@@ -1,0 +1,92 @@
+{
+  "1": [
+    { "sender": "me", "type": "text", "text": "Hey Akhil!", "time": "09:00" },
+    { "sender": "Akhil", "type": "text", "text": "Hey bro! How are you?", "time": "09:01" }
+  ],
+  "2": [
+    { "sender": "me", "type": "text", "text": "Hi Rajesh, meeting at 3?", "time": "10:00" },
+    { "sender": "Rajesh", "type": "text", "text": "Yes bro, done!", "time": "10:02" }
+  ],
+  "3": [
+    { "sender": "Pooja", "type": "text", "text": "Good morning!", "time": "08:30" },
+    { "sender": "me", "type": "text", "text": "Morning Pooja!", "time": "08:32", "status": "seen" }
+  ],
+  "4": [
+    { "sender": "Sumanth", "type": "file", "filename": "Project.zip", "url": "https://example.com/file.zip", "time": "11:00" },
+    { "sender": "me", "type": "text", "text": "Got it, thanks!", "time": "11:05", "status": "seen" }
+  ],
+  "5": [
+    { "sender": "me", "type": "image", "url": "https://via.placeholder.com/150", "time": "12:00" },
+    { "sender": "Nikhil", "type": "text", "text": "Nice pic bro!", "time": "12:02" }
+  ],
+  "7": [
+    { "sender": "Deepthi", "type": "text", "text": "Are you free for a call?", "time": "13:00" },
+    { "sender": "me", "type": "text", "text": "Yeah, tell me.", "time": "13:03", "status": "seen" }
+  ],
+  "9": [
+    { "sender": "Anusha", "type": "text", "text": "Please share the HR document.", "time": "15:00" },
+    { "sender": "me", "type": "file", "filename": "HR_Policy.pdf", "url": "https://example.com/hr.pdf", "time": "15:02", "status": "seen" }
+  ],
+  "11": [
+    { "sender": "me", "type": "audio", "url": "https://example.com/voice.mp3", "time": "17:00" },
+    { "sender": "Kiran", "type": "text", "text": "Heard the voice note, clear bro.", "time": "17:02" }
+  ],
+  "13": [
+    { "sender": "Sandeep", "type": "text", "text": "Check this out", "time": "18:00" },
+    { "sender": "me", "type": "image", "url": "https://via.placeholder.com/150", "time": "18:03", "status": "seen" }
+  ],
+  "15": [
+    { "sender": "Manoj", "type": "text", "text": "Send me your location", "time": "19:00" },
+    { "sender": "me", "type": "text", "text": "On the way bro", "time": "19:02", "status": "seen" }
+  ],
+  "17": [
+    { "sender": "Ravi", "type": "file", "filename": "Invoice.docx", "url": "https://example.com/invoice.docx", "time": "09:00" },
+    { "sender": "me", "type": "text", "text": "Downloaded, thanks bro.", "time": "09:05", "status": "seen" }
+  ],
+
+  "g1": [
+    { "sender": "Akhil", "type": "text", "text": "Hello HR Team!", "time": "09:00" },
+    { "sender": "Pooja", "type": "text", "text": "Good morning team!", "time": "09:02" },
+    { "sender": "Anusha", "type": "text", "text": "Any updates on HR policy?", "time": "09:05" },
+    { "sender": "Ravi", "type": "text", "text": "Yes, check your email.", "time": "09:06" },
+    { "sender": "Srinivas", "type": "text", "text": "Received. Thanks Ravi.", "time": "09:08" }
+  ],
+
+  "g2": [
+    { "sender": "Rajesh", "type": "text", "text": "Backend API deployed!", "time": "10:00" },
+    { "sender": "Sumanth", "type": "text", "text": "Frontend integration pending.", "time": "10:02" },
+    { "sender": "Naveen", "type": "text", "text": "I'll work on it.", "time": "10:03" },
+    { "sender": "Karthik", "type": "text", "text": "Database schema updated.", "time": "10:05" },
+    { "sender": "Vikram", "type": "text", "text": "Testing starts at 4 PM.", "time": "10:07" }
+  ],
+
+  "g3": [
+    { "sender": "Manoj", "type": "text", "text": "Management meet at 5 PM.", "time": "11:00" },
+    { "sender": "Deepthi", "type": "text", "text": "Noted.", "time": "11:02" },
+    { "sender": "Kiran", "type": "text", "text": "See you all there.", "time": "11:03" },
+    { "sender": "Sandeep", "type": "text", "text": "Agenda shared on mail.", "time": "11:05" }
+  ],
+
+  "g4": [
+    { "sender": "Lakshmi", "type": "text", "text": "Test cases uploaded.", "time": "12:00" },
+    { "sender": "Divya", "type": "text", "text": "Running regression tests now.", "time": "12:02" },
+    { "sender": "Swathi", "type": "text", "text": "UI testing pending.", "time": "12:04" },
+    { "sender": "Priya", "type": "text", "text": "I'll handle mobile testing.", "time": "12:05" },
+    { "sender": "Sneha", "type": "text", "text": "Performance testing report ready.", "time": "12:07" }
+  ],
+
+  "g5": [
+    { "sender": "Pallavi", "type": "text", "text": "New logo designs uploaded.", "time": "14:00" },
+    { "sender": "Harika", "type": "text", "text": "Check color palette suggestions.", "time": "14:02" },
+    { "sender": "Aishwarya", "type": "text", "text": "Wireframes are ready.", "time": "14:04" },
+    { "sender": "Sandhya", "type": "text", "text": "Homepage design updated.", "time": "14:06" },
+    { "sender": "Varsha", "type": "text", "text": "UI kit shared.", "time": "14:07" }
+  ],
+
+  "g6": [
+    { "sender": "Admin", "type": "text", "text": "Welcome everyone to the company chat!", "time": "09:00" },
+    { "sender": "Akhil", "type": "text", "text": "Good morning everyone!", "time": "09:02" },
+    { "sender": "Rajesh", "type": "text", "text": "Hello team!", "time": "09:03" },
+    { "sender": "Anusha", "type": "text", "text": "Excited to work with you all.", "time": "09:05" }
+  ]
+}
