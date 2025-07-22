@@ -39,6 +39,7 @@ const NotificationSystem = () => {
   const fromDateRef = useRef(null);
   const toDateRef = useRef(null);
 
+  // Helper functions
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
@@ -60,23 +61,86 @@ const NotificationSystem = () => {
     return icons[kind] || <FaInfoCircle size={18} className="text-gray-400" />;
   };
 
-  const handleStar = (id) => {
-    if (!isEditMode) {
-      setGdata(
-        gdata.map((msg) =>
-          msg.id === id ? { ...msg, stared: !msg.stared } : msg
-        )
-      );
-    } else {
+  const handleStar = async (id) => {
+    if (isEditMode) {
       handleSelectNotification(id);
+      return;
+    }
+
+    const originalGdata = [...gdata];
+    const notificationToUpdate = gdata.find((msg) => msg.id === id);
+
+    if (!notificationToUpdate) return;
+
+    // Optimistically update the UI to feel responsive
+    const updatedGdata = gdata.map((msg) =>
+      msg.id === id ? { ...msg, stared: !msg.stared } : msg
+    );
+    setGdata(updatedGdata);
+
+    try {
+      let response;
+      const isCurrentlyStared = notificationToUpdate.stared;
+
+      if (isCurrentlyStared) {
+        // If it's already starred, call the UNSTAR endpoint
+        response = await fetch(
+          `http://localhost:8081/api/notifications/unstared/${id}`,
+          {
+            method: "PUT", // Assuming PUT, can be changed if needed
+          }
+        );
+      } else {
+        // If it's not starred, call the STAR endpoint
+        response = await fetch(
+          `http://localhost:8081/api/notifications/stared/${id}`,
+          {
+            method: "PUT",
+          }
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+
+      console.log(`Notification ${id} star status updated successfully.`);
+    } catch (error) {
+      console.error("Failed to update star status:", error);
+      // If the API call fails, revert the UI to the original state
+      setGdata(originalGdata);
+      alert("Failed to update the notification. Please try again.");
     }
   };
 
-  const handleDeleteSingle = (id) => {
-    if (!isEditMode) {
-      setGdata(gdata.filter((msg) => msg.id !== id));
-    } else {
+  const handleDeleteSingle = async (id) => {
+    if (isEditMode) {
       handleSelectNotification(id);
+      return;
+    }
+
+    const originalGdata = [...gdata];
+
+    const updatedGdata = gdata.filter((msg) => msg.id !== id);
+    setGdata(updatedGdata);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8081/api/notifications/delete/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+
+      console.log(`Notification ${id} deleted successfully.`);
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+      setGdata(originalGdata);
+      alert("Failed to delete the notification. Please try again.");
     }
   };
 
@@ -137,6 +201,7 @@ const NotificationSystem = () => {
     }
   };
 
+  // Memoized values
   const unreadCount = useMemo(
     () => gdata?.filter((msg) => !msg.read).length || 0,
     [gdata]
@@ -186,6 +251,7 @@ const NotificationSystem = () => {
     return filtered;
   }, [gdata, activeTab, searchQuery, fromDate, toDate]);
 
+  // Animation variants
   const topBarVariants = {
     hidden: { y: -50, opacity: 0 },
     visible: {
@@ -200,6 +266,7 @@ const NotificationSystem = () => {
     tap: { scale: 0.95 },
   };
 
+  // Sidebar navigation items
   const sidebarItems = [
     { tab: "Leaves", icon: FaEnvelope },
     { tab: "Performance", icon: FaChartBar },
@@ -208,13 +275,15 @@ const NotificationSystem = () => {
   ];
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50 relative">
+    <div className="w-full h-screen flex flex-col bg-gray-50">
+      {/* Top Bar */}
       <motion.div
         className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20 w-full"
         initial="hidden"
         animate="visible"
         variants={topBarVariants}
       >
+        {/* Mobile Header */}
         <div className="sm:hidden bg-white py-2 flex items-center justify-between px-3 h-[50px]">
           <motion.button
             onClick={toggleMobileMenu}
@@ -238,9 +307,12 @@ const NotificationSystem = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          {/* Mobile Bell Icon Removed */}
         </div>
 
+        {/* === DESKTOP HEADER === */}
         <div className="hidden sm:flex items-center space-x-4 py-2 px-4 h-[60px]">
+          {/* Tabs */}
           <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
             {["All", "Unread", "Starred"].map((tab) => (
               <motion.button
@@ -266,6 +338,7 @@ const NotificationSystem = () => {
             ))}
           </div>
 
+          {/* Search Bar */}
           <div className="relative flex-1">
             <FaSearch
               className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -280,6 +353,7 @@ const NotificationSystem = () => {
             />
           </div>
 
+          {/* Filters */}
           <div className="flex items-center space-x-2">
             <button
               onClick={() => fromDateRef.current?.showPicker()}
@@ -318,7 +392,9 @@ const NotificationSystem = () => {
             </button>
           </div>
 
+          {/* Action Buttons & Notifications */}
           <div className="flex items-center">
+            {/* Button Group */}
             <div className="flex items-center space-x-2">
               {!isEditMode ? (
                 <motion.button
@@ -358,16 +434,20 @@ const NotificationSystem = () => {
                 </>
               )}
             </div>
+            {/* Desktop Bell Icon Removed */}
           </div>
         </div>
       </motion.div>
 
+      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Notification List */}
         <div className="p-2 notifications-list flex-1 overflow-y-auto">
-          {filteredNotifications?.map((message) => (
-            <motion.div
-              key={message.id}
-              className={`rounded-lg shadow-sm border mb-1.5 cursor-pointer overflow-hidden relative
+          {filteredNotifications?.length > 0 ? (
+            filteredNotifications.map((message) => (
+              <motion.div
+                key={message.id}
+                className={`rounded-lg shadow-sm border mb-1.5 cursor-pointer overflow-hidden relative
                 ${
                   selectedNotifications.includes(message.id)
                     ? "border-indigo-400 ring-2 ring-indigo-200"
@@ -378,13 +458,81 @@ const NotificationSystem = () => {
                     ? "bg-gradient-to-r from-indigo-50 to-purple-50"
                     : "bg-white"
                 }`}
-              onClick={() => handleNotificationClick(message)}
-              whileHover={{ y: -2, boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="sm:hidden flex flex-col p-2.5">
-                <div className="flex items-start">
-                  <div className="pr-3 pt-1">
+                onClick={() => handleNotificationClick(message)}
+                whileHover={{ y: -2, boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}
+                transition={{ duration: 0.15 }}
+              >
+                {/* Mobile Layout */}
+                <div className="sm:hidden flex flex-col p-2.5">
+                  <div className="flex items-start">
+                    <div className="pr-3 pt-1">
+                      {isEditMode ? (
+                        <FaCheckCircle
+                          size={18}
+                          className={
+                            selectedNotifications.includes(message.id)
+                              ? "text-indigo-600"
+                              : "text-gray-300"
+                          }
+                        />
+                      ) : (
+                        getKindIcon(message.kind)
+                      )}
+                    </div>
+                    <div className="flex-1 overflow-hidden pr-8">
+                      <div className="font-semibold text-sm text-gray-800">
+                        {message.subject}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {message.message}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200/80">
+                    <div className="flex flex-col items-start">
+                      <div className="text-xs font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+                        {message.category}
+                      </div>
+                      <div className="font-bold text-xs text-gray-700 mt-1">
+                        {message.sender}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end text-xs">
+                      <span className="text-gray-600 font-semibold">
+                        {getTimeAgo(message.createdAt)}
+                      </span>
+                      <span className="text-gray-400 mt-0.5">
+                        {getTimestamp(message.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="absolute top-2.5 right-2.5 flex flex-col items-center justify-center space-y-3">
+                    <FaStar
+                      size={16}
+                      className={`cursor-pointer transition-colors ${
+                        message.stared
+                          ? "text-yellow-400"
+                          : "text-gray-300 hover:text-yellow-400"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStar(message.id);
+                      }}
+                    />
+                    <FaTrashAlt
+                      size={15}
+                      className="cursor-pointer text-gray-300 hover:text-red-500 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSingle(message.id);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex items-center w-full h-[90px] p-2">
+                  <div className="px-2">
                     {isEditMode ? (
                       <FaCheckCircle
                         size={18}
@@ -398,135 +546,81 @@ const NotificationSystem = () => {
                       getKindIcon(message.kind)
                     )}
                   </div>
-                  <div className="flex-1 overflow-hidden pr-8">
-                    <div className="font-semibold text-sm text-gray-800">
+                  <div className="flex-1 flex flex-col justify-center overflow-hidden h-full pl-3">
+                    <div className="font-semibold text-sm text-gray-800 truncate">
                       {message.subject}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className="text-xs text-gray-600 mt-1 truncate">
                       {message.message}
                     </div>
                   </div>
-                </div>
-                <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200/80">
-                  <div className="flex flex-col items-start">
-                    <div className="text-xs font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
-                      {message.category}
-                    </div>
-                    <div className="font-bold text-xs text-gray-700 mt-1">
+                  <div className="flex flex-col items-start justify-center px-4 w-48 h-full shrink-0">
+                    <div className="font-bold text-sm text-gray-800 truncate w-full">
                       {message.sender}
                     </div>
+                    <div className="text-xs font-medium text-indigo-600 mt-1">
+                      {message.category}
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end text-xs">
-                    <span className="text-gray-600 font-semibold">
+                  <div className="flex flex-col items-end justify-center px-4 w-40 text-right h-full shrink-0">
+                    <div className="text-xs text-gray-600 font-semibold">
                       {getTimeAgo(message.createdAt)}
-                    </span>
-                    <span className="text-gray-400 mt-0.5">
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
                       {getTimestamp(message.createdAt)}
-                    </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center justify-center space-y-3 px-4">
+                    <motion.div
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <FaStar
+                        size={16}
+                        className={`cursor-pointer transition-colors ${
+                          message.stared
+                            ? "text-yellow-400"
+                            : "text-gray-300 hover:text-yellow-400"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStar(message.id);
+                        }}
+                      />
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <FaTrashAlt
+                        size={15}
+                        className="cursor-pointer text-gray-300 hover:text-red-500 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSingle(message.id);
+                        }}
+                      />
+                    </motion.div>
                   </div>
                 </div>
-                <div className="absolute top-2.5 right-2.5 flex flex-col items-center justify-center space-y-3">
-                  <FaStar
-                    size={16}
-                    className={`cursor-pointer transition-colors ${
-                      message.stared
-                        ? "text-yellow-400"
-                        : "text-gray-300 hover:text-yellow-400"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStar(message.id);
-                    }}
-                  />
-                  <FaTrashAlt
-                    size={15}
-                    className="cursor-pointer text-gray-300 hover:text-red-500 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSingle(message.id);
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="hidden sm:flex items-center w-full h-[90px] p-2">
-                <div className="px-2">
-                  {isEditMode ? (
-                    <FaCheckCircle
-                      size={18}
-                      className={
-                        selectedNotifications.includes(message.id)
-                          ? "text-indigo-600"
-                          : "text-gray-300"
-                      }
-                    />
-                  ) : (
-                    getKindIcon(message.kind)
-                  )}
-                </div>
-                <div className="flex-1 flex flex-col justify-center overflow-hidden h-full pl-3">
-                  <div className="font-semibold text-sm text-gray-800 truncate">
-                    {message.subject}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-1 truncate">
-                    {message.message}
-                  </div>
-                </div>
-                <div className="flex flex-col items-start justify-center px-4 w-48 h-full shrink-0">
-                  <div className="font-bold text-sm text-gray-800 truncate w-full">
-                    {message.sender}
-                  </div>
-                  <div className="text-xs font-medium text-indigo-600 mt-1">
-                    {message.category}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end justify-center px-4 w-40 text-right h-full shrink-0">
-                  <div className="text-xs text-gray-600 font-semibold">
-                    {getTimeAgo(message.createdAt)}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {getTimestamp(message.createdAt)}
-                  </div>
-                </div>
-                <div className="flex flex-col items-center justify-center space-y-3 px-4">
-                  <motion.div
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <FaStar
-                      size={16}
-                      className={`cursor-pointer transition-colors ${
-                        message.stared
-                          ? "text-yellow-400"
-                          : "text-gray-300 hover:text-yellow-400"
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStar(message.id);
-                      }}
-                    />
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <FaTrashAlt
-                      size={15}
-                      className="cursor-pointer text-gray-300 hover:text-red-500 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteSingle(message.id);
-                      }}
-                    />
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-4">
+              <FaCheckCircle size={48} className="mb-4 text-green-500" />
+              <h3 className="text-xl font-semibold text-gray-700">
+                You're All Caught Up!
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                No notifications match your current filters.
+              </p>
+            </div>
+          )}
         </div>
 
+        {/* Desktop Sidebar (Moved to the Right) */}
         <aside
-          className={`flex-col bg-white border-l border-gray-200 transition-all duration-200 ${
+          className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200 ${
             isSidebarCollapsed ? "w-[60px]" : "w-[250px]"
           } hidden sm:flex sm:sticky sm:top-0 sm:self-start h-full`}
         >
@@ -565,6 +659,7 @@ const NotificationSystem = () => {
         </aside>
       </div>
 
+      {/* === MOBILE SIDEBAR MENU === */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
