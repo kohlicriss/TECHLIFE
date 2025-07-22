@@ -1,18 +1,17 @@
-import React from 'react';
-import {  Routes, Route } from 'react-router-dom';
-import EmployeeApp from '../Employees/EmployeeApp';
-import EmployeeProfile from '../Employees/EmployeeProfile';
-import { employees } from '../Employees/EmployeeApp';
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import EmployeeApp from "./EmployeeApp"; // Assuming this is the correct path
+import EmployeeProfile from "./EmployeeProfile"; // Assuming this is the correct path
 
-const AppRoutes = () => {
+const Employees = () => {
   return (
-     
-      <Routes>
-        <Route path="/" element={<EmployeeApp />} />
-        <Route path="/employee/:id" element={<EmployeeProfile employees={employees} />} />
-      </Routes>
-    
+    <Routes>
+      {/* FIX: 'index' specifies that EmployeeApp is the default component for the '/employees' route */}
+      <Route index element={<EmployeeApp />} />
+      {/* FIX: The path is now relative to '/employees', creating the full path '/employees/employee/:id' */}
+      <Route path="employee/:id" element={<EmployeeProfile />} />
+    </Routes>
   );
 };
 
-export default AppRoutes;
+export default Employees;

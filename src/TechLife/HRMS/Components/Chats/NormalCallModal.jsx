@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, PhoneOff } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { Mic, MicOff, PhoneOff } from "lucide-react";
 
 function NormalCallModal({ onClose, selectedUser, currentUser }) {
   const localAudioRef = useRef(null);
@@ -13,72 +13,84 @@ function NormalCallModal({ onClose, selectedUser, currentUser }) {
   const [micOn, setMicOn] = useState(true);
 
   const isGroup = selectedUser?.isGroup === true;
-  const displayName = selectedUser?.name || 'Unknown';
-  const displayInitial = displayName?.trim()?.charAt(0)?.toUpperCase() || '?';
+  const displayName = selectedUser?.name || "Unknown";
+  const displayInitial = displayName?.trim()?.charAt(0)?.toUpperCase() || "?";
 
   useEffect(() => {
-    audioRef.current = new Audio('/assets/teams_ringtone.mp3');
+    audioRef.current = new Audio("/assets/teams_ringtone.mp3");
     audioRef.current.loop = true;
-    audioRef.current.play().catch(err => {
-      console.warn('Ringtone autoplay blocked:', err.message);
+    audioRef.current.play().catch((err) => {
+      console.warn("Ringtone autoplay blocked:", err.message);
     });
 
     const init = async () => {
       try {
-        const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
         streamRef.current = localStream;
         if (localAudioRef.current) {
           localAudioRef.current.srcObject = localStream;
         }
 
         const pc = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
         });
         peerConnectionRef.current = pc;
 
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        localStream
+          .getTracks()
+          .forEach((track) => pc.addTrack(track, localStream));
 
-        pc.ontrack = event => {
-          event.streams[0].getTracks().forEach(track => remoteStreamRef.current.addTrack(track));
+        pc.ontrack = (event) => {
+          event.streams[0]
+            .getTracks()
+            .forEach((track) => remoteStreamRef.current.addTrack(track));
           if (remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = remoteStreamRef.current;
           }
         };
 
-        pc.onicecandidate = event => {
+        pc.onicecandidate = (event) => {
           if (event.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: 'ice', candidate: event.candidate }));
+            wsRef.current.send(
+              JSON.stringify({ type: "ice", candidate: event.candidate })
+            );
           }
         };
 
-        const ws = new WebSocket('wss://ws.postman-echo.com/raw');
+        const ws = new WebSocket("wss://ws.postman-echo.com/raw");
         wsRef.current = ws;
 
         ws.onopen = async () => {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
-          ws.send(JSON.stringify({ type: 'offer', offer }));
+          ws.send(JSON.stringify({ type: "offer", offer }));
         };
 
-        ws.onmessage = async message => {
+        ws.onmessage = async (message) => {
           try {
             const data = JSON.parse(message.data);
-            if (data.type === 'offer') {
-              await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            if (data.type === "offer") {
+              await pc.setRemoteDescription(
+                new RTCSessionDescription(data.offer)
+              );
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
-              ws.send(JSON.stringify({ type: 'answer', answer }));
-            } else if (data.type === 'answer') {
-              await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-            } else if (data.type === 'ice' && data.candidate) {
+              ws.send(JSON.stringify({ type: "answer", answer }));
+            } else if (data.type === "answer") {
+              await pc.setRemoteDescription(
+                new RTCSessionDescription(data.answer)
+              );
+            } else if (data.type === "ice" && data.candidate) {
               await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
             }
           } catch (err) {
-            console.error('WebRTC signaling error:', err);
+            console.error("WebRTC signaling error:", err);
           }
         };
       } catch (err) {
-        console.error('Mic access error:', err);
+        console.error("Mic access error:", err);
       }
     };
 
@@ -97,7 +109,7 @@ function NormalCallModal({ onClose, selectedUser, currentUser }) {
       }
 
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
 
@@ -112,7 +124,9 @@ function NormalCallModal({ onClose, selectedUser, currentUser }) {
       }
 
       if (peerConnectionRef.current) {
-        peerConnectionRef.current.getSenders().forEach(sender => peerConnectionRef.current.removeTrack(sender));
+        peerConnectionRef.current
+          .getSenders()
+          .forEach((sender) => peerConnectionRef.current.removeTrack(sender));
         peerConnectionRef.current.close();
         peerConnectionRef.current = null;
       }
@@ -124,7 +138,7 @@ function NormalCallModal({ onClose, selectedUser, currentUser }) {
 
       remoteStreamRef.current = new MediaStream();
     } catch (err) {
-      console.error('Error during cleanup:', err);
+      console.error("Error during cleanup:", err);
     }
   };
 
@@ -134,18 +148,16 @@ function NormalCallModal({ onClose, selectedUser, currentUser }) {
   };
 
   const toggleMic = () => {
-    streamRef.current?.getAudioTracks().forEach(track => {
+    streamRef.current?.getAudioTracks().forEach((track) => {
       track.enabled = !micOn;
     });
-    setMicOn(prev => !prev);
+    setMicOn((prev) => !prev);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center">
+    <div className="fixed inset-0   bg-opacity-100 z-112 flex items-center justify-center">
       <div className="bg-white text-black rounded-lg p-6 w-full max-w-md flex flex-col items-center gap-6 shadow-lg">
-        <h2 className="text-lg font-semibold">
-          Calling {displayName}...
-        </h2>
+        <h2 className="text-lg font-semibold">Calling {displayName}...</h2>
 
         <div className="flex flex-col items-center">
           {selectedUser?.profilePic ? (
@@ -160,15 +172,17 @@ function NormalCallModal({ onClose, selectedUser, currentUser }) {
             </div>
           )}
           <p className="mt-2 text-gray-600">
-            {isGroup ? 'Group Voice Call' : 'Voice Call'}
+            {isGroup ? "Group Voice Call" : "Voice Call"}
           </p>
         </div>
 
         <div className="flex gap-4">
           <button
             onClick={toggleMic}
-            className={`p-3 rounded-full ${micOn ? 'bg-blue-600' : 'bg-red-600'} text-white`}
-            title={micOn ? 'Mute Mic' : 'Unmute Mic'}
+            className={`p-3 rounded-full ${
+              micOn ? "bg-blue-600" : "bg-red-600"
+            } text-white`}
+            title={micOn ? "Mute Mic" : "Unmute Mic"}
           >
             {micOn ? <Mic size={20} /> : <MicOff size={20} />}
           </button>

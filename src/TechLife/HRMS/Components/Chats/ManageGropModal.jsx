@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState } from "react"; // Import useState
 
 function ManageGroupModal({ group, users, onAdd, onRemove, onClose }) {
   const groupMemberIds = group.members || [];
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const usersInGroup = users
-    .filter(u => groupMemberIds.includes(u.id))
-    .filter(u => u.name.toLowerCase().includes(search.toLowerCase()));
+    .filter((u) => groupMemberIds.includes(u.id))
+    .filter((u) => u.name.toLowerCase().includes(search.toLowerCase()));
 
   const usersNotInGroup = users
-    .filter(u => !groupMemberIds.includes(u.id))
-    .filter(u => u.name.toLowerCase().includes(search.toLowerCase()));
+    .filter((u) => !groupMemberIds.includes(u.id))
+    .filter((u) => u.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="relative bg-white p-0 rounded-lg w-96 shadow-xl max-h-[80vh] overflow-hidden">
-
+    // The main changes are in the div below
+    <div
+      style={{ zIndex: "100" }}
+      className="absolute inset-0   bg-opacity-100 flex items-center justify-center z-50"
+    >
+      <div className="relative bg-white p-0 rounded-lg w-96 shadow-2xl max-h-[80vh] overflow-hidden">
         <div className="sticky top-0 bg-white z-10 px-5 pt-5 pb-3 border-b">
           <button
             onClick={onClose}
@@ -26,28 +29,32 @@ function ManageGroupModal({ group, users, onAdd, onRemove, onClose }) {
             &times;
           </button>
 
-          <h3 className="text-xl font-bold text-center text-gray-800">Manage Members</h3>
+          <h3 className="text-xl font-bold text-center text-gray-800">
+            Manage Members
+          </h3>
 
           <input
             type="text"
             placeholder="Search members..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="w-full mt-3 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
         <div className="overflow-y-auto px-5 py-4 max-h-[calc(80vh-110px)]">
-
           <div className="mb-6">
             <p className="font-semibold mb-2">Remove User:</p>
             <ul className="space-y-1">
-              {usersInGroup.map(u => (
-                <li key={u.id} className="flex justify-between items-center px-2 py-1 hover:bg-gray-50 rounded">
+              {usersInGroup.map((u) => (
+                <li
+                  key={u.id}
+                  className="flex justify-between items-center px-2 py-1 hover:bg-gray-50 rounded"
+                >
                   <span className="text-gray-700">{u.name}</span>
                   <button
                     onClick={() => onRemove(u.id, group.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
+                    className="bg-red-500 cursor-pointer hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition"
                   >
                     Remove
                   </button>
@@ -62,12 +69,15 @@ function ManageGroupModal({ group, users, onAdd, onRemove, onClose }) {
           <div>
             <p className="font-semibold mb-2">Add User:</p>
             <ul className="space-y-1">
-              {usersNotInGroup.map(u => (
-                <li key={u.id} className="flex justify-between items-center px-2 py-1 hover:bg-gray-50 rounded">
+              {usersNotInGroup.map((u) => (
+                <li
+                  key={u.id}
+                  className="flex justify-between items-center px-2 py-1 hover:bg-gray-50 rounded"
+                >
                   <span className="text-gray-700">{u.name}</span>
                   <button
                     onClick={() => onAdd(u.id, group.id)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition"
+                    className="bg-blue-500 cursor-pointer hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition"
                   >
                     Add
                   </button>
@@ -78,7 +88,6 @@ function ManageGroupModal({ group, users, onAdd, onRemove, onClose }) {
               )}
             </ul>
           </div>
-
         </div>
       </div>
     </div>

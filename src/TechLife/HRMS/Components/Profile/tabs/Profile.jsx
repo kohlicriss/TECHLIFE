@@ -1,141 +1,172 @@
-import React, { useState, useEffect } from 'react';
-import { IoClose } from 'react-icons/io5';
+import React, { useState, useEffect } from "react";
+import { IoClose } from "react-icons/io5";
 
 // ---- Default Profile ---
 const defaultProfile = {
   primaryDetails: {
-    firstName: 'John',
-    middleName: 'Robert',
-    lastName: 'Smith',
-    displayName: 'John Smith',
-    gender: 'Male',
-    dateOfBirth: '1990-03-15',
-    maritalStatus: 'Married',
-    bloodGroup: 'O+ (O Positive)',
-    physicallyHandicapped: 'No',
-    nationality: 'United States',
+    firstName: "John",
+    middleName: "Robert",
+    lastName: "Smith",
+    displayName: "John Smith",
+    gender: "Male",
+    dateOfBirth: "1990-03-15",
+    maritalStatus: "Married",
+    bloodGroup: "O+ (O Positive)",
+    physicallyHandicapped: "No",
+    nationality: "United States",
   },
   contactDetails: {
-    email: 'john@example.com',
-    alternateEmail: 'john@gmail.com',
-    phone: '+1 234-567-8900',
-    city: 'Los Angeles',
-    state: 'California',
-    zip: '90001',
-    country: 'United States',
+    email: "john@example.com",
+    alternateEmail: "john@gmail.com",
+    phone: "+1 234-567-8900",
+    city: "Los Angeles",
+    state: "California",
+    zip: "90001",
+    country: "United States",
   },
   address: {
-    permanentAddress: '123 Main St, Hometown',
-    permanentCity: 'Los Angeles',
-    permanentState: 'California',
-    permanentZip: '90001',
-    permanentCountry: 'United States',
-    currentAddress: '456 Work Ave, Worktown',
-    currentCity: 'San Francisco',
-    currentState: 'California',
-    currentZip: '94101',
-    currentCountry: 'United States',
+    permanentAddress: "123 Main St, Hometown",
+    permanentCity: "Los Angeles",
+    permanentState: "California",
+    permanentZip: "90001",
+    permanentCountry: "United States",
+    currentAddress: "456 Work Ave, Worktown",
+    currentCity: "San Francisco",
+    currentState: "California",
+    currentZip: "94101",
+    currentCountry: "United States",
   },
   relations: {
-    fatherName: 'Albert Smith',
-    motherName: 'Marry Smith',
-    spouseName: 'Jane Smith',
-    children: '2',
-    siblings: '1',
+    fatherName: "Albert Smith",
+    motherName: "Marry Smith",
+    spouseName: "Jane Smith",
+    children: "2",
+    siblings: "1",
   },
   education: {
-    highestDegree: 'B.Tech',
-    institution: 'MIT',
-    yearOfPassing: '2014',
-    gradingSystem: 'CGPA',
-    grade: '9.2',
-    specialization: 'Computer Science',
+    highestDegree: "B.Tech",
+    institution: "MIT",
+    yearOfPassing: "2014",
+    gradingSystem: "CGPA",
+    grade: "9.2",
+    specialization: "Computer Science",
   },
   professionalSummary: {
-    summary: 'Full-stack developer with 10+ years of experience.',
+    summary: "Full-stack developer with 10+ years of experience.",
   },
   identityInformation: {
     photoId: null,
     addressProof: null,
     payroll: null,
-    photoIdName: '',
-    addressProofName: '',
-    payrollName: '',
+    photoIdName: "",
+    addressProofName: "",
+    payrollName: "",
   },
 };
 
 const sectionFields = {
   primaryDetails: [
-    { label: 'First Name', name: 'firstName', type: 'text', required: true },
-    { label: 'Middle Name', name: 'middleName', type: 'text' },
-    { label: 'Last Name', name: 'lastName', type: 'text', required: true },
-    { label: 'Display Name', name: 'displayName', type: 'text', required: true },
-    { label: 'Gender', name: 'gender', type: 'select', required: true, options: ['Male', 'Female', 'Other'] },
-    { label: 'Date of Birth', name: 'dateOfBirth', type: 'date', required: true },
-    { label: 'Marital Status', name: 'maritalStatus', type: 'select', options: ['Single', 'Married', 'Divorced'] },
+    { label: "First Name", name: "firstName", type: "text", required: true },
+    { label: "Middle Name", name: "middleName", type: "text" },
+    { label: "Last Name", name: "lastName", type: "text", required: true },
     {
-      label: 'Blood Group',
-      name: 'bloodGroup',
-      type: 'select',
+      label: "Display Name",
+      name: "displayName",
+      type: "text",
       required: true,
-      options: ['O+ (O Positive)', 'A+', 'B+', 'AB+', 'O-', 'A-', 'B-', 'AB-'],
     },
     {
-      label: 'Physically Handicapped',
-      name: 'physicallyHandicapped',
-      type: 'select',
+      label: "Gender",
+      name: "gender",
+      type: "select",
       required: true,
-      options: ['Yes', 'No'],
+      options: ["Male", "Female", "Other"],
     },
     {
-      label: 'Nationality',
-      name: 'nationality',
-      type: 'select',
+      label: "Date of Birth",
+      name: "dateOfBirth",
+      type: "date",
       required: true,
-      options: ['United States', 'India', 'Canada'],
+    },
+    {
+      label: "Marital Status",
+      name: "maritalStatus",
+      type: "select",
+      options: ["Single", "Married", "Divorced"],
+    },
+    {
+      label: "Blood Group",
+      name: "bloodGroup",
+      type: "select",
+      required: true,
+      options: ["O+ (O Positive)", "A+", "B+", "AB+", "O-", "A-", "B-", "AB-"],
+    },
+    {
+      label: "Physically Handicapped",
+      name: "physicallyHandicapped",
+      type: "select",
+      required: true,
+      options: ["Yes", "No"],
+    },
+    {
+      label: "Nationality",
+      name: "nationality",
+      type: "select",
+      required: true,
+      options: ["United States", "India", "Canada"],
     },
   ],
   contactDetails: [
-    { label: 'Email', name: 'email', type: 'email', required: true },
-    { label: 'Alternate Email', name: 'alternateEmail', type: 'email' },
-    { label: 'Phone', name: 'phone', type: 'text', required: true },
-    { label: 'City', name: 'city', type: 'text' },
-    { label: 'State', name: 'state', type: 'text' },
-    { label: 'Zip', name: 'zip', type: 'text' },
-    { label: 'Country', name: 'country', type: 'text', required: true },
+    { label: "Email", name: "email", type: "email", required: true },
+    { label: "Alternate Email", name: "alternateEmail", type: "email" },
+    { label: "Phone", name: "phone", type: "text", required: true },
+    { label: "City", name: "city", type: "text" },
+    { label: "State", name: "state", type: "text" },
+    { label: "Zip", name: "zip", type: "text" },
+    { label: "Country", name: "country", type: "text", required: true },
   ],
   address: [
-    { label: 'Permanent Address', name: 'permanentAddress', type: 'text' },
-    { label: 'Permanent City', name: 'permanentCity', type: 'text' },
-    { label: 'Permanent State', name: 'permanentState', type: 'text' },
-    { label: 'Permanent Zip', name: 'permanentZip', type: 'text' },
-    { label: 'Permanent Country', name: 'permanentCountry', type: 'text' },
-    { label: 'Current Address', name: 'currentAddress', type: 'text' },
-    { label: 'Current City', name: 'currentCity', type: 'text' },
-    { label: 'Current State', name: 'currentState', type: 'text' },
-    { label: 'Current Zip', name: 'currentZip', type: 'text' },
-    { label: 'Current Country', name: 'currentCountry', type: 'text' },
+    { label: "Permanent Address", name: "permanentAddress", type: "text" },
+    { label: "Permanent City", name: "permanentCity", type: "text" },
+    { label: "Permanent State", name: "permanentState", type: "text" },
+    { label: "Permanent Zip", name: "permanentZip", type: "text" },
+    { label: "Permanent Country", name: "permanentCountry", type: "text" },
+    { label: "Current Address", name: "currentAddress", type: "text" },
+    { label: "Current City", name: "currentCity", type: "text" },
+    { label: "Current State", name: "currentState", type: "text" },
+    { label: "Current Zip", name: "currentZip", type: "text" },
+    { label: "Current Country", name: "currentCountry", type: "text" },
   ],
   relations: [
-    { label: 'Father Name', name: 'fatherName', type: 'text' },
-    { label: 'Mother Name', name: 'motherName', type: 'text' },
-    { label: 'Spouse Name', name: 'spouseName', type: 'text' },
-    { label: 'Children', name: 'children', type: 'number' },
-    { label: 'Siblings', name: 'siblings', type: 'number' },
+    { label: "Father Name", name: "fatherName", type: "text" },
+    { label: "Mother Name", name: "motherName", type: "text" },
+    { label: "Spouse Name", name: "spouseName", type: "text" },
+    { label: "Children", name: "children", type: "number" },
+    { label: "Siblings", name: "siblings", type: "number" },
   ],
   education: [
-    { label: 'Highest Degree', name: 'highestDegree', type: 'text', required: true },
-    { label: 'Institution', name: 'institution', type: 'text', required: true },
-    { label: 'Year Of Passing', name: 'yearOfPassing', type: 'number', required: true },
     {
-      label: 'Grading System',
-      name: 'gradingSystem',
-      type: 'select',
-      options: ['Percentage', 'CGPA', 'GPA'],
+      label: "Highest Degree",
+      name: "highestDegree",
+      type: "text",
       required: true,
     },
-    { label: 'Grade', name: 'grade', type: 'text' },
-    { label: 'Specialization', name: 'specialization', type: 'text' },
+    { label: "Institution", name: "institution", type: "text", required: true },
+    {
+      label: "Year Of Passing",
+      name: "yearOfPassing",
+      type: "number",
+      required: true,
+    },
+    {
+      label: "Grading System",
+      name: "gradingSystem",
+      type: "select",
+      options: ["Percentage", "CGPA", "GPA"],
+      required: true,
+    },
+    { label: "Grade", name: "grade", type: "text" },
+    { label: "Specialization", name: "specialization", type: "text" },
   ],
 };
 
@@ -144,28 +175,28 @@ function Profile() {
   const [editingSection, setEditingSection] = useState(null);
   const [editingData, setEditingData] = useState({});
   const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem('profileData');
+    const saved = localStorage.getItem("profileData");
     return saved ? JSON.parse(saved) : defaultProfile;
   });
 
   useEffect(() => {
-    localStorage.setItem('profileData', JSON.stringify(formData));
+    localStorage.setItem("profileData", JSON.stringify(formData));
   }, [formData]);
 
   const getFileName = (file, name) =>
-    file ? (file.name ? file.name : name) : name || '';
+    file ? (file.name ? file.name : name) : name || "";
 
   // ---- Helper: Get Display Value with Defaults -----
   const getDisplayValue = (sectionKey, fieldName) => {
     const val = formData[sectionKey]?.[fieldName];
-    if (val !== undefined && val !== '') {
+    if (val !== undefined && val !== "") {
       return val;
     }
     const defaultVal = defaultProfile[sectionKey]?.[fieldName];
-    if (defaultVal !== undefined && defaultVal !== '') {
+    if (defaultVal !== undefined && defaultVal !== "") {
       return defaultVal;
     }
-    return '-Not Set-';
+    return "-Not Set-";
   };
 
   // ---- Edit / Modal Section Logic -----
@@ -187,37 +218,47 @@ function Profile() {
     setEditingData((prev) => ({
       ...prev,
       [field]: file,
-      [`${field}Name`]: file && file.name ? file.name : '',
+      [`${field}Name`]: file && file.name ? file.name : "",
     }));
   };
 
-  const renderField = (label, name, type = 'text', required = false, options = []) => (
+  const renderField = (
+    label,
+    name,
+    type = "text",
+    required = false,
+    options = []
+  ) => (
     <div className="mb-4" key={name}>
       <label className="block text-sm font-medium text-gray-700">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      {type === 'select' ? (
+      {type === "select" ? (
         <select
-          value={editingData[name] || ''}
-          onChange={e => handleEditFieldChange(name, e.target.value)}
+          value={editingData[name] || ""}
+          onChange={(e) => handleEditFieldChange(name, e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         >
           <option value="">Select {label}</option>
-          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
         </select>
-      ) : type === 'date' ? (
+      ) : type === "date" ? (
         <input
           type="date"
-          value={editingData[name] || ''}
-          onChange={e => handleEditFieldChange(name, e.target.value)}
+          value={editingData[name] || ""}
+          onChange={(e) => handleEditFieldChange(name, e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       ) : (
         <input
           type={type}
-          value={editingData[name] || ''}
-          onChange={e => handleEditFieldChange(name, e.target.value)}
+          value={editingData[name] || ""}
+          onChange={(e) => handleEditFieldChange(name, e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           placeholder={`Enter ${label.toLowerCase()}`}
           required={required}
@@ -230,7 +271,7 @@ function Profile() {
   const renderEditModal = () => {
     if (!editingSection) return null;
 
-    if (editingSection === 'professionalSummary') {
+    if (editingSection === "professionalSummary") {
       return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
@@ -246,11 +287,11 @@ function Profile() {
             </div>
             <form
               className="p-4"
-              onSubmit={e => {
+              onSubmit={(e) => {
                 e.preventDefault();
-                setFormData(prev => ({
+                setFormData((prev) => ({
                   ...prev,
-                  professionalSummary: { summary: editingData.summary || '' },
+                  professionalSummary: { summary: editingData.summary || "" },
                 }));
                 setEditingSection(null);
               }}
@@ -260,8 +301,10 @@ function Profile() {
                   Professional Summary
                 </label>
                 <textarea
-                  value={editingData.summary || ''}
-                  onChange={e => handleEditFieldChange('summary', e.target.value)}
+                  value={editingData.summary || ""}
+                  onChange={(e) =>
+                    handleEditFieldChange("summary", e.target.value)
+                  }
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                   rows={5}
@@ -289,7 +332,7 @@ function Profile() {
     }
 
     // File upload identity info
-    if (editingSection === 'identityInformation') {
+    if (editingSection === "identityInformation") {
       return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[550px] max-h-[90vh] overflow-y-auto">
@@ -305,9 +348,9 @@ function Profile() {
             </div>
             <form
               className="p-4"
-              onSubmit={e => {
+              onSubmit={(e) => {
                 e.preventDefault();
-                setFormData(prev => ({
+                setFormData((prev) => ({
                   ...prev,
                   identityInformation: { ...editingData },
                 }));
@@ -316,18 +359,18 @@ function Profile() {
             >
               {[
                 {
-                  id: 'photoId',
-                  label: 'Photo ID (e.g., Passport, PAN Card)',
+                  id: "photoId",
+                  label: "Photo ID (e.g., Passport, PAN Card)",
                 },
                 {
-                  id: 'addressProof',
-                  label: 'Address Proof (e.g., Aadhaar, Electricity Bill)',
+                  id: "addressProof",
+                  label: "Address Proof (e.g., Aadhaar, Electricity Bill)",
                 },
                 {
-                  id: 'payroll',
-                  label: 'Payroll (Recent Payslip)',
+                  id: "payroll",
+                  label: "Payroll (Recent Payslip)",
                 },
-              ].map(f => (
+              ].map((f) => (
                 <div key={f.id} className="mb-4">
                   <label className="block text-sm font-medium text-gray-700">
                     {f.label}
@@ -335,13 +378,22 @@ function Profile() {
                   <input
                     type="file"
                     accept=".jpg,.jpeg,.png,.pdf"
-                    onChange={e =>
+                    onChange={(e) =>
                       handleFileChange(f.id, e.target.files?.[0])
                     }
                     className="mt-1 block w-full text-sm text-gray-600"
                   />
-                  {getFileName(editingData[f.id], editingData[`${f.id}Name`]) && (
-                    <span className="block mt-1 text-xs text-gray-500">Uploaded: {getFileName(editingData[f.id], editingData[`${f.id}Name`])}</span>
+                  {getFileName(
+                    editingData[f.id],
+                    editingData[`${f.id}Name`]
+                  ) && (
+                    <span className="block mt-1 text-xs text-gray-500">
+                      Uploaded:{" "}
+                      {getFileName(
+                        editingData[f.id],
+                        editingData[`${f.id}Name`]
+                      )}
+                    </span>
                   )}
                 </div>
               ))}
@@ -373,7 +425,7 @@ function Profile() {
         <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-xl font-medium capitalize">
-              {editingSection.replace(/([A-Z])/g, ' $1')}
+              {editingSection.replace(/([A-Z])/g, " $1")}
             </h2>
             <button
               onClick={() => setEditingSection(null)}
@@ -385,9 +437,9 @@ function Profile() {
           </div>
           <form
             className="p-4"
-            onSubmit={e => {
+            onSubmit={(e) => {
               e.preventDefault();
-              setFormData(prev => ({
+              setFormData((prev) => ({
                 ...prev,
                 [editingSection]: editingData,
               }));
@@ -395,7 +447,7 @@ function Profile() {
             }}
           >
             <div className="grid grid-cols-2 gap-4">
-              {fields.map(f =>
+              {fields.map((f) =>
                 renderField(f.label, f.name, f.type, f.required, f.options)
               )}
             </div>
@@ -432,36 +484,39 @@ function Profile() {
           Edit
         </button>
       </div>
-      <div className={singleField ? 'mb-2' : 'grid grid-cols-2 gap-x-8 gap-y-4'}>
+      <div
+        className={singleField ? "mb-2" : "grid grid-cols-2 gap-x-8 gap-y-4"}
+      >
         {/* Textarea only for Professional Summary */}
         {singleField ? (
           <div>
             <label className="block text-sm text-gray-500">SUMMARY</label>
-            <p>
-              {getDisplayValue(sectionKey, 'summary')}
-            </p>
+            <p>{getDisplayValue(sectionKey, "summary")}</p>
           </div>
         ) : isFileSection ? (
-          ['photoId', 'addressProof', 'payroll'].map(field => (
+          ["photoId", "addressProof", "payroll"].map((field) => (
             <div key={field}>
               <label className="block text-sm text-gray-500">
-                {field === 'photoId'
-                  ? 'PHOTO ID'
-                  : field === 'addressProof'
-                  ? 'ADDRESS PROOF'
-                  : field === 'payroll'
-                  ? 'PAYROLL'
+                {field === "photoId"
+                  ? "PHOTO ID"
+                  : field === "addressProof"
+                  ? "ADDRESS PROOF"
+                  : field === "payroll"
+                  ? "PAYROLL"
                   : field}
               </label>
               <span className="block text-gray-600 text-sm truncate">
                 {formData[sectionKey]?.[`${field}Name`] ||
-                  getFileName(formData[sectionKey]?.[field], defaultProfile[sectionKey][`${field}Name`]) ||
-                  '-Not Set-'}
+                  getFileName(
+                    formData[sectionKey]?.[field],
+                    defaultProfile[sectionKey][`${field}Name`]
+                  ) ||
+                  "-Not Set-"}
               </span>
             </div>
           ))
         ) : (
-          (sectionFields[sectionKey] || []).map(field => (
+          (sectionFields[sectionKey] || []).map((field) => (
             <div key={field.name}>
               <label className="block text-sm text-gray-500">
                 {field.label.toUpperCase()}
@@ -481,8 +536,16 @@ function Profile() {
       <Section sectionKey="address" title="Address" />
       <Section sectionKey="relations" title="Relations" />
       <Section sectionKey="education" title="Education" />
-      <Section sectionKey="professionalSummary" title="Professional Summary" singleField />
-      <Section sectionKey="identityInformation" title="Identity Information" isFileSection />
+      <Section
+        sectionKey="professionalSummary"
+        title="Professional Summary"
+        singleField
+      />
+      <Section
+        sectionKey="identityInformation"
+        title="Identity Information"
+        isFileSection
+      />
       {renderEditModal()}
     </div>
   );

@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 function ForwardModal({ users, groups, onForwardTo, onClose }) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const combinedList = [
-    ...groups.map(g => ({ ...g, isGroup: true })),
-    ...users.map(u => ({ ...u, isGroup: false })),
+    ...groups.map((g) => ({ ...g, isGroup: true })),
+    ...users.map((u) => ({ ...u, isGroup: false })),
   ];
 
-  const filteredList = combinedList.filter(item =>
+  const filteredList = combinedList.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-80 relative">
+    <div className="fixed inset-0    bg-opacity-100 flex items-center justify-center z-114">
+      <div className="bg-white p-6  shadow-2xl rounded-lg w-80 relative">
         <button
           onClick={onClose}
           className="absolute top-2 right-3 text-xl text-gray-500 hover:text-black"
@@ -34,7 +34,7 @@ function ForwardModal({ users, groups, onForwardTo, onClose }) {
 
         <div className="max-h-64 overflow-y-auto">
           {filteredList.length > 0 ? (
-            filteredList.map(item => (
+            filteredList.map((item) => (
               <div
                 key={item.id}
                 onClick={() => onForwardTo(item)}
@@ -55,7 +55,9 @@ function ForwardModal({ users, groups, onForwardTo, onClose }) {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-sm text-center">No results found.</p>
+            <p className="text-gray-500 text-sm text-center">
+              No results found.
+            </p>
           )}
         </div>
       </div>

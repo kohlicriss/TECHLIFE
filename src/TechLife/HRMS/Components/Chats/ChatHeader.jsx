@@ -1,13 +1,20 @@
-import { useState } from 'react';
-import { IoArrowBack, IoVideocamOutline, IoCallOutline } from 'react-icons/io5';
-import VideoCallModal from './VideoCallModal';
-import NormalCallModal from './NormalCallModal';
-
-function ChatHeader({ selectedUser, onClearChat, onBack, onGroupInfo, currentUser }) {
+import { useState } from "react";
+import { IoArrowBack, IoVideocamOutline, IoCallOutline } from "react-icons/io5";
+import VideoCallModal from "./VideoCallModal";
+import NormalCallModal from "./NormalCallModal";
+import { useNavigate } from "react-router-dom";
+function ChatHeader({
+  selectedUser,
+  onClearChat,
+  onBack,
+  onGroupInfo,
+  currentUser,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [showAudioCall, setShowAudioCall] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -55,7 +62,8 @@ function ChatHeader({ selectedUser, onClearChat, onBack, onGroupInfo, currentUse
                 if (isGroup) {
                   onGroupInfo();
                 } else {
-                  window.location.href = `/profile/${selectedUser?.id}`;
+                  // window.location.href = `/profile/${selectedUser?.id}`;
+                  navigate(`/profile/${selectedUser?.id}`);
                 }
               }}
             >
@@ -65,7 +73,7 @@ function ChatHeader({ selectedUser, onClearChat, onBack, onGroupInfo, currentUse
               {isGroup
                 ? `${selectedUser?.members?.length || 0} Members`
                 : selectedUser?.online
-                ? 'Online'
+                ? "Online"
                 : `Last seen ${selectedUser?.lastSeen}`}
             </p>
           </div>
@@ -133,7 +141,7 @@ function ChatHeader({ selectedUser, onClearChat, onBack, onGroupInfo, currentUse
       {/* Image Preview for Group */}
       {showPreview && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+          className="fixed inset-0   bg-opacity-100 flex items-center justify-center z-115"
           onClick={() => setShowPreview(false)}
         >
           <img

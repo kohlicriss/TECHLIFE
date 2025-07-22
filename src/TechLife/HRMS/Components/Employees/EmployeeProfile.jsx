@@ -1,20 +1,30 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiMail, FiMapPin, FiBriefcase, FiArrowLeft, FiPhone, FiHash } from 'react-icons/fi';
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  FiMail,
+  FiMapPin,
+  FiBriefcase,
+  FiArrowLeft,
+  FiPhone,
+  FiHash,
+} from "react-icons/fi";
+import { employees } from "./EmployeeApp";
 
-const EmployeeProfile = ({ employees }) => {
+const EmployeeProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const employee = employees.find(emp => emp.empId === id);
+  const employee = employees.find((emp) => emp.empId === id);
 
   if (!employee) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Employee not found</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Employee not found
+          </h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/employees")}
             className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-500"
           >
             <FiArrowLeft className="mr-2" /> Back to Directory
@@ -33,7 +43,8 @@ const EmployeeProfile = ({ employees }) => {
     >
       <div className="max-w-7xl mx-auto">
         <button
-          onClick={() => navigate('/')}
+          // FIX: Changed path to the correct absolute path for the directory
+          onClick={() => navigate("/employees")}
           className="mb-8 inline-flex items-center text-indigo-600 hover:text-indigo-500"
         >
           <FiArrowLeft className="mr-2" /> Back to Directory
@@ -57,10 +68,16 @@ const EmployeeProfile = ({ employees }) => {
                   />
                 ) : (
                   <div className="h-32 w-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold ring-4 ring-indigo-500 ring-offset-4 mb-4">
-                    {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {employee.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()}
                   </div>
                 )}
-                <h1 className="text-3xl font-bold text-gray-900 text-center">{employee.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 text-center">
+                  {employee.name}
+                </h1>
                 <p className="text-xl text-indigo-600 mt-2">{employee.role}</p>
               </div>
 
@@ -121,7 +138,9 @@ const EmployeeProfile = ({ employees }) => {
             className="bg-white rounded-lg shadow-xl overflow-hidden"
           >
             <div className="px-6 py-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Projects</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Projects
+              </h2>
               <div className="space-y-6">
                 {employee.projects?.map((project, index) => (
                   <motion.div
@@ -131,7 +150,9 @@ const EmployeeProfile = ({ employees }) => {
                     transition={{ delay: 0.4 + index * 0.1 }}
                     className="border-b border-gray-200 last:border-0 pb-6 last:pb-0"
                   >
-                    <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {project.name}
+                    </h3>
                     <p className="text-gray-600 mt-2">{project.description}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {project.technologies.map((tech, techIndex) => (

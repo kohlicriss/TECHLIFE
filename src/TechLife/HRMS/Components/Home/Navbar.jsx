@@ -1,12 +1,19 @@
-import React from 'react';
-import { FiMenu, FiSearch } from 'react-icons/fi';
-import { Bell } from 'lucide-react';
-import logo from '../assets/anasol-logo.png';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { FiMenu, FiSearch } from "react-icons/fi";
+import { Bell } from "lucide-react";
+import logo from "../assets/anasol-logo.png";
+import { Link, useLocation } from "react-router-dom"; // Import useLocation
+import { useContext } from "react";
+import { Context } from "../HrmsContext";
 
-const Navbar = ({ setSidebarOpen, currentUser, notificationCount = 0 }) => {
-  const name = currentUser?.name || 'Guest';
-  const designation = currentUser?.designation || 'Guest';
+const Navbar = ({ setSidebarOpen, currentUser }) => {
+  const name = currentUser?.name || "Guest";
+  const designation = currentUser?.designation || "Guest";
+  const { unreadCount } = useContext(Context);
+
+  // Get the current page location
+  const location = useLocation();
+  const isNotificationsActive = location.pathname === "/notifications";
 
   return (
     <header className="bg-white px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16">
@@ -40,17 +47,24 @@ const Navbar = ({ setSidebarOpen, currentUser, notificationCount = 0 }) => {
 
       <div className="flex items-center space-x-5">
         <Link to="/notifications" className="relative">
-          <Bell size={22} className="text-gray-600 hover:text-black" />
-          {notificationCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-              {notificationCount}
+          <Bell
+            size={22}
+            className={
+              isNotificationsActive
+                ? "text-blue-600 fill-blue-100" // Active style when on the /notifications page
+                : "text-gray-600 hover:text-black" // Default style for all other pages
+            }
+          />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Link>
 
         <div className="w-9 h-9 bg-gray-300 rounded-full overflow-hidden">
           <img
-            src={currentUser?.avatar || 'https://i.pravatar.cc/100'}
+            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
             alt="Profile"
             className="w-full h-full object-cover"
           />

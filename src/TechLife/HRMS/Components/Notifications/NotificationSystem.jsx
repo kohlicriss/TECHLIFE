@@ -483,7 +483,7 @@ const NotificationSystem = () => {
                       <div className="font-semibold text-sm text-gray-800">
                         {message.subject}
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">
+                      <div className="text-xs text-gray-600 mt-1 truncate">
                         {message.message}
                       </div>
                     </div>

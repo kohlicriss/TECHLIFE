@@ -1,45 +1,49 @@
+import { useState, useEffect } from "react";
 
-import { useState, useEffect } from 'react';
-
-function ChatSidebar({ users, groups, selectedUser, setSelectedUser, messages, setMessages }) {
+function ChatSidebar({
+  users,
+  groups,
+  selectedUser,
+  setSelectedUser,
+  messages,
+  setMessages,
+}) {
   useEffect(() => {
     if (!selectedUser) return;
     const chatId = selectedUser.id;
     const chatMessages = messages[chatId] || [];
     let updated = false;
-    const newMsgs = chatMessages.map(m => {
-      if (m.sender !== 'me' && !m.read) {
+    const newMsgs = chatMessages.map((m) => {
+      if (m.sender !== "me" && !m.read) {
         updated = true;
         return { ...m, read: true };
       }
       return m;
     });
     if (updated) {
-      setMessages(prev => ({ ...prev, [chatId]: newMsgs }));
+      setMessages((prev) => ({ ...prev, [chatId]: newMsgs }));
     }
+  }, [selectedUser, messages, setMessages]);
 
-  }, [selectedUser]);
-
-
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
-    const newCounts = { ...unreadCounts };
-    Object.keys(messages).forEach(id => {
+    const newCounts = {};
+    Object.keys(messages).forEach((id) => {
       const msgs = messages[id] || [];
-      newCounts[id] = msgs.filter(m => m.sender !== 'me' && !m.read).length;
+      newCounts[id] = msgs.filter((m) => m.sender !== "me" && !m.read).length;
     });
     if (selectedUser) newCounts[selectedUser.id] = 0;
     setUnreadCounts(newCounts);
   }, [messages, selectedUser]);
 
   const combinedList = [
-    ...groups.map(group => ({ ...group, isGroup: true })),
-    ...users.map(user => ({ ...user, isGroup: false })),
+    ...groups.map((group) => ({ ...group, isGroup: true })),
+    ...users.map((user) => ({ ...user, isGroup: false })),
   ];
 
-  const filteredList = combinedList.filter(item =>
+  const filteredList = combinedList.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -48,38 +52,45 @@ function ChatSidebar({ users, groups, selectedUser, setSelectedUser, messages, s
     const bMessages = messages[b.id] || [];
     const aLastMsg = aMessages[aMessages.length - 1];
     const bLastMsg = bMessages[bMessages.length - 1];
-    const aLastTime = aLastMsg ? (aLastMsg.timestamp || 0) : 0;
-    const bLastTime = bLastMsg ? (bLastMsg.timestamp || 0) : 0;
+    const aLastTime = aLastMsg ? aLastMsg.timestamp || 0 : 0;
+    const bLastTime = bLastMsg ? bLastMsg.timestamp || 0 : 0;
     return bLastTime - aLastTime;
   });
 
   return (
     <div
-      className={` flex flex-col bg-white  ${
-        selectedUser ? 'hidden md:flex md:w-1/3 lg:w-1/4' : 'w-full md:w-1/3 lg:w-1/4'
+      className={`flex flex-col bg-white border-r border-gray-200 ${
+        selectedUser
+          ? "hidden md:flex md:w-1/3 lg:w-1/4"
+          : "w-full md:w-1/3 lg:w-1/4"
       }`}
     >
-      <h2 className="text-xl font-bold p-4">Chats</h2>
+      {/* Changed text-xl to text-lg */}
+      <h2 className="text-lg font-bold p-4 border-b border-gray-200">Chats</h2>
 
+      {/* Added text-sm */}
       <input
         type="text"
         placeholder="Search users or groups..."
-        className="mx-4 mb-2 px-3 py-2 border rounded-lg"
+        className="mx-4 my-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={(e) => setSearch(e.target.value)}
       />
 
       <div className="flex-1 overflow-y-auto">
-        {sortedList.map(item => {
+        {sortedList.map((item) => {
           const itemMessages = messages[item.id] || [];
           const lastMessage = itemMessages[itemMessages.length - 1];
+          const unreadCount = unreadCounts[item.id] || 0;
 
           return (
             <div
               key={item.id}
               onClick={() => setSelectedUser(item)}
-              className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer ${
-                selectedUser?.id === item.id ? 'bg-gray-100' : ''
+              className={`flex items-center gap-3 p-2 mx-2 my-1 rounded-lg border border-transparent hover:bg-gray-100 hover:border-gray-200 cursor-pointer ${
+                selectedUser?.id === item.id
+                  ? "bg-gray-100 border-gray-200"
+                  : ""
               }`}
             >
               <div className="relative">
@@ -90,7 +101,7 @@ function ChatSidebar({ users, groups, selectedUser, setSelectedUser, messages, s
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                  <div className="bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-base">
                     {item.name.charAt(0)}
                   </div>
                 )}
@@ -101,37 +112,47 @@ function ChatSidebar({ users, groups, selectedUser, setSelectedUser, messages, s
 
               <div className="flex flex-col flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium truncate max-w-[120px]">{item.name}</p>
-                  {unreadCounts[item.id] > 0 && (
-                    <span className="ml-2 bg-green-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center font-semibold">
-                      {unreadCounts[item.id]}
+                  <p className="font-semibold text-sm truncate max-w-[120px]">
+                    {item.name}
+                  </p>
+                  {unreadCount > 0 && (
+                    <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[24px] text-center font-semibold">
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 truncate w-40 flex items-center gap-1">
                   {lastMessage ? (
-                    lastMessage.type === 'image' ? (
+                    lastMessage.type === "image" ? (
                       <>
-                        <span role="img" aria-label="image">🖼️</span>
+                        <span role="img" aria-label="image">
+                          🖼️
+                        </span>
                         <span>Photo</span>
                       </>
-                    ) : lastMessage.type === 'file' ? (
+                    ) : lastMessage.type === "file" ? (
                       <>
-                        <span role="img" aria-label="file">📎</span>
-                        <span>{lastMessage.filename ? lastMessage.filename : 'File'}</span>
+                        <span role="img" aria-label="file">
+                          📎
+                        </span>
+                        <span>
+                          {lastMessage.filename ? lastMessage.filename : "File"}
+                        </span>
                       </>
-                    ) : lastMessage.type === 'audio' ? (
+                    ) : lastMessage.type === "audio" ? (
                       <>
-                        <span role="img" aria-label="voice">🎤</span>
+                        <span role="img" aria-label="voice">
+                          🎤
+                        </span>
                         <span>Voice message</span>
                       </>
                     ) : (
                       lastMessage.text
                     )
                   ) : item.isGroup ? (
-                    'No messages yet'
+                    "No messages yet"
                   ) : item.online ? (
-                    'Online'
+                    "Online"
                   ) : (
                     `Last seen ${item.lastSeen}`
                   )}

@@ -1,44 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import About from './tabs/About';
-import Profile from './tabs/Profile';
-import Job from './tabs/Job';
-import Document from './tabs/Document';
-import { HiIdentification, HiPencil } from 'react-icons/hi';
-import { MdWork, MdBusiness, MdEmail, MdPerson, MdChevronLeft, MdChevronRight } from 'react-icons/md';
-import { FaPhone, FaBuilding } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import {
+  Route,
+  Routes,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import About from "./tabs/About";
+import Profile from "./tabs/Profile";
+import Job from "./tabs/Job";
+import Document from "./tabs/Document";
+import { HiIdentification, HiPencil } from "react-icons/hi";
+import {
+  MdWork,
+  MdBusiness,
+  MdEmail,
+  MdPerson,
+  MdChevronLeft,
+  MdChevronRight,
+} from "react-icons/md";
+import { FaPhone, FaBuilding } from "react-icons/fa";
 
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('/about');
+  const [activeTab, setActiveTab] = useState("/about");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileImage, setProfileImage] = useState(() => {
-    const savedImage = localStorage.getItem('profileImage');
+    const savedImage = localStorage.getItem("profileImage");
     return savedImage || null;
   });
   const [isEditing, setIsEditing] = useState(false);
   const [employeeData, setEmployeeData] = useState(() => {
-    const savedData = localStorage.getItem('employeeData');
-    return savedData ? JSON.parse(savedData) : {
-      name: 'JOHN DOE',
-      empId: 'e123',
-      company: 'ABC Services',
-      department: 'Software',
-      email: 'john@gmail.com',
-      contact: '+91123456799',
-      role: 'Associate Software'
-    };
+    const savedData = localStorage.getItem("employeeData");
+    return savedData
+      ? JSON.parse(savedData)
+      : {
+          name: "JOHN DOE",
+          empId: "e123",
+          company: "ABC Services",
+          department: "Software",
+          email: "john@gmail.com",
+          contact: "+91123456799",
+          role: "Associate Software",
+        };
   });
 
   useEffect(() => {
-    localStorage.setItem('employeeData', JSON.stringify(employeeData));
+    localStorage.setItem("employeeData", JSON.stringify(employeeData));
   }, [employeeData]);
 
   useEffect(() => {
     if (profileImage) {
-      localStorage.setItem('profileImage', profileImage);
+      localStorage.setItem("profileImage", profileImage);
     }
   }, [profileImage]);
 
@@ -46,13 +61,16 @@ const Profiles = () => {
     setActiveTab(location.pathname);
   }, [location.pathname]);
 
-  const initials = employeeData.name.split(' ').map(word => word[0]).join('');
+  const initials = employeeData.name
+    .split(" ")
+    .map((word) => word[0])
+    .join("");
 
   const tabs = [
-    { name: 'About', path: '/about', icon: MdPerson },
-    { name: 'Profile', path: '/profile', icon: HiIdentification },
-    { name: 'Job', path: '/job', icon: MdWork },
-    { name: 'Documents', path: '/documents', icon: MdBusiness }
+    { name: "About", path: "/about", icon: MdPerson },
+    { name: "Profile", path: "/profile", icon: HiIdentification },
+    { name: "Job", path: "/job", icon: MdWork },
+    { name: "Documents", path: "/documents", icon: MdBusiness },
   ];
 
   const handleImageUpload = (event) => {
@@ -77,9 +95,9 @@ const Profiles = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEmployeeData(prev => ({
+    setEmployeeData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -131,7 +149,9 @@ const Profiles = () => {
 
           {/* Name and Details */}
           <div className="ml-8 text-gray-800">
-            <h1 className="text-3xl font-bold tracking-wide mb-4">{employeeData.name}</h1>
+            <h1 className="text-3xl font-bold tracking-wide mb-4">
+              {employeeData.name}
+            </h1>
             <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-gray-700">
               <div className="flex items-center space-x-2">
                 <HiIdentification className="w-5 h-5" />
@@ -176,7 +196,11 @@ const Profiles = () => {
         </main>
 
         {/* Sidebar on Right */}
-        <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-50 border-l border-gray-200 min-h-full relative`}>
+        <div
+          className={`transition-all duration-300 ${
+            sidebarOpen ? "w-64" : "w-20"
+          } bg-gray-50 border-l border-gray-200 min-h-full relative`}
+        >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="absolute -left-3 top-4 bg-white border border-gray-300 rounded-full p-1 shadow hover:bg-gray-100 z-10"
@@ -190,11 +214,19 @@ const Profiles = () => {
                   key={tab.path}
                   onClick={() => handleTabClick(tab.path)}
                   className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === tab.path ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100'
+                    activeTab === tab.path
+                      ? "bg-black text-white"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
-                  <tab.icon className={`w-5 h-5 ${activeTab === tab.path ? 'text-white' : 'text-gray-500'}`} />
-                  {sidebarOpen && <span className="font-medium">{tab.name}</span>}
+                  <tab.icon
+                    className={`w-5 h-5 ${
+                      activeTab === tab.path ? "text-white" : "text-gray-500"
+                    }`}
+                  />
+                  {sidebarOpen && (
+                    <span className="font-medium">{tab.name}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -209,11 +241,21 @@ const Profiles = () => {
             <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
             <form onSubmit={handleSave}>
               <div className="space-y-4">
-                {['name', 'empId', 'company', 'department', 'email', 'contact', 'role'].map((field) => (
+                {[
+                  "name",
+                  "empId",
+                  "company",
+                  "department",
+                  "email",
+                  "contact",
+                  "role",
+                ].map((field) => (
                   <div key={field}>
-                    <label className="block text-sm font-medium text-gray-700 capitalize">{field}</label>
+                    <label className="block text-sm font-medium text-gray-700 capitalize">
+                      {field}
+                    </label>
                     <input
-                      type={field === 'email' ? 'email' : 'text'}
+                      type={field === "email" ? "email" : "text"}
                       name={field}
                       value={employeeData[field]}
                       onChange={handleInputChange}
