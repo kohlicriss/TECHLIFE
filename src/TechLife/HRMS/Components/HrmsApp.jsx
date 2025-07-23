@@ -13,8 +13,9 @@ import Navbar from "./Home/Navbar";
 import ChatApp from "./Chats/ChatApp";
 import Employees from "./Employees/Employees";
 import Profiles from "./Profile/Profiles";
-import LoginPage from "./Login/LoginPage"; // Make sure to import LoginPage
+import LoginPage from "./Login/LoginPage"; 
 import Dashboard from "./Dasboards/Dashboard";
+import AllTeams from "./Teams/AllTeams";
 
 const MainLayout = ({
   isSidebarOpen,
@@ -105,6 +106,7 @@ const HrmsApp = () => {
               <Route path="/chat" element={<ChatApp />} />
               <Route path="/profile/*" element={<Profiles />} />
               <Route path="/employees/*" element={<Employees />} />
+              <Route path="/my-teams" element={<AllTeams />} />
               {/* Redirect any unmatched route to the dashboard when logged in */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

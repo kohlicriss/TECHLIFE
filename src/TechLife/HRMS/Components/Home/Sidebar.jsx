@@ -21,7 +21,7 @@ const navItems = [
     name: "Dashboard",
     icon: <LayoutDashboard size={18} />,
     path: "/dashboard",
-  }, // Changed path from "/"
+  },
   { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
   {
     name: "Attendance",
@@ -29,7 +29,8 @@ const navItems = [
     path: "/attendance",
   },
   { name: "My Leaves", icon: <FileText size={18} />, path: "/leaves" },
-  { name: "My Team", icon: <Users size={18} />, path: "/team" },
+  // Updated path for My Team to link to AllTeams
+  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" }, // Changed path to /my-teams
   { name: "My Projects", icon: <Database size={18} />, path: "/projects" },
   { name: "My Tasks", icon: <ListChecks size={18} />, path: "/tasks" },
   { name: "Employees", icon: <BadgePlus size={18} />, path: "/employees" },

@@ -14,7 +14,7 @@ const generateInitials = (name) => {
 
 export const employees = [
   {
-    empId: "EMP001",
+    empId: "E123",
     name: "Riya Mehra",
     role: "Associate Software Engineer",
     department: "Software Development",
