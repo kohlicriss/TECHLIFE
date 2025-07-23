@@ -1413,7 +1413,6 @@
 //               <div className="mb-1">Issued: {data.issueMonth} {data.issueYear}</div>
 //               <div className="mb-1">ID: {data.credId}</div>
 
-
 //               {/* Image preview */}
 //               {data.fileType?.startsWith("image/") && data.fileData && (
 //                 <div

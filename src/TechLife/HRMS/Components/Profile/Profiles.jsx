@@ -25,7 +25,7 @@ const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState("/about");
+  const [activeTab, setActiveTab] = useState(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileImage, setProfileImage] = useState(() => {
     const savedImage = localStorage.getItem("profileImage");
@@ -58,8 +58,12 @@ const Profiles = () => {
   }, [profileImage]);
 
   useEffect(() => {
+    // FIX: If the path is just /profile, redirect to the new default tab 'profile'
+    if (location.pathname === "/profile" || location.pathname === "/profile/") {
+      navigate("/profile/profile", { replace: true });
+    }
     setActiveTab(location.pathname);
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   const initials = employeeData.name
     .split(" ")
@@ -67,10 +71,10 @@ const Profiles = () => {
     .join("");
 
   const tabs = [
-    { name: "About", path: "/about", icon: MdPerson },
-    { name: "Profile", path: "/profile", icon: HiIdentification },
-    { name: "Job", path: "/job", icon: MdWork },
-    { name: "Documents", path: "/documents", icon: MdBusiness },
+    { name: "About", path: "/profile/about", icon: MdPerson },
+    { name: "Profile", path: "/profile/profile", icon: HiIdentification },
+    { name: "Job", path: "/profile/job", icon: MdWork },
+    { name: "Documents", path: "/profile/documents", icon: MdBusiness },
   ];
 
   const handleImageUpload = (event) => {
@@ -102,7 +106,6 @@ const Profiles = () => {
   };
 
   const handleTabClick = (path) => {
-    setActiveTab(path);
     navigate(path);
   };
 
@@ -147,7 +150,6 @@ const Profiles = () => {
             />
           </div>
 
-          {/* Name and Details */}
           <div className="ml-8 text-gray-800">
             <h1 className="text-3xl font-bold tracking-wide mb-4">
               {employeeData.name}
@@ -182,20 +184,18 @@ const Profiles = () => {
         </div>
       </div>
 
-      {/* Layout */}
       <div className="flex flex-1">
-        {/* Main Content */}
         <main className="flex-1 p-6 bg-gray-50">
           <Routes>
-            <Route path="/profile" element={<Navigate to="/about" replace />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/job" element={<Job />} />
-            <Route path="/documents" element={<Document />} />
+            <Route path="about" element={<About />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="job" element={<Job />} />
+            <Route path="documents" element={<Document />} />
+            {/* FIX: Change index route to navigate to "profile" */}
+            <Route index element={<Navigate to="profile" replace />} />
           </Routes>
         </main>
 
-        {/* Sidebar on Right */}
         <div
           className={`transition-all duration-300 ${
             sidebarOpen ? "w-64" : "w-20"
@@ -234,7 +234,6 @@ const Profiles = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
       {isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-[500px]">

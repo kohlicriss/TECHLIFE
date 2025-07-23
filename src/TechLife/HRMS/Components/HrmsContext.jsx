@@ -1,5 +1,7 @@
 import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
+import logo from "./assets/anasol-logo.png"; // Your existing logo import
+
 export const Context = createContext();
 
 const HrmsContext = ({ children }) => {
@@ -13,18 +15,17 @@ const HrmsContext = ({ children }) => {
     if ("Notification" in window) {
       Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
-          console.log("✅ Notification permission granted.");
+          console.log("Notification permission granted.");
         } else {
-          console.warn("🔔 Notification permission was not granted.");
+          console.warn("Notification permission was not granted.");
         }
       });
     }
   }, []);
 
-  // 2. New function to fetch the unread count
+  // New function to fetch the unread count
   const fetchUnreadCount = useCallback(async () => {
     try {
-      // Corrected the URL from '/notification/' to '/notifications/' for consistency
       const res = await axios.get(
         `http://localhost:8081/api/notifications/unread-count/${username}`
       );
@@ -43,13 +44,13 @@ const HrmsContext = ({ children }) => {
           prev.map((msg) => (msg.id === id ? { ...msg, read: true } : msg))
         );
         await axios.post(`http://localhost:8081/api/notifications/read/${id}`);
-        fetchUnreadCount(); // 3. Refresh count after marking as read
+        fetchUnreadCount(); // Refresh count after marking as read
       } catch (err) {
         console.error("Error marking notification as read:", err);
       }
     },
     [fetchUnreadCount]
-  ); // Added dependency
+  );
 
   // Memoized function to fetch all notifications initially
   const fetchNotifications = useCallback(async () => {
@@ -92,21 +93,21 @@ const HrmsContext = ({ children }) => {
         });
 
         setLastSseMsgId(incoming.id);
-        fetchUnreadCount(); // 3. Refresh count when a new notification arrives
+        fetchUnreadCount(); // Refresh count when a new notification arrives
 
         if (Notification.permission === "granted") {
           const notification = new Notification(incoming.subject, {
             body: incoming.message,
-            icon: "/favicon.ico",
+            icon: logo,
             data: { id: incoming.id, link: incoming.link },
           });
 
           notification.onclick = (e) => {
             e.preventDefault();
             if (incoming.link) {
-              window.open(incoming.link, "_self");
+              window.open(incoming.link, "_self"); // This opens the link in the current tab
             }
-            window.focus();
+            window.focus(); // This brings the app's window to the foreground
             markAsRead(incoming.id);
             notification.close();
           };
@@ -125,16 +126,15 @@ const HrmsContext = ({ children }) => {
       console.log("Closing SSE connection");
       eventSource.close();
     };
-  }, [username, markAsRead, fetchUnreadCount]); // Added dependency
+  }, [username, markAsRead, fetchUnreadCount]);
 
   // Initial fetch of notifications and unread count
   useEffect(() => {
     fetchNotifications();
-    fetchUnreadCount(); // 3. Fetch count on initial load
+    fetchUnreadCount();
   }, [fetchNotifications, fetchUnreadCount]);
 
   return (
-    // 4. Expose unreadCount in the context provider
     <Context.Provider
       value={{ gdata, setGdata, lastSseMsgId, markAsRead, unreadCount }}
     >

@@ -17,7 +17,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/" },
+  {
+    name: "Dashboard",
+    icon: <LayoutDashboard size={18} />,
+    path: "/dashboard",
+  }, // Changed path from "/"
   { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
   {
     name: "Attendance",
@@ -32,7 +36,8 @@ const navItems = [
   { name: "Chat", icon: <MessageCircle size={18} />, path: "/chat" },
 ];
 
-function Sidebar({ isSidebarOpen, setSidebarOpen }) {
+// Accept onLogout as a prop
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
@@ -80,7 +85,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen }) {
 
         <nav className="mt-4">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.name}
@@ -102,10 +107,12 @@ function Sidebar({ isSidebarOpen, setSidebarOpen }) {
           })}
 
           <div className="mt-10">
+            {/* Attach the onLogout function to the onClick event */}
             <button
+              onClick={onLogout}
               className={`flex items-center ${
                 collapsed ? "justify-center" : "justify-start"
-              } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full`}
+              } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
             >
               <LogOut size={18} />
               {!collapsed && <span>Log Out</span>}
