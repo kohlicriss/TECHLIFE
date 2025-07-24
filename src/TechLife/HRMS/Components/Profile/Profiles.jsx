@@ -58,7 +58,6 @@ const Profiles = () => {
   }, [profileImage]);
 
   useEffect(() => {
-    // FIX: If the path is just /profile, redirect to the new default tab 'profile'
     if (location.pathname === "/profile" || location.pathname === "/profile/") {
       navigate("/profile/profile", { replace: true });
     }

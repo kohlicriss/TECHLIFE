@@ -29,22 +29,19 @@ const navItems = [
     path: "/attendance",
   },
   { name: "My Leaves", icon: <FileText size={18} />, path: "/leaves" },
-  // Updated path for My Team to link to AllTeams
-  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" }, // Changed path to /my-teams
+  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" }, 
   { name: "My Projects", icon: <Database size={18} />, path: "/projects" },
   { name: "My Tasks", icon: <ListChecks size={18} />, path: "/tasks" },
   { name: "Employees", icon: <BadgePlus size={18} />, path: "/employees" },
   { name: "Chat", icon: <MessageCircle size={18} />, path: "/chat" },
 ];
 
-// Accept onLogout as a prop
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
   return (
     <>
-      {/* Overlay: z-index increased to 50 */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
@@ -54,7 +51,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
 
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
-        // Sidebar: z-index increased to 60, width reduced to w-60
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
         } bg-white shadow-lg z-60 transform transition-all duration-200 ease-in-out ${
@@ -92,7 +88,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                 key={item.name}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                // Spacing reduced: py-1.5 and mx-2
                 className={`flex items-center ${
                   collapsed ? "justify-center" : "justify-start"
                 } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
@@ -108,7 +103,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           })}
 
           <div className="mt-10">
-            {/* Attach the onLogout function to the onClick event */}
             <button
               onClick={onLogout}
               className={`flex items-center ${

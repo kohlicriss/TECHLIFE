@@ -13,37 +13,82 @@ import Navbar from "./Home/Navbar";
 import ChatApp from "./Chats/ChatApp";
 import Employees from "./Employees/Employees";
 import Profiles from "./Profile/Profiles";
-import LoginPage from "./Login/LoginPage"; 
+import LoginPage from "./Login/LoginPage";
 import Dashboard from "./Dasboards/Dashboard";
 import AllTeams from "./Teams/AllTeams";
+
+// Placeholder Components for Navigation Links/Notification Links
+const LeavesPage = () => (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">My Leaves</h2>
+    <p className="text-gray-600">Details about your leave requests and history will appear here.</p>
+  </div>
+);
+
+const PerformancePage = () => (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">Performance Review</h2>
+    <p className="text-gray-600">Your performance metrics and reviews will be displayed here.</p>
+  </div>
+);
+
+const FinancePage = () => (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">Finance Details</h2>
+    <p className="text-gray-600">Financial information like payslips and expenses will appear here.</p>
+  </div>
+);
+
+const AttendancePage = () => (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">Attendance Log</h2>
+    <p className="text-gray-600">Your attendance records will be available here.</p>
+  </div>
+);
+
+const ProjectsPage = () => (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">My Projects</h2>
+    <p className="text-gray-600">Details of your assigned projects will be shown here.</p>
+  </div>
+);
+
+const TasksPage = () => (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4">My Tasks</h2>
+    <p className="text-gray-600">This is where your task management content will go.</p>
+  </div>
+);
+
 
 const MainLayout = ({
   isSidebarOpen,
   setSidebarOpen,
   currentUser,
-  onLogout, // Receive onLogout prop
+  onLogout,
 }) => (
   <div className="flex flex-col h-screen bg-gray-50">
     <Navbar
       setSidebarOpen={setSidebarOpen}
       currentUser={currentUser}
-      onLogout={onLogout} // Pass it to Navbar
+      onLogout={onLogout}
     />
-    <div className="flex flex-1 overflow-hidden pt-16">
+    {/* This div provides the main layout structure */}
+    <div className="flex flex-1 overflow-hidden pt-16"> {/* pt-16 ensures content starts below Navbar */}
       <Sidebar
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        onLogout={onLogout} // Pass it to Sidebar
+        onLogout={onLogout}
       />
+      {/* The main content area where routes are rendered */}
       <main className="flex-1 overflow-y-auto">
-        <Outlet />
+        <Outlet /> {/* This is crucial for rendering nested routes */}
       </main>
     </div>
   </div>
 );
 
 const HrmsApp = () => {
-  // Initialize state from localStorage to persist login
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("authToken")
   );
@@ -54,7 +99,6 @@ const HrmsApp = () => {
     avatar: "https://i.pravatar.cc/100",
   });
 
-  // Effect to sync state with localStorage - useful if auth changes in another tab
   useEffect(() => {
     const handleStorageChange = () => {
       setIsAuthenticated(!!localStorage.getItem("authToken"));
@@ -66,13 +110,11 @@ const HrmsApp = () => {
     };
   }, []);
 
-  // Handle Login: set auth state and save a token to localStorage
   const handleLogin = () => {
-    localStorage.setItem("authToken", "true"); // Use a simple flag
+    localStorage.setItem("authToken", "true");
     setIsAuthenticated(true);
   };
 
-  // Handle Logout: clear auth state and remove the token from localStorage
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     setIsAuthenticated(false);
@@ -97,18 +139,27 @@ const HrmsApp = () => {
                   isSidebarOpen={isSidebarOpen}
                   setSidebarOpen={setSidebarOpen}
                   currentUser={currentUser}
-                  onLogout={handleLogout} // Pass the logout handler down
+                  onLogout={handleLogout}
                 />
               }
             >
+              {/* Main Application Routes */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/notifications" element={<NotificationSystem />} />
               <Route path="/chat" element={<ChatApp />} />
               <Route path="/profile/*" element={<Profiles />} />
               <Route path="/employees/*" element={<Employees />} />
               <Route path="/my-teams" element={<AllTeams />} />
-              {/* Redirect any unmatched route to the dashboard when logged in */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              {/* Routes for notification links and sidebar items */}
+              <Route path="/leaves" element={<LeavesPage />} />
+              <Route path="/performance" element={<PerformancePage />} />
+              <Route path="/finance" element={<FinancePage />} />
+              <Route path="/attendance" element={<AttendancePage />} />
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/tasks" element={<TasksPage />} /> {/* Route for My Tasks */}
+
+              {/* Redirect any unmatched route to the dashboard when logged in (optional) */}
+              {/* <Route path="*" element={<Navigate to="/dashboard" replace />} /> */}
             </Route>
           )}
         </Routes>

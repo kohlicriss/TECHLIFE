@@ -23,11 +23,11 @@ const HrmsContext = ({ children }) => {
     }
   }, []);
 
-  // New function to fetch the unread count
+  // Function to fetch the unread count from the backend
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8081/api/notifications/unread-count/${username}`
+        `http://localhost:8085/api/notifications/unread-count/${username}`
       );
       setUnreadCount(res.data);
       console.log("Notification count", res.data);
@@ -43,8 +43,8 @@ const HrmsContext = ({ children }) => {
         setGdata((prev) =>
           prev.map((msg) => (msg.id === id ? { ...msg, read: true } : msg))
         );
-        await axios.post(`http://localhost:8081/api/notifications/read/${id}`);
-        fetchUnreadCount(); // Refresh count after marking as read
+        await axios.post(`http://localhost:8085/api/notifications/read/${id}`);
+        fetchUnreadCount(); // Refresh count after marking as read (backend confirms read status)
       } catch (err) {
         console.error("Error marking notification as read:", err);
       }
@@ -52,17 +52,24 @@ const HrmsContext = ({ children }) => {
     [fetchUnreadCount]
   );
 
+  // *NEW FUNCTION*: Decrement unread count directly
+  const decrementUnreadCount = useCallback(() => {
+    setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
+  }, []);
+
   // Memoized function to fetch all notifications initially
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8081/api/notifications/all/${username}`
+        `http://localhost:8085/api/notifications/all/${username}`
       );
       const data = res.data;
       setGdata(data);
 
-      const unread = data.find((msg) => !msg.read);
-      setLastSseMsgId(unread ? unread.id : null);
+      // Re-evaluate lastSseMsgId based on current unread notifications if needed,
+      // though typically this is for new incoming messages.
+      const latestUnread = data.find((msg) => !msg.read);
+      setLastSseMsgId(latestUnread ? latestUnread.id : null);
 
       console.log("Initial notification fetch:", data);
     } catch (err) {
@@ -73,8 +80,8 @@ const HrmsContext = ({ children }) => {
   // Effect for setting up the SSE connection
   useEffect(() => {
     console.log("Setting up SSE connection...");
-    const eventSource = new EventSource(
-      `http://localhost:8081/api/notifications/subscribe/${username}`
+    const eventSource = new EventSource(` http://localhost:8085/api/notifications/subscribe/${username}`
+     
     );
 
     eventSource.onopen = () => {
@@ -94,6 +101,7 @@ const HrmsContext = ({ children }) => {
 
         setLastSseMsgId(incoming.id);
         fetchUnreadCount(); // Refresh count when a new notification arrives
+        // No direct setUnreadCount(prev => prev + 1) here because fetchUnreadCount will handle it.
 
         if (Notification.permission === "granted") {
           const notification = new Notification(incoming.subject, {
@@ -113,7 +121,7 @@ const HrmsContext = ({ children }) => {
           };
         }
       } catch (err) {
-        console.error("⚠️ Error parsing SSE data:", err);
+        console.error("⚠ Error parsing SSE data:", err);
       }
     });
 
@@ -136,7 +144,7 @@ const HrmsContext = ({ children }) => {
 
   return (
     <Context.Provider
-      value={{ gdata, setGdata, lastSseMsgId, markAsRead, unreadCount }}
+      value={{ gdata, setGdata, lastSseMsgId, markAsRead, unreadCount, decrementUnreadCount }}
     >
       {children}
     </Context.Provider>

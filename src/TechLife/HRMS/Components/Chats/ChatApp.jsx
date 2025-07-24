@@ -5,21 +5,20 @@ import ChatWindow from './ChatWindow';
 function ChatApp() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState({});
-  const [users, setUsers] = useState([]);
-  const [groups, setGroups] = useState([]);
+  const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
 
   useEffect(() => {
-    fetch('/users.json')
+    // Fetch from new unified JSON endpoint
+    fetch('/chatData.json') // This should be your API endpoint in real app
       .then((res) => res.json())
-      .then((data) => setUsers(data));
+      .then((data) => {
+        setChatData(data);
+      });
 
+    // Optional: Fetch message history (you might switch this to socket-based or real-time fetch later)
     fetch('/messages.json')
       .then((res) => res.json())
       .then((data) => setMessages(data));
-
-    fetch('/groups.json')
-      .then((res) => res.json())
-      .then((data) => setGroups(data));
   }, []);
 
   const handleSendMessage = (receiverId, messageObj) => {
@@ -37,11 +36,10 @@ function ChatApp() {
   };
 
   return (
-    <div style={{height:"90vh"}} className="flex h-screen ">
+    <div style={{ height: '90vh' }} className="flex h-screen">
       <ChatSidebar
-      
-        users={users}
-        groups={groups}
+        users={chatData.privateChatsWith}
+        groups={chatData.groups}
         selectedUser={selectedUser}
         setSelectedUser={setSelectedUser}
         messages={messages}
@@ -52,14 +50,14 @@ function ChatApp() {
         setSelectedUser={setSelectedUser}
         messages={messages}
         setMessages={setMessages}
-        users={users}
-        groups={groups}
-        setGroups={setGroups} 
-        onSendMessage={handleSendMessage}        
-        onReceiveMessage={handleReceiveMessage}   
+        users={chatData.privateChatsWith}
+        groups={chatData.groups}
+        setGroups={(groups) => setChatData((prev) => ({ ...prev, groups }))}
+        onSendMessage={handleSendMessage}
+        onReceiveMessage={handleReceiveMessage}
       />
     </div>
   );
 }
 
-export default ChatApp ;
+export default ChatApp;

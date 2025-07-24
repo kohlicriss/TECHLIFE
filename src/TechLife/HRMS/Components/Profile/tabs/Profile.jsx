@@ -273,8 +273,8 @@ function Profile() {
 
     if (editingSection === "professionalSummary") {
       return (
-        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-114">
-          <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0  bg-opacity-100  flex items-center justify-center z-116">
+          <div className="bg-white shadow-2xl rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-medium">Professional Summary</h2>
               <button
@@ -334,12 +334,12 @@ function Profile() {
     // File upload identity info
     if (editingSection === "identityInformation") {
       return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-[550px] max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-117">
+          <div className="bg-white shadow-2xl rounded-lg w-[550px] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-medium">Identity Information</h2>
               <button
-                onClick={() => setEditingSection(null)}
+                onClick={() => setEditingSection(null)} 
                 className="text-gray-400 hover:text-gray-600"
                 aria-label="Close"
               >
@@ -421,8 +421,8 @@ function Profile() {
     // General case: all regular field sections
     const fields = sectionFields[editingSection] || [];
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-115">
+        <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto shadow-2xl">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-xl font-medium capitalize">
               {editingSection.replace(/([A-Z])/g, " $1")}
@@ -474,7 +474,7 @@ function Profile() {
 
   // ---- Section Renderer ----
   const Section = ({ sectionKey, title, singleField, isFileSection }) => (
-    <div className="bg-white rounded-lg p-6 mt-6">
+    <div className="bg-white rounded-lg p-6 mt-6 bg-opacity-100 z-[116] shadow-2xl">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium">{title}</h2>
         <button

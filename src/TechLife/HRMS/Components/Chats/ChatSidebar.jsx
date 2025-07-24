@@ -1,167 +1,106 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from 'react';
+import { FaUsers } from 'react-icons/fa'; 
 
-function ChatSidebar({
-  users,
-  groups,
-  selectedUser,
-  setSelectedUser,
-  messages,
-  setMessages,
-}) {
-  useEffect(() => {
-    if (!selectedUser) return;
-    const chatId = selectedUser.id;
-    const chatMessages = messages[chatId] || [];
-    let updated = false;
-    const newMsgs = chatMessages.map((m) => {
-      if (m.sender !== "me" && !m.read) {
-        updated = true;
-        return { ...m, read: true };
-      }
-      return m;
-    });
-    if (updated) {
-      setMessages((prev) => ({ ...prev, [chatId]: newMsgs }));
-    }
-  }, [selectedUser, messages, setMessages]);
-
-  const [search, setSearch] = useState("");
-  const [unreadCounts, setUnreadCounts] = useState({});
+function ChatSidebar({ onSelectChat, currentUser }) {
+  const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const newCounts = {};
-    Object.keys(messages).forEach((id) => {
-      const msgs = messages[id] || [];
-      newCounts[id] = msgs.filter((m) => m.sender !== "me" && !m.read).length;
-    });
-    if (selectedUser) newCounts[selectedUser.id] = 0;
-    setUnreadCounts(newCounts);
-  }, [messages, selectedUser]);
+    fetch('/chatData.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => setChatData(data))
+      .catch(error => console.error('Error loading chat data:', error));
+  }, []);
 
-  const combinedList = [
-    ...groups.map((group) => ({ ...group, isGroup: true })),
-    ...users.map((user) => ({ ...user, isGroup: false })),
-  ];
-
-  const filteredList = combinedList.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
+  const allChats = [
+    ...chatData.privateChatsWith
+      .filter(user => user.chatId !== currentUser?.chatId) 
+      .map(user => ({
+        ...user,
+        type: 'private',
+        name: user.employeeName, 
+      })),
+    ...chatData.groups.map(group => ({
+      ...group,
+      type: 'group',
+      name: group.groupName, 
+    })),
+  ]
+  .sort((a, b) => {
+    if (!a.lastSeen) return 1;
+    if (!b.lastSeen) return -1;
+    
+    return new Date(b.lastSeen) - new Date(a.lastSeen);
+  });
+  const filteredChats = allChats.filter(chat =>
+    chat.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const sortedList = filteredList.sort((a, b) => {
-    const aMessages = messages[a.id] || [];
-    const bMessages = messages[b.id] || [];
-    const aLastMsg = aMessages[aMessages.length - 1];
-    const bLastMsg = bMessages[bMessages.length - 1];
-    const aLastTime = aLastMsg ? aLastMsg.timestamp || 0 : 0;
-    const bLastTime = bLastMsg ? bLastMsg.timestamp || 0 : 0;
-    return bLastTime - aLastTime;
-  });
-
   return (
-    <div
-      className={`flex flex-col bg-white border-r border-gray-200 ${
-        selectedUser
-          ? "hidden md:flex md:w-1/3 lg:w-1/4"
-          : "w-full md:w-1/3 lg:w-1/4"
-      }`}
-    >
-      {/* Changed text-xl to text-lg */}
-      <h2 className="text-lg font-bold p-4 border-b border-gray-200">Chats</h2>
-
-      {/* Added text-sm */}
-      <input
-        type="text"
-        placeholder="Search users or groups..."
-        className="mx-4 my-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
-      <div className="flex-1 overflow-y-auto">
-        {sortedList.map((item) => {
-          const itemMessages = messages[item.id] || [];
-          const lastMessage = itemMessages[itemMessages.length - 1];
-          const unreadCount = unreadCounts[item.id] || 0;
-
-          return (
-            <div
-              key={item.id}
-              onClick={() => setSelectedUser(item)}
-              className={`flex items-center gap-3 p-2 mx-2 my-1 rounded-lg border border-transparent hover:bg-gray-100 hover:border-gray-200 cursor-pointer ${
-                selectedUser?.id === item.id
-                  ? "bg-gray-100 border-gray-200"
-                  : ""
-              }`}
-            >
-              <div className="relative">
-                {item.isGroup ? (
-                  <img
-                    src={item.imageUrl || "/group-icon.png"}
-                    alt="Group"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-base">
-                    {item.name.charAt(0)}
-                  </div>
-                )}
-                {!item.isGroup && item.online && (
-                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
-                )}
-              </div>
-
-              <div className="flex flex-col flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm truncate max-w-[120px]">
-                    {item.name}
-                  </p>
-                  {unreadCount > 0 && (
-                    <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[24px] text-center font-semibold">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 truncate w-40 flex items-center gap-1">
-                  {lastMessage ? (
-                    lastMessage.type === "image" ? (
-                      <>
-                        <span role="img" aria-label="image">
-                          🖼️
-                        </span>
-                        <span>Photo</span>
-                      </>
-                    ) : lastMessage.type === "file" ? (
-                      <>
-                        <span role="img" aria-label="file">
-                          📎
-                        </span>
-                        <span>
-                          {lastMessage.filename ? lastMessage.filename : "File"}
-                        </span>
-                      </>
-                    ) : lastMessage.type === "audio" ? (
-                      <>
-                        <span role="img" aria-label="voice">
-                          🎤
-                        </span>
-                        <span>Voice message</span>
-                      </>
-                    ) : (
-                      lastMessage.text
-                    )
-                  ) : item.isGroup ? (
-                    "No messages yet"
-                  ) : item.online ? (
-                    "Online"
-                  ) : (
-                    `Last seen ${item.lastSeen}`
-                  )}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+    <div className="relative w-full sm:w-80 h-full border-r border-gray-200 p-4 bg-white flex flex-col shadow-lg">
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search chats or users..."
+          className="w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
       </div>
+
+      <div className="flex-grow space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+        {filteredChats.length === 0 && (
+          <p className="text-center text-gray-500 py-4">No chats found.</p>
+        )}
+        
+        {filteredChats.map(chat => (
+          <div
+            key={chat.chatId} 
+            onClick={() => onSelectChat(chat, chat.type)}
+            className="p-3 flex items-center rounded-lg cursor-pointer hover:bg-blue-50 transition-colors duration-200 ease-in-out group"
+          >
+            <div className="relative flex-shrink-0">
+              <img
+                src={chat.profile}
+                alt={chat.name}
+                className="w-11 h-11 rounded-full object-cover"
+              />
+              {chat.isOnline && (
+                <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-500"></span>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0 mx-3">
+              <p className="font-semibold text-gray-800 truncate group-hover:text-blue-700">
+                {chat.name}
+              </p>
+              <p className="text-sm text-gray-500 truncate">
+                {chat.lastMessage || 'No messages yet'}
+              </p>
+            </div>
+
+            {chat.unreadMessageCount > 0 && (
+              <div className="flex-shrink-0">
+                <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {chat.unreadMessageCount}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button
+        className="absolute bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-110"
+        title="View All Employees"
+      >
+        <FaUsers size={20} />
+      </button>
     </div>
   );
 }

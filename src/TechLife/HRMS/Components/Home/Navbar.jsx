@@ -2,7 +2,7 @@ import React from "react";
 import { FiMenu, FiSearch } from "react-icons/fi";
 import { Bell } from "lucide-react";
 import logo from "../assets/anasol-logo.png";
-import { Link, useLocation } from "react-router-dom"; // Import useLocation
+import { Link, useLocation } from "react-router-dom"; 
 import { useContext } from "react";
 import { Context } from "../HrmsContext";
 
@@ -11,7 +11,6 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
   const designation = currentUser?.designation || "Guest";
   const { unreadCount } = useContext(Context);
 
-  // Get the current page location
   const location = useLocation();
   const isNotificationsActive = location.pathname === "/notifications";
 
@@ -51,8 +50,8 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
             size={22}
             className={
               isNotificationsActive
-                ? "text-blue-600 fill-blue-100" // Active style when on the /notifications page
-                : "text-gray-600 hover:text-black" // Default style for all other pages
+                ? "text-blue-600 fill-blue-100" 
+                : "text-gray-600 hover:text-black" 
             }
           />
           {unreadCount > 0 && (
