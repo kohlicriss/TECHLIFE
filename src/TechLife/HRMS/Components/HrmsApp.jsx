@@ -16,6 +16,9 @@ import Profiles from "./Profile/Profiles";
 import LoginPage from "./Login/LoginPage"; 
 import Dashboard from "./Dasboards/Dashboard";
 import AllTeams from "./Teams/AllTeams";
+import Tickets from  "./AdminTickets/Tickets";
+import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
+
 
 const MainLayout = ({
   isSidebarOpen,
@@ -107,6 +110,8 @@ const HrmsApp = () => {
               <Route path="/profile/*" element={<Profiles />} />
               <Route path="/employees/*" element={<Employees />} />
               <Route path="/my-teams" element={<AllTeams />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/tickets/employee" element={<EmployeeTicket />} />
               {/* Redirect any unmatched route to the dashboard when logged in */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
