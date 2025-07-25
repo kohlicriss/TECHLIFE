@@ -13,38 +13,40 @@ import Navbar from "./Home/Navbar";
 import ChatApp from "./Chats/ChatApp";
 import Employees from "./Employees/Employees";
 import Profiles from "./Profile/Profiles";
-import LoginPage from "./Login/LoginPage";
+import LoginPage from "./Login/LoginPage"; 
 import Dashboard from "./Dasboards/Dashboard";
 import AllTeams from "./Teams/AllTeams";
+import Tickets from  "./AdminTickets/Tickets";
+import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
+
 
 const MainLayout = ({
   isSidebarOpen,
   setSidebarOpen,
   currentUser,
-  onLogout,
+  onLogout, // Receive onLogout prop
 }) => (
   <div className="flex flex-col h-screen bg-gray-50">
     <Navbar
       setSidebarOpen={setSidebarOpen}
       currentUser={currentUser}
-      onLogout={onLogout}
+      onLogout={onLogout} // Pass it to Navbar
     />
-    {/* This div provides the main layout structure */}
-    <div className="flex flex-1 overflow-hidden pt-16"> {/* pt-16 ensures content starts below Navbar */}
+    <div className="flex flex-1 overflow-hidden pt-16">
       <Sidebar
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        onLogout={onLogout}
+        onLogout={onLogout} // Pass it to Sidebar
       />
-      {/* The main content area where routes are rendered */}
       <main className="flex-1 overflow-y-auto">
-        <Outlet /> {/* This is crucial for rendering nested routes */}
+        <Outlet />
       </main>
     </div>
   </div>
 );
 
 const HrmsApp = () => {
+  // Initialize state from localStorage to persist login
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("authToken")
   );
@@ -55,6 +57,7 @@ const HrmsApp = () => {
     avatar: "https://i.pravatar.cc/100",
   });
 
+  // Effect to sync state with localStorage - useful if auth changes in another tab
   useEffect(() => {
     const handleStorageChange = () => {
       setIsAuthenticated(!!localStorage.getItem("authToken"));
@@ -66,11 +69,13 @@ const HrmsApp = () => {
     };
   }, []);
 
+  // Handle Login: set auth state and save a token to localStorage
   const handleLogin = () => {
-    localStorage.setItem("authToken", "true");
+    localStorage.setItem("authToken", "true"); // Use a simple flag
     setIsAuthenticated(true);
   };
 
+  // Handle Logout: clear auth state and remove the token from localStorage
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     setIsAuthenticated(false);
@@ -95,17 +100,18 @@ const HrmsApp = () => {
                   isSidebarOpen={isSidebarOpen}
                   setSidebarOpen={setSidebarOpen}
                   currentUser={currentUser}
-                  onLogout={handleLogout}
+                  onLogout={handleLogout} // Pass the logout handler down
                 />
               }
             >
-              {/* Main Application Routes */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/notifications" element={<NotificationSystem />} />
               <Route path="/chat" element={<ChatApp />} />
               <Route path="/profile/*" element={<Profiles />} />
               <Route path="/employees/*" element={<Employees />} />
               <Route path="/my-teams" element={<AllTeams />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/tickets/employee" element={<EmployeeTicket />} />
               {/* Redirect any unmatched route to the dashboard when logged in */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

@@ -7,7 +7,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM011",
             "lastMessage": "",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         },
         {
             "groupName": "Alpha Team",
@@ -16,7 +16,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM001",
             "lastMessage": "",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         },
         {
             "groupName": "Gamma Team",
@@ -25,7 +25,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM003",
             "lastMessage": "",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         },
         {
             "groupName": "Zeta Team",
@@ -34,7 +34,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM006",
             "lastMessage": "Hello!",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         },
         {
             "groupName": "Lambda Team",
@@ -43,7 +43,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM014",
             "lastMessage": "",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         },
         {
             "groupName": "Iota Team",
@@ -52,7 +52,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM008",
             "lastMessage": "",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         },
         {
             "groupName": "Sigma Team",
@@ -61,7 +61,7 @@
             "profile": "https://api.dicebear.com/8.x/bottts-neutral/svg?seed=TEAM010",
             "lastMessage": "",
             "unreadMessageCount": 0,
-            "isOnline": false
+            "isOnline": null
         }
     ],
     "privateChatsWith": [

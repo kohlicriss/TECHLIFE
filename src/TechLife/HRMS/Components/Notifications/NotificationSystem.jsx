@@ -86,7 +86,7 @@ const NotificationSystem = () => {
       if (isCurrentlyStared) {
        
         response = await fetch(
-          `http://localhost:8081/api/notifications/unstared/${id}`,
+          `http://localhost:8085/api/notifications/unstared/${id}`,
           {
             method: "PUT",
           }
@@ -94,7 +94,7 @@ const NotificationSystem = () => {
       } else {
        
         response = await fetch(
-          `http://localhost:8081/api/notifications/stared/${id}`,
+          `http://localhost:8085/api/notifications/stared/${id}`,
           {
             method: "PUT",
           }
@@ -132,7 +132,7 @@ const NotificationSystem = () => {
  
     try {
       const response = await fetch(
-        `http://localhost:8081/api/notifications/delete/${id}`,
+        `http://localhost:8085/api/notifications/delete/${id}`,
         {
           method: "DELETE",
         }
@@ -197,7 +197,7 @@ const NotificationSystem = () => {
     try {
       // Assuming your backend can handle a batch delete or multiple deletes
       await Promise.all(idsToDelete.map(id =>
-        fetch(`http://localhost:8081/api/notifications/delete/${id}`, { method: "DELETE" })
+        fetch(`http://localhost:8085/api/notifications/delete/${id}`, { method: "DELETE" })
           .then(res => {
             if (!res.ok) throw new Error(`Failed to delete ${id}`);
           })
