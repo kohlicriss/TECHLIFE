@@ -18,20 +18,6 @@ function ChatApp() {
       .then((data) => setMessages(data));
   }, []);
 
-  const handleSendMessage = (receiverId, messageObj) => {
-    setMessages((prev) => ({
-      ...prev,
-      [receiverId]: [...(prev[receiverId] || []), messageObj],
-    }));
-  };
-
-  const handleReceiveMessage = (senderId, messageObj) => {
-    setMessages((prev) => ({
-      ...prev,
-      [senderId]: [...(prev[senderId] || []), messageObj],
-    }));
-  };
-
   return (
     <div style={{ height: '90vh' }} className="flex h-screen">
       <ChatApplication
@@ -42,17 +28,6 @@ function ChatApp() {
         messages={messages}
         setMessages={setMessages}
       />
-      {/* <ChatWindow
-        selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
-        messages={messages}
-        setMessages={setMessages}
-        users={chatData.privateChatsWith}
-        groups={chatData.groups}
-        setGroups={(groups) => setChatData((prev) => ({ ...prev, groups }))}
-        onSendMessage={handleSendMessage}
-        onReceiveMessage={handleReceiveMessage}
-      /> */}
     </div>
   );
 }
