@@ -14,10 +14,11 @@ import ChatApp from "./Chats/ChatApp";
 import Employees from "./Employees/Employees";
 import Profiles from "./Profile/Profiles";
 import LoginPage from "./Login/LoginPage"; 
-import Dashboard from "./Dasboards/Dashboard";
 import AllTeams from "./Teams/AllTeams";
 import Tickets from  "./AdminTickets/Tickets";
 import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
+import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
+import Dashboard from "./EmployeeDashboards/Dashboard";
 
 
 const MainLayout = ({
@@ -104,7 +105,8 @@ const HrmsApp = () => {
                 />
               }
             >
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/AdminDashBoard" element={<AdminDashBoard/>}/>
+              <Route path="/dashboard" element={<Dashboard />}> </Route>
               <Route path="/notifications" element={<NotificationSystem />} />
               <Route path="/chat" element={<ChatApp />} />
               <Route path="/profile/*" element={<Profiles />} />
