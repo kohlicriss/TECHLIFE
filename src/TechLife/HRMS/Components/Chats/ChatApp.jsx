@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom'; 
 import axios from 'axios';
 import ChatApplication from './ChatApplication';
 
 function ChatApp() {
+    const { userId } = useParams(); 
     const [chatList, setChatList] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const currentUser = {
         name: 'You',
-        id: 'ACS00000001',
+        id: userId, 
         profile: 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'
     };
 
     useEffect(() => {
-        axios.get(`http://localhost:8082/api/overview/${currentUser.id}`)
+        if (!userId) return;
+
+        axios.get(`http://192.168.0.143:8082/api/overview/${userId}`)
             .then(response => {
+                console.log(response.data); 
                 const rawChatListData = response.data;
 
                 const formattedChatList = rawChatListData.reduce((acc, chat) => {
@@ -25,7 +30,7 @@ function ChatApp() {
                     }
                     return acc;
                 }, { groups: [], privateChatsWith: [] });
-                
+
                 setChatList(formattedChatList);
             })
             .catch(error => {
@@ -35,7 +40,7 @@ function ChatApp() {
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [currentUser.id]);
+    }, [userId]);
 
     return (
         <div style={{ height: '90vh' }} className="flex h-screen">

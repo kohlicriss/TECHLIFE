@@ -53,6 +53,7 @@ const HrmsApp = () => {
   );
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState({
+    
     name: "Johnes",
     designation: " Associate Software Engineer",
     avatar: "https://i.pravatar.cc/100",
@@ -108,9 +109,9 @@ const HrmsApp = () => {
               <Route path="/AdminDashBoard" element={<AdminDashBoard/>}/>
               <Route path="/dashboard" element={<Dashboard />}> </Route>
               <Route path="/notifications" element={<NotificationSystem />} />
-              <Route path="/chat" element={<ChatApp />} />
+              <Route path="/chat/:userId" element={<ChatApp />} />
               <Route path="/profile/*" element={<Profiles />} />
-              <Route path="/employees/*" element={<Employees />} />
+              <Route path="/employees/*" element={<Employees />} />  
               <Route path="/my-teams" element={<AllTeams />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/tickets/employee" element={<EmployeeTicket />} />

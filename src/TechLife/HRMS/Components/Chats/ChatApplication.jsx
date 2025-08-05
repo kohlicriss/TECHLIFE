@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { Client } from '@stomp/stompjs';
 import {
@@ -10,6 +10,7 @@ import {
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 
+// No changes to FileIcon component
 const FileIcon = ({ fileName, type, className = "text-3xl" }) => {
     if (type === 'image') return <FaImage className={`text-purple-500 ${className}`} />;
     if (type === 'audio') return <FaFileAudio className={`text-pink-500 ${className}`} />;
@@ -21,6 +22,7 @@ const FileIcon = ({ fileName, type, className = "text-3xl" }) => {
     return <FaFileAlt className={`text-gray-500 ${className}`} />;
 };
 
+// No changes to AudioPlayer component
 const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -110,10 +112,11 @@ function ChatApplication({ currentUser, initialChats }) {
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
     const [activeGroupInfoTab, setActiveGroupInfoTab] = useState('Overview');
     const [imageInView, setImageInView] = useState(null);
+    
+    const [isChatDataReady, setIsChatDataReady] = useState(false);
 
     const chatContainerRef = useRef(null);
     const stompClient = useRef(null);
-    const selectedChatRef = useRef(null);
     const fileInputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -125,6 +128,9 @@ function ChatApplication({ currentUser, initialChats }) {
     const messageInputRef = useRef(null);
     const pinnedMenuRef = useRef(null);
     const pinnedMenuButtonRef = useRef(null);
+    
+    const onMessageReceivedRef = useRef(null);
+    const subscriptions = useRef({});
 
     useEffect(() => {
         if (initialChats) {
@@ -133,80 +139,74 @@ function ChatApplication({ currentUser, initialChats }) {
                 allUsersForLookup.push({ ...currentUser, chatId: currentUser.id, employeeName: currentUser.name, profile: currentUser.profile });
             }
 
-            const enrichedGroups = initialChats.groups.map(group => ({
+            const enrichedGroups = (initialChats.groups || []).map(group => ({
                 ...group,
                 type: 'group',
                 name: group.groupName,
                 members: allUsersForLookup,
                 lastMessageTimestamp: group.lastSeen || new Date(0).toISOString(),
             }));
-            const enrichedPrivate = initialChats.privateChatsWith.map(p => ({
+            const enrichedPrivate = (initialChats.privateChatsWith || []).map(p => ({
                 ...p,
                 type: 'private',
                 name: p.employeeName,
                 lastMessageTimestamp: p.lastSeen || new Date(0).toISOString()
             }));
             setChatData({ groups: enrichedGroups, privateChatsWith: enrichedPrivate });
+            setIsChatDataReady(true);
         }
     }, [initialChats, currentUser]);
 
     useEffect(() => {
         if (!selectedChat) return;
-        
         if (messages[selectedChat.chatId]) return;
 
         setIsMessagesLoading(true);
-        axios.get(`http://localhost:8082/api/chat/${currentUser.id}/${selectedChat.chatId}`)
+        axios.get(`http://192.168.0.143:8082/api/chat/${currentUser.id}/${selectedChat.chatId}`)
             .then(response => {
+                console.log("Fetched Messages:", response.data);
                 const fetchedMessages = (response.data || []).map(msg => {
                     const timestamp = new Date(`${msg.date} ${msg.time}`).toISOString();
-                    const messageType = msg.kind === 'send' ? 'text' : msg.kind;
-
-                    let fileName = null;
-                    if (messageType === 'file' && msg.content?.startsWith('File: ')) {
-                        fileName = msg.content.substring(6).trim();
+                    const isFileOrImage = msg.fileData || msg.fileName;
+                    let messageType = 'text';
+                    if (isFileOrImage) {
+                         messageType = msg.fileType && msg.fileType.startsWith('image/') ? 'image' : 'file';
+                    } else if (msg.kind) {
+                         messageType = msg.kind === 'send' ? 'text' : msg.kind;
                     }
-                    
                     let status = null;
                     if (msg.sender === currentUser.id) {
                         status = (msg.isSeen === 'true' || msg.isSeen === true) ? 'seen' : 'sent';
                     }
+                    // FIX: Ensure fileName and fileSize are present for files
+                    const fileName = msg.fileName || (msg.type === 'file' ? 'Unknown File' : null);
+                    const fileSize = msg.fileSize || null;
 
                     return {
-                        ...msg,
-                        timestamp,
-                        type: messageType,
-                        fileName,
-                        status,
-                        content: messageType === 'file' ? msg.messageId : msg.content
+                        ...msg, timestamp, type: messageType, fileName, fileSize, status,
+                        content: isFileOrImage ? msg.id : msg.content
                     };
                 });
-
-                setMessages(prev => ({
-                    ...prev,
-                    [selectedChat.chatId]: fetchedMessages
-                }));
+                setMessages(prev => ({ ...prev, [selectedChat.chatId]: fetchedMessages }));
             })
             .catch(error => {
                 console.error(`Failed to fetch messages for chat ${selectedChat.chatId}:`, error);
-                setMessages(prev => ({
-                    ...prev,
-                    [selectedChat.chatId]: []
-                }));
+                setMessages(prev => ({ ...prev, [selectedChat.chatId]: [] }));
             })
-            .finally(() => {
-                setIsMessagesLoading(false);
-            });
-    }, [selectedChat, currentUser.id]);
+            .finally(() => setIsMessagesLoading(false));
+    }, [selectedChat, currentUser.id, messages]);
 
-    const updateLastMessage = (chatId, message) => {
+    const groupIds = useMemo(() => {
+        return (chatData.groups || []).map(g => g.chatId).sort().join(',');
+    }, [chatData.groups]);
+
+    const updateLastMessage = useCallback((chatId, message) => {
         const generatePreview = (msg) => {
             if (!msg) return 'Chat cleared';
             if (msg.type === 'deleted') return 'This message was deleted';
             const prefix = msg.isForwarded ? 'Forwarded: ' : '';
             if (msg.type === 'image') return prefix + '📷 Image';
             if (msg.type === 'audio') return prefix + '🎤 Voice Message';
-            if (msg.type === 'file') return prefix + `📄 ${msg.fileName || 'File'}`;
             if (msg.content) return prefix + msg.content;
             return '...';
         };
@@ -216,59 +216,182 @@ function ChatApplication({ currentUser, initialChats }) {
             const newPrivate = prev.privateChatsWith.map(p => p.chatId === chatId ? { ...p, lastMessage: generatePreview(message), lastMessageTimestamp: message?.timestamp || new Date(0).toISOString() } : p);
             return { groups: newGroups, privateChatsWith: newPrivate };
         });
-    };
+    }, []);
 
-    useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat])
-
-    useEffect(() => {
-        if (!currentUser?.id) return;
-
-        const onMessageReceived = (payload) => {
-            const receivedMessage = JSON.parse(payload.body);
-            
-            const finalMessage = {
-                ...receivedMessage,
-                timestamp: new Date(`${receivedMessage.date} ${receivedMessage.time}`).toISOString(),
-                type: receivedMessage.kind === 'send' ? 'text' : receivedMessage.kind,
-                 // For received files, content should be the messageId for the download link
-                content: receivedMessage.kind === 'file' ? receivedMessage.messageId : receivedMessage.content
-            };
-
-            const chatId = selectedChatRef.current?.chatId; // Determine chat ID from the message 
-            const messageChatId = (finalMessage.sender === currentUser.id) ? finalMessage.receiver : finalMessage.sender;
-
-            setMessages(prev => ({
-                ...prev,
-                [messageChatId]: [...(prev[messageChatId] || []), finalMessage]
-            }));
-            updateLastMessage(messageChatId, finalMessage);
-        };
+    const onMessageReceived = useCallback((payload) => {
+        const receivedMessage = JSON.parse(payload.body);
+        let messageType = 'text';
+        const isFileOrImage = receivedMessage.fileName;
+        if (isFileOrImage) {
+            messageType = receivedMessage.fileType && receivedMessage.fileType.startsWith('image/') ? 'image' : 'file';
+        } else if (receivedMessage.kind) {
+            messageType = receivedMessage.kind === 'send' ? 'text' : receivedMessage.kind;
+        }
         
-        const client = new Client({
-            brokerURL: 'ws://localhost:8082/ws',
-            reconnectDelay: 5000,
-            onConnect: () => {
-                console.log('STOMP client connected.');
-                // Subscribe to user-specific queue to receive messages
-                client.subscribe(`/user/${currentUser.id}/queue/private`, onMessageReceived);
-            },
-            onStompError: (frame) => {
-                console.error('Broker reported error: ' + frame.headers['message']);
-                console.error('Additional details: ' + frame.body);
-            },
+        // FIX: Ensure fileName and fileSize are present for files
+        const fileName = receivedMessage.fileName || (messageType === 'file' ? 'Unknown File' : null);
+        const fileSize = receivedMessage.fileSize || null;
+
+
+        const finalMessage = {
+            ...receivedMessage,
+            timestamp: new Date().toISOString(),
+            type: messageType,
+            content: isFileOrImage ? receivedMessage.id : receivedMessage.content,
+            fileName: receivedMessage.fileName || null,
+            fileSize: receivedMessage.fileSize || null,
+            status: 'sent',
+        };
+        const messageChatId = receivedMessage.groupId || (receivedMessage.sender === currentUser.id ? receivedMessage.receiver : receivedMessage.sender);
+        if (!messageChatId) {
+            console.error("Received message without a chat identifier:", receivedMessage);
+            return;
+        }
+
+        setMessages(prev => {
+            const chatMessages = prev[messageChatId] || [];
+            
+            // FIX: Find the optimistic message by a more reliable method if client_id is not returned.
+            const existingMessageIndex = chatMessages.findIndex(m => m.id === receivedMessage.id && m.id);
+            const lastOptimisticMessageIndex = chatMessages.length > 0 ? chatMessages.length - 1 : -1;
+            const lastMessage = chatMessages[lastOptimisticMessageIndex];
+            
+            if (lastMessage && lastMessage.status === 'sending' && lastMessage.sender === finalMessage.sender && lastMessage.content === finalMessage.content) {
+                const updatedMessages = [...chatMessages];
+                updatedMessages[lastOptimisticMessageIndex] = {
+                    ...finalMessage,
+                    status: 'sent',
+                };
+                return { ...prev, [messageChatId]: updatedMessages };
+            }
+            
+            // Check for duplicates based on official message ID
+            if (chatMessages.some(m => m.id === finalMessage.id)) {
+                 console.log("Duplicate message received, ignoring:", finalMessage);
+                 return prev;
+            }
+            
+            return { ...prev, [messageChatId]: [...chatMessages, finalMessage] };
         });
 
+        updateLastMessage(messageChatId, finalMessage);
+    }, [currentUser.id, updateLastMessage]);
+    
+    useEffect(() => {
+        onMessageReceivedRef.current = onMessageReceived;
+    });
+
+    useEffect(() => {
+        if (!currentUser?.id || !isChatDataReady) return;
+
+        const client = new Client({
+            brokerURL: `ws://192.168.0.143:8082/ws?employeeId=${currentUser.id}`,
+            reconnectDelay: 5000,
+            onConnect: () => {
+                console.log('%cCONNECTED: STOMP client connected successfully.', 'color: green; font-weight: bold;');
+                
+                const messageHandler = (payload) => {
+                    if (onMessageReceivedRef.current) {
+                        onMessageReceivedRef.current(payload);
+                    }
+                };
+
+                // Subscribe only to the private user queue on connection
+                const privateSubscription = client.subscribe(`/user/queue/private`, messageHandler);
+                subscriptions.current['private'] = privateSubscription;
+            },
+            onWebSocketError: (error) => console.error('%cWEBSOCKET ERROR:', 'color: red; font-weight: bold;', error),
+            onStompError: (frame) => console.error('%cSTOMP ERROR:', 'color: red; font-weight: bold;', frame.headers['message'], frame.body),
+            onWebSocketClose: () => console.log('%cDISCONNECTED: WebSocket has closed.', 'color: orange;')
+        });
+
+        console.log('CONNECTing: Activating STOMP client...');
         client.activate();
         stompClient.current = client;
 
         return () => {
             if (stompClient.current) {
+                console.log('DEACTIVATING: Cleaning up STOMP client...');
+                Object.values(subscriptions.current).forEach(sub => sub.unsubscribe());
+                subscriptions.current = {};
                 stompClient.current.deactivate();
+                stompClient.current = null;
             }
         };
-    }, [currentUser]);
+    }, [currentUser.id, isChatDataReady]);
+    
+    const openChat = useCallback((targetChat) => {
+        if (stompClient.current && stompClient.current.active) {
+            if (selectedChat?.type === 'group' && subscriptions.current[selectedChat.chatId]) {
+                console.log(`Unsubscribing from group chat: /topic/team-${selectedChat.chatId}`);
+                subscriptions.current[selectedChat.chatId].unsubscribe();
+                delete subscriptions.current[selectedChat.chatId];
+            }
 
-    useEffect(() => { if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight; }, [messages, selectedChat]);
+            if (targetChat.type === 'group') {
+                if (!subscriptions.current[targetChat.chatId]) {
+                    const messageHandler = (payload) => {
+                        if (onMessageReceivedRef.current) {
+                            onMessageReceivedRef.current(payload);
+                        }
+                    };
+                    const destination = `/topic/team-${targetChat.chatId}`;
+                    console.log(`Subscribing to group chat: ${destination}`);
+                    const subscription = stompClient.current.subscribe(destination, messageHandler);
+                    subscriptions.current[targetChat.chatId] = subscription;
+                }
+            } else {
+                 console.log(`Already subscribed to private chat queue.`);
+            }
+
+            stompClient.current.publish({ destination: `/app/presence/open/${targetChat.chatId}`, body: "{}" });
+            console.log(`✅ Opened chat with ${targetChat.chatId}`);
+            
+            setSelectedChat(targetChat);
+            setIsChatOpen(true);
+        } else {
+            console.error("STOMP client is not connected.");
+        }
+    }, [selectedChat]);
+    
+    const closeChat = useCallback(() => {
+        if (!selectedChat) return;
+        if (stompClient.current && stompClient.current.active) {
+            if (selectedChat.type === 'group' && subscriptions.current[selectedChat.chatId]) {
+                console.log(`Unsubscribing from group chat: /topic/team-${selectedChat.chatId}`);
+                subscriptions.current[selectedChat.chatId].unsubscribe();
+                delete subscriptions.current[selectedChat.chatId];
+            }
+
+            stompClient.current.publish({ destination: `/app/presence/close/${selectedChat.chatId}`, body: "{}" });
+            console.log(`❌ Closed chat with ${selectedChat.chatId}`);
+            setSelectedChat(null);
+            setIsChatOpen(false);
+        }
+    }, [selectedChat]);
+    
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (selectedChat) {
+                if (stompClient.current && stompClient.current.active) {
+                    stompClient.current.publish({ destination: `/app/presence/close/${selectedChat.chatId}`, body: "{}" });
+                }
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [selectedChat]);
+
+
+    useEffect(() => { 
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages, selectedChat]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -280,28 +403,68 @@ function ChatApplication({ currentUser, initialChats }) {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showEmojiPicker, showChatMenu, contextMenu, showPinnedMenu]);
-
-    // **send messages via STOMP**
+    
+    // --- The rest of the component remains the same ---
+    
     const addAndSendMessage = (messageObject) => {
-        const chatId = selectedChat?.chatId;
-        if (!chatId || !stompClient.current?.connected) {
+        if (!selectedChat || !stompClient.current?.active) {
             console.error("Cannot send message: no chat selected or STOMP client not connected.");
             return;
         }
-
-        const payload = {
+        
+        const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+    
+        const optimisticMessage = {
+            id: clientId,
             sender: currentUser.id,
-            receiver: chatId,
+            content: messageObject.content,
+            timestamp: new Date().toISOString(),
+            status: 'sending',
+            type: messageObject.type,
+            fileName: messageObject.fileName || null,
+        };
+    
+        setMessages(prev => ({
+            ...prev,
+            [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
+        }));
+        updateLastMessage(selectedChat.chatId, optimisticMessage);
+    
+        const basePayload = {
+            sender: currentUser.id,
             content: messageObject.content,
             kind: messageObject.type === 'text' ? 'send' : messageObject.type,
             fileName: messageObject.fileName || null,
         };
+    
+        let payload;
+    
+        if (selectedChat.type === 'group') {
+            payload = {
+                ...basePayload,
+                type: 'TEAM',
+                groupId: selectedChat.chatId,
+                receiver: null,
+            };
+        } else {
+            payload = {
+                ...basePayload,
+                type: 'PRIVATE',
+                groupId: null,
+                receiver: selectedChat.chatId,
+            };
+        }
 
+        const stompPayload = {
+            ...payload,
+            client_id: clientId,
+        };
+    
         stompClient.current.publish({
             destination: '/app/chat/send',
-            body: JSON.stringify(payload),
+            body: JSON.stringify(stompPayload),
         });
-
+    
         if (messageObject.type === 'text') {
             setMessage('');
             setShowEmojiPicker(false);
@@ -317,24 +480,55 @@ function ChatApplication({ currentUser, initialChats }) {
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedChat) return;
+        
+        const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        
+        const optimisticMessage = {
+            id: clientId,
+            sender: currentUser.id,
+            content: URL.createObjectURL(file),
+            timestamp: new Date().toISOString(),
+            status: 'sending',
+            type: file.type.startsWith('image/') ? 'image' : 'file',
+            fileName: file.name,
+            fileSize: file.size,
+        };
+        setMessages(prev => ({
+            ...prev,
+            [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
+        }));
+        updateLastMessage(selectedChat.chatId, optimisticMessage);
+
 
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('senderId', currentUser.id);
-        formData.append('receiverId', selectedChat.chatId);
+        formData.append('sender', currentUser.id);
+        formData.append('client_id', clientId);
+
+        if (selectedChat.type === 'group') {
+            formData.append('groupId', selectedChat.chatId);
+            formData.append('receiver', '');
+            formData.append('type', 'TEAM');
+        } else {
+            formData.append('groupId', '');
+            formData.append('receiver', selectedChat.chatId);
+            formData.append('type', 'PRIVATE');
+        }
 
         try {
-            await axios.post('http://localhost:8082/api/upload', formData);
+            const response = await axios.post('http://192.168.0.143:8082/api/upload', formData);
+            console.log(response.data);
+            console.log("File upload request sent successfully!");
         } catch (error) {
             console.error("File upload failed:", error);
-            alert("File could not be sent.");
+            console.error("File could not be sent. Please try again.");
         } finally {
             event.target.value = null;
         }
     };
     
     const handleMicButtonClick = () => { if (isRecording) stopRecording(); else startRecording(); };
-    const startRecording = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); setIsRecording(true); audioChunksRef.current = []; mediaRecorderRef.current = new MediaRecorder(stream); mediaRecorderRef.current.ondataavailable = (event) => audioChunksRef.current.push(event.data); mediaRecorderRef.current.onstop = () => { const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' }); const audioUrl = URL.createObjectURL(audioBlob); addAndSendMessage({ type: 'audio', content: audioUrl }); stream.getTracks().forEach(track => track.stop()); }; mediaRecorderRef.current.start(); } catch (error) { console.error("Mic error:", error); alert("Could not access microphone."); } };
+    const startRecording = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); setIsRecording(true); audioChunksRef.current = []; mediaRecorderRef.current = new MediaRecorder(stream); mediaRecorderRef.current.ondataavailable = (event) => audioChunksRef.current.push(event.data); mediaRecorderRef.current.onstop = () => { const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' }); const audioUrl = URL.createObjectURL(audioBlob); addAndSendMessage({ type: 'audio', content: audioUrl }); stream.getTracks().forEach(track => track.stop()); }; mediaRecorderRef.current.start(); } catch (error) { console.error("Mic error:", error); console.error("Could not access microphone. Please check permissions."); } };
     const stopRecording = () => { if (mediaRecorderRef.current) { mediaRecorderRef.current.stop(); setIsRecording(false); } };
     const handleClearChat = () => {
         if (!selectedChat) return;
@@ -346,25 +540,94 @@ function ChatApplication({ currentUser, initialChats }) {
     const handleContextMenu = (event, message, index) => { event.preventDefault(); event.stopPropagation(); const menuWidth = 180; const menuHeight = 250; let x = event.pageX; let y = event.pageY; if (message.sender === currentUser?.id) x -= menuWidth; if (y + menuHeight > window.innerHeight) y -= menuHeight; setContextMenu({ visible: true, x, y, message, index }); };
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false }); messageInputRef.current.focus(); };
-    const handleSaveEdit = () => { if (message.trim() === '') return; const currentMessages = messages[selectedChat.chatId]; const updatedMessages = [...currentMessages]; updatedMessages[editingInfo.index].content = message; updatedMessages[editingInfo.index].isEdited = true; setMessages(prev => ({ ...prev, [selectedChat.chatId]: updatedMessages })); setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
+    
+    const handleSaveEdit = async () => {
+        const updatedContent = message.trim();
+        if (updatedContent === '' || editingInfo.index === null) return;
+    
+        const chatId = selectedChat.chatId;
+        const currentMessages = messages[chatId];
+        const messageToEdit = currentMessages[editingInfo.index];
+        const messageId = messageToEdit.messageId;
+    
+        if (!messageId) {
+            console.error("Cannot edit message: messageId is missing.");
+            console.error("Failed to edit message. Please try again.");
+            setEditingInfo({ index: null, originalContent: '' });
+            setMessage('');
+            return;
+        }
+    
+        try {
+            const response = await axios.put(`http://192.168.0.143:8082/api/chat/update/${messageId}`, {
+                content: updatedContent
+            });
+            console.log(response.data);
+    
+            const updatedMessages = [...currentMessages];
+            updatedMessages[editingInfo.index] = {
+                ...updatedMessages[editingInfo.index],
+                content: updatedContent,
+                isEdited: true
+            };
+            setMessages(prev => ({ ...prev, [chatId]: updatedMessages }));
+            
+            setEditingInfo({ index: null, originalContent: '' });
+            setMessage('');
+    
+        } catch (error) {
+            console.error(`Failed to update message ${messageId}:`, error);
+            console.error("Error updating message. Your changes were not saved.");
+        }
+    };
+
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
-    const handleDelete = (forEveryone) => {
+    
+    const handleDelete = async (forEveryone) => {
         const chatId = selectedChat.chatId;
         const currentMessages = [...(messages[chatId] || [])];
         const messageToDelete = currentMessages[contextMenu.index];
-        let nextMessages = [...currentMessages];
-        if (forEveryone) {
-            nextMessages[contextMenu.index] = { ...messageToDelete, type: 'deleted', content: 'This message was deleted', originalMessage: messageToDelete };
-            setLastDeleted({ index: contextMenu.index, message: messageToDelete });
-            setTimeout(() => setLastDeleted(null), 5000);
-        } else {
-            nextMessages.splice(contextMenu.index, 1);
+        const messageId = messageToDelete?.messageId;
+    
+        if (!messageId) {
+            console.error("Cannot delete message: messageId is missing.");
+            console.error("Could not delete the message.");
+            setContextMenu({ visible: false });
+            return;
         }
-        setMessages(prev => ({ ...prev, [chatId]: nextMessages }));
-        const newLastMessage = nextMessages.length > 0 ? nextMessages[nextMessages.length - 1] : null;
-        updateLastMessage(chatId, newLastMessage);
-        setContextMenu({ visible: false });
+    
+        try {
+            let nextMessages;
+            if (forEveryone) {
+                const response = await axios.post(`http://192.168.0.143:8082/api/chat/${messageId}/everyone?userId=${currentUser.id}`);
+                console.log(response.data);
+    
+                nextMessages = [...currentMessages];
+                nextMessages[contextMenu.index] = { ...messageToDelete, type: 'deleted', content: 'This message was deleted', originalMessage: messageToDelete };
+                
+                setLastDeleted({ index: contextMenu.index, message: messageToDelete });
+                setTimeout(() => setLastDeleted(null), 5000);
+    
+            } else {
+                const response = await axios.post(`http://192.168.0.143:8082/api/chat/${messageId}/me?userId=${currentUser.id}`);
+                console.log(response.data);
+                
+                nextMessages = [...currentMessages];
+                nextMessages.splice(contextMenu.index, 1);
+            }
+    
+            setMessages(prev => ({ ...prev, [chatId]: nextMessages }));
+            const newLastMessage = nextMessages.length > 0 ? nextMessages[nextMessages.length - 1] : null;
+            updateLastMessage(chatId, newLastMessage);
+    
+        } catch (error) {
+            console.error(`Failed to delete message ${messageId} (forEveryone: ${forEveryone}):`, error);
+            console.error("An error occurred while deleting the message.");
+        } finally {
+            setContextMenu({ visible: false });
+        }
     };
+
     const handleUndoDelete = () => { if (!lastDeleted) return; const currentMessages = [...messages[selectedChat.chatId]]; currentMessages[lastDeleted.index] = lastDeleted.message; setMessages(prev => ({ ...prev, [selectedChat.chatId]: currentMessages })); setLastDeleted(null); };
     const handlePin = () => { setPinnedMessages(prev => ({ ...prev, [selectedChat.chatId]: { message: contextMenu.message, index: contextMenu.index } })); setContextMenu({ visible: false }); };
     const handleUnpin = () => { setPinnedMessages(prev => { const newPinned = { ...prev }; delete newPinned[selectedChat.chatId]; return newPinned; }); setShowPinnedMenu(false); };
@@ -410,8 +673,13 @@ function ChatApplication({ currentUser, initialChats }) {
                 privateChatsWith: prev.privateChatsWith.map(p => p.chatId === chat.chatId ? { ...p, unreadMessageCount: 0 } : p),
             }));
         }
-        setSelectedChat(chat);
-        setIsChatOpen(true);
+        
+        // Close the current chat if a different one is selected
+        if (selectedChat && selectedChat.chatId !== chat.chatId) {
+            closeChat();
+        }
+        
+        openChat(chat);
     };
 
     const openGroupInfoModal = () => {
@@ -513,7 +781,7 @@ function ChatApplication({ currentUser, initialChats }) {
                         <>
                             <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
-                                    <button onClick={() => setIsChatOpen(false)} className="md:hidden p-2 rounded-full hover:bg-gray-100"><FaArrowLeft /></button>
+                                    <button onClick={closeChat} className="md:hidden p-2 rounded-full hover:bg-gray-100"><FaArrowLeft /></button>
                                     <button onClick={() => setIsProfileModalOpen(true)} className="flex-shrink-0">
                                         {currentChatInfo.type === 'group' ? (
                                             <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
@@ -560,7 +828,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                             const isMedia = ['image', 'audio', 'file'].includes(msg.type);
 
                                             return (
-                                                <React.Fragment key={msg.messageId || index}>
+                                                <React.Fragment key={msg.id || index}>
                                                     {showDateHeader && (
                                                         <div className="text-center my-4">
                                                             <span className="bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">{formatDateHeader(msg.timestamp)}</span>
@@ -586,50 +854,37 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                         {msg.replyTo && (
                                                                             <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : 'bg-gray-300'}`}>
                                                                                 <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
-                                                                                <p className="opacity-80 truncate">{['image', 'audio', 'file'].includes(msg.replyTo.type) ? `Media (${msg.replyTo.type})` : msg.replyTo.content}</p>
+                                                                                <p className="opacity-80 truncate">{['image', 'audio', 'file'].includes(msg.replyTo.type) ? 'Media message' : msg.replyTo.content}</p>
                                                                             </div>
                                                                         )}
                                                                         {msg.type === 'image' ? (
-                                                                            <button onClick={() => setImageInView(`http://localhost:8082/api/chat/file/${msg.messageId}`)}><img src={`http://localhost:8082/api/chat/file/${msg.messageId}`} alt={msg.fileName || 'image'} className="rounded-md max-w-full" /></button>
+                                                                            <button onClick={() => setImageInView(`http://192.168.0.143:8082/api/chat/file/${msg.content}`)}><img src={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} alt={msg.fileName || 'image'} className="rounded-md max-w-full" /></button>
                                                                         ) : msg.type === 'audio' ? (
-                                                                            <AudioPlayer src={`http://localhost:8082/api/chat/file/${msg.messageId}`} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index]} onDownload={() => handleMediaDownload(index, `http://localhost:8082/api/chat/file/${msg.messageId}`, 'voice-message.wav')} />
+                                                                            <AudioPlayer src={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index]} onDownload={() => handleMediaDownload(index, `http://192.168.0.143:8082/api/chat/file/${msg.content}`, 'voice-message.wav')} />
                                                                         ) : msg.type === 'file' ? (
-                                                                            isMyMessage ? (
-                                                                                <a 
-                                                                                    href={`http://localhost:8082/api/chat/file/${msg.messageId}`} 
-                                                                                    target="_blank" 
-                                                                                    rel="noopener noreferrer" 
-                                                                                    className="flex items-center gap-3 cursor-pointer"
-                                                                                >
-                                                                                    <FileIcon fileName={msg.fileName} type={msg.type} />
-                                                                                    <div className="flex-grow min-w-0">
-                                                                                        <p className="font-bold text-sm truncate text-white">{msg.fileName}</p>
-                                                                                        <p className="text-xs text-blue-200">{msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : ''}</p>
-                                                                                    </div>
-                                                                                </a>
-                                                                            ) : (
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <FileIcon fileName={msg.fileName} type={msg.type} />
-                                                                                    <div className="flex-grow min-w-0">
-                                                                                        <p className="font-bold text-sm truncate text-gray-800">{msg.fileName}</p>
-                                                                                        <p className="text-xs text-gray-500">{msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : ''}</p>
-                                                                                    </div>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <FileIcon fileName={msg.fileName} type={msg.type} />
+                                                                                <div className="flex-grow min-w-0">
+                                                                                    <p className={`font-bold text-sm truncate ${isMyMessage ? 'text-white' : 'text-gray-800'}`}>{msg.fileName}</p>
+                                                                                    <p className={`text-xs ${isMyMessage ? 'text-blue-200' : 'text-gray-500'}`}>{msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : ''}</p>
+                                                                                </div>
+                                                                                {!isMyMessage && (
                                                                                     <a 
-                                                                                        href={`http://localhost:8082/api/chat/file/${msg.messageId}`} 
+                                                                                        href={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} 
                                                                                         download={msg.fileName}
                                                                                         className="p-2 rounded-full text-gray-500 hover:bg-gray-300 cursor-pointer"
                                                                                     >
                                                                                         <FaDownload />
                                                                                     </a>
-                                                                                </div>
-                                                                            )
+                                                                                )}
+                                                                            </div>
                                                                         ) : (
                                                                             <p className="text-sm break-words">{msg.content}</p>
                                                                         )}
                                                                     </>
                                                                 )}
                                                             </div>
-                                                            <span className="text-xs text-gray-400 mt-1 px-1">{formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
+                                                            <span className="text-xs text-gray-400 mt-1 px-1">{msg.status === 'sending' ? 'Sending...' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
                                                         </div>
                                                         {isMyMessage && (
                                                             <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
@@ -686,7 +941,7 @@ function ChatApplication({ currentUser, initialChats }) {
                 </div>
             )}
 
-            {forwardingInfo.visible && (<div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[100]"><div className="bg-white rounded-lg shadow-2xl w-full max-w-md"><div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-lg">Forward message to...</h3><button onClick={() => setForwardingInfo({ visible: false, message: null })}><FaTimes /></button></div><div className="p-4"><input type="text" placeholder="Search for users or groups" className="w-full p-2 border rounded-lg" value={forwardSearchTerm} onChange={(e) => setForwardSearchTerm(e.target.value)} /></div><div className="h-64 overflow-y-auto p-4">{allChats.filter(c => c.name?.toLowerCase().includes(forwardSearchTerm.toLowerCase())).map(chat => (<div key={chat.chatId} className="flex items-center p-2 rounded-lg hover:bg-gray-100"><input type="checkbox" id={`fwd-${chat.chatId}`} className="mr-3 h-4 w-4 accent-blue-600" checked={forwardRecipients.includes(chat.chatId)} onChange={(e) => { if (e.target.checked) setForwardRecipients([...forwardRecipients, chat.chatId]); else setForwardRecipients(forwardRecipients.filter(id => id !== chat.chatId)); }} />
+            {forwardingInfo.visible && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"><div className="bg-white rounded-lg shadow-2xl w-full max-w-md"><div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-lg">Forward message to...</h3><button onClick={() => setForwardingInfo({ visible: false, message: null })}><FaTimes /></button></div><div className="p-4"><input type="text" placeholder="Search for users or groups" className="w-full p-2 border rounded-lg" value={forwardSearchTerm} onChange={(e) => setForwardSearchTerm(e.target.value)} /></div><div className="h-64 overflow-y-auto p-4">{allChats.filter(c => c.name?.toLowerCase().includes(forwardSearchTerm.toLowerCase())).map(chat => (<div key={chat.chatId} className="flex items-center p-2 rounded-lg hover:bg-gray-100"><input type="checkbox" id={`fwd-${chat.chatId}`} className="mr-3 h-4 w-4 accent-blue-600" checked={forwardRecipients.includes(chat.chatId)} onChange={(e) => { if (e.target.checked) setForwardRecipients([...forwardRecipients, chat.chatId]); else setForwardRecipients(forwardRecipients.filter(id => id !== chat.chatId)); }} />
                 <label htmlFor={`fwd-${chat.chatId}`} className="flex-grow flex items-center gap-3 cursor-pointer">
                     {chat.type === 'group' ? (
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"><FaUsers className="text-gray-500" /></div>
@@ -697,14 +952,14 @@ function ChatApplication({ currentUser, initialChats }) {
                 </label>
             </div>))}</div><div className="p-4 border-t text-right"><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400">Forward</button></div></div></div>)}
 
-            {isProfileModalOpen && currentChatInfo && (
+            {isProfileModalOpen && currentChatInfo && currentChatInfo.type !== 'group' && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]" onClick={() => setIsProfileModalOpen(false)}>
-                    <img src={currentChatInfo.profile} alt={currentChatInfo.name} className="max-w-[80vw] max-h-[80vh] rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
+                    <img src={currentChatInfo.profile} alt={currentChatInfo.name} className="max-w-[80vw] max-h-[90vh] rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
 
             {isGroupInfoModalOpen && currentChatInfo?.type === 'group' && (
-                <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[100]" onClick={() => setIsGroupInfoModalOpen(false)}>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={() => setIsGroupInfoModalOpen(false)}>
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                             <h3 className="font-bold text-xl">Group Info</h3>
@@ -740,8 +995,8 @@ function ChatApplication({ currentUser, initialChats }) {
                             {activeGroupInfoTab === 'Media' && (
                                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                                     {chatMessages.filter(msg => msg.type === 'image').map((msg, i) => (
-                                        <button key={i} onClick={() => setImageInView(`http://localhost:8082/api/chat/file/${msg.messageId}`)}>
-                                            <img src={`http://localhost:8082/api/chat/file/${msg.messageId}`} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
+                                        <button key={i} onClick={() => setImageInView(`http://192.168.0.143:8082/api/chat/file/${msg.content}`)}>
+                                            <img src={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
                                         </button>
                                     ))}
                                 </div>
@@ -749,7 +1004,7 @@ function ChatApplication({ currentUser, initialChats }) {
                             {activeGroupInfoTab === 'Files' && (
                                 <div className="space-y-3">
                                     {chatMessages.filter(msg => msg.type === 'file').map((msg, i) => (
-                                        <a key={i} href={`http://localhost:8082/api/chat/file/${msg.messageId}`} download={msg.fileName} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100">
+                                        <a key={i} href={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} download={msg.fileName} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100">
                                             <FileIcon fileName={msg.fileName} />
                                             <div className="min-w-0">
                                                 <p className="font-bold text-sm truncate text-gray-800">{msg.fileName}</p>
