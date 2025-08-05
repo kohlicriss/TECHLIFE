@@ -19,6 +19,7 @@ import Tickets from  "./AdminTickets/Tickets";
 import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
 import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
 import Dashboard from "./EmployeeDashboards/Dashboard";
+import TasksApp from "./Tasks/TaskApp";
 
 
 const MainLayout = ({
@@ -115,6 +116,7 @@ const HrmsApp = () => {
               <Route path="/my-teams" element={<AllTeams />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/tickets/employee" element={<EmployeeTicket />} />
+              <Route path="/tasks/*" element={<TasksApp />} />
               {/* Redirect any unmatched route to the dashboard when logged in */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
