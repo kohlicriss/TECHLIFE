@@ -171,9 +171,9 @@ function ChatApplication({ currentUser, initialChats }) {
             const prefix = msg.isForwarded ? 'Forwarded: ' : '';
             if (msg.type === 'image') return prefix + '📷 Image';
             if (msg.type === 'audio') return prefix + '🎤 Voice Message';
-            // FIX: Handle file type for sidebar preview
             if (msg.type === 'file') return prefix + `📄 ${msg.fileName || 'File'}`;
-            if (msg.content) return prefix + msg.content;
+            if (msg.content && typeof msg.content === 'string') return prefix + msg.content;
+            if (msg.fileName) return prefix + `📄 ${msg.fileName}`; // Fallback for files
             return '...';
         };
 
@@ -204,9 +204,6 @@ function ChatApplication({ currentUser, initialChats }) {
         });
     }, [currentUser.id, selectedChat]);
 
-    // =================================================================================
-    // START: CRITICAL FIX FOR FILE UPLOAD AND DUPLICATE MESSAGES
-    // =================================================================================
     const onMessageReceived = useCallback((payload) => {
         const receivedMessage = JSON.parse(payload.body);
 
@@ -219,6 +216,11 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
+        // For file uploads, backend might send a message with null content first. Ignore it.
+        if (receivedMessage.fileName && !receivedMessage.content) {
+            return;
+        }
+
         setMessages(prevMessages => {
             const chatMessages = prevMessages[messageChatId] || [];
             let newChatMessages = [...chatMessages];
@@ -227,11 +229,9 @@ function ChatApplication({ currentUser, initialChats }) {
 
             const finalServerId = receivedMessage.messageId || receivedMessage.id;
 
-            // Check if this message (by its final server ID) is already in our state.
-            // This is the ultimate defense against duplicates from any source.
             const messageAlreadyExists = chatMessages.some(m => m.messageId === finalServerId && m.status !== 'sending');
             if (messageAlreadyExists) {
-                return prevMessages; // Already have it, do nothing.
+                return prevMessages;
             }
 
             if (isAck) {
@@ -243,10 +243,8 @@ function ChatApplication({ currentUser, initialChats }) {
                         id: receivedMessage.id,
                         messageId: finalServerId,
                         status: 'sent',
-                        // IMPORTANT: If it's a file, the content is the server ID.
                         content: receivedMessage.fileName ? receivedMessage.id : receivedMessage.content,
                         timestamp: new Date().toISOString(),
-                        // Carry over file info from optimistic message if backend ack lacks it
                         fileName: receivedMessage.fileName || optimisticMessage.fileName,
                         fileSize: receivedMessage.fileSize || optimisticMessage.fileSize,
                     };
@@ -283,9 +281,6 @@ function ChatApplication({ currentUser, initialChats }) {
             return prevMessages;
         });
     }, [currentUser.id, updateLastMessage]);
-    // =================================================================================
-    // END: CRITICAL FIX
-    // =================================================================================
 
 
     useEffect(() => {
