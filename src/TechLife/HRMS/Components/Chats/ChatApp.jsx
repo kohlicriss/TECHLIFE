@@ -1,65 +1,61 @@
 import { useEffect, useState } from 'react';
-import ChatSidebar from './ChatSidebar';
-import ChatWindow from './ChatWindow';
+import { useParams } from 'react-router-dom'; 
+import axios from 'axios';
+import ChatApplication from './ChatApplication';
 
 function ChatApp() {
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [messages, setMessages] = useState({});
-  const [users, setUsers] = useState([]);
-  const [groups, setGroups] = useState([]);
+    const { userId } = useParams(); 
+    const [chatList, setChatList] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('/users.json')
-      .then((res) => res.json())
-      .then((data) => setUsers(data));
+    const currentUser = {
+        name: 'You',
+        id: userId, 
+        profile: 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'
+    };
 
-    fetch('/messages.json')
-      .then((res) => res.json())
-      .then((data) => setMessages(data));
+    useEffect(() => {
+        if (!userId) return;
 
-    fetch('/groups.json')
-      .then((res) => res.json())
-      .then((data) => setGroups(data));
-  }, []);
+        axios.get(`http://192.168.0.143:8082/api/overview/${userId}`)
+            .then(response => {
+                console.log(response.data); 
+                const rawChatListData = response.data;
 
-  const handleSendMessage = (receiverId, messageObj) => {
-    setMessages((prev) => ({
-      ...prev,
-      [receiverId]: [...(prev[receiverId] || []), messageObj],
-    }));
-  };
+                const formattedChatList = rawChatListData.reduce((acc, chat) => {
+                    if (chat.groupName !== undefined && chat.groupName !== null) {
+                        acc.groups.push(chat);
+                    } else {
+                        acc.privateChatsWith.push(chat);
+                    }
+                    return acc;
+                }, { groups: [], privateChatsWith: [] });
 
-  const handleReceiveMessage = (senderId, messageObj) => {
-    setMessages((prev) => ({
-      ...prev,
-      [senderId]: [...(prev[senderId] || []), messageObj],
-    }));
-  };
+                setChatList(formattedChatList);
+            })
+            .catch(error => {
+                console.error("Failed to fetch chat overview:", error);
+                setChatList({ groups: [], privateChatsWith: [] });
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [userId]);
 
-  return (
-    <div style={{height:"90vh"}} className="flex h-screen ">
-      <ChatSidebar
-      
-        users={users}
-        groups={groups}
-        selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
-        messages={messages}
-        setMessages={setMessages}
-      />
-      <ChatWindow
-        selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
-        messages={messages}
-        setMessages={setMessages}
-        users={users}
-        groups={groups}
-        setGroups={setGroups} 
-        onSendMessage={handleSendMessage}        
-        onReceiveMessage={handleReceiveMessage}   
-      />
-    </div>
-  );
+    return (
+        <div style={{ height: '90vh' }} className="flex h-screen">
+            {isLoading ? (
+                <div className="w-full flex items-center justify-center">
+                    <p className="text-xl text-gray-500">Loading Chats...</p>
+                </div>
+            ) : (
+                <ChatApplication
+                    currentUser={currentUser}
+                    initialChats={chatList}
+                />
+            )}
+        </div>
+    );
 }
 
-export default ChatApp ;
+export default ChatApp;
