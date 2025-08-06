@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  CalendarDaysIcon, 
-  SwatchIcon, 
-  
+  CalendarDaysIcon,
+  SwatchIcon,
+  RocketLaunchIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/solid';
 import AttendancesDashboard from './AttendancesDashboard';
 import LeavesDashboard from './LeavesDashboard';
@@ -14,74 +15,69 @@ import LeavesDashboard from './LeavesDashboard';
 const navItems = [
   { id: 'attendance', name: 'Attendance', icon: CalendarDaysIcon, component: AttendancesDashboard },
   { id: 'leaves', name: 'Leaves', icon: SwatchIcon, component: LeavesDashboard },
- 
+  
 ];
 
-const AdminDashboard = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+const Dashboard = () => {
+  // isSidebarOpen is true when the sidebar is expanded/visible, false when collapsed/hidden
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('attendance'); // Set initial active section
 
+  // Toggle function for the sidebar
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   // Find the component to render based on the activeSection
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component;
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh' }} className="flex bg-gray-100  overflow-hidden">
-      {/* Main Content Area */}
-      <div className="flex-1 p-2 transition-all duration-300 ease-in-out flex flex-col">
-        {/* Header with Toggle Button (moved to sidebar for right-side placement) */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 capitalize">
-            {activeSection ? `${activeSection} Overview` : 'Dashboard Overview'}
-          </h1>
-        </div>
+    <div className="relative flex flex-col lg:flex-row-reverse w-full min-h-screen bg-gray-100 overflow-hidden">
 
-        {/* Section Content */}
-        <div >
-          {ActiveComponent && <ActiveComponent />}
-        </div>
-      </div>
-
-      {/* Sidebar */}
+      {/* Sidebar - Positioned fixed to the right */}
       <div
-        className={`bg-gray-100 text-white p-6 transition-all duration-300 border border-black-100 ease-in-out flex-shrink-0 ${
-          isSidebarOpen ? 'w-52' : 'w-24' // Adjust width based on sidebar state
-        }`}
+        className={`fixed top-0 right-0 h-full bg-gray-100 text-white p-6 transition-all duration-300 border-l border-gray-200 ease-in-out flex-shrink-0 flex flex-col z-20
+          ${isSidebarOpen ? 'w-52' : 'w-0 lg:w-24'} 
+          ${isSidebarOpen ? 'block' : 'hidden lg:flex'} `} /* Mobile: completely hide when closed; Desktop: show collapsed */
       >
-        {/* Toggle Button */}
-        <div className="flex justify-start mb-8">
+        {/* Toggle Button for Desktop View (Always inside sidebar) */}
+        {/* This button both opens and closes the sidebar */}
+        <div className="flex justify-end mb-8">
           <button
             onClick={toggleSidebar}
             className="bg-white text-gray-800 shadow-md p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
             aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
             {isSidebarOpen ? (
-              <ChevronRightIcon className="w-6 h-6" />
+              <ChevronLeftIcon className="w-4 h-4" /> /* Show left arrow to close (collapse left) */
             ) : (
-              <ChevronLeftIcon className="w-6 h-6" />
+              <ChevronRightIcon className="w-4 h-4" /> /* Show right arrow to open (expand right) */
             )}
           </button>
         </div>
 
-        <div className={`font-bold mb-8 text-center ${isSidebarOpen ? 'text-2xl' : 'text-xl'}`}>
-         
+        <div className={`font-bold mb-8 text-center text-gray-800 ${isSidebarOpen ? 'text-2xl' : 'text-xl'}`}>
+          {isSidebarOpen && <span>Menu</span>}
         </div>
 
-        <nav className="flex flex-col space-y-4">
+        <nav className="flex flex-col space-y-4 flex-1">
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                setActiveSection(item.id);
+                // On mobile (less than 'lg' breakpoint), close sidebar after selection
+                if (window.innerWidth < 1024) { 
+                  setIsSidebarOpen(false);
+                }
+              }}
               className={`text-left text-lg p-3 rounded-lg flex items-center ${
                 isSidebarOpen ? 'justify-start' : 'justify-center'
               }
-                ${
-                  activeSection === item.id
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'hover:bg-gray-300 text-black'
-                }`}
-              title={item.name} // Add title for tooltip on collapsed icons
+              ${
+                activeSection === item.id
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'hover:bg-gray-300 text-black'
+              }`}
+              title={item.name}
             >
               <item.icon className={`w-8 h-8 ${isSidebarOpen ? 'mr-3' : ''}`} />
               {isSidebarOpen && <span>{item.name}</span>}
@@ -89,8 +85,36 @@ const AdminDashboard = () => {
           ))}
         </nav>
       </div>
+
+      {/* Main Content Area */}
+      <div className={`flex-1 p-2 transition-all duration-300 ease-in-out flex flex-col
+        ${isSidebarOpen ? 'mr-52' : 'mr-0 lg:mr-24'} `} /* Adjust margin based on sidebar state for spacing */
+      >
+        {/* Header with Dashboard Title and Mobile Toggle Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 capitalize">
+            
+          </h1>
+          {/* Mobile sidebar OPEN button (visible on mobile, hidden on desktop) */}
+          {/* This button is only shown if the sidebar is currently closed */}
+          {!isSidebarOpen && ( 
+             <button
+               onClick={toggleSidebar}
+               className=" bg-white text-gray-800 shadow-md p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+               aria-label="Open sidebar"
+             >
+               <ChevronLeftIcon className="w-4 h-4" /> /* Indicates opening the sidebar from the left */
+             </button>
+           )}
+        </div>
+
+        {/* Section Content - This remains scrollable */}
+        <div className="flex-1 overflow-y-auto pb-4">
+          {ActiveComponent && <ActiveComponent />}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default AdminDashboard;
+export default Dashboard;

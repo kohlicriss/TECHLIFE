@@ -7,11 +7,11 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Label,
   BarChart,
   Bar,
   XAxis,
   YAxis,
+  Label,
 } from "recharts";
 
 // --- Data Simulation (This would come from a backend in a real app) ---
@@ -22,7 +22,7 @@ const initialLeaveTypeData = [
   { employee: "Rajesh", leaveType: "Casual Leave", days: 3 },
 ];
 
-let currentLeaveHistoryData = [
+const currentLeaveHistoryData = [
   {
     department: "IT",
     Gender: "Male",
@@ -169,22 +169,20 @@ let currentLeaveHistoryData = [
   },
 ];
 
-
-
-// --- CasualLeaveType Component ---
-const CasualLeaveType = ({ leaveData }) => {
-  const COLORS = ["#4CAF50", "#E0E0E0"]; // Green for consumed, light gray for remaining
-  const { leaveType, days, Available, "Annual Quota": annualQuota } = leaveData;
+// --- Reusable LeaveTypeCard Component ---
+const LeaveTypeCard = ({ title, leaveData, color }) => {
   const isMobile = useMediaQuery("(max-width:768px)");
+  const { leaveType, days, Available, "Annual Quota": annualQuota } = leaveData;
 
   const chartData = [
     { name: "Consumed", value: days },
     { name: "Remaining", value: Math.max(annualQuota - days, 0) },
   ];
+  const COLORS = [color, "#E0E0E0"]; // Dynamic color for consumed, light gray for remaining
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">Casual Leave</h1>
+      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">{title}</h1>
       <Box
         display="flex"
         flexDirection={isMobile ? "column" : "row"}
@@ -224,223 +222,7 @@ const CasualLeaveType = ({ leaveData }) => {
         </ResponsiveContainer>
 
         {/* Info Panel */}
-        <div className="text-left space-y-1 text-sm text-gray-700">
-          <div>
-            <strong>Leave Type:</strong> {leaveType}
-          </div>
-          <div>
-            <strong>Consumed:</strong> <span className="font-semibold text-red-600">{days}</span> days
-          </div>
-          <div>
-            <strong>Available:</strong> <span className="font-semibold text-green-600">{Available}</span> days
-          </div>
-          <div>
-            <strong>Annual Quota:</strong> {annualQuota} days
-          </div>
-        </div>
-      </Box>
-    </div>
-  );
-};
-
-// --- PaidLeaveType Component ---
-const PaidLeaveType = ({ leaveData }) => {
-  const COLORS = ["#2196F3", "#E0E0E0"]; // Blue for consumed, light gray for remaining
-  const { leaveType, days, Available, "Annual Quota": annualQuota } = leaveData;
-  const isMobile = useMediaQuery("(max-width:768px)");
-
-  const chartData = [
-    { name: "Consumed", value: days },
-    { name: "Remaining", value: Math.max(annualQuota - days, 0) },
-  ];
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">Paid Leave</h1>
-      <Box
-        display="flex"
-        flexDirection={isMobile ? "column" : "row"}
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        p={1}
-        className="w-full"
-      >
-        <ResponsiveContainer width={150} height={150}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={40}
-              outerRadius={70}
-              paddingAngle={3}
-              dataKey="value"
-              stroke="none"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
-              ))}
-            </Pie>
-            <text
-              x="50%"
-              y="50%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="text-lg font-bold text-gray-700"
-            >
-              {leaveType.split(" ")[0]}
-            </text>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-
-        {/* Info Panel */}
-        <div className="text-left space-y-1 text-sm text-gray-700">
-          <div>
-            <strong>Leave Type:</strong> {leaveType}
-          </div>
-          <div>
-            <strong>Consumed:</strong> <span className="font-semibold text-red-600">{days}</span> days
-          </div>
-          <div>
-            <strong>Available:</strong> <span className="font-semibold text-green-600">{Available}</span> days
-          </div>
-          <div>
-            <strong>Annual Quota:</strong> {annualQuota} days
-          </div>
-        </div>
-      </Box>
-    </div>
-  );
-};
-
-// --- SickLeaveType Component ---
-const SickLeaveType = ({ leaveData }) => {
-  const COLORS = ["#FFC107", "#E0E0E0"]; // Amber for consumed, light gray for remaining
-  const { leaveType, days, Available, "Annual Quota": annualQuota } = leaveData;
-  const isMobile = useMediaQuery("(max-width:768px)");
-
-  const chartData = [
-    { name: "Consumed", value: days },
-    { name: "Remaining", value: Math.max(annualQuota - days, 0) },
-  ];
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">Sick Leave</h1>
-      <Box
-        display="flex"
-        flexDirection={isMobile ? "column" : "row"}
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        p={1}
-        className="w-full"
-      >
-        <ResponsiveContainer width={150} height={150}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={40}
-              outerRadius={70}
-              paddingAngle={3}
-              dataKey="value"
-              stroke="none"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
-              ))}
-            </Pie>
-            <text
-              x="50%"
-              y="50%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="text-lg font-bold text-gray-700"
-            >
-              {leaveType.split(" ")[0]}
-            </text>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-
-        {/* Info Panel */}
-        <div className="text-left space-y-1 text-sm text-gray-700">
-          <div>
-            <strong>Leave Type:</strong> {leaveType}
-          </div>
-          <div>
-            <strong>Consumed:</strong> <span className="font-semibold text-red-600">{days}</span> days
-          </div>
-          <div>
-            <strong>Available:</strong> <span className="font-semibold text-green-600">{Available}</span> days
-          </div>
-          <div>
-            <strong>Annual Quota:</strong> {annualQuota} days
-          </div>
-        </div>
-      </Box>
-    </div>
-  );
-};
-
-// --- UnpaidLeaveType Component ---
-const UnpaidLeaveType = ({ leaveData }) => {
-  const COLORS = ["#EF5350", "#E0E0E0"]; // Red for consumed, light gray for remaining
-  const { leaveType, days, Available, "Annual Quota": annualQuota } = leaveData;
-  const isMobile = useMediaQuery("(max-width:768px)");
-
-  const chartData = [
-    { name: "Consumed", value: days },
-    { name: "Remaining", value: Math.max(annualQuota - days, 0) },
-  ];
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">Unpaid Leave</h1>
-      <Box
-        display="flex"
-        flexDirection={isMobile ? "column" : "row"}
-        justifyContent="center"
-        alignItems="center"
-        gap={2}
-        p={1}
-        className="w-full"
-      >
-        <ResponsiveContainer width={150} height={150}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={40}
-              outerRadius={70}
-              paddingAngle={3}
-              dataKey="value"
-              stroke="none"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
-              ))}
-            </Pie>
-            <text
-              x="50%"
-              y="50%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="text-lg font-bold text-gray-700"
-            >
-              {leaveType.split(" ")[0]}
-            </text>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-
-        {/* Info Panel */}
-        <div className="text-left space-y-1 text-sm text-gray-700">
+        <div className="text-left space-y-2 text-sm text-gray-700">
           <div>
             <strong>Leave Type:</strong> {leaveType}
           </div>
@@ -461,7 +243,7 @@ const UnpaidLeaveType = ({ leaveData }) => {
 
 // --- LeaveType Component (Overall Leave Breakdown) ---
 const LeaveType = ({ leaveData }) => {
-  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
+  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"]; // Diverse colors for overall breakdown
 
   const filteredData = leaveData.map(({ leaveType, days }) => ({
     name: leaveType,
@@ -764,56 +546,56 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
 };
 
 // --- Main LeavesDashboard Component ---
-const LeavesDashboard = () => {
-  const [leaveTypesOverallData, setLeaveTypesOverallData] = useState(initialLeaveTypeData);
-  const [leaveHistoryTableData, setLeaveHistoryTableData] = useState(currentLeaveHistoryData);
+const LeavesDashboard = ({ isSidebarOpen }) => { // Accept isSidebarOpen prop
+  const [leaveTypesOverallData] = useState(initialLeaveTypeData);
+  const [leaveHistoryTableData] = useState(currentLeaveHistoryData);
 
   // Simulate individual leave type quotas (these would also typically come from a dynamic source)
-  const [casualLeaveQuota, setCasualLeaveQuota] = useState({
+  const [casualLeaveQuota] = useState({
     employee: "Rajesh",
     leaveType: "Casual Leave",
     days: 3,
-    Available: 6,
-    "Annual Quota": 2.83,
+    Available: 2.83, // Adjusted for clarity (Annual Quota - Consumed)
+    "Annual Quota": 5.83, // Example total
   });
-  const [paidLeaveQuota, setPaidLeaveQuota] = useState({
+  const [paidLeaveQuota] = useState({
     employee: "Rajesh",
     leaveType: "Paid Leave",
     days: 2,
-    Available: 0,
-    "Annual Quota": 0.5,
+    Available: 0.5, // Adjusted for clarity
+    "Annual Quota": 2.5, // Example total
   });
-  const [sickLeaveQuota, setSickLeaveQuota] = useState({
+  const [sickLeaveQuota] = useState({
     employee: "Rajesh",
     leaveType: "Sick Leave",
     days: 5,
-    Available: 5,
-    "Annual Quota": 4.83,
+    Available: 4.83, // Adjusted for clarity
+    "Annual Quota": 9.83, // Example total
   });
-  const [unpaidLeaveQuota, setUnpaidLeaveQuota] = useState({
+  const [unpaidLeaveQuota] = useState({
     employee: "Rajesh",
     leaveType: "Unpaid Leave",
     days: 4,
-    Available: "Infinity",
-    "Annual Quota": 1.25,
+    Available: "Infinity", // Unpaid usually has no limit
+    "Annual Quota": "N/A", // No annual quota for unpaid
   });
-
-
- 
 
   const handleRequestLeave = () => {
     alert("Initiating Leave Request Form...");
     // In a real application, this would open a modal or navigate to a leave request form.
   };
 
+  // Calculate dynamic margin based on sidebar state
+  const dynamicMarginClass = isSidebarOpen ? "ml-64" : "ml-0"; // Assuming sidebar width is 64 (256px)
+
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className={`min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-2 font-sans ${dynamicMarginClass} transition-all duration-300 ease-in-out`}>
       <header className="bg-white shadow-lg rounded-xl p-6 mb-6 flex justify-between items-center border border-gray-200">
         <div className="text-left">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
-             Leaves DashBoard
+            Leaves Dashboard
           </h1>
-         
+          <p className="text-gray-600">Overview of employee leave statistics and history.</p>
         </div>
         <button
           onClick={handleRequestLeave}
@@ -825,10 +607,10 @@ const LeavesDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {/* Individual Leave Type Cards */}
-        <CasualLeaveType leaveData={casualLeaveQuota} />
-        <PaidLeaveType leaveData={paidLeaveQuota} />
-        <SickLeaveType leaveData={sickLeaveQuota} />
-        <UnpaidLeaveType leaveData={unpaidLeaveQuota} />
+        <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
+        <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />
+        <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota} color="#FFC107" />
+        <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

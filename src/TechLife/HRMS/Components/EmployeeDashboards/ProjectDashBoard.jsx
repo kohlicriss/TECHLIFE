@@ -20,11 +20,11 @@ const projects = [
         ],
         characteristics: ["Enterprise-grade, scalable", "highly integrated", "compliance-focused", "data-intensive."],
         team: [
-            { role: "Project Manager", avatars: ["https://randomuser.me/api/portraits/men/64.jpg"] },
-            { role: "Backend Developers", avatars: ["https://randomuser.me/api/portraits/men/67.jpg", "https://randomuser.me/api/portraits/men/77.jpg", "https://randomuser.me/api/portraits/women/65.jpg", "https://randomuser.me/api/portraits/men/31.jpg"] },
-            { role: "Frontend Developers", avatars: ["https://randomuser.me/api/portraits/women/23.jpg", "https://randomuser.me/api/portraits/men/56.jpg", "https://randomuser.me/api/portraits/men/15.jpg"] },
-            { role: "QA Engineers", avatars: ["https://randomuser.me/api/portraits/women/43.jpg", "https://randomuser.me/api/portraits/men/60.jpg"] },
-            { role: "UX/UI Designer", avatars: ["https://randomuser.me/api/portraits/men/77.jpg"] },
+            { role: "Project Manager", avatars: [1] },
+            { role: "Backend Developers", avatars: [4] },
+            { role: "Frontend Developers", avatars: [3] },
+            { role: "QA Engineers", avatars: [2] },
+            { role: "UX/UI Designer", avatars: [1] },
         ],
         duration: "12 months"
     },
@@ -42,10 +42,10 @@ const projects = [
         ],
         characteristics: ["User-centric", "mobile-first", "intuitive", "secure, responsive."],
         team: [
-            { role: "Product Owner", avatars: ["https://randomuser.me/api/portraits/men/15.jpg"] },
-            { role: "Mobile Developers", avatars: ["https://randomuser.me/api/portraits/men/31.jpg", "https://randomuser.me/api/portraits/women/38.jpg"] },
-            { role: "Web Developer", avatars: ["https://randomuser.me/api/portraits/women/66.jpg"] },
-            { role: "QA Tester", avatars: ["https://randomuser.me/api/portraits/women/65.jpg"] },
+            { role: "Product Owner", avatars: [1] },
+            { role: "Mobile Developers", avatars: [2] },
+            { role: "Web Developer", avatars: [3] },
+            { role: "QA Tester", avatars: [1] },
         ],
         duration: "6 months"
     },
@@ -63,10 +63,10 @@ const projects = [
         ],
         characteristics: ["High accuracy", "compliance-driven", "secure, scalable", "integration-focused."],
         team: [
-            { role: "Lead Developer", avatars: ["https://randomuser.me/api/portraits/men/32.jpg"] },
-            { role: "Backend Developers", avatars: ["https://randomuser.me/api/portraits/women/65.jpg", "https://randomuser.me/api/portraits/men/60.jpg", "https://randomuser.me/api/portraits/men/31.jpg"] },
-            { role: "QA Engineer", avatars: ["https://randomuser.me/api/portraits/women/75.jpg"] },
-            { role: "Business Analyst", avatars: ["https://randomuser.me/api/portraits/women/27.jpg"] },
+            { role: "Lead Developer", avatars: [1] },
+            { role: "Backend Developers", avatars: [3] },
+            { role: "QA Engineer", avatars: [1] },
+            { role: "Business Analyst", avatars: [1] },
         ],
         duration: "9 months"
     },
@@ -85,10 +85,10 @@ const projects = [
         ],
         characteristics: ["Accurate", "real-time, robust", "integrated", "user-friendly."],
         team: [
-            { role: "System Architect", avatars: ["https://randomuser.me/api/portraits/men/89.jpg"] },
-            { role: "Software Engineers", avatars: ["https://randomuser.me/api/portraits/men/74.jpg", "https://randomuser.me/api/portraits/men/1.jpg"] },
-            { role: "Hardware Integration Specialist", avatars: ["https://randomuser.me/api/portraits/men/21.jpg"] },
-            { role: "QA Tester", avatars: ["https://randomuser.me/api/portraits/men/23.jpg"] },
+            { role: "System Architect", avatars: [1] },
+            { role: "Software Engineers", avatars: [2] },
+            { role: "Hardware Integration Specialist", avatars: [1] },
+            { role: "QA Tester", avatars: [1] },
         ],
         duration: "7 months"
     },
@@ -107,10 +107,10 @@ const projects = [
         ],
         characteristics: ["Intelligent", "efficient", "data-driven", "scalable", "integrates with external platforms."],
         team: [
-            { role: "AI/ML Engineer", avatars: ["https://randomuser.me/api/portraits/men/5.jpg"] },
-            { role: "Data Scientists", avatars: ["https://randomuser.me/api/portraits/men/39.jpg", "https://randomuser.me/api/portraits/women/82.jpg"] },
-            { role: "Full-stack Developers", avatars: ["https://randomuser.me/api/portraits/women/51.jpg", "https://randomuser.me/api/portraits/women/31.jpg"] },
-            { role: "UX Designer", avatars: ["https://randomuser.me/api/portraits/women/32.jpg"] },
+            { role: "AI/ML Engineer", avatars: [1] },
+            { role: "Data Scientists", avatars: [1] },
+            { role: "Full-stack Developers", avatars: [1] },
+            { role: "UX Designer", avatars: [1] },
         ],
         duration: "10 months"
     },
@@ -128,10 +128,10 @@ const projects = [
         ],
         characteristics: ["AI-powered", "responsive", "multi-channel", "helpful, analytical."],
         team: [
-            { role: "AI Chatbot Developer", avatars: ["https://randomuser.me/api/portraits/women/0.jpg"] },
-            { role: "Content Specialist", avatars: ["https://randomuser.me/api/portraits/men/53.jpg"] },
-            { role: "Integration Engineer", avatars: ["https://randomuser.me/api/portraits/men/9.jpg"] },
-            { role: "QA Tester", avatars: ["https://randomuser.me/api/portraits/women/76.jpg"] },
+            { role: "AI Chatbot Developer", avatars: [1] },
+            { role: "Content Specialist", avatars: [1] },
+            { role: "Integration Engineer", avatars: [1] },
+            { role: "QA Tester", avatars: [1] },
         ],
         duration: "5 months"
     }
@@ -205,15 +205,7 @@ const ProjectCard = () => {
                 <div key={index} className="flex flex-col items-start">
                     <p className="font-medium text-gray-800 text-base sm:text-lg mb-2">
                     <div className="flex flex-wrap gap-2">
-                        {teamMember.role}:
-                        {teamMember.avatars.map((avatarUrl, idx) => (
-                            <img
-                                key={idx}
-                                src={avatarUrl}
-                                alt={`${teamMember.role} avatar`}
-                                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-indigo-400 object-cover shadow-md"
-                            />
-                        ))}
+                        {teamMember.role}: {teamMember.avatars}
                     </div></p>
                     
                 </div>
@@ -587,7 +579,7 @@ function Project() {
 const ProjectDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 sm:mb-8 text-center drop-shadow-sm">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 sm:mb-8 text-left drop-shadow-sm">
                  Project Dashboard
             </h1>
             {/* Project Profile Section */}

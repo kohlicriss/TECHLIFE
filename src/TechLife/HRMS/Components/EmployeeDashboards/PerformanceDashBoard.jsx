@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell,
@@ -73,220 +73,249 @@ const EmployeeProfile = () => {
 }
 
 // --- Assignment Component (Line Chart) ---
-const Assignment = () => {
-    const dailyAssignmentData = [
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": "Web Page for chart System", "Manager": "Ravindra", "No of assignment": 1, "day": "Monday" },
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": "Adding some application", "Manager": "Ravindra", "No of assignment": 1, "day": "Tuesday" },
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": "Add file send application", "Manager": "Ravindra", "No of assignment": 1, "day": "Wednesday" },
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": "Add Audio call application and video call", "Manager": "Ravindra", "No of assignment": 2, "day": "Thursday" },
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": "Create Groups, search bar", "Manager": "Ravindra", "No of assignment": 2, "day": "Friday" },
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": "Styling to entire page", "Manager": "Ravindra", "No of assignment": 4, "day": "Saturday" },
-        { "project_name": "HRMS Project", "Task": "Chat Application", "Assigment": null, "Manager": "Ravindra", "No of assignment": 0, "day": "Sunday" },
-    ];
+const weeklyTaskData = [
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Period: 'Week-1', 'No of Task': 2 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Period: 'Week-2', 'No of Task': 4 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Period: 'Week-3', 'No of Task': 8 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Period: 'Week-4', 'No of Task': 6 },
+];
 
-    const weeklyAssignmentData = [
-        { "Period": "Week-1", "No of assignment": 5 },
-        { "Period": "Week-2", "No of assignment": 8 },
-        { "Period": "Week-3", "No of assignment": 10 },
-        { "Period": "Week-4", "No of assignment": 9 },
-    ];
+const monthlyTaskSummary = [
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Jun', 'No of Task': 20 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Jul', 'No of Task': 40 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Aug', 'No of Task': 30 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Sep', 'No of Task': 25 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Oct', 'No of Task': 15 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Nov', 'No of Task': 10 },
+    { project_name: 'HRMS Project', Manager: 'Ravindra', Month: 'Dec', 'No of Task': 24 },
+];
 
-    const monthlyAssignmentSummary = {
-        "Month": "Last Month",
-        "No of Assignment": 30
-    };
-
-    const [selectedView, setSelectedView] = useState('Days');
-
-    const getChartData = () => {
-        switch (selectedView) {
-            case 'Days': return dailyAssignmentData;
-            case 'Weeks': return weeklyAssignmentData;
-            default: return [];
-        }
-    };
-
-    const getXAxisDataKey = () => {
-        switch (selectedView) {
-            case 'Days': return 'day';
-            case 'Weeks': return 'Period';
-            default: return '';
-        }
-    };
-
-    return (
-        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[400px] flex flex-col justify-between border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-            <h2 className="chart-title text-2xl font-bold mb-4 text-center text-gray-800">
-                Assignments Completed
-            </h2>
-
-            <div className="flex justify-center mb-4 space-x-4">
-                {['Days', 'Weeks', 'Months'].map((view) => (
-                    <button
-                        key={view}
-                        onClick={() => setSelectedView(view)}
-                        className={`px-6 py-2 rounded-lg text-lg font-semibold transition-colors duration-300 ${
-                            selectedView === view
-                                ? 'bg-indigo-400 text-white shadow-md'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                    >
-                        {view}
-                    </button>
-                ))}
+// Custom Tooltip for Line Chart (Weekly Data)
+const CustomLineTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 border border-gray-300 shadow-md rounded-lg">
+                <p className="font-semibold text-gray-700">{`Period: ${label}`}</p>
+                <p className="text-blue-600">{`Total Tasks: ${payload[0].value}`}</p>
             </div>
-
-            {selectedView === 'Months' ? (
-                <div className="flex-grow flex items-center justify-center">
-                    <div className="bg-gradient-to-r from-teal-500 to-green-600 text-white p-8 rounded-lg shadow-xl text-center transform hover:scale-105 transition-transform duration-300 ease-in-out">
-                        <p className="text-xl font-medium mb-2">{monthlyAssignmentSummary.Month} Assignments:</p>
-                        <p className="text-5xl font-extrabold">{monthlyAssignmentSummary["No of Assignment"]}</p>
-                    </div>
-                </div>
-            ) : (
-                <ResponsiveContainer width="100%" height="90%">
-                    <LineChart data={getChartData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <XAxis dataKey={getXAxisDataKey()} className="text-sm text-gray-600" />
-                        <YAxis allowDecimals={false} className="text-sm text-gray-600" />
-                        <Tooltip />
-                        <Line
-                            type="monotone"
-                            dataKey="No of assignment"
-                            stroke="#4f46e5"
-                            strokeWidth={3}
-                            activeDot={{ r: 8 }}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            )}
-        </div>
-    );
+        );
+    }
+    return null;
 };
 
+// Custom Tooltip for Area Chart (Monthly Data)
+const CustomAreaTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 border border-gray-300 shadow-md rounded-lg">
+                <p className="font-semibold text-gray-700">{`Month: ${label}`}</p>
+                <p className="text-purple-600">{`Total Tasks: ${payload[0].value}`}</p>
+            </div>
+        );
+    }
+    return null;
+};
+
+const TaskCharts = () => {
+    const [chartType, setChartType] = useState('weekly'); // 'weekly' or 'monthly'
+
+    return (
+        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col justify-between border border-blue-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out relative">
+                <h1 className="text-2xl font-bold text-gray-800 mb-6 text-left"> Task Overview</h1>
+
+                {/* Buttons in the center within the chart layout */}
+                <div className="absolute items-center top-6 right-6 flex space-x-4 z-10">
+                    <button
+                        onClick={() => setChartType('weekly')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+              ${chartType === 'weekly' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                    >
+                        Weekly Tasks
+                    </button>
+                    <button
+                        onClick={() => setChartType('monthly')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+              ${chartType === 'monthly' ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                    >
+                        Monthly Tasks
+                    </button>
+                </div>
+
+                <div className="mt-12" style={{ width: '100%', height: 400 }}>
+                    {chartType === 'weekly' ? (
+                        <ResponsiveContainer>
+                            <LineChart
+                                data={weeklyTaskData}
+                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-gray-300" />
+                                <XAxis dataKey="Period" hide />
+                                <YAxis hide />
+                                <Tooltip content={<CustomLineTooltip />} />
+                                <Legend />
+                                <Line
+                                    type="monotone"
+                                    dataKey="No of Task"
+                                    stroke="#4F46E5" // Indigo color
+                                    activeDot={{ r: 8 }}
+                                    strokeWidth={2}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <ResponsiveContainer>
+                            <AreaChart
+                                data={monthlyTaskSummary}
+                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-gray-300" />
+                                <XAxis dataKey="Month"  />
+                                <YAxis hide />
+                                <Tooltip content={<CustomAreaTooltip />} />
+                                <Legend />
+                                <Area
+                                    type="monotone"
+                                    dataKey="No of Task"
+                                    stroke="#8B5CF6" // Purple color
+                                    fillOpacity={0.8}
+                                    fill="url(#colorUv)"
+                                    strokeWidth={2}
+                                />
+                                <defs>
+                                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
+       
+    );
+}
+
 // --- AssignmentSurvey Component (Bar Chart) ---
-const AssignmentSurvey = () => {
-    const dailyData = [
-        { Project: "TECH LIFE", Task: "Chat System", day: "Mon", Range: 10, Status: "Completed", Assigment: "Web Page for chart System", "No of assignment": 1 },
-        { Project: "TECH LIFE", Task: "Chat System", day: "Tues", Range: 5, Status: "on-going", Assigment: "Adding some application", "No of assignment": 3 },
-        { Project: "TECH LIFE", Task: "Chat System", day: "Wed", Range: 10, Status: "Completed", Assigment: "Add file send application", "No of assignment": 1 },
-        { Project: "TECH LIFE", Task: "Chat System", day: "Thur", Range: 8, Status: "on-going", Assigment: "Add Audio call application and video call", "No of assignment": 2 },
-        { Project: "TECH LIFE", Task: "Chat System", day: "Fri", Range: 10, Status: "Completed", Assigment: "Create Groups, search bar", "No of assignment": 2 },
-        { Project: "TECH LIFE", Task: "Chat System", day: "Sat", Range: 4, Status: "Not Started", Assigment: "Styling to entire page", "No of assignment": 5 },
-        { Project: "TECH LIFE", Task: "Chat System", day: "Sun", Range: 0, Status: null, Assigment: null, "No of assignment": 0 },
-    ];
-
+const Preformancerating = () => {
     const weeklyData = [
-        { "Period": "Week-1", "Range": 5 },
-        { "Period": "Week-2", "Range": 7 },
-        { "Period": "Week-3", "Range": 8 },
-        { "Period": "Week-4", "Range": 10 }
+        { "Period": "Week-1","usercount":5, "rating_start":0, "rating_end":10, "topPercentage": 10.0 },
+        { "Period": "Week-1","usercount":8, "rating_start":10, "rating_end":20, "topPercentage":9.5 },
+        { "Period": "Week-1","usercount":10,"rating_start":30, "rating_end":40, "topPercentage":9.0 },
+        { "Period": "Week-1","usercount":7, "rating_start":40, "rating_end":50, "topPercentage":8.5 },
+        { "Period": "Week-1","usercount":5, "rating_start":50, "rating_end":60, "topPercentage":8.0 },
+        { "Period": "Week-2","usercount":5, "rating_start":0, "rating_end":10, "topPercentage":10.0 },
+        { "Period": "Week-2","usercount":7, "rating_start":10, "rating_end":20, "topPercentage":9.5 },
+        { "Period": "Week-2","usercount":8, "rating_start":30, "rating_end":40, "topPercentage":9.0 },
+        { "Period": "Week-2","usercount":10, "rating_start":40, "rating_end":50, "topPercentage":8.5 },
+        { "Period": "Week-2","usercount":5, "rating_start":50, "rating_end":60, "topPercentage":8.0 },
+        { "Period": "Week-3","usercount":7, "rating_start":0, "rating_end":10, "topPercentage":10.0 },
+        { "Period": "Week-3","usercount":10, "rating_start":10, "rating_end":20, "topPercentage":9.5 },
+        { "Period": "Week-3","usercount":8, "rating_start":30, "rating_end":40, "topPercentage":9.0 },
+        { "Period": "Week-3","usercount":5, "rating_start":40, "rating_end":50, "topPercentage":8.5 },
+        { "Period": "Week-3","usercount":5, "rating_start":50, "rating_end":60, "topPercentage":8.0 },
+        { "Period": "Week-4","usercount":10, "rating_start":0, "rating_end":10, "topPercentage":10.0 },
+        { "Period": "Week-4","usercount":8, "rating_start":10, "rating_end":20, "topPercentage":9.5 },
+        { "Period": "Week-4","usercount":7, "rating_start":30, "rating_end":40, "topPercentage":9.0 },
+        { "Period": "Week-4","usercount":5, "rating_start":40, "rating_end":50, "topPercentage":8.5 },
+        { "Period": "Week-4","usercount":5, "rating_start":50, "rating_end":60, "topPercentage":8.0 },
     ];
 
-    const monthlyData = {
-        "Month": "Last Month",
-        "Range": "70%"
-    };
-
-    const [selectedView, setSelectedView] = useState('Days');
-
-    const statusColors = {
-        Completed: "#27F56C",
-        "on-going": "#BB27F5",
-        "Not Started": "#F52731",
-        null: "#adb5bd",
-    };
-
-    const getChartData = () => {
-        switch (selectedView) {
-            case 'Days': return dailyData;
-            case 'Weeks': return weeklyData;
-            default: return [];
-        }
-    };
-
-    const getAxisDataKey = () => {
-        switch (selectedView) {
-            case 'Days': return "day";
-            case 'Weeks': return "Period";
-            default: return "";
-        }
-    };
-
-    const CustomTooltip = ({ active, payload, label }) => {
+    const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
-            const item = payload[0].payload;
-            if (selectedView === 'Days') {
-                return (
-                    <div className="p-3 bg-white border border-gray-300 rounded-md shadow-lg text-sm text-gray-800">
-                        <p className="font-semibold text-lg mb-1">{label}</p>
-                        <p><strong>Project:</strong> {item.Project || "None"}</p>
-                        <p><strong>Task:</strong> {item.Task || "None"}</p>
-                        <p><strong>Assignment:</strong> {item.Assigment || "None"}</p>
-                        <p><strong>Status:</strong> {item.Status || "N/A"}</p>
-                        <p><strong>No of Assignments:</strong> {item["No of assignment"]}</p>
-                        <p><strong>Range:</strong> {item.Range}</p>
-                    </div>
-                );
-            } else if (selectedView === 'Weeks') {
-                return (
-                    <div className="p-3 bg-white border border-gray-300 rounded-md shadow-lg text-sm text-gray-800">
-                        <p className="font-semibold text-lg mb-1">{label}</p>
-                        <p><strong>Completion Range:</strong> {item.Range}</p>
-                    </div>
-                );
-            }
+            const data = payload[0].payload;
+            return (
+                <div className="p-2 bg-white border border-gray-300 rounded shadow-md">
+                    <p className="text-gray-800">
+                        <span className="font-semibold">User Count:</span> {data.usercount}
+                    </p>
+                    <p className="text-gray-800">
+                        <span className="font-semibold">Rating Range:</span> {data.rating_start}-{data.rating_end}
+                    </p>
+                    <p className="text-gray-800">
+                        <span className="font-semibold">Top Percentage:</span> {data.topPercentage}%
+                    </p>
+                </div>
+            );
         }
         return null;
     };
 
+
+    const [currentPeriod, setCurrentPeriod] = useState('Week-1');
+
+    const filteredData = weeklyData.filter(item => item.Period === currentPeriod);
+
+    let highestUserCount = 0;
+    if (filteredData.length > 0) {
+        highestUserCount = Math.max(...filteredData.map(item => item.usercount));
+    }
+
+    // Get unique periods for the dropdown options
+    const uniquePeriods = [...new Set(weeklyData.map(item => item.Period))];
+
+    const handlePeriodChange = (event) => {
+        setCurrentPeriod(event.target.value);
+    };
+
     return (
-        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[400px] flex flex-col justify-between border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-            <h2 className="chart-title text-2xl font-bold mb-4 text-center text-gray-800">Assignment Status Survey</h2>
-
-            <div className="flex justify-center mb-4 space-x-4">
-                {['Days', 'Weeks', 'Months'].map((view) => (
-                    <button
-                        key={view}
-                        onClick={() => setSelectedView(view)}
-                        className={`px-6 py-2 rounded-lg text-lg font-semibold transition-colors duration-300 ${
-                            selectedView === view
-                                ? 'bg-indigo-400 text-white shadow-md'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                    >
-                        {view}
-                    </button>
-                ))}
+        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col justify-between border border-blue-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out relative">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Performance Overview - {currentPeriod}</h2>
+            <div className="mb-4">
+                <label htmlFor="period-select" className="sr-only">Select Period</label>
+                <select
+                    id="period-select"
+                    value={currentPeriod}
+                    onChange={handlePeriodChange}
+                    className="block w-full px-4 py-2 text-base text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                    {uniquePeriods.map(period => (
+                        <option key={period} value={period}>
+                            {period}
+                        </option>
+                    ))}
+                </select>
             </div>
-
-            {selectedView === 'Months' ? (
-                <div className="flex-grow flex items-center justify-center">
-                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 rounded-lg shadow-xl text-center transform hover:scale-105 transition-transform duration-300 ease-in-out">
-                        <p className="text-xl font-medium mb-2">{monthlyData.Month} Completion:</p>
-                        <p className="text-5xl font-extrabold">{monthlyData.Range}</p>
-                    </div>
-                </div>
-            ) : (
-                <ResponsiveContainer width="100%" height="90%">
-                    <BarChart
-                        layout="vertical"
-                        data={getChartData()}
-                        margin={{ top: 20, right: 40, left: 80, bottom: 10 }}
-                    >
-                        <XAxis type="number" className="text-sm text-gray-600" />
-                        <YAxis dataKey={getAxisDataKey()} type="category" className="text-sm text-gray-600" />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="Range">
-                            {getChartData().map((entry, index) => (
+            <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                    data={filteredData}
+                    margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                    }}
+                >
+                    
+                    <XAxis
+                        dataKey="topPercentage"
+                        label={{ value: "Top Percentage", position: "insideBottom", offset: -5 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#ccc' }}
+                        tickFormatter={(value) => `${value}%`}
+                        className="text-sm fill-gray-600" hide
+                        // removed 'hide' prop to show X-axis labels
+                    />
+                    <YAxis
+                        label={{ value: "User Count", angle: -90, position: "insideLeft" }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#ccc' }}
+                        className="text-sm fill-gray-600" hide
+                        // removed 'hide' prop to show Y-axis labels
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.1)' }} />
+                    <Bar dataKey="usercount" barSize={120}>
+                        {
+                            filteredData.map((entry, index) => (
                                 <Cell
                                     key={`cell-${index}`}
-                                    fill={selectedView === 'Days' ? (statusColors[entry.Status] || "#adb5bd") : "#CF27F5"}
+                                    fill={entry.usercount === highestUserCount ? '#8884d8' : '#82ca9d'}
                                 />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
-            )}
+                            ))
+                        }
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
         </div>
     );
 };
@@ -306,9 +335,9 @@ const Achievement = () => {
     const ringWidth = 10;
 
     return (
-        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col justify-between border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out relative">
+        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col w-[500px] justify-between border border-blue-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out relative">
             <h2 className="chart-title text-2xl font-bold mb-4 text-center text-gray-800">Weekly Achievement Score</h2>
-            <div className="absolute top-6 right-6 z-10">
+            <div className="absolute top-16 right-6 z-10">
                 <button
                     className="bg-blue-600 text-white px-3 py-1 text-sm rounded-md hover:bg-blue-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onClick={() => setShowFeedback(!showFeedback)}
@@ -396,7 +425,7 @@ const Achievement = () => {
 // --- Projects Component (Area Chart) ---
 function Projects() {
     const initialRawData = [
-        { project_id: "P_01", project_name: "HRMS Project", status: "Ongoing", Survey: 22, Month: "July 03" },
+        { project_id: "P_01", project_name: "HRMS Project", status: "Ongoing", Survey: 22, Month: "Jul 03" },
         { project_id: "P_01", project_name: "HRMS Project", status: "Ongoing", Survey: 11, Month: "Aug 03" },
         { project_id: "P_01", project_name: "HRMS Project", status: "Ongoing", Survey: 20, Month: "Sep 03" },
         { project_id: "P_01", project_name: "HRMS Project", status: "Ongoing", Survey: 27, Month: "Oct 03" },
@@ -419,7 +448,7 @@ function Projects() {
     const combinedData = getCombinedData();
 
     return (
-        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col justify-between border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
+        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] w-[800px] flex flex-col justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
             <h2 className="chart-title text-2xl font-bold mb-4 text-center text-gray-800">Project Survey</h2>
             <ResponsiveContainer width="100%" height="90%">
                 <AreaChart data={combinedData}>
@@ -430,7 +459,7 @@ function Projects() {
                         </linearGradient>
                     </defs>
                     <XAxis dataKey="Month" className="text-sm text-gray-600" />
-                    <YAxis className="text-sm text-gray-600" />
+                    <YAxis className="text-sm text-gray-600" hide />
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <Tooltip />
                     <Legend verticalAlign="top" height={36} />
@@ -453,15 +482,16 @@ function Projects() {
 const PerformanceDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-100 p-6 sm:p-6 lg:p-8 font-sans">
-            <header className="p-3 mb-6 text-center">
+            <header className="p-3 mb-6 text-left">
                 <h1 className="text-4xl font-bold text-gray-900 mb-8">
                     Performance Dashboard
                 </h1>
                 <EmployeeProfile />
             </header>
             <div className="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Assignment />
-                <AssignmentSurvey />
+                {/* Each chart component will now occupy its own grid cell */}
+                <TaskCharts />
+                <Preformancerating />
                 <Achievement />
                 <Projects />
             </div>
