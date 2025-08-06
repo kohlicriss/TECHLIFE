@@ -19,6 +19,7 @@ import Tickets from  "./AdminTickets/Tickets";
 import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
 import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
 import Dashboard from "./EmployeeDashboards/Dashboard";
+import TasksApp from "./Tasks/TaskApp";
 
 
 const MainLayout = ({
@@ -53,6 +54,7 @@ const HrmsApp = () => {
   );
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState({
+    
     name: "Johnes",
     designation: " Associate Software Engineer",
     avatar: "https://i.pravatar.cc/100",
@@ -108,12 +110,13 @@ const HrmsApp = () => {
               <Route path="/AdminDashBoard" element={<AdminDashBoard/>}/>
               <Route path="/dashboard" element={<Dashboard />}> </Route>
               <Route path="/notifications" element={<NotificationSystem />} />
-              <Route path="/chat" element={<ChatApp />} />
+              <Route path="/chat/:userId" element={<ChatApp />} />
               <Route path="/profile/*" element={<Profiles />} />
-              <Route path="/employees/*" element={<Employees />} />
+              <Route path="/employees/*" element={<Employees />} />  
               <Route path="/my-teams" element={<AllTeams />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/tickets/employee" element={<EmployeeTicket />} />
+              <Route path="/tasks/*" element={<TasksApp />} />
               {/* Redirect any unmatched route to the dashboard when logged in */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
