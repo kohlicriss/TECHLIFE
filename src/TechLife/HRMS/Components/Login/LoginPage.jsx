@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { jwtDecode } from "jwt-decode";
 import logo from "../assets/anasol-logo.png";
+import { Context } from "../HrmsContext";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage = ({ onLogin }) => {
+  const navigate = useNavigate();
+
   const [selectedRole, setSelectedRole] = useState("Admin");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -11,24 +16,24 @@ const LoginPage = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [otpScreen, setOtpScreen] = useState(false);
-  const [otpMethod, setOtpMethod] = useState(null); // New state: 'mobile' or 'email' for login OTP
+  const [otpMethod, setOtpMethod] = useState(null);
   const [mobileOtp, setMobileOtp] = useState(["", "", "", ""]);
   const [emailOtp, setEmailOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(59);
   const [resendEnabled, setResendEnabled] = useState(false);
 
-  // New states for Forgot Password functionality
   const [forgotPasswordScreen, setForgotPasswordScreen] = useState(false);
-  const [forgotPasswordStep, setForgotPasswordStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
+  const [forgotPasswordStep, setForgotPasswordStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotOtp, setForgotOtp] = useState(["", "", "", "", "", ""]); // Assuming email OTP for forgot password
+  const [forgotOtp, setForgotOtp] = useState(["", "", "", "", "", ""]);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Ref for forgot password OTP
+  const { setUserData, setAccessToken, setRefreshToken } = useContext(Context);
+
   const forgotOtpRefs = [
     useRef(null),
     useRef(null),
@@ -37,7 +42,6 @@ const LoginPage = ({ onLogin }) => {
     useRef(null),
     useRef(null),
   ];
-
   const mobileRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
   const emailRefs = [
     useRef(null),
@@ -54,7 +58,6 @@ const LoginPage = ({ onLogin }) => {
   }, []);
 
   useEffect(() => {
-    // Timer only runs if otpScreen is active and an OTP method is selected, OR if forgot password OTP (step 2) is active
     if (!otpScreen && !(forgotPasswordScreen && forgotPasswordStep === 2))
       return;
     if (timer === 0) {
@@ -63,36 +66,65 @@ const LoginPage = ({ onLogin }) => {
     }
     const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
     return () => clearInterval(interval);
-  }, [timer, otpScreen, otpMethod, forgotPasswordScreen, forgotPasswordStep]); // Added new dependencies
+  }, [timer, otpScreen, otpMethod, forgotPasswordScreen, forgotPasswordStep]);
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
+    setError("");
+    setIsLoading(true);
 
-    // Validation for name and password
-    if (!name.trim()) {
-      setError("Please enter your email or username.");
-      return;
-    }
-    if (!password.trim()) {
-      setError("Please enter your password.");
+    if (!name.trim() || !password.trim()) {
+      setError("Please enter both username and password.");
+      setIsLoading(false);
       return;
     }
 
-    // Note: selectedRole is currently always "Admin". If roles become dynamic, this check is relevant.
-    if (!selectedRole) {
-      setError("Please select a role.");
-      return;
-    }
+    try {
+      const response = await fetch("http://localhost:9090/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: name, password: password }),
+      });
 
-    setOtpScreen(true);
-    setOtpMethod(null); // Reset OTP method selection
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Login Successful! Tokens Received:", data);
+
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        console.log("Tokens have been saved to Local Storage.");
+
+        setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
+
+        try {
+          const decodedPayload = jwtDecode(data.accessToken);
+          setUserData(decodedPayload);
+          console.log("Decoded Access Token Payload:", decodedPayload);
+          localStorage.setItem("logedempid", decodedPayload.employeeId);
+          localStorage.setItem("logedemprole", decodedPayload.roles[0]);
+          localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
+        } catch (decodeError) {
+          console.error("Failed to decode access token:", decodeError);
+        }
+
+        onLogin(data);
+      } else {
+        setError(data.message || "Invalid credentials. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login API call failed:", error);
+      setError("Could not connect to the server. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOtpMethodSelect = (method) => {
     setOtpMethod(method);
-    resetTimer(); // Start timer for the chosen method
-    setError(""); // Clear error when method is selected
+    resetTimer();
+    setError("");
     setMobileOtp(["", "", "", ""]);
     setEmailOtp(["", "", "", "", "", ""]);
   };
@@ -115,8 +147,6 @@ const LoginPage = ({ onLogin }) => {
     }
   };
 
-  const handleRoleSelect = (role) => setSelectedRole(role);
-
   const handleOtpChange = (
     otpArray,
     setOtpArray,
@@ -125,7 +155,7 @@ const LoginPage = ({ onLogin }) => {
     refs,
     event
   ) => {
-    const regex = /^[0-9]$/; // OTPs are typically numeric
+    const regex = /^[0-9]$/;
     if (event.key === "Backspace") {
       const newOtp = [...otpArray];
       if (newOtp[index] === "" && index > 0) {
@@ -154,23 +184,19 @@ const LoginPage = ({ onLogin }) => {
   const handleBack = () => {
     if (forgotPasswordScreen) {
       if (forgotPasswordStep > 1) {
-        // If not at step 1 of forgot password, go back one step
         setForgotPasswordStep((prev) => prev - 1);
         setError("");
-        // Clear OTP if going back from step 2
         if (forgotPasswordStep === 2) {
           setForgotOtp(["", "", "", "", "", ""]);
         }
-        // Clear passwords if going back from step 3
         if (forgotPasswordStep === 3) {
           setNewPassword("");
           setConfirmPassword("");
         }
       } else {
-        // If at step 1 of forgot password, go back to login
         setForgotPasswordScreen(false);
         setForgotEmail("");
-        setForgotPasswordStep(1); // Reset step for next time
+        setForgotPasswordStep(1);
         setError("");
       }
     } else if (otpScreen) {
@@ -187,43 +213,35 @@ const LoginPage = ({ onLogin }) => {
   const handleResend = () => {
     resetTimer();
     if (forgotPasswordScreen && forgotPasswordStep === 2) {
-      // Resending OTP for forgot password
       console.log(`Resending Forgot Password OTP to ${forgotEmail}`);
-      // Call API to resend forgot password OTP
     } else if (otpScreen && otpMethod) {
-      // Resending OTP for regular login
       console.log(`Resending Login OTP via ${otpMethod}`);
-      // Call API to resend login OTP
     }
   };
 
   const handleForgotPasswordClick = () => {
     setForgotPasswordScreen(true);
-    setOtpScreen(false); // Ensure login OTP screen is hidden
-    setForgotEmail(""); // Clear previous email
-    setForgotPasswordStep(1); // Start at step 1
-    setForgotOtp(["", "", "", "", "", ""]); // Clear OTP field
-    setNewPassword(""); // Clear password fields
+    setOtpScreen(false);
+    setForgotEmail("");
+    setForgotPasswordStep(1);
+    setForgotOtp(["", "", "", "", "", ""]);
+    setNewPassword("");
     setConfirmPassword("");
-    setError(""); // Clear errors
+    setError("");
   };
 
   const handleRequestOtp = (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
-
-    // Validation for empty email in Forgot Password flow - THIS IS ALREADY HERE
+    setError("");
     if (!forgotEmail.trim()) {
-      // .trim() to handle whitespace-only input
-      setError("Please enter your email."); // THIS SETS THE ERROR MESSAGE
-      return; // Stops the function execution
+      setError("Please enter your email.");
+      return;
     }
-    // Logic to simulate requesting OTP (already exists)
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      setForgotPasswordStep(2); // Move to OTP entry step
-      resetTimer(); // Start timer for OTP entry
+      setForgotPasswordStep(2);
+      resetTimer();
       console.log(`OTP requested for: ${forgotEmail}`);
     }, 1500);
   };
@@ -236,12 +254,10 @@ const LoginPage = ({ onLogin }) => {
       return;
     }
     setIsLoading(true);
-    // Simulate OTP verification
     setTimeout(() => {
       setIsLoading(false);
-      // If OTP is correct (simulated success)
-      setForgotPasswordStep(3); // Move to set new password step
-      setError(""); // Clear any previous errors
+      setForgotPasswordStep(3);
+      setError("");
       console.log("Forgot Password OTP Verified.");
     }, 1500);
   };
@@ -249,7 +265,6 @@ const LoginPage = ({ onLogin }) => {
   const handleUpdatePassword = (e) => {
     e.preventDefault();
     setError("");
-
     if (!newPassword || !confirmPassword) {
       setError("Please enter and confirm your new password.");
       return;
@@ -259,21 +274,16 @@ const LoginPage = ({ onLogin }) => {
       return;
     }
     if (newPassword.length < 6) {
-      // Example: minimum password length
       setError("New password must be at least 6 characters long.");
       return;
     }
-
-    // Simulate API call to update password
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      alert(
-        "Password updated successfully! Please login with your new password."
-      );
-      setForgotPasswordScreen(false); // Go back to login screen
+      console.log("Password updated successfully! Please login with your new password.");
+      setForgotPasswordScreen(false);
       setForgotEmail("");
-      setForgotPasswordStep(1); // Reset step for next time
+      setForgotPasswordStep(1);
       setForgotOtp(["", "", "", "", "", ""]);
       setNewPassword("");
       setConfirmPassword("");
@@ -289,8 +299,8 @@ const LoginPage = ({ onLogin }) => {
       </div>
       <div
         className={`relative z-10 flex w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl bg-white/80 backdrop-blur-lg ring-1 ring-black/10 transition-all duration-700 ease-out 
-        ${isMounted ? "scale-100 opacity-100" : "scale-95 opacity-0"} 
-        max-h-[90vh] min-h-[600px]`}
+          ${isMounted ? "scale-100 opacity-100" : "scale-95 opacity-0"} 
+          max-h-[90vh] min-h-[600px]`}
       >
         <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-800 text-white p-10 lg:p-14">
           <div className="space-y-8 mt-8">
@@ -321,10 +331,11 @@ const LoginPage = ({ onLogin }) => {
           </div>
         </div>
         <div className="w-full md:w-1/2 p-10 md:p-14 bg-white/95 backdrop-blur-md h-full overflow-y-auto flex flex-col justify-center items-center">
-          <div style={{ marginTop: "80px" }} className="max-w-md mx-auto">
-            {/* Removed space-y-4 here */}
+          <div
+            style={{ marginTop: "80px" }}
+            className="max-w-md mx-auto w-full"
+          >
             <h2 className="text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 mb-6">
-              {/* Added mb-6 here */}
               {forgotPasswordScreen
                 ? forgotPasswordStep === 1
                   ? "Forgot Password"
@@ -339,378 +350,348 @@ const LoginPage = ({ onLogin }) => {
                   : "Choose OTP Method"
                 : "Login"}
             </h2>
-            {/* --- Forgot Password Form --- */}
-            {forgotPasswordScreen ? (
-              <form
-                onSubmit={
-                  forgotPasswordStep === 1
-                    ? handleRequestOtp
-                    : forgotPasswordStep === 2
-                    ? handleVerifyForgotOtp
-                    : handleUpdatePassword
-                }
-                className="space-y-3"
-              >
-                {forgotPasswordStep === 1 && (
-                  <>
+            <div className="w-full">
+              {!forgotPasswordScreen && !otpScreen && (
+                <form onSubmit={handleLoginSubmit} className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Email or Username"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                  />
+                  <div className="relative">
                     <input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
-                      required
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
                     />
-                    {/* Error message for forgot password email input */}
-                    {error && (
-                      <p className="text-red-500 text-center">{error}</p>
-                    )}
                     <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`w-full py-3 text-white rounded-full ${
-                        isLoading
-                          ? "bg-gray-500"
-                          : "bg-gradient-to-r from-blue-500 to-blue-700"
-                      }`}
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {isLoading ? "Requesting OTP..." : "Request OTP"}
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
-                  </>
-                )}
-                {forgotPasswordStep === 2 && (
-                  <>
-                    <p className="text-gray-600 text-center mb-2">
-                      Enter the 6-digit code sent to {forgotEmail}.
-                    </p>
-                    <div className="grid grid-cols-6 gap-2 justify-center">
-                      {forgotOtp.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          type="text"
-                          maxLength="1"
-                          value={digit}
-                          ref={forgotOtpRefs[idx]}
-                          onChange={(e) =>
-                            handleOtpChange(
-                              forgotOtp,
-                              setForgotOtp,
-                              idx,
-                              e.target.value,
-                              forgotOtpRefs,
-                              e
-                            )
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Backspace") {
-                              handleOtpChange(
-                                forgotOtp,
-                                setForgotOtp,
-                                idx,
-                                "",
-                                forgotOtpRefs,
-                                e
-                              );
-                            }
-                          }}
-                          className="w-14 h-14 border-2 text-2xl text-center rounded-lg border-gray-300 focus:outline-none focus:border-purple-500"
-                        />
-                      ))}
-                    </div>
-                    <div className="text-center mt-2">
-                      <button
-                        type="button"
-                        onClick={handleResend}
-                        disabled={!resendEnabled}
-                        className="text-sm text-blue-500 hover:underline disabled:text-gray-400 disabled:no-underline"
-                      >
-                        {resendEnabled
-                          ? "Resend OTP"
-                          : `Resend in 00:${timer < 10 ? `0${timer}` : timer}`}
-                      </button>
-                    </div>
-                    {error && (
-                      <p className="text-red-500 text-center">{error}</p>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`w-full py-3 text-white rounded-full ${
-                        isLoading
-                          ? "bg-gray-500"
-                          : "bg-gradient-to-r from-purple-600 to-blue-600"
-                      }`}
-                    >
-                      {isLoading ? "Verifying..." : "Verify OTP"}
-                    </button>
-                  </>
-                )}
-                {forgotPasswordStep === 3 && (
-                  <>
-                    <div className="relative">
-                      <input
-                        type={showNewPassword ? "text" : "password"}
-                        placeholder="New Password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showNewPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
-                    {error && (
-                      <p className="text-red-500 text-center">{error}</p>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`w-full py-3 text-white rounded-full ${
-                        isLoading
-                          ? "bg-gray-500"
-                          : "bg-gradient-to-r from-purple-600 to-blue-600"
-                      }`}
-                    >
-                      {isLoading ? "Updating..." : "Update Password"}
-                    </button>
-                  </>
-                )}
-              </form>
-            ) : (
-              // --- Original Login/OTP Form ---
-              <form
-                onSubmit={
-                  otpScreen && otpMethod ? handleOtpSubmit : handleLoginSubmit
-                }
-                className="space-y-3"
-              >
-                {!otpScreen ? (
-                  <>
-                    <input
-                      type="text"
-                      placeholder="Email or Username"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
-                    />
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {!otpMethod ? (
-                      <div className="flex flex-col gap-4">
-                        <p className="text-gray-600 text-center mb-2">
-                          How would you like to receive the OTP?
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => handleOtpMethodSelect("mobile")}
-                          className="w-full py-3 text-white rounded-full bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition duration-300 ease-in-out"
-                        >
-                          Send to Mobile
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOtpMethodSelect("email")}
-                          className="w-full py-3 text-white rounded-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 transition duration-300 ease-in-out"
-                        >
-                          Send to Email
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-gray-600 text-center mb-2">
-                          {otpMethod === "mobile"
-                            ? "Enter the 4-digit code sent to your mobile."
-                            : "Enter the 6-digit code sent to your email."}
-                        </p>
-                        {/* Corrected conditional rendering for OTP inputs to strictly show only one grid */}
-                        {otpMethod === "mobile" ? (
-                          <div className="grid grid-cols-4 gap-2 justify-center">
-                            {mobileOtp.map((digit, idx) => (
-                              <input
-                                key={idx}
-                                type="text"
-                                maxLength="1"
-                                value={digit}
-                                ref={mobileRefs[idx]}
-                                onChange={(e) =>
-                                  handleOtpChange(
-                                    mobileOtp,
-                                    setMobileOtp,
-                                    idx,
-                                    e.target.value,
-                                    mobileRefs,
-                                    e
-                                  )
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Backspace") {
-                                    handleOtpChange(
-                                      mobileOtp,
-                                      setMobileOtp,
-                                      idx,
-                                      "",
-                                      mobileRefs,
-                                      e
-                                    );
-                                  }
-                                }}
-                                className="w-14 h-14 border-2 text-2xl text-center rounded-lg border-gray-300 focus:outline-none focus:border-purple-500"
-                              />
-                            ))}
-                          </div>
-                        ) : otpMethod === "email" ? (
-                          <div className="grid grid-cols-6 gap-2 justify-center">
-                            {emailOtp.map((digit, idx) => (
-                              <input
-                                key={idx}
-                                type="text"
-                                maxLength="1"
-                                value={digit}
-                                ref={emailRefs[idx]}
-                                onChange={(e) =>
-                                  handleOtpChange(
-                                    emailOtp,
-                                    setEmailOtp,
-                                    idx,
-                                    e.target.value,
-                                    emailRefs,
-                                    e
-                                  )
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Backspace") {
-                                    handleOtpChange(
-                                      emailOtp,
-                                      setEmailOtp,
-                                      idx,
-                                      "",
-                                      emailRefs,
-                                      e
-                                    );
-                                  }
-                                }}
-                                className="w-14 h-14 border-2 text-2xl text-center rounded-lg border-gray-300 focus:outline-none focus:border-purple-500"
-                              />
-                            ))}
-                          </div>
-                        ) : null}{" "}
-                        {/* Ensures only one or none are rendered */}
-                        <div className="text-center mt-2">
-                          <button
-                            type="button"
-                            onClick={handleResend}
-                            disabled={!resendEnabled}
-                            className="text-sm text-blue-500 hover:underline disabled:text-gray-400 disabled:no-underline"
-                          >
-                            {resendEnabled
-                              ? "Resend OTP"
-                              : `Resend in 00:${
-                                  timer < 10 ? `0${timer}` : timer
-                                }`}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-                {error && <p className="text-red-500 text-center">{error}</p>}
-                {/* Login button is now only disabled by isLoading, allowing validation messages */}
-                {!otpScreen || otpMethod ? (
+                  </div>
+                  {error && <p className="text-red-500 text-center">{error}</p>}
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className={`w-full py-3 text-white rounded-full ${
+                    className={`w-full py-3 text-white rounded-full transition-all ${
                       isLoading
-                        ? "bg-gray-500"
-                        : "bg-gradient-to-r from-purple-600 to-blue-600"
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
                     }`}
                   >
-                    {isLoading
-                      ? "Loading..."
-                      : otpScreen
-                      ? "Verify OTP"
-                      : "Login"}
+                    {isLoading ? "Loading..." : "Login"}
                   </button>
-                ) : null}
-              </form>
-            )}
-            {/* Back button logic */}
-            {(otpScreen || forgotPasswordScreen) && (
-              <div className="text-center mt-2">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  className="text-sm text-blue-500 hover:underline"
-                >
-                  Back
-                </button>
-              </div>
-            )}
-            {/* Forgot Password Link - Only shown on initial login screen */}
-            {!otpScreen && !forgotPasswordScreen && (
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleForgotPasswordClick}
-                  className="text-sm text-blue-500 hover:underline mt-2"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
+                </form>
+              )}
+
+              {otpScreen && !otpMethod && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleOtpMethodSelect("mobile")}
+                    className="w-full py-3 text-white rounded-full bg-blue-500 hover:bg-blue-600 transition"
+                  >
+                    Verify with Mobile OTP
+                  </button>
+                  <button
+                    onClick={() => handleOtpMethodSelect("email")}
+                    className="w-full py-3 text-white rounded-full bg-purple-500 hover:bg-purple-600 transition"
+                  >
+                    Verify with Email OTP
+                  </button>
+                </div>
+              )}
+
+              {otpScreen && otpMethod === "mobile" && (
+                <form onSubmit={handleOtpSubmit} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Enter the 4-digit code sent to your mobile.
+                  </p>
+                  <div className="flex justify-center space-x-2">
+                    {mobileOtp.map((digit, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) =>
+                          handleOtpChange(
+                            mobileOtp,
+                            setMobileOtp,
+                            index,
+                            e.target.value,
+                            mobileRefs,
+                            e
+                          )
+                        }
+                        onKeyDown={(e) =>
+                          handleOtpChange(
+                            mobileOtp,
+                            setMobileOtp,
+                            index,
+                            e.target.value,
+                            mobileRefs,
+                            e
+                          )
+                        }
+                        ref={mobileRefs[index]}
+                        className="w-12 h-12 text-center text-2xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                      />
+                    ))}
+                  </div>
+                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  <button
+                    type="submit"
+                    className="w-full py-3 text-white rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg transition"
+                  >
+                    Verify Mobile OTP
+                  </button>
+                  <p className="text-center text-sm text-gray-500">
+                    Time remaining: {timer}s
+                    {resendEnabled ? (
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        className="ml-2 text-blue-500 hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    ) : null}
+                  </p>
+                </form>
+              )}
+
+              {otpScreen && otpMethod === "email" && (
+                <form onSubmit={handleOtpSubmit} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Enter the 6-digit code sent to your email.
+                  </p>
+                  <div className="flex justify-center space-x-2">
+                    {emailOtp.map((digit, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) =>
+                          handleOtpChange(
+                            emailOtp,
+                            setEmailOtp,
+                            index,
+                            e.target.value,
+                            emailRefs,
+                            e
+                          )
+                        }
+                        onKeyDown={(e) =>
+                          handleOtpChange(
+                            emailOtp,
+                            setEmailOtp,
+                            index,
+                            e.target.value,
+                            emailRefs,
+                            e
+                          )
+                        }
+                        ref={emailRefs[index]}
+                        className="w-10 h-10 text-center text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 transition"
+                      />
+                    ))}
+                  </div>
+                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  <button
+                    type="submit"
+                    className="w-full py-3 text-white rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg transition"
+                  >
+                    Verify Email OTP
+                  </button>
+                  <p className="text-center text-sm text-gray-500">
+                    Time remaining: {timer}s
+                    {resendEnabled ? (
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        className="ml-2 text-blue-500 hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    ) : null}
+                  </p>
+                </form>
+              )}
+
+              {forgotPasswordScreen && forgotPasswordStep === 1 && (
+                <form onSubmit={handleRequestOtp} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Enter your email to receive a password reset OTP.
+                  </p>
+                  <input
+                    type="email"
+                    placeholder="Your Email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                  />
+                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 text-white rounded-full transition-all ${
+                      isLoading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
+                    }`}
+                  >
+                    {isLoading ? "Sending OTP..." : "Request OTP"}
+                  </button>
+                </form>
+              )}
+
+              {forgotPasswordScreen && forgotPasswordStep === 2 && (
+                <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Enter the 6-digit OTP sent to {forgotEmail}.
+                  </p>
+                  <div className="flex justify-center space-x-2">
+                    {forgotOtp.map((digit, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) =>
+                          handleOtpChange(
+                            forgotOtp,
+                            setForgotOtp,
+                            index,
+                            e.target.value,
+                            forgotOtpRefs,
+                            e
+                          )
+                        }
+                        onKeyDown={(e) =>
+                          handleOtpChange(
+                            forgotOtp,
+                            setForgotOtp,
+                            index,
+                            e.target.value,
+                            forgotOtpRefs,
+                            e
+                          )
+                        }
+                        ref={forgotOtpRefs[index]}
+                        className="w-10 h-10 text-center text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 transition"
+                      />
+                    ))}
+                  </div>
+                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 text-white rounded-full transition-all ${
+                      isLoading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
+                    }`}
+                  >
+                    {isLoading ? "Verifying..." : "Verify OTP"}
+                  </button>
+                  <p className="text-center text-sm text-gray-500">
+                    Time remaining: {timer}s
+                    {resendEnabled ? (
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        className="ml-2 text-blue-500 hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    ) : null}
+                  </p>
+                </form>
+              )}
+
+              {forgotPasswordScreen && forgotPasswordStep === 3 && (
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Set your new password.
+                  </p>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 text-white rounded-full transition-all ${
+                      isLoading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
+                    }`}
+                  >
+                    {isLoading ? "Updating Password..." : "Update Password"}
+                  </button>
+                </form>
+              )}
+
+              {(otpScreen || forgotPasswordScreen) && (
+                <div className="text-center mt-2">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="text-sm text-blue-500 hover:underline"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
+              {!otpScreen && !forgotPasswordScreen && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleForgotPasswordClick}
+                    className="text-sm text-blue-500 hover:underline mt-2"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

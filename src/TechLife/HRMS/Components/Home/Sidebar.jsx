@@ -11,12 +11,13 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight, 
+  ChevronRight,
   UserCircle,
   BadgePlus,
   TicketCheck,
 } from "lucide-react";
 
+// Navigation items for the sidebar
 const navItems = [
   {
     name: "Dashboard",
@@ -30,20 +31,39 @@ const navItems = [
     path: "/attendance",
   },
   { name: "My Leaves", icon: <FileText size={18} />, path: "/leaves" },
-  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" }, 
+  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" },
   { name: "My Projects", icon: <Database size={18} />, path: "/projects" },
   { name: "My Tasks", icon: <ListChecks size={18} />, path: "/tasks" },
   { name: "Employees", icon: <BadgePlus size={18} />, path: "/employees" },
   { name: "Chat", icon: <MessageCircle size={18} />, path: "/chat" },
-  { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" }, 
+  { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
 ];
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
+  // This function handles the logout process
+  const handleLogoutClick = () => {
+    // Remove user-specific data from localStorage as requested
+    console.log("Clearing user data from localStorage...");
+    localStorage.removeItem("logedempid");
+    localStorage.removeItem("logedemprole");
+    localStorage.removeItem("emppayload");
+    // It's also best practice to remove the auth tokens
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    console.log("User data cleared.");
+
+    // Call the original onLogout function passed in props (e.g., to redirect the user)
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
   return (
     <>
+      {/* Overlay for mobile view when sidebar is open */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
@@ -51,6 +71,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         onClick={() => setSidebarOpen(false)}
       ></div>
 
+      {/* Sidebar container */}
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
@@ -60,6 +81,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
+          {/* Close button for mobile view */}
           <div className="lg:hidden">
             <button
               className="text-gray-600 hover:text-black"
@@ -68,6 +90,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               <X size={20} />
             </button>
           </div>
+          {/* Collapse/Expand button */}
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
@@ -82,6 +105,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           </div>
         </div>
 
+        {/* Navigation links */}
         <nav className="mt-4">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -104,9 +128,10 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
             );
           })}
 
+          {/* Logout button section */}
           <div className="mt-10">
             <button
-              onClick={onLogout}
+              onClick={handleLogoutClick} // Updated to call our new handler
               className={`flex items-center ${
                 collapsed ? "justify-center" : "justify-start"
               } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
