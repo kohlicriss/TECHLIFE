@@ -206,12 +206,12 @@ const TaskViewPage = () => {
     try {
       setLoading(true);
       const taskResponse = await axios.get(
-        `http://localhost:8091/api/task/${projectid}/${id}`
+        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
       );
       setCurrentTask(taskResponse.data);
 
       const historyResponse = await axios.get(
-        `http://localhost:8091/api/task/status/${projectid}/${id}`
+        `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
       );
       setUpdateHistory(historyResponse.data);
 
@@ -291,7 +291,7 @@ const TaskViewPage = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8091/api/history/${projectid}/${id}`,
+        `http://192.168.0.120:8090/api/history/${projectid}/${id}`,
         payload
       );
       console.log("Update History Response:", response.data);
@@ -323,7 +323,7 @@ const TaskViewPage = () => {
   const handleInlineSave = async () => {
     try {
       const response = await axios.put(
-        `http://localhost:8091/api/status/${projectid}/${id}`,
+        `http://192.168.0.120:8090/api/status/${projectid}/${id}`,
         editRowData
       );
       console.log("Inline Save Response:", response.data);

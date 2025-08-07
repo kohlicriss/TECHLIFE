@@ -45,7 +45,7 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
       </div>
 
       <div className="flex items-center space-x-5">
-        <Link to="/notifications" className="relative">
+        <Link to={`/notifications/${userData?.employeeId}`} className="relative">
           <Bell
             size={22}
             className={

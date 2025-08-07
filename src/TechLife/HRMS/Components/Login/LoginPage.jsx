@@ -31,8 +31,10 @@ const LoginPage = ({ onLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+   let employeeIdFromToken = null;
 
-  const { setUserData, setAccessToken, setRefreshToken } = useContext(Context);
+  const { userData,setUserData, setAccessToken, setRefreshToken } = useContext(Context);
+  // const empID=userData?.employeeId
 
   const forgotOtpRefs = [
     useRef(null),
@@ -101,6 +103,7 @@ const LoginPage = ({ onLogin }) => {
         try {
           const decodedPayload = jwtDecode(data.accessToken);
           setUserData(decodedPayload);
+           employeeIdFromToken = decodedPayload.employeeId;
           console.log("Decoded Access Token Payload:", decodedPayload);
           localStorage.setItem("logedempid", decodedPayload.employeeId);
           localStorage.setItem("logedemprole", decodedPayload.roles[0]);
@@ -110,6 +113,13 @@ const LoginPage = ({ onLogin }) => {
         }
 
         onLogin(data);
+        // Navigate to the user's specific dashboard upon successful login
+       if (employeeIdFromToken) {
+          navigate(`/dashboard/${employeeIdFromToken}`);
+        } else {
+          // Fallback if the employeeId is not found in the token
+          navigate("/dashboard");
+        }
       } else {
         setError(data.message || "Invalid credentials. Please try again.");
       }
@@ -280,7 +290,9 @@ const LoginPage = ({ onLogin }) => {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      console.log("Password updated successfully! Please login with your new password.");
+      console.log(
+        "Password updated successfully! Please login with your new password."
+      );
       setForgotPasswordScreen(false);
       setForgotEmail("");
       setForgotPasswordStep(1);
@@ -376,7 +388,9 @@ const LoginPage = ({ onLogin }) => {
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
-                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -445,7 +459,9 @@ const LoginPage = ({ onLogin }) => {
                       />
                     ))}
                   </div>
-                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
                   <button
                     type="submit"
                     className="w-full py-3 text-white rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg transition"
@@ -504,7 +520,9 @@ const LoginPage = ({ onLogin }) => {
                       />
                     ))}
                   </div>
-                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
                   <button
                     type="submit"
                     className="w-full py-3 text-white rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg transition"
@@ -538,7 +556,9 @@ const LoginPage = ({ onLogin }) => {
                     onChange={(e) => setForgotEmail(e.target.value)}
                     className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
                   />
-                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -590,7 +610,9 @@ const LoginPage = ({ onLogin }) => {
                       />
                     ))}
                   </div>
-                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -635,7 +657,11 @@ const LoginPage = ({ onLogin }) => {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      {showNewPassword ? (
+                        <EyeOff size={20} />
+                      ) : (
+                        <Eye size={20} />
+                      )}
                     </button>
                   </div>
                   <div className="relative">
@@ -648,13 +674,21 @@ const LoginPage = ({ onLogin }) => {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      {showConfirmPassword ? (
+                        <EyeOff size={20} />
+                      ) : (
+                        <Eye size={20} />
+                      )}
                     </button>
                   </div>
-                  {error && <p className="text-red-500 text-center">{error}</p>}
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
                   <button
                     type="submit"
                     disabled={isLoading}

@@ -227,6 +227,7 @@ const TasksPage = () => {
   const { employeeId } = useParams();
   const sai = localStorage.getItem("logedempid");
   const role = localStorage.getItem("logedemprole");
+  
   console.log(sai, role);
   const { userData, setUserData,accessToken } = useContext(Context);
 
@@ -261,9 +262,9 @@ const TasksPage = () => {
   const fetchTasks = useCallback(async (currentEmployeeId) => {
     try {
       setLoading(true);
-      const idToFetch = currentEmployeeId || "ACS00000002";
+      const idToFetch = currentEmployeeId || userData?.employeeId ;
       const response = await axios.get(
-        `http://localhost:8091/api/all/tasks/${idToFetch}`
+        `http://192.168.0.120:8090/api/all/tasks/${idToFetch}`
       );
       setTasks(response.data);
       console.log("Fetched tasks:", response.data);
@@ -401,13 +402,13 @@ const TasksPage = () => {
     try {
       if (isEditing) {
         const response = await axios.put(
-          `http://localhost:8091/api/${employeeId}/${projectId}/task`,
+          `http://192.168.0.120:8090/api/${employeeId}/${projectId}/task`,
           taskPayload
         );
         console.log("Task updated:", response.data);
       } else {
         const response = await axios.post(
-          `http://localhost:8091/api/${employeeId}/${projectId}/task`,
+          `http://192.168.0.120:8090/api/${employeeId}/${projectId}/task`,
           taskPayload
         );
         console.log("Task created:", response.data);

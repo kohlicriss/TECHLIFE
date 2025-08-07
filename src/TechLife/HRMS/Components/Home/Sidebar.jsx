@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -16,50 +16,55 @@ import {
   BadgePlus,
   TicketCheck,
 } from "lucide-react";
-
-// Navigation items for the sidebar
-const navItems = [
-  {
-    name: "Dashboard",
-    icon: <LayoutDashboard size={18} />,
-    path: "/dashboard",
-  },
-  { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
-  {
-    name: "Attendance",
-    icon: <CalendarCheck size={18} />,
-    path: "/attendance",
-  },
-  { name: "My Leaves", icon: <FileText size={18} />, path: "/leaves" },
-  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" },
-  { name: "My Projects", icon: <Database size={18} />, path: "/projects" },
-  { name: "My Tasks", icon: <ListChecks size={18} />, path: "/tasks" },
-  { name: "Employees", icon: <BadgePlus size={18} />, path: "/employees" },
-  { name: "Chat", icon: <MessageCircle size={18} />, path: "/chat" },
-  { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
-];
+import { Context } from "../HrmsContext";
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { userData } = useContext(Context);
+  const empId = userData?.employeeId; // Use optional chaining for safety
 
   // This function handles the logout process
   const handleLogoutClick = () => {
-    // Remove user-specific data from localStorage as requested
     console.log("Clearing user data from localStorage...");
     localStorage.removeItem("logedempid");
     localStorage.removeItem("logedemprole");
     localStorage.removeItem("emppayload");
-    // It's also best practice to remove the auth tokens
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     console.log("User data cleared.");
 
-    // Call the original onLogout function passed in props (e.g., to redirect the user)
     if (onLogout) {
       onLogout();
     }
   };
+
+  // Define navItems inside the component to access the dynamic empId
+  const navItems = [
+    {
+      name: "Dashboard",
+      icon: <LayoutDashboard size={18} />,
+      path:empId? `/dashboard/${empId}`:"/dashboard",
+    },
+    { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
+    {
+      name: "Attendance",
+      icon: <CalendarCheck size={18} />,
+      path:empId?`/attendance/${empId}`: "/attendance",
+    },
+    { name: "My Leaves", icon: <FileText size={18} />, path:empId?`/leaves/${empId}`: "/leaves" },
+    { name: "My Team", icon: <Users size={18} />, path:empId?`/my-teams/${empId}`: "/my-teams" },
+    { name: "My Projects", icon: <Database size={18} />, path:empId?`/projects/${empId}`: "/projects" },
+    // Use a template literal to dynamically insert empId
+    {
+      name: "My Tasks",
+      icon: <ListChecks size={18} />,
+      path: empId ? `/tasks/${empId}` : "/tasks", // Add a fallback path
+    },
+    { name: "Employees", icon: <BadgePlus size={18} />, path:empId?`/employees/${empId}`: "/employees" },
+    { name: "Chat", icon: <MessageCircle size={18} />, path:empId?`/chat/${empId}`:"/chat" },
+    { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
+  ];
 
   return (
     <>
@@ -108,6 +113,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         {/* Navigation links */}
         <nav className="mt-4">
           {navItems.map((item) => {
+            // Check for active link based on the pathname
             const isActive = location.pathname.startsWith(item.path);
             return (
               <Link
@@ -131,7 +137,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           {/* Logout button section */}
           <div className="mt-10">
             <button
-              onClick={handleLogoutClick} // Updated to call our new handler
+              onClick={handleLogoutClick}
               className={`flex items-center ${
                 collapsed ? "justify-center" : "justify-start"
               } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}

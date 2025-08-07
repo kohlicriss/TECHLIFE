@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Context } from "./HrmsContext";
 import { useContext } from "react";
-
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Navigate,
+    Outlet,
 } from "react-router-dom";
 import HrmsContext from "./HrmsContext";
 import NotificationSystem from "./Notifications/NotificationSystem";
@@ -24,106 +23,111 @@ import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
 import Dashboard from "./EmployeeDashboards/Dashboard";
 import TasksApp from "./Tasks/TaskApp";
 
+// Assuming ProtectedRoute is located in a directory above HrmsApp.js
+import ProtectedRoute from "../../../ProtectedRoute";
 
 const MainLayout = ({
-  isSidebarOpen,
-  setSidebarOpen,
-  currentUser,
-  onLogout,
+    isSidebarOpen,
+    setSidebarOpen,
+    currentUser,
+    onLogout,
 }) => (
-  <div className="flex flex-col h-screen bg-gray-50">
-    <Navbar
-      setSidebarOpen={setSidebarOpen}
-      currentUser={currentUser}
-      onLogout={onLogout}
-    />
-    <div className="flex flex-1 overflow-hidden pt-16">
-      <Sidebar
-        isSidebarOpen={isSidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        onLogout={onLogout}
-      />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+    <div className="flex flex-col h-screen bg-gray-50">
+        <Navbar
+            setSidebarOpen={setSidebarOpen}
+            currentUser={currentUser}
+            onLogout={onLogout}
+        />
+        <div className="flex flex-1 overflow-hidden pt-16">
+            <Sidebar
+                isSidebarOpen={isSidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                onLogout={onLogout}
+            />
+            <main className="flex-1 overflow-y-auto">
+                <Outlet />
+            </main>
+        </div>
     </div>
-  </div>
 );
 
 const HrmsApp = () => {
+    const fulldata = localStorage.getItem("emppayload");
+    console.log(fulldata);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("authToken")
-  );
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState({
+    const [isAuthenticated, setIsAuthenticated] = useState(
+        !!localStorage.getItem("authToken")
+    );
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [currentUser, setCurrentUser] = useState({
+        name: "Johnes",
+        designation: " Associate Software Engineer",
+        avatar: "https://i.pravatar.cc/100",
+    });
 
-    name: "Johnes",
-    designation: " Associate Software Engineer",
-    avatar: "https://i.pravatar.cc/100",
-  });
+    useEffect(() => {
+        const handleStorageChange = () => {
+            setIsAuthenticated(!!localStorage.getItem("authToken"));
+        };
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem("authToken"));
+        window.addEventListener("storage", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, []);
+
+    const handleLogin = () => {
+        localStorage.setItem("authToken", "true");
+        setIsAuthenticated(true);
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
+    const handleLogout = () => {
+        localStorage.removeItem("authToken");
+        setIsAuthenticated(false);
     };
-  }, []);
 
-  const handleLogin = () => {
-    localStorage.setItem("authToken", "true");
-    setIsAuthenticated(true);
-  };
+    const loggedInEmpId = localStorage.getItem("logedempid");
 
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    setIsAuthenticated(false);
-  };
-
-  return (
-    <HrmsContext>
-      <Router>
-        <Routes>
-          {!isAuthenticated ? (
-            <>
-              <Route
-                path="/login"
-                element={<LoginPage onLogin={handleLogin} />}
-              />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </>
-          ) : (
-            <Route
-              element={
-                <MainLayout
-                  isSidebarOpen={isSidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                  currentUser={currentUser}
-                  onLogout={handleLogout}
-                />
-              }
-            >
-              <Route path="/AdminDashBoard" element={<AdminDashBoard/>}/>
-              <Route path="/dashboard" element={<Dashboard />}> </Route>
-              <Route path="/notifications" element={<NotificationSystem />} />
-              <Route path="/chat/:userId" element={<ChatApp />} />
-              <Route path="/profile/*" element={<Profiles />} />
-              <Route path="/employees/*" element={<Employees />} />
-              <Route path="/my-teams" element={<AllTeams />} />
-              <Route path="/tickets" element={<Tickets />} />
-              <Route path="/tickets/employee" element={<EmployeeTicket />} />
-              <Route path="/tasks/*" element={<TasksApp />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          )}
-        </Routes>
-      </Router>
-    </HrmsContext>
-  );
+    return (
+        <HrmsContext>
+            <Router>
+                <Routes>
+                    {!isAuthenticated ? (
+                        <>
+                            <Route
+                                path="/login"
+                                element={<LoginPage onLogin={handleLogin} />}
+                            />
+                            <Route path="*" element={<Navigate to="/login" replace />} />
+                        </>
+                    ) : (
+                        <Route
+                            element={
+                                <MainLayout
+                                    isSidebarOpen={isSidebarOpen}
+                                    setSidebarOpen={setSidebarOpen}
+                                    currentUser={currentUser}
+                                    onLogout={handleLogout}
+                                />
+                            }
+                        >
+                            <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
+                            <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                            <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
+                            <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                            <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
+                            <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                            <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                            <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                            <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
+                            <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
+                            <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
+                        </Route>
+                    )}
+                </Routes>
+            </Router>
+        </HrmsContext>
+    );
 };
 
 export default HrmsApp;
