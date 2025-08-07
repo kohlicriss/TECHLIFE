@@ -259,25 +259,28 @@ const TasksPage = () => {
 
   const [taskData, setTaskData] = useState(initialFormState);
 
-  const fetchTasks = useCallback(async (currentEmployeeId) => {
-    try {
-      setLoading(true);
-      const idToFetch = currentEmployeeId || userData?.employeeId ;
-      const response = await axios.get(
-        `http://192.168.0.120:8090/api/all/tasks/${idToFetch}`
-      );
-      setTasks(response.data);
-      console.log("Fetched tasks:", response.data);
-      setError(null);
-    } catch (err) {
-      setError(
-        "Failed to fetch tasks. Please make sure the server is running."
-      );
-      console.error(err);
-    } finally {
-      setLoading(false);
+ const fetchTasks = useCallback(async (currentEmployeeId) => {
+  try {
+    setLoading(true);
+    const idToFetch = currentEmployeeId || "ACS00000003";
+    const response = await fetch(`http://192.168.0.120:8090/api/all/tasks/${idToFetch}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
-  }, []);
+
+    const data = await response.json();
+    setTasks(data);
+    console.log("Fetched tasks:", data);
+    setError(null);
+  } catch (err) {
+    setError("Failed to fetch tasks. Please make sure the server is running.");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
 
   useEffect(() => {
     fetchTasks(employeeId);

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,6 +17,7 @@ import {
   TicketCheck,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
+import axios from "axios";
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -25,6 +26,32 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const empId = userData?.employeeId; // Use optional chaining for safety
 
   // This function handles the logout process
+
+
+
+
+
+        useEffect(() => {
+  const apicall = async () => {
+    try {
+      const response = await fetch("http://192.168.0.120:8090/api/all/tasks/ACS00000003");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  apicall();
+}, []);
+
+
+
+
+
   const handleLogoutClick = () => {
     console.log("Clearing user data from localStorage...");
     localStorage.removeItem("logedempid");

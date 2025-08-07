@@ -25,6 +25,7 @@ import TasksApp from "./Tasks/TaskApp";
 
 // Assuming ProtectedRoute is located in a directory above HrmsApp.js
 import ProtectedRoute from "../../../ProtectedRoute";
+import axios from "axios";
 
 const MainLayout = ({
     isSidebarOpen,
@@ -64,6 +65,7 @@ const HrmsApp = () => {
         designation: " Associate Software Engineer",
         avatar: "https://i.pravatar.cc/100",
     });
+
 
     useEffect(() => {
         const handleStorageChange = () => {
