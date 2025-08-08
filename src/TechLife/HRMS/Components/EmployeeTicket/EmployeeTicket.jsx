@@ -35,7 +35,7 @@ export default function EmployeeTicket() {
   };
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/employee/tickets?employeeId=ACS123`)
+    fetch(`http://localhost:8080/api/employee/tickets?employeeId=emp456`)
       .then(res => res.json())
       .then(data => setTickets(data))
       .catch(err => console.error("Error fetching tickets:", err));
