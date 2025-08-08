@@ -36,8 +36,8 @@ const Dashboard = () => {
 
       {/* Sidebar - Positioned fixed to the right */}
       <div
-        className={`fixed top-0 right-0 h-full bg-gray-100 text-white p-6 transition-all duration-300 border-l border-gray-200 ease-in-out flex-shrink-0 flex flex-col z-20
-          ${isSidebarOpen ? 'w-52' : 'w-0 lg:w-24'} 
+        className={`fixed top-0 right-0 h-full bg-gray-100 text-white p-4 transition-all duration-300 border-l border-gray-200 ease-in-out flex-shrink-0 flex flex-col z-20
+          ${isSidebarOpen ? 'w-52' : 'w-0 lg:w-20'} 
           ${isSidebarOpen ? 'block' : 'hidden lg:flex'} `} /* Mobile: completely hide when closed; Desktop: show collapsed */
       >
         {/* Toggle Button for Desktop View (Always inside sidebar) */}
@@ -56,7 +56,7 @@ const Dashboard = () => {
           </button>
         </div>
 
-        <div className={`font-bold mb-8 text-center text-gray-800 ${isSidebarOpen ? 'text-2xl' : 'text-xl'}`}>
+        <div className={`font-bold mb-8 text-center text-gray-800 ${isSidebarOpen ? 'text-xl' : 'text-xl'}`}>
           {isSidebarOpen && <span>Menu</span>}
         </div>
 
