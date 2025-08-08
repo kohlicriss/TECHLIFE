@@ -176,7 +176,7 @@ const UpdateHistoryPopup = ({
 );
 
 const TaskViewPage = () => {
-  const { projectid, id } = useParams();
+  const { projectid, id,empID } = useParams();
   const navigate = useNavigate();
   // const [position, setPosition] = useState("user");
 
@@ -200,31 +200,38 @@ const TaskViewPage = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editRowData, setEditRowData] = useState(null);
+const fetchTaskData = async () => {
+  if (!projectid || !id) return;
+  try {
+    setLoading(true);
 
-  const fetchTaskData = async () => {
-    if (!projectid || !id) return;
-    try {
-      setLoading(true);
-      const taskResponse = await axios.get(
-        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
-      );
-      setCurrentTask(taskResponse.data);
+    // Task details fetch using fetch()
+    const taskResponse = await fetch(
+      `http://192.168.0.120:8090/api/task/${projectid}/${id}`
+    );
+    if (!taskResponse.ok) throw new Error("Task fetch failed");
+    const taskData = await taskResponse.json();
+    console.log(taskData)
+    setCurrentTask(taskData);
 
-      const historyResponse = await axios.get(
-        `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
-      );
-      setUpdateHistory(historyResponse.data);
+    // Update history fetch using fetch()
+    const historyResponse = await fetch(
+      `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+    );
+    if (!historyResponse.ok) throw new Error("History fetch failed");
+    const historyData = await historyResponse.json();
+    setUpdateHistory(historyData);
 
-      setError(null);
-    } catch (err) {
-      setError(
-        "Failed to fetch task details. Please check the task ID and ensure the server is running."
-      );
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(null);
+  } catch (err) {
+    setError(
+      "Failed to fetch task details"
+    );
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchTaskData();
