@@ -335,7 +335,7 @@ const Achievement = () => {
     const ringWidth = 10;
 
     return (
-        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col w-[500px] justify-between border border-blue-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out relative">
+        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] flex flex-col justify-between border border-blue-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out relative">
             <h2 className="chart-title text-2xl font-bold mb-4 text-center text-gray-800">Weekly Achievement Score</h2>
             <div className="absolute top-16 right-6 z-10">
                 <button
@@ -448,7 +448,7 @@ function Projects() {
     const combinedData = getCombinedData();
 
     return (
-        <div className="chart-panel bg-white rounded-xl shadow-lg p-6 h-[500px] w-[800px] flex flex-col justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
+        <div className=" bg-white rounded-xl shadow-lg p-6 h-[500px]  flex flex-col justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
             <h2 className="chart-title text-2xl font-bold mb-4 text-center text-gray-800">Project Survey</h2>
             <ResponsiveContainer width="100%" height="90%">
                 <AreaChart data={combinedData}>
