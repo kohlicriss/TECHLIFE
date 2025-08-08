@@ -92,6 +92,32 @@ const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
     );
 };
 
+// Skeleton component for loading messages
+const MessageSkeleton = () => (
+    <div className="space-y-4 p-4">
+        <div className="flex items-end gap-2 justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+            <div className="h-10 rounded-lg bg-gray-200 animate-pulse w-48"></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className="h-12 rounded-lg bg-blue-200 animate-pulse w-32"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+            <div className="h-16 rounded-lg bg-gray-200 animate-pulse w-64"></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className="h-10 rounded-lg bg-blue-200 animate-pulse w-40"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+        </div>
+         <div className="flex items-end gap-2 justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+            <div className="h-10 rounded-lg bg-gray-200 animate-pulse w-32"></div>
+        </div>
+    </div>
+);
+
 
 function ChatApplication({ currentUser, initialChats }) {
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
@@ -431,7 +457,6 @@ function ChatApplication({ currentUser, initialChats }) {
             isForwarded: false,
         };
         
-        // FIX GOES HERE: Update sidebar immediately on send
         updateLastMessage(selectedChat.chatId, optimisticMessage);
 
         setMessages(prev => ({
@@ -482,7 +507,6 @@ function ChatApplication({ currentUser, initialChats }) {
             fileSize: file.size,
         };
 
-        // FIX GOES HERE: Update sidebar immediately on send
         updateLastMessage(selectedChat.chatId, optimisticMessage);
 
         setMessages(prev => ({
@@ -548,7 +572,6 @@ function ChatApplication({ currentUser, initialChats }) {
                     type: 'audio', fileName: audioFile.name, fileSize: audioFile.size,
                 };
 
-                // FIX GOES HERE: Update sidebar immediately on send
                 updateLastMessage(selectedChat.chatId, optimisticMessage);
 
                 setMessages(prev => ({
@@ -619,7 +642,7 @@ function ChatApplication({ currentUser, initialChats }) {
         }
 
         try {
-            await updateMessage(messageId, updatedContent, selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE');
+            await updateMessage(messageId, updatedContent, selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE', currentUser.id);
             const updatedMessages = [...currentMessages];
             updatedMessages[editingInfo.index] = { ...updatedMessages[editingInfo.index], content: updatedContent, isEdited: true };
             setMessages(prev => ({ ...prev, [chatId]: updatedMessages }));
@@ -866,9 +889,7 @@ function ChatApplication({ currentUser, initialChats }) {
                             {/* Messages Area */}
                             <div ref={chatContainerRef} className="flex-grow p-4 overflow-y-auto bg-gray-50">
                                 {isMessagesLoading ? (
-                                    <div className="flex justify-center items-center h-full">
-                                        <p className="text-gray-500">Loading messages...</p>
-                                    </div>
+                                    <MessageSkeleton />
                                 ) : (
                                     <div className="space-y-2">
                                         {chatMessages.map((msg, index) => {
