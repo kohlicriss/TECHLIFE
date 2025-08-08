@@ -3,9 +3,11 @@ import { useState } from 'react';
 export default function IssueForm({ onSubmit }) {
   const [formData, setFormData] = useState({
     employeeId: '',
+    ticketId: '',
     title: '',
     priority: 'Low',
     description: '',
+    role:'',
   });
 
   const [showNotification, setShowNotification] = useState(false);
@@ -21,9 +23,11 @@ export default function IssueForm({ onSubmit }) {
     onSubmit(formData);
     setFormData({
       employeeId: '',
+      ticketId: '',
       title: '',
       priority: 'Low',
       description: '',
+      role:'',
     });
   };
 
@@ -40,6 +44,14 @@ export default function IssueForm({ onSubmit }) {
             name="employeeId"
             placeholder="Employee ID"
             value={formData.employeeId}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+           <input
+            name="ticketId"
+            placeholder="Ticket ID"
+            value={formData.ticketId}
             onChange={handleChange}
             required
             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -65,6 +77,20 @@ export default function IssueForm({ onSubmit }) {
           <option value="Medium">Medium</option>
           <option value="High">High</option>
         </select>
+        <select
+  name="role"
+  value={formData.role}
+  onChange={handleChange}
+  required
+  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+>
+  <option value="">Select Role</option>
+  <option value="ADMIN">Admin</option>
+  <option value="HR">HR</option>
+  <option value="MANAGER">Manager</option>
+  <option value="TEAM_LEAD">Team Lead</option>
+</select>
+
 
         <textarea
           name="description"

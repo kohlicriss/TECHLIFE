@@ -12,10 +12,13 @@ import TicketModal from "./TicketModal";
 import TicketStats from "./TicketStats";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { Ticket,  AlertTriangle } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+
 
 const PER_PAGE = 9;
 
-export default function TicketDashboard() {
+export default function TicketDashboard(ticket) {
   const [tickets, setTickets] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [dateFilter, setDateFilter] = useState("All");
@@ -25,51 +28,43 @@ export default function TicketDashboard() {
   const [replyText, setReplyText] = useState("");
   const [newStatus, setNewStatus] = useState("Pending");
   const [error, setError] = useState("");
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const wsRef = useRef(null);
-  const repliedBy = "admin"; // This can be dynamically set based on auth
+  const repliedBy = "admin"; // You can set dynamically
+  const navigate = useNavigate();
 
   const statusIcons = {
     all: <LayoutDashboard size={20} />,
-    pending: <Clock size={20} />,
-    unopened: <HelpCircle size={20} />,
-    opened: <MailOpen size={20} />,
+   
     resolved: <CheckCircle2 size={20} />,
   };
 
   const statusLabels = {
     all: "All",
-    pending: "Pending",
-    unopened: "Unopened",
-    opened: "Opened",
+   
     resolved: "Resolved",
+
   };
+  
+
 
   const statuses = Object.keys(statusIcons);
 
-  // Fetch all tickets from the backend
   const fetchTickets = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/admin/tickets");
-      if (!res.ok) throw new Error("Failed to fetch tickets");
-      const data = await res.json();
+  try {
+    const res = await fetch("http://192.168.0.7:8080/api/admin/tickets");
+    if (!res.ok) throw new Error("Failed to fetch");
+    const data = await res.json();
+    setTickets(data);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to load tickets");
+  }
+};
 
-      // Normalize ticket IDs
-      const normalized = data.map((t) => ({
-        ...t,
-        ticketId: t.ticketId || t.id,
-      }));
 
-      setTickets(normalized);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load tickets");
-    }
-  };
 
-  // WebSocket connection
   const connectWebSocket = () => {
-    const socket = new WebSocket("ws://localhost:8080/ws-ticket");
+    const socket = new WebSocket(`ws://192.168.0.7:8080/ws-ticket`);
     socket.onopen = () => console.log("✅ WebSocket connected");
 
     socket.onmessage = (event) => {
@@ -78,37 +73,42 @@ export default function TicketDashboard() {
     };
 
     socket.onclose = () => {
-      console.warn("⚠️ WebSocket disconnected. Reconnecting...");
+      console.warn("⚠️ WS disconnected. Reconnecting...");
       setTimeout(connectWebSocket, 3000);
     };
 
-    socket.onerror = (e) => console.error("❌ WebSocket error:", e);
+    socket.onerror = (e) => console.error("❌ WS error:", e);
 
     wsRef.current = socket;
   };
 
-  // Update state when receiving a new reply
-  const updateTicketReplies = (replyDTO) => {
-    setTickets((prev) =>
-      prev.map((ticket) =>
-        ticket.ticketId === replyDTO.ticketId
-          ? {
-              ...ticket,
-              replies: [...(ticket.replies || []), replyDTO],
-              status: replyDTO.status || ticket.status,
-            }
-          : ticket
-      )
-    );
+ const updateTicketReplies = (replyDTO) => {
+  console.log("Updating ticket with replyDTO:", replyDTO);
 
-    if (selectedTicket?.ticketId === replyDTO.ticketId) {
-      setSelectedTicket((prev) => ({
-        ...prev,
-        replies: [...(prev.replies || []), replyDTO],
-        status: replyDTO.status || prev.status,
-      }));
-    }
-  };
+  setTickets((prev) =>
+    prev.map((ticket) =>
+      ticket.id === replyDTO.ticketId
+        ? {
+            ...ticket,
+            replies: [...(ticket.replies || []), replyDTO],
+            status: replyDTO.status || ticket.status,
+          }
+        : ticket
+    )
+  );
+
+  if (selectedTicket?.id === replyDTO.ticketId) {
+    setSelectedTicket((prev) => ({
+      ...prev,
+      replies: [...(prev.replies || []), replyDTO],
+      status: replyDTO.status || prev.status,
+    }));
+  }
+};
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+const toggleSidebar = () => setIsSidebarCollapsed((prev) => !prev);
+
 
   const handleReply = async () => {
     if (!selectedTicket || !replyText.trim()) return;
@@ -122,7 +122,7 @@ export default function TicketDashboard() {
     };
 
     try {
-      await fetch(`http://localhost:8080/api/admin/tickets/${selectedTicket.ticketId}/reply`, {
+      await fetch(`http://192.168.0.7:8080/api/admin/tickets/${selectedTicket.ticketId}/reply`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -138,26 +138,24 @@ export default function TicketDashboard() {
     }
   };
 
-  const handleStatusChange = async (ticketId, statusToUpdate, employeeId) => {
-    if (!ticketId) return;
+  const handleStatusChange = async (statusToUpdate) => {
+  try {
+    await fetch(`http://192.168.0.7:8080/api/admin/tickets/${ticket.ticketId}/reply`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticketId: ticket.ticketId,
+        replyText: "",
+        repliedBy,
+        repliedAt: new Date().toISOString(),
+        status: statusToUpdate,
+      }),
+    });
+  } catch (err) {
+    console.error("Status change failed", err);
+  }
+};
 
-    try {
-      await fetch(`http://localhost:8080/api/admin/tickets/${ticketId}/reply`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ticketId,
-          replyText: "",
-          repliedBy,
-          repliedAt: new Date().toISOString(),
-          status: statusToUpdate,
-          employeeId,
-        }),
-      });
-    } catch (err) {
-      console.error("Status change failed", err);
-    }
-  };
 
   const applyDateFilter = (ticket) => {
     if (dateFilter === "All") return true;
@@ -184,12 +182,23 @@ export default function TicketDashboard() {
         t.status?.toLowerCase().includes(term)
       );
     });
+     const sidebarItems = [
+    { tab: "My Tickets", icon: Ticket },
+ 
+  ];
+   const handleTabClick = (tab) => {
+ 
+  if (tab === "My Tickets") {
+    navigate("/tickets/employee"); 
+  }
+    
+    
+};
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const pageTickets = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   const changePage = (n) => n >= 1 && n <= totalPages && setCurrentPage(n);
-  const toggleSidebar = () => setIsSidebarCollapsed((prev) => !prev);
 
   useEffect(() => {
     fetchTickets();
@@ -198,122 +207,140 @@ export default function TicketDashboard() {
   }, []);
 
   return (
-    <div className="flex flex-row min-h-screen bg-gray-50">
-      {/* Main content */}
-      <main className="flex-1 relative">
-        <div className="absolute inset-0 bg-[url('/your-image.jpg')] bg-cover bg-center">
-          <div className="w-full h-full bg-gradient-to-b from-white/20 via-white/80 to-white" />
-        </div>
+  <div className="flex flex-row min-h-screen bg-gray-50">
+    {/* Main Content Left */}
+    <main className="flex-1 relative">
+      <div className="absolute inset-0 bg-[url('/your-image.jpg')] bg-cover bg-center">
+        <div className="w-full h-full bg-gradient-to-b from-white/20 via-white/80 to-white"></div>
+      </div>
 
-        <div className="relative z-10 px-4">
-          <Filters
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-          />
+      <div className="relative z-10 px-4">
+        <Filters
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+        />
 
-          {error && <div className="bg-red-100 text-red-700 p-2 border rounded mb-4">{error}</div>}
-
-          <TicketStats tickets={tickets} />
-
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pageTickets.map((t) => (
-              <TicketCard
-                key={t.ticketId}
-                {...t}
-                onClick={() => {
-                  setSelectedTicket(t);
-                  setNewStatus(t.status);
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="flex flex-wrap justify-center items-center my-4 gap-2">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => changePage(currentPage - 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => changePage(i + 1)}
-                className={`px-3 py-1 border rounded ${
-                  currentPage === i + 1 ? "bg-blue-600 text-white" : ""
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => changePage(currentPage + 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-
-        {selectedTicket && (
-          <TicketModal
-            ticket={selectedTicket}
-            onClose={() => setSelectedTicket(null)}
-            onReply={handleReply}
-            replyText={replyText}
-            setReplyText={setReplyText}
-            newStatus={newStatus}
-            setNewStatus={setNewStatus}
-            onStatusChange={handleStatusChange}
-          />
+        {error && (
+          <div className="bg-red-100 text-red-700 p-2 border rounded mb-4">{error}</div>
         )}
-      </main>
 
-      {/* Sidebar */}
-      <aside
-        className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200 ${
-          isSidebarCollapsed ? "w-[60px]" : "w-[250px]"
-        } hidden sm:flex sm:sticky sm:top-0 h-screen`}
-      >
-        <div className="flex justify-start p-1.5 items-center">
-          <motion.button
-            onClick={toggleSidebar}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
-            transition={{ duration: 0.3 }}
-          >
-            {isSidebarCollapsed ? <FaArrowLeft size={14} /> : <FaArrowRight size={14} />}
-          </motion.button>
+        <TicketStats tickets={tickets} />
+
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {pageTickets.map((t) => (
+            <TicketCard
+              key={t.id}
+              {...t}
+              onClick={() => {
+                setSelectedTicket(t);
+                setNewStatus(t.status);
+              }}
+            />
+          ))}
         </div>
 
-        <nav className="flex-1 space-y-1.5 px-1.5">
-          {statuses.map((status) => (
-            <motion.button
-              key={status}
-              className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
-                ${
-                  filterStatus === status
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-700 hover:bg-gray-200"
-                }
-                ${isSidebarCollapsed ? "justify-center" : ""}`}
-              onClick={() => {
-                setFilterStatus(status);
-                setCurrentPage(1);
-              }}
-              whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+        <div className="flex flex-wrap justify-center items-center my-4 gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => changePage(currentPage - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => changePage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
+              }`}
             >
-              {statusIcons[status]}
-              {!isSidebarCollapsed && (
-                <span className="ml-2 capitalize">{statusLabels[status]}</span>
-              )}
-            </motion.button>
+              {i + 1}
+            </button>
           ))}
-        </nav>
-      </aside>
-    </div>
-  );
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => changePage(currentPage + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {selectedTicket && (
+        <TicketModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onReply={handleReply}
+          replyText={replyText}
+          setReplyText={setReplyText}
+          newStatus={newStatus}
+          setNewStatus={setNewStatus}
+          onStatusChange={handleStatusChange}
+        />
+      )}
+    </main>
+
+    {/* Sidebar on the Right */}
+    <aside
+  className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200 ${
+    isSidebarCollapsed ? "w-[60px]" : "w-[250px]"
+  } hidden sm:flex sm:sticky sm:top-0 h-screen`}
+>
+  {/* Collapse/Expand Button */}
+  <div className="flex justify-start p-1.5 items-center">
+    <motion.button
+      onClick={toggleSidebar}
+      className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
+      transition={{ duration: 0.3 }}
+    >
+      {isSidebarCollapsed ? <FaArrowRight size={14} /> : <FaArrowLeft size={14} />}
+    </motion.button>
+  </div>
+
+  {/* Navigation */}
+  <nav className="flex-1 space-y-1.5 px-1.5">
+    {/* Ticket Status Filters */}
+    {statuses.map((status) => (
+      <motion.button
+        key={status}
+        className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
+          ${filterStatus === status ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"}
+          ${isSidebarCollapsed ? "justify-center" : ""}`}
+        onClick={() => {
+          setFilterStatus(status);
+          setCurrentPage(1);
+        }}
+        whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+      >
+        {statusIcons[status]}
+        {!isSidebarCollapsed && (
+          <span className="ml-2 capitalize">{statusLabels[status]}</span>
+        )}
+      </motion.button>
+    ))}
+
+    {/* Static Sidebar Items */}
+    <hr className="my-3 border-gray-300" />
+
+    {sidebarItems.map(({ tab, icon: Icon }) => (
+      <motion.button
+        key={tab}
+        className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
+          ${isSidebarCollapsed ? "justify-center" : ""}`}
+        onClick={() => handleTabClick(tab)}
+        whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+      >
+        <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
+        {!isSidebarCollapsed && <span>{tab}</span>}
+      </motion.button>
+    ))}
+  </nav>
+</aside>
+
+  </div>
+);
 }

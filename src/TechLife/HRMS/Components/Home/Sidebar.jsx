@@ -35,7 +35,7 @@ const navItems = [
   { name: "My Tasks", icon: <ListChecks size={18} />, path: "/tasks" },
   { name: "Employees", icon: <BadgePlus size={18} />, path: "/employees" },
   { name: "Chat", icon: <MessageCircle size={18} />, path: "/chat" },
-  { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" }, 
+  { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets/employee" }, 
 ];
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {

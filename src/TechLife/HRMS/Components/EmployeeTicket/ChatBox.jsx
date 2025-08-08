@@ -10,23 +10,23 @@ export default function ChatBox({ userRole = 'employee', ticketId }) {
   // Fetch existing messages safely
   const fetchInitialMessages = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/${userRole}/tickets/${ticketId}/messages`);
+      const res = await fetch(`http://192.168.0.7:8080/api/${userRole}/tickets/${ticketId}/messages`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setMessages(data);
       } else {
         console.warn('⚠️ Unexpected data format:', data);
-        setMessages([]); // fallback to empty array
+        setMessages([]); 
       }
     } catch (err) {
       console.error('❌ Fetch error:', err);
-      setMessages([]); // fallback on error
+      setMessages([]); 
     }
   };
 
-  // WebSocket connection
+  
   const connectWebSocket = () => {
-    const ws = new WebSocket(`ws://localhost:8080/ws-ticket?ticketId=${ticketId}`);
+    const ws = new WebSocket(`ws://192.168.0.7:8080/ws-ticket?ticketId=${ticketId}`);
 
     ws.onopen = () => console.log("✅ WebSocket connected");
 
@@ -68,17 +68,17 @@ export default function ChatBox({ userRole = 'employee', ticketId }) {
   };
 
   try {
-    // Send to backend via REST API
-    await fetch(`http://localhost:8080/api/${userRole}/tickets/${ticketId}/messages`, {
+    
+    await fetch(`http://192.168.0.7:8080/api/${userRole}/tickets/${ticketId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(messagePayload),
     });
 
-    // 💡 Immediately update UI
+    
     setMessages((prev) => [...prev, messagePayload]);
 
-    // Send over WebSocket (optional)
+   
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(messagePayload));
       console.log('📤 Sent over WebSocket');

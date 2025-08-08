@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import IssueForm from '../EmployeeTicket/IssueForm'
 import ChatBox from '../EmployeeTicket/ChatBox';
 import TicketHistory from '../EmployeeTicket/TicketHistory';
+import { useNavigate } from "react-router-dom";
 
 
 export default function EmployeeTicket() {
@@ -20,29 +21,35 @@ export default function EmployeeTicket() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+  const navigate = useNavigate();
 
   const sidebarItems = [
-    { tab: "All", icon: Ticket },
-    { tab: "Resolved", icon: CheckCircle2 },
-    { tab: "Unresolved", icon: AlertTriangle },
+    { tab: "My Tickets", icon: Ticket },
+    { tab: "Assigned Tickets", icon: AlertTriangle },
   ];
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const handleTabClick = (tab) => {
-    setActiveTab(tab);
+  setActiveTab(tab);
+
+  if (tab === "Assigned Tickets") {
+    navigate("/tickets"); 
+  }
+    
     setStatusFilter(tab);
-  };
+};
+  
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/employee/tickets?employeeId=emp456`)
+    fetch(`http://192.168.0.7:8080/api/employee/tickets?employeeId=emp456`)
       .then(res => res.json())
       .then(data => setTickets(data))
       .catch(err => console.error("Error fetching tickets:", err));
   }, []);
 
   const handleFormSubmit = (data) => {
-    fetch('http://localhost:8080/api/employee/create', {
+    fetch('http://192.168.0.7:8080/api/employee/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -272,6 +279,7 @@ export default function EmployeeTicket() {
                 />
               </div>
             </div>
+            
           )}
 
         </main>
