@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.0.143:8082/api';
+const API_BASE_URL = 'http://192.168.0.244:8082/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -13,7 +13,7 @@ const apiClient = axios.create({
  * Fetches the initial list of chats (groups and private) for a user.
  * @param {string} employeeId - The ID of the current user.
  */
-export const getChatOverview = async (employeeId) => {
+export const getChatOverview = async (employeeId) => {  
   try {
     const response = await apiClient.get(`/overview/${employeeId}`);
     return response.data;

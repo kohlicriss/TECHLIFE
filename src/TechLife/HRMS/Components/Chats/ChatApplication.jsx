@@ -294,7 +294,7 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        const brokerURL = `ws://192.168.0.143:8082/ws?employeeId=${currentUser.id}`;
+        const brokerURL = `ws://192.168.0.244:8082/ws?employeeId=${currentUser.id}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -418,7 +418,7 @@ function ChatApplication({ currentUser, initialChats }) {
             sender: currentUser.id,
             content: messageObject.content,
             timestamp: new Date().toISOString(),
-            status: 'sending',
+            status: 'send',
             type: messageObject.type,
             fileName: messageObject.fileName || null,
             fileSize: messageObject.fileSize || null,
@@ -835,9 +835,9 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                             </div>
                                                                         )}
                                                                         {msg.type === 'image' ? (
-                                                                            <button onClick={() => setImageInView(msg.status === 'sending' ? msg.content : `http://192.168.0.143:8082/api/chat/file/${msg.content}`)}><img src={msg.status === 'sending' ? msg.content : `http://192.168.0.143:8082/api/chat/file/${msg.content}`} alt={msg.fileName || 'image'} className="rounded-md max-w-full" /></button>
+                                                                            <button onClick={() => setImageInView(msg.status === 'sending' ? msg.content : `http://192.168.0.244:8082/api/chat/file/${msg.content}`)}><img src={msg.status === 'sending' ? msg.content : `http://192.168.0.244:8082/api/chat/file/${msg.content}`} alt={msg.fileName || 'image'} className="rounded-md max-w-full" /></button>
                                                                         ) : msg.type === 'audio' ? (
-                                                                            <AudioPlayer src={msg.status === 'sending' ? msg.content : `http://192.168.0.143:8082/api/chat/file/${msg.content}`} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index]} onDownload={() => handleMediaDownload(index, `http://192.168.0.143:8082/api/chat/file/${msg.content}`, 'voice-message.wav')} />
+                                                                            <AudioPlayer src={msg.status === 'sending' ? msg.content : `http://192.168.0.244:8082/api/chat/file/${msg.content}`} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index]} onDownload={() => handleMediaDownload(index, `http://192.168.0.244:8082/api/chat/file/${msg.content}`, 'voice-message.wav')} />
                                                                         ) : msg.type === 'file' ? (
                                                                             <div className="flex items-center gap-3">
                                                                                 <FileIcon fileName={msg.fileName} type={msg.type} />
@@ -847,7 +847,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                                 </div>
                                                                                 {msg.status !== 'sending' && (
                                                                                     <a
-                                                                                        href={`http://192.168.0.143:8082/api/chat/file/${msg.content}`}
+                                                                                        href={`http://192.168.0.244:8082/api/chat/file/${msg.content}`}
                                                                                         download={msg.fileName}
                                                                                         className={`p-2 rounded-full ${isMyMessage ? 'text-blue-200 hover:bg-blue-700' : 'text-gray-500 hover:bg-gray-300'} cursor-pointer`}
                                                                                     >
@@ -991,8 +991,8 @@ function ChatApplication({ currentUser, initialChats }) {
                             {activeGroupInfoTab === 'Media' && (
                                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                                     {chatMessages.filter(msg => msg.type === 'image').map((msg, i) => (
-                                        <button key={i} onClick={() => setImageInView(`http://192.168.0.143:8082/api/chat/file/${msg.content}`)}>
-                                            <img src={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
+                                        <button key={i} onClick={() => setImageInView(`http://192.168.0.244:8082/api/chat/file/${msg.content}`)}>
+                                            <img src={`http://192.168.0.244:8082/api/chat/file/${msg.content}`} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
                                         </button>
                                     ))}
                                 </div>
@@ -1000,7 +1000,7 @@ function ChatApplication({ currentUser, initialChats }) {
                             {activeGroupInfoTab === 'Files' && (
                                 <div className="space-y-3">
                                     {chatMessages.filter(msg => msg.type === 'file').map((msg, i) => (
-                                        <a key={i} href={`http://192.168.0.143:8082/api/chat/file/${msg.content}`} download={msg.fileName} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100">
+                                        <a key={i} href={`http://192.168.0.244:8082/api/chat/file/${msg.content}`} download={msg.fileName} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100">
                                             <FileIcon fileName={msg.fileName} />
                                             <div className="min-w-0">
                                                 <p className="font-bold text-sm truncate text-gray-800">{msg.fileName}</p>
