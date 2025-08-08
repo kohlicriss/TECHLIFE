@@ -11,7 +11,7 @@ const TasksApp = () => {
       <Routes>
         <Route path='/' element={<TasksPage />} />
         
-        <Route path=':employeeId' element={<TasksPage />} />
+        {/* <Route path=':employeeId' element={<TasksPage />} /> */}
 
         <Route path='taskview/:projectid/:id' element={<TaskViewPage />} />
       </Routes>

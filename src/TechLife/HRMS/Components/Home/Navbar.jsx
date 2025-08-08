@@ -9,7 +9,7 @@ import { Context } from "../HrmsContext";
 const Navbar = ({ setSidebarOpen, currentUser }) => {
   const name = currentUser?.name || "Guest";
   const designation = currentUser?.designation || "Guest";
-  const { unreadCount } = useContext(Context);
+  const { unreadCount,userData } = useContext(Context);
 
   const location = useLocation();
   const isNotificationsActive = location.pathname === "/notifications";
@@ -30,8 +30,8 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
         </div>
 
         <div className="hidden md:flex flex-col ml-6">
-          <span className="text-sm font-medium text-gray-900">{name}</span>
-          <span className="text-xs text-gray-500">{designation}</span>
+          <span className="text-sm font-medium text-gray-900">{userData?.employeeId}</span>
+          <span className="text-xs text-gray-500">{userData?.roles[0]}</span>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
       </div>
 
       <div className="flex items-center space-x-5">
-        <Link to="/notifications" className="relative">
+        <Link to={`/notifications/${userData?.employeeId}`} className="relative">
           <Bell
             size={22}
             className={

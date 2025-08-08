@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -11,39 +11,91 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight, 
+  ChevronRight,
   UserCircle,
   BadgePlus,
   TicketCheck,
 } from "lucide-react";
-
-const navItems = [
-  {
-    name: "Dashboard",
-    icon: <LayoutDashboard size={18} />,
-    path: "/dashboard",
-  },
-  { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
-  {
-    name: "Attendance",
-    icon: <CalendarCheck size={18} />,
-    path: "/attendance",
-  },
-  { name: "My Leaves", icon: <FileText size={18} />, path: "/leaves" },
-  { name: "My Team", icon: <Users size={18} />, path: "/my-teams" }, 
-  { name: "My Projects", icon: <Database size={18} />, path: "/projects" },
-  { name: "My Tasks", icon: <ListChecks size={18} />, path: "/tasks" },
-  { name: "Employees", icon: <BadgePlus size={18} />, path: "/employees" },
-  { name: "Chat", icon: <MessageCircle size={18} />, path: "/chat" },
-  { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" }, 
-];
+import { Context } from "../HrmsContext";
+import axios from "axios";
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { userData } = useContext(Context);
+  const empId = userData?.employeeId; // Use optional chaining for safety
+
+  // This function handles the logout process
+
+
+
+
+
+        useEffect(() => {
+  const apicall = async () => {
+    try {
+      const response = await fetch("http://192.168.0.120:8090/api/all/tasks/ACS00000003");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  apicall();
+}, []);
+
+
+
+
+
+  const handleLogoutClick = () => {
+    console.log("Clearing user data from localStorage...");
+    localStorage.removeItem("logedempid");
+    localStorage.removeItem("logedemprole");
+    localStorage.removeItem("emppayload");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    console.log("User data cleared.");
+
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
+  // Define navItems inside the component to access the dynamic empId
+  const navItems = [
+    {
+      name: "Dashboard",
+      icon: <LayoutDashboard size={18} />,
+      path:empId? `/dashboard/${empId}`:"/dashboard",
+    },
+    { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
+    {
+      name: "Attendance",
+      icon: <CalendarCheck size={18} />,
+      path:empId?`/attendance/${empId}`: "/attendance",
+    },
+    { name: "My Leaves", icon: <FileText size={18} />, path:empId?`/leaves/${empId}`: "/leaves" },
+    { name: "My Team", icon: <Users size={18} />, path:empId?`/my-teams/${empId}`: "/my-teams" },
+    { name: "My Projects", icon: <Database size={18} />, path:empId?`/projects/${empId}`: "/projects" },
+    // Use a template literal to dynamically insert empId
+    {
+      name: "My Tasks",
+      icon: <ListChecks size={18} />,
+      path: empId ? `/tasks/${empId}` : "/tasks", // Add a fallback path
+    },
+    { name: "Employees", icon: <BadgePlus size={18} />, path:empId?`/employees/${empId}`: "/employees" },
+    { name: "Chat", icon: <MessageCircle size={18} />, path:empId?`/chat/${empId}`:"/chat" },
+    { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
+  ];
 
   return (
     <>
+      {/* Overlay for mobile view when sidebar is open */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
@@ -51,6 +103,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         onClick={() => setSidebarOpen(false)}
       ></div>
 
+      {/* Sidebar container */}
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
@@ -60,6 +113,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
+          {/* Close button for mobile view */}
           <div className="lg:hidden">
             <button
               className="text-gray-600 hover:text-black"
@@ -68,6 +122,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               <X size={20} />
             </button>
           </div>
+          {/* Collapse/Expand button */}
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
@@ -82,8 +137,10 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           </div>
         </div>
 
+        {/* Navigation links */}
         <nav className="mt-4">
           {navItems.map((item) => {
+            // Check for active link based on the pathname
             const isActive = location.pathname.startsWith(item.path);
             return (
               <Link
@@ -104,9 +161,10 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
             );
           })}
 
+          {/* Logout button section */}
           <div className="mt-10">
             <button
-              onClick={onLogout}
+              onClick={handleLogoutClick}
               className={`flex items-center ${
                 collapsed ? "justify-center" : "justify-start"
               } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
