@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Context } from "../HrmsContext";
+import { useContext } from "react";
 import {
   ChevronLeft,
   Edit,
@@ -149,9 +151,11 @@ const UpdateHistoryPopup = ({
               <div className="mt-2 text-sm text-gray-600">
                 <p className="font-semibold">Selected files:</p>
                 <ul className="list-disc list-inside pl-2">
-                  {Array.from(updateHistoryData.relatedFileLinks).map((file, index) => (
-                    <li key={index}>{file.name}</li>
-                  ))}
+                  {Array.from(updateHistoryData.relatedFileLinks).map(
+                    (file, index) => (
+                      <li key={index}>{file.name}</li>
+                    )
+                  )}
                 </ul>
               </div>
             )}
@@ -172,10 +176,13 @@ const UpdateHistoryPopup = ({
 );
 
 const TaskViewPage = () => {
-  const { projectid, id } = useParams();
+  const { projectid, id,empID } = useParams();
   const navigate = useNavigate();
-  const [position, setPosition] = useState("user");
+  // const [position, setPosition] = useState("user");
+
   const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);
+  const { userData, setUserData } = useContext(Context);
+  let position=userData?.roles[0]
   const [updateHistoryData, setUpdateHistoryData] = useState({
     changes: "",
     note: "",
@@ -193,32 +200,45 @@ const TaskViewPage = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editRowData, setEditRowData] = useState(null);
-  
-  const fetchTaskData = async () => {
-    if (!projectid || !id) return;
-    try {
-      setLoading(true);
-      const taskResponse = await axios.get(`http://localhost:8091/api/task/${projectid}/${id}`);
-      setCurrentTask(taskResponse.data);
-      
-      const historyResponse = await axios.get(`http://localhost:8091/api/task/status/${projectid}/${id}`);
-      setUpdateHistory(historyResponse.data);
+const fetchTaskData = async () => {
+  if (!projectid || !id) return;
+  try {
+    setLoading(true);
 
-      setError(null);
-    } catch (err) {
-      setError("Failed to fetch task details. Please check the task ID and ensure the server is running.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Task details fetch using fetch()
+    const taskResponse = await fetch(
+      `http://192.168.0.120:8090/api/task/${projectid}/${id}`
+    );
+    if (!taskResponse.ok) throw new Error("Task fetch failed");
+    const taskData = await taskResponse.json();
+    console.log(taskData)
+    setCurrentTask(taskData);
+
+    // Update history fetch using fetch()
+    const historyResponse = await fetch(
+      `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+    );
+    if (!historyResponse.ok) throw new Error("History fetch failed");
+    const historyData = await historyResponse.json();
+    setUpdateHistory(historyData);
+
+    setError(null);
+  } catch (err) {
+    setError(
+      "Failed to fetch task details"
+    );
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchTaskData();
   }, [projectid, id]);
 
   const getPriorityClass = (priority) => {
-    const upperPriority = priority ? priority.toUpperCase() : '';
+    const upperPriority = priority ? priority.toUpperCase() : "";
     switch (upperPriority) {
       case "HIGH":
         return "bg-red-100 text-red-800 border-red-200";
@@ -232,7 +252,7 @@ const TaskViewPage = () => {
   };
 
   const getStatusClass = (status) => {
-    const upperStatus = status ? status.toUpperCase().replace(" ", "_") : '';
+    const upperStatus = status ? status.toUpperCase().replace(" ", "_") : "";
     switch (upperStatus) {
       case "IN_PROGRESS":
         return "bg-purple-100 text-purple-800 border-purple-200";
@@ -254,7 +274,10 @@ const TaskViewPage = () => {
     const files = [...e.target.files];
     if (files.length > 5) {
       const limitedFiles = files.slice(0, 5);
-      setUpdateHistoryData((prev) => ({ ...prev, relatedFileLinks: limitedFiles }));
+      setUpdateHistoryData((prev) => ({
+        ...prev,
+        relatedFileLinks: limitedFiles,
+      }));
     } else {
       setUpdateHistoryData((prev) => ({ ...prev, relatedFileLinks: files }));
     }
@@ -264,12 +287,20 @@ const TaskViewPage = () => {
     e.preventDefault();
     const payload = {
       ...updateHistoryData,
-      relatedLinks: updateHistoryData.relatedLinks.split(',').map(link => link.trim()).filter(link => link),
-      relatedFileLinks: updateHistoryData.relatedFileLinks.map(file => file.name)
+      relatedLinks: updateHistoryData.relatedLinks
+        .split(",")
+        .map((link) => link.trim())
+        .filter((link) => link),
+      relatedFileLinks: updateHistoryData.relatedFileLinks.map(
+        (file) => file.name
+      ),
     };
 
     try {
-      const response = await axios.post(`http://localhost:8091/api/history/${projectid}/${id}`, payload);
+      const response = await axios.post(
+        `http://192.168.0.120:8090/api/history/${projectid}/${id}`,
+        payload
+      );
       console.log("Update History Response:", response.data);
       setShowUpdateHistoryPopup(false);
       setUpdateHistoryData({
@@ -298,18 +329,21 @@ const TaskViewPage = () => {
 
   const handleInlineSave = async () => {
     try {
-        const response = await axios.put(`http://localhost:8091/api/status/${projectid}/${id}`, editRowData);
-        console.log("Inline Save Response:", response.data);
-        handleInlineCancel();
-        fetchTaskData();
+      const response = await axios.put(
+        `http://192.168.0.120:8090/api/status/${projectid}/${id}`,
+        editRowData
+      );
+      console.log("Inline Save Response:", response.data);
+      handleInlineCancel();
+      fetchTaskData();
     } catch (error) {
-        console.error("Error updating status:", error);
+      console.error("Error updating status:", error);
     }
   };
 
   const handleInlineInputChange = (e) => {
     const { name, value } = e.target;
-    setEditRowData(prev => ({ ...prev, [name]: value }));
+    setEditRowData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmitTask = () => {
@@ -318,25 +352,25 @@ const TaskViewPage = () => {
     const updatedDateTime = now.toISOString();
 
     const updatedTask = {
-        ...currentTask,
-        status: "COMPLETED",
-        completedDate: completedDate,
-        completionNote: currentTask.completionNote || "Task marked as completed.",
+      ...currentTask,
+      status: "COMPLETED",
+      completedDate: completedDate,
+      completionNote: currentTask.completionNote || "Task marked as completed.",
     };
-     const newHistoryEntry = {
-        updatedBy: {
-            id: currentTask.assignedTo,
-            name: currentTask.assignedTo,
+    const newHistoryEntry = {
+      updatedBy: {
+        id: currentTask.assignedTo,
+        name: currentTask.assignedTo,
+      },
+      updatedDate: updatedDateTime,
+      changes: {
+        status: { from: currentTask.status, to: "COMPLETED" },
+        completedDate: {
+          from: currentTask.completedDate,
+          to: completedDate,
         },
-        updatedDate: updatedDateTime,
-        changes: {
-            status: { from: currentTask.status, to: "COMPLETED" },
-            completedDate: {
-                from: currentTask.completedDate,
-                to: completedDate,
-            },
-        },
-        note: "Task submitted and marked as completed.",
+      },
+      note: "Task submitted and marked as completed.",
     };
 
     setCurrentTask(updatedTask);
@@ -348,7 +382,9 @@ const TaskViewPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="text-xl font-semibold text-gray-600">Loading Task Details...</div>
+        <div className="text-xl font-semibold text-gray-600">
+          Loading Task Details...
+        </div>
       </div>
     );
   }
@@ -409,9 +445,7 @@ const TaskViewPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
                   <div className="flex items-center text-gray-700">
-                    <Info
-                      className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0"
-                    />
+                    <Info className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                     <span className="font-semibold mr-2">Priority:</span>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-bold ${getPriorityClass(
@@ -422,49 +456,39 @@ const TaskViewPage = () => {
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
-                    <Clock
-                      className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0"
-                    />
+                    <Clock className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                     <span className="font-semibold mr-2">Status:</span>
                     <span
-                        className={`px-3 py-1 rounded-full text-sm font-bold ${getStatusClass(
-                            currentTask.status
-                        )}`}
-                        >
-                        {currentTask.status}
+                      className={`px-3 py-1 rounded-full text-sm font-bold ${getStatusClass(
+                        currentTask.status
+                      )}`}
+                    >
+                      {currentTask.status}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
-                    <CalendarDays
-                      className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0"
-                    />
+                    <CalendarDays className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                     <span className="font-semibold mr-2">Due Date:</span>
                     <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
                       {currentTask.dueDate}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
-                    <CalendarDays
-                      className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0"
-                    />
+                    <CalendarDays className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                     <span className="font-semibold mr-2">Created On:</span>
                     <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
                       {currentTask.createdDate}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
-                    <User
-                      className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0"
-                    />
+                    <User className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                     <span className="font-semibold mr-2">Created By:</span>
                     <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
                       {currentTask.createdBy}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
-                    <User
-                      className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0"
-                    />
+                    <User className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                     <span className="font-semibold mr-2">Assigned To:</span>
                     <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
                       {currentTask.assignedTo}
@@ -472,20 +496,16 @@ const TaskViewPage = () => {
                   </div>
                   {currentTask.completedDate && (
                     <div className="flex items-center text-gray-700">
-                      <CheckCircle
-                        className="h-5 w-5 text-green-600 mr-2 flex-shrink-0"
-                      />
+                      <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
                       <span className="font-semibold mr-2">Completed On:</span>
                       <span className="text-sm">
                         {currentTask.completedDate}
                       </span>
                     </div>
                   )}
-                   {currentTask.rating && (
+                  {currentTask.rating && (
                     <div className="flex items-center text-gray-700">
-                      <Star
-                        className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0"
-                      />
+                      <Star className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" />
                       <span className="font-semibold mr-2">Rating:</span>
                       <span className="text-sm">{currentTask.rating} / 10</span>
                     </div>
@@ -498,17 +518,20 @@ const TaskViewPage = () => {
                   Description
                 </h4>
                 <div className="bg-white p-5 rounded-lg border border-gray-200 text-gray-700 leading-relaxed shadow-sm">
-                    {currentTask.description}
+                  {currentTask.description}
                 </div>
               </div>
 
               {currentTask.remark && (
-                 <div className="mb-8">
-                    <h4 className="text-xl font-semibold text-gray-800 mb-3">Remark</h4>
-                    <div className="bg-gray-100 p-5 rounded-lg border border-gray-200 text-gray-800 leading-relaxed shadow-sm">
-                        <MessageSquare className="inline-block h-4 w-4 mr-2 text-gray-500" /> {currentTask.remark}
-                    </div>
-                 </div>
+                <div className="mb-8">
+                  <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                    Remark
+                  </h4>
+                  <div className="bg-gray-100 p-5 rounded-lg border border-gray-200 text-gray-800 leading-relaxed shadow-sm">
+                    <MessageSquare className="inline-block h-4 w-4 mr-2 text-gray-500" />{" "}
+                    {currentTask.remark}
+                  </div>
+                </div>
               )}
 
               {currentTask.completionNote && (
@@ -522,7 +545,8 @@ const TaskViewPage = () => {
                 </div>
               )}
 
-              {(currentTask.relatedLinks && currentTask.relatedLinks.length > 0) ||
+              {(currentTask.relatedLinks &&
+                currentTask.relatedLinks.length > 0) ||
               (currentTask.attachedFileLinks &&
                 currentTask.attachedFileLinks.length > 0) ? (
                 <div className="mb-8">
@@ -581,209 +605,226 @@ const TaskViewPage = () => {
                 </div>
               ) : null}
             </div>
-            
+
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
-                <div className="mb-8">
-                    <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-xl font-semibold text-gray-800">
-                        Update History
-                    </h4>
-                    {position === "user" && (
-                        <button
-                        onClick={() => setShowUpdateHistoryPopup(true)}
-                        className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
-                        >
-                        Update History
-                        </button>
-                    )}
-                    </div>
-                    {updateHistory && updateHistory.length > 0 ? (
-                    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-xl font-semibold text-gray-800">
+                    Update History
+                  </h4>
+                  {position === "EMPLOYEE" && (
+                    <button
+                      onClick={() => setShowUpdateHistoryPopup(true)}
+                      className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
+                    >
+                      Update History
+                    </button>
+                  )}
+                </div>
+                {updateHistory && updateHistory.length > 0 ? (
+                  <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-white">
+                      <thead className="bg-white">
                         <tr>
-                            <th
+                          <th
                             scope="col"
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
+                          >
                             S.No
-                            </th>
-                            <th
+                          </th>
+                          <th
                             scope="col"
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
+                          >
                             Updated Date
-                            </th>
-                            <th
+                          </th>
+                          <th
                             scope="col"
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
+                          >
                             Changes
-                            </th>
-                            <th
+                          </th>
+                          <th
                             scope="col"
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
+                          >
                             Note
-                            </th>
-                            <th
+                          </th>
+                          <th
                             scope="col"
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
+                          >
                             Related Links
-                            </th>
-                            <th
+                          </th>
+                          <th
                             scope="col"
                             className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
+                          >
                             Related Files
-                            </th>
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Remarks
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Reviewed By
+                          </th>
+                          {position === "TEAM_LEAD" && (
                             <th
-                                scope="col"
-                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                              scope="col"
+                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                             >
-                                Remarks
+                              Actions
                             </th>
-                            <th
-                                scope="col"
-                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                                Reviewed By
-                            </th>
-                            {position === "admin" && (
-                            <th
-                                scope="col"
-                                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                                Actions
-                            </th>
-                            )}
+                          )}
                         </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
                         {updateHistory.map((history, index) => (
-                            <tr
+                          <tr
                             key={history.id}
                             className="hover:bg-gray-50 transition-colors duration-150"
-                            >
+                          >
                             <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                                {index + 1}
+                              {index + 1}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
-                                {new Date(
-                                history.updatedDate
-                                ).toLocaleString()}
+                              {new Date(history.updatedDate).toLocaleString()}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                                {history.changes}
+                              {history.changes}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
-                                {history.note || "-"}
+                              {history.note || "-"}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
-                                {history.relatedLinks &&
-                                history.relatedLinks.length > 0 ? (
+                              {history.relatedLinks &&
+                              history.relatedLinks.length > 0 ? (
                                 <ul className="list-disc list-inside space-y-0.5">
-                                    {history.relatedLinks.map((link, linkIndex) => (
-                                    <li
-                                        key={linkIndex}
-                                        className="break-words"
-                                    >
-                                        <a
-                                        href={link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:underline"
-                                        >
-                                        {link}
-                                        </a>
-                                    </li>
-                                    ))}
-                                </ul>
-                                ) : (
-                                "-"
-                                )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
-                                {history.relatedFileLinks &&
-                                history.relatedFileLinks.length > 0 ? (
-                                <ul className="list-disc list-inside space-y-0.5">
-                                    {history.relatedFileLinks.map(
+                                  {history.relatedLinks.map(
                                     (link, linkIndex) => (
-                                        <li
+                                      <li
                                         key={linkIndex}
                                         className="break-words"
-                                        >
+                                      >
                                         <a
-                                            href={link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-purple-600 hover:underline"
+                                          href={link}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline"
                                         >
-                                            <FileText className="inline-block h-3 w-3 mr-1" />
-                                            File {linkIndex + 1}
+                                          {link}
                                         </a>
-                                        </li>
+                                      </li>
                                     )
-                                    )}
+                                  )}
                                 </ul>
-                                ) : (
+                              ) : (
                                 "-"
-                                )}
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
+                              {history.relatedFileLinks &&
+                              history.relatedFileLinks.length > 0 ? (
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {history.relatedFileLinks.map(
+                                    (link, linkIndex) => (
+                                      <li
+                                        key={linkIndex}
+                                        className="break-words"
+                                      >
+                                        <a
+                                          href={link}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-purple-600 hover:underline"
+                                        >
+                                          <FileText className="inline-block h-3 w-3 mr-1" />
+                                          File {linkIndex + 1}
+                                        </a>
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              ) : (
+                                "-"
+                              )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
-                                {editingRowId === history.id ? (
-                                    <input
-                                        type="text"
-                                        name="remark"
-                                        value={editRowData.remark || ''}
-                                        onChange={handleInlineInputChange}
-                                        className="w-full p-1 border rounded"
-                                    />
-                                ) : (
-                                    history.remark || "-"
-                                )}
+                              {editingRowId === history.id ? (
+                                <input
+                                  type="text"
+                                  name="remark"
+                                  value={editRowData.remark || ""}
+                                  onChange={handleInlineInputChange}
+                                  className="w-full p-1 border rounded"
+                                />
+                              ) : (
+                                history.remark || "-"
+                              )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                                {editingRowId === history.id ? (
-                                    <input
-                                        type="text"
-                                        name="reviewedBy"
-                                        value={editRowData.reviewedBy || ''}
-                                        onChange={handleInlineInputChange}
-                                        className="w-full p-1 border rounded"
-                                    />
-                                ) : (
-                                    history.reviewedBy || "-"
-                                )}
+                              {editingRowId === history.id ? (
+                                <input
+                                  type="text"
+                                  name="reviewedBy"
+                                  value={editRowData.reviewedBy || ""}
+                                  onChange={handleInlineInputChange}
+                                  className="w-full p-1 border rounded"
+                                />
+                              ) : (
+                                history.reviewedBy || "-"
+                              )}
                             </td>
-                            {position === "admin" && (
-                                <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                                    {editingRowId === history.id ? (
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleInlineSave(history.id)} className="text-green-600 hover:text-green-800"><Save size={16}/></button>
-                                            <button onClick={handleInlineCancel} className="text-red-600 hover:text-red-800"><XCircle size={16}/></button>
-                                        </div>
-                                    ) : (
-                                        <button onClick={() => handleInlineEdit(history)} className="text-blue-600 hover:text-blue-800"><Edit size={16}/></button>
-                                    )}
-                                </td>
+                            {position ==="TEAM_LEAD"&& (
+                              <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
+                                {editingRowId === history.id ? (
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() =>
+                                        handleInlineSave(history.id)
+                                      }
+                                      className="text-green-600 hover:text-green-800"
+                                    >
+                                      <Save size={16} />
+                                    </button>
+                                    <button
+                                      onClick={handleInlineCancel}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <XCircle size={16} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleInlineEdit(history)}
+                                    className="text-blue-600 hover:text-blue-800"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                )}
+                              </td>
                             )}
-                            </tr>
+                          </tr>
                         ))}
-                        </tbody>
+                      </tbody>
                     </table>
-                    </div>
-                    ) : (
-                        <div className="text-center py-4 text-gray-500">
-                            No history recorded for this task yet.
-                        </div>
-                    )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No history recorded for this task yet.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {!isTaskCompleted && position === "admin" && (
+          {!isTaskCompleted && position ==="TEAM_LEAD"&& (
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <button
                 onClick={handleSubmitTask}
