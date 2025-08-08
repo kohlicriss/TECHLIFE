@@ -39,14 +39,17 @@ export const getMessages = async (employeeId, chatId) => {
 };
 
 /**
- * Updates an existing message.
+ * BUG FIX: Updates an existing message.
+ * Now accepts 'chatType' and sends it in the request body to prevent backend error.
  * @param {number} messageId - The ID of the message to update.
  * @param {string} newContent - The new text content for the message.
+ * @param {string} chatType - The type of chat ('PRIVATE' or 'TEAM').
  */
-export const updateMessage = async (messageId, newContent) => {
+export const updateMessage = async (messageId, newContent, chatType) => {
   try {
     const requestBody = {
       content: newContent,
+      type: chatType, // This was the missing piece causing the 500 error.
     };
     const response = await apiClient.put(`/chat/update/${messageId}`, requestBody);
     return response.data;

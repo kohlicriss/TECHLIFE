@@ -216,7 +216,6 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        // For file uploads, backend might send a message with null content first. Ignore it.
         if (receivedMessage.fileName && !receivedMessage.content) {
             return;
         }
@@ -254,7 +253,8 @@ function ChatApplication({ currentUser, initialChats }) {
             } else if (isIncoming) {
                 let messageType = 'text';
                 if (receivedMessage.fileName) {
-                    messageType = receivedMessage.fileType?.startsWith('image/') ? 'image' : 'file';
+                    messageType = receivedMessage.fileType?.startsWith('image/') ? 'image' :
+                                  receivedMessage.fileType?.startsWith('audio/') ? 'audio' : 'file';
                 } else if (receivedMessage.kind) {
                     messageType = receivedMessage.kind === 'send' ? 'text' : receivedMessage.kind;
                 }
@@ -368,10 +368,14 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
         const destination = `/app/presence/open/${targetChat.chatId}`;
-        stompClient.current.publish({ destination, body: "{}" });
+        const payload = {
+            userId: currentUser.id,
+            type: targetChat.type === 'group' ? 'TEAM' : 'PRIVATE'
+        };
+        stompClient.current.publish({ destination, body: JSON.stringify(payload) });
         setSelectedChat(targetChat);
         setIsChatOpen(true);
-    }, []);
+    }, [currentUser.id]);
 
     const closeChat = useCallback(() => {
         if (!selectedChat || !stompClient.current?.active) return;
@@ -418,7 +422,7 @@ function ChatApplication({ currentUser, initialChats }) {
             sender: currentUser.id,
             content: messageObject.content,
             timestamp: new Date().toISOString(),
-            status: 'send',
+            status: 'sent',
             type: messageObject.type,
             fileName: messageObject.fileName || null,
             fileSize: messageObject.fileSize || null,
@@ -426,6 +430,10 @@ function ChatApplication({ currentUser, initialChats }) {
             replyTo: replyingTo,
             isForwarded: false,
         };
+        
+        // FIX GOES HERE: Update sidebar immediately on send
+        updateLastMessage(selectedChat.chatId, optimisticMessage);
+
         setMessages(prev => ({
             ...prev,
             [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
@@ -468,11 +476,15 @@ function ChatApplication({ currentUser, initialChats }) {
             sender: currentUser.id,
             content: URL.createObjectURL(file),
             timestamp: new Date().toISOString(),
-            status: 'sending',
+            status: 'sent',
             type: file.type.startsWith('image/') ? 'image' : 'file',
             fileName: file.name,
             fileSize: file.size,
         };
+
+        // FIX GOES HERE: Update sidebar immediately on send
+        updateLastMessage(selectedChat.chatId, optimisticMessage);
+
         setMessages(prev => ({
             ...prev,
             [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
@@ -482,6 +494,7 @@ function ChatApplication({ currentUser, initialChats }) {
         formData.append('file', file);
         formData.append('sender', currentUser.id);
         formData.append('client_id', clientId);
+        formData.append('fileType', file.type);
 
         if (selectedChat.type === 'group') {
             formData.append('groupId', selectedChat.chatId);
@@ -506,8 +519,80 @@ function ChatApplication({ currentUser, initialChats }) {
     };
 
     const handleMicButtonClick = () => { if (isRecording) stopRecording(); else startRecording(); };
-    const startRecording = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); setIsRecording(true); audioChunksRef.current = []; mediaRecorderRef.current = new MediaRecorder(stream); mediaRecorderRef.current.ondataavailable = (event) => audioChunksRef.current.push(event.data); mediaRecorderRef.current.onstop = () => { const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' }); const audioUrl = URL.createObjectURL(audioBlob); addAndSendMessage({ type: 'audio', content: audioUrl, fileName: `voice-message-${Date.now()}.wav` }); stream.getTracks().forEach(track => track.stop()); }; mediaRecorderRef.current.start(); } catch (error) { console.error("Mic error:", error); } };
-    const stopRecording = () => { if (mediaRecorderRef.current) { mediaRecorderRef.current.stop(); setIsRecording(false); } };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setIsRecording(true);
+            audioChunksRef.current = [];
+            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                audioChunksRef.current.push(event.data);
+            };
+            
+            mediaRecorderRef.current.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
+                
+                stream.getTracks().forEach(track => track.stop());
+
+                if (!selectedChat) return;
+
+                const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+                const optimisticMessage = {
+                    id: clientId, messageId: clientId, sender: currentUser.id,
+                    content: URL.createObjectURL(audioFile),
+                    timestamp: new Date().toISOString(), 
+                    status: 'sent',
+                    type: 'audio', fileName: audioFile.name, fileSize: audioFile.size,
+                };
+
+                // FIX GOES HERE: Update sidebar immediately on send
+                updateLastMessage(selectedChat.chatId, optimisticMessage);
+
+                setMessages(prev => ({
+                    ...prev,
+                    [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
+                }));
+
+                const formData = new FormData();
+                formData.append('file', audioFile);
+                formData.append('sender', currentUser.id);
+                formData.append('client_id', clientId);
+                formData.append('fileType', audioFile.type);
+
+                if (selectedChat.type === 'group') {
+                    formData.append('groupId', selectedChat.chatId);
+                    formData.append('type', 'TEAM');
+                } else {
+                    formData.append('receiver', selectedChat.chatId);
+                    formData.append('type', 'PRIVATE');
+                }
+
+                uploadFile(formData).catch(error => {
+                    console.error("Voice message upload failed:", error);
+                    setMessages(prev => {
+                        const chatMessages = prev[selectedChat.chatId] || [];
+                        const newMessages = chatMessages.map(m => m.id === clientId ? { ...m, status: 'failed' } : m);
+                        return { ...prev, [selectedChat.chatId]: newMessages };
+                    });
+                });
+            };
+            
+            mediaRecorderRef.current.start();
+        } catch (error) {
+            console.error("Mic error:", error);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
+
     const handleClearChat = () => {
         if (!selectedChat) return;
         setMessages(prev => ({ ...prev, [selectedChat.chatId]: [] }));
@@ -534,7 +619,7 @@ function ChatApplication({ currentUser, initialChats }) {
         }
 
         try {
-            await updateMessage(messageId, updatedContent);
+            await updateMessage(messageId, updatedContent, selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE');
             const updatedMessages = [...currentMessages];
             updatedMessages[editingInfo.index] = { ...updatedMessages[editingInfo.index], content: updatedContent, isEdited: true };
             setMessages(prev => ({ ...prev, [chatId]: updatedMessages }));
@@ -553,7 +638,7 @@ function ChatApplication({ currentUser, initialChats }) {
         const messageToDelete = currentMessages[contextMenu.index];
         const messageId = messageToDelete?.messageId;
 
-        if (!messageId) {
+        if (!messageId || messageToDelete.status === 'sending' || messageToDelete.status === 'failed') {
             setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
             return;
         }
@@ -923,13 +1008,18 @@ function ChatApplication({ currentUser, initialChats }) {
                                 <li onClick={handleReply} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaReply /> Reply</li>
                                 <li onClick={handlePin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaThumbtack /> Pin</li>
                                 <li onClick={handleForward} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaShare /> Forward</li>
-                                {contextMenu.message.sender === currentUser?.id && contextMenu.message.type === 'text' && (new Date() - new Date(contextMenu.message.timestamp) < 15 * 60 * 1000) && (
-                                    <li onClick={handleEdit} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaEdit /> Edit</li>
-                                )}
-                                <hr className="my-1" />
-                                <li onClick={() => handleDelete(false)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for me</li>
-                                {contextMenu.message.sender === currentUser?.id && (
-                                    <li onClick={() => handleDelete(true)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for everyone</li>
+                                
+                                {contextMenu.message.status !== 'sending' && contextMenu.message.status !== 'failed' && (
+                                    <>
+                                        {contextMenu.message.sender === currentUser?.id && contextMenu.message.type === 'text' && (new Date() - new Date(contextMenu.message.timestamp) < 15 * 60 * 1000) && (
+                                            <li onClick={handleEdit} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaEdit /> Edit</li>
+                                        )}
+                                        <hr className="my-1" />
+                                        <li onClick={() => handleDelete(false)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for me</li>
+                                        {contextMenu.message.sender === currentUser?.id && (
+                                            <li onClick={() => handleDelete(true)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for everyone</li>
+                                        )}
+                                    </>
                                 )}
                             </>
                         )}
