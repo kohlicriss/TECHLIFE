@@ -6,6 +6,14 @@ import { Context } from "../HrmsContext";
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Note: For authenticated API calls, it's recommended to use the Axios instance
+// we previously discussed instead of the native fetch API.
+
+const MAX_ATTEMPTS_PHASE1 = 5;
+const MAX_ATTEMPTS_PHASE2 = 7; // 5 + 2 additional attempts
+const LOCKOUT_DURATION_PHASE1 = 60; // 1 minute
+const LOCKOUT_DURATION_PHASE2 = 300; // 5 minutes
+
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
 
@@ -31,7 +39,12 @@ const LoginPage = ({ onLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-   let employeeIdFromToken = null;
+  let employeeIdFromToken = null;
+
+  // New state variables for the lockout feature
+  const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [isLockedOut, setIsLockedOut] = useState(false);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   const { userData,setUserData, setAccessToken, setRefreshToken } = useContext(Context);
   // const empID=userData?.employeeId
@@ -70,13 +83,36 @@ const LoginPage = ({ onLogin }) => {
     return () => clearInterval(interval);
   }, [timer, otpScreen, otpMethod, forgotPasswordScreen, forgotPasswordStep]);
 
+  // New useEffect to handle the lockout timer
+  useEffect(() => {
+    let timerId;
+    if (isLockedOut && lockoutTimer > 0) {
+      timerId = setInterval(() => {
+        setLockoutTimer((prevTimer) => prevTimer - 1);
+      }, 1000);
+    } else if (lockoutTimer === 0 && isLockedOut) {
+      setIsLockedOut(false);
+      // Don't reset attempts here, as the user gets 2 more tries
+      // after the first lockout
+      setError("You can now try logging in again.");
+    }
+    return () => clearInterval(timerId);
+  }, [isLockedOut, lockoutTimer]);
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    if (!isLockedOut) {
+      setError("");
+    }
     setIsLoading(true);
 
     if (!name.trim() || !password.trim()) {
       setError("Please enter both username and password.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (isLockedOut) {
       setIsLoading(false);
       return;
     }
@@ -103,7 +139,7 @@ const LoginPage = ({ onLogin }) => {
         try {
           const decodedPayload = jwtDecode(data.accessToken);
           setUserData(decodedPayload);
-           employeeIdFromToken = decodedPayload.employeeId;
+          employeeIdFromToken = decodedPayload.employeeId;
           console.log("Decoded Access Token Payload:", decodedPayload);
           localStorage.setItem("logedempid", decodedPayload.employeeId);
           localStorage.setItem("logedemprole", decodedPayload.roles[0]);
@@ -112,16 +148,32 @@ const LoginPage = ({ onLogin }) => {
           console.error("Failed to decode access token:", decodeError);
         }
 
+        setWrongAttempts(0); // Reset on success
         onLogin(data);
-        // Navigate to the user's specific dashboard upon successful login
-       if (employeeIdFromToken) {
+        if (employeeIdFromToken) {
           navigate(`/dashboard/${employeeIdFromToken}`);
         } else {
-          // Fallback if the employeeId is not found in the token
           navigate("/dashboard");
         }
       } else {
-        setError(data.message || "Invalid credentials. Please try again.");
+        const newAttempts = wrongAttempts + 1;
+        setWrongAttempts(newAttempts);
+
+        if (newAttempts > MAX_ATTEMPTS_PHASE2) {
+            // Second lockout (5 minutes)
+            setIsLockedOut(true);
+            setLockoutTimer(LOCKOUT_DURATION_PHASE2);
+            setError(`Too many failed attempts. Please try again in 5 minutes.`);
+        } else if (newAttempts >= MAX_ATTEMPTS_PHASE1) {
+            // First lockout (1 minute)
+            setIsLockedOut(true);
+            setLockoutTimer(LOCKOUT_DURATION_PHASE1);
+            setError(`Too many failed attempts. Please try again in 60 seconds.`);
+        } else {
+            // Error message with remaining attempts
+            const attemptsLeft = MAX_ATTEMPTS_PHASE1 - newAttempts;
+            setError(`Invalid credentials. You have ${attemptsLeft} attempts left.`);
+        }
       }
     } catch (error) {
       console.error("Login API call failed:", error);
@@ -370,6 +422,7 @@ const LoginPage = ({ onLogin }) => {
                     placeholder="Email or Username"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    disabled={isLockedOut} // Disable input when locked out
                     className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
                   />
                   <div className="relative">
@@ -378,24 +431,31 @@ const LoginPage = ({ onLogin }) => {
                       placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLockedOut} // Disable input when locked out
                       className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      disabled={isLockedOut} // Disable button when locked out
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
-                  {error && (
-                    <p className="text-red-500 text-center">{error}</p>
+                  {/* Conditional rendering for error messages */}
+                  {isLockedOut ? (
+                    <p className="text-red-500 text-center">
+                      Too many failed attempts. Please try again in {lockoutTimer} seconds.
+                    </p>
+                  ) : (
+                    error && <p className="text-red-500 text-center">{error}</p>
                   )}
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || isLockedOut} // Disable button when loading or locked out
                     className={`w-full py-3 text-white rounded-full transition-all ${
-                      isLoading
+                      isLoading || isLockedOut
                         ? "bg-gray-500 cursor-not-allowed"
                         : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
                     }`}

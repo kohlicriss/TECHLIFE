@@ -1,19 +1,58 @@
-import React from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { FiMenu, FiSearch } from "react-icons/fi";
 import { Bell } from "lucide-react";
-import logo from "../assets/anasol-logo.png";
-import { Link, useLocation } from "react-router-dom"; 
-import { useContext } from "react";
+import logo from "../assets/anasol-logo.png"; // Using the imported logo
+import { Link, useLocation } from "react-router-dom";
 import { Context } from "../HrmsContext";
 
+// A simple skeleton loader component for the Navbar
+const NavbarSkeleton = () => (
+  <header className="bg-white px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16 animate-pulse">
+    <div className="flex items-center space-x-4">
+      <div className="h-8 w-8 bg-gray-300 rounded-full md:hidden"></div>
+      <div className="flex items-center space-x-2">
+        <div className="h-8 w-8 bg-gray-300 rounded"></div>
+        <div className="h-6 w-24 bg-gray-300 rounded"></div>
+      </div>
+      <div className="hidden md:flex flex-col ml-6 space-y-1">
+        <div className="h-4 w-20 bg-gray-300 rounded"></div>
+        <div className="h-3 w-16 bg-gray-300 rounded"></div>
+      </div>
+    </div>
+    <div className="hidden md:flex relative w-[400px]">
+      <div className="w-full h-9 bg-gray-300 rounded-md"></div>
+    </div>
+    <div className="flex items-center space-x-5">
+      <div className="h-6 w-6 bg-gray-300 rounded-full"></div>
+      <div className="h-9 w-9 bg-gray-300 rounded-full"></div>
+    </div>
+  </header>
+);
+
 const Navbar = ({ setSidebarOpen, currentUser }) => {
-  const name = currentUser?.name || "Guest";
-  const designation = currentUser?.designation || "Guest";
-  const { unreadCount,userData } = useContext(Context);
-
+  const [isLoading, setIsLoading] = useState(true);
+  const { unreadCount, userData } = useContext(Context);
   const location = useLocation();
-  const isNotificationsActive = location.pathname === "/notifications";
 
+  useEffect(() => {
+    // Set a timeout to simulate a loading delay of 1 second
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    // Cleanup the timer if the component unmounts
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Use startsWith for a more robust active state check
+  const isNotificationsActive = location.pathname.startsWith(`/notifications/${userData?.employeeId}`);
+
+  // If isLoading is true, show the skeleton component
+  if (isLoading) {
+    return <NavbarSkeleton />;
+  }
+
+  // If isLoading is false, render the actual Navbar
   return (
     <header className="bg-white px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16">
       <div className="flex items-center space-x-4">
@@ -25,13 +64,14 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
         </button>
 
         <div className="flex items-center space-x-2">
+          {/* Using the imported logo */}
           <img src={logo} alt="Logo" className="h-8 w-auto" />
           <h1 className="text-xl font-bold text-blue-600">Anasol</h1>
         </div>
 
         <div className="hidden md:flex flex-col ml-6">
           <span className="text-sm font-medium text-gray-900">{userData?.employeeId}</span>
-          <span className="text-xs text-gray-500">{userData?.roles[0]}</span>
+          <span className="text-xs text-gray-500">{userData?.roles?.[0]}</span>
         </div>
       </div>
 
@@ -50,8 +90,8 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
             size={22}
             className={
               isNotificationsActive
-                ? "text-blue-600 fill-blue-100" 
-                : "text-gray-600 hover:text-black" 
+                ? "text-blue-600 fill-blue-100"
+                : "text-gray-600 hover:text-black"
             }
           />
           {unreadCount > 0 && (
