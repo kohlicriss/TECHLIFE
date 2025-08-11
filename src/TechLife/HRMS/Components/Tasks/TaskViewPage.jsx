@@ -28,7 +28,7 @@ const UpdateHistoryPopup = ({
   handleUpdateHistoryFileChange,
   position,
 }) => (
-  <div className="fixed inset-0  bg-opacity-100 flex justify-center items-center shadow-2xl z-201">
+  <div className="fixed inset-0  bg-opacity-100 flex justify-center items-center shadow-2xl z-201">
     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95">
       <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
@@ -176,13 +176,13 @@ const UpdateHistoryPopup = ({
 );
 
 const TaskViewPage = () => {
-  const { projectid, id,empID } = useParams();
+  const { projectid, id, empID } = useParams();
   const navigate = useNavigate();
-  // const [position, setPosition] = useState("user");
 
+  const [assignedBy, setAssignedBy] = useState("");
   const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);
   const { userData, setUserData } = useContext(Context);
-  let position=userData?.roles[0]
+  const position = userData?.roles[0];
   const [updateHistoryData, setUpdateHistoryData] = useState({
     changes: "",
     note: "",
@@ -200,58 +200,60 @@ const TaskViewPage = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editRowData, setEditRowData] = useState(null);
-const fetchTaskData = async () => {
-  if (!projectid || !id) return;
-  
-  setLoading(true);
-  setError(null); // Reset error state on new fetch
 
-  try {
-    // --- Step 1: Fetch Task Details ---
-    const taskResponse = await fetch(
-      `http://192.168.0.120:8090/api/task/${projectid}/${id}`
-    );
+  const fetchTaskData = async () => {
+    if (!projectid || !id) return;
+    
+    setLoading(true);
+    setError(null); // Reset error state on new fetch
 
-    if (!taskResponse.ok) {
-      // Throw a specific error if task fetch fails
-      throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
-    }
-
-    const taskData = await taskResponse.json();
-    console.log("Task Data Received:", taskData);
-    setCurrentTask(taskData);
-
-    // --- Step 2: Fetch Update History (in a separate try/catch) ---
     try {
-      const historyResponse = await fetch(
-        `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+      // --- Step 1: Fetch Task Details ---
+      const taskResponse = await fetch(
+        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
       );
-      if (!historyResponse.ok) {
-        // Don't throw an error that stops the page. Just log it and set an empty history.
-        console.warn("Could not fetch task history. Displaying task without it.");
-        setUpdateHistory([]); // Set to empty array to prevent render errors
-      } else {
-        const historyData = await historyResponse.json();
-        setUpdateHistory(historyData);
-      }
-    } catch (historyErr) {
-       console.error("A network or other error occurred while fetching history:", historyErr);
-       setUpdateHistory([]);
-    }
 
-  } catch (err) {
-    // This will only catch errors from the main task fetch now
-    setError(err.message || "Failed to fetch critical task details.");
-    console.error(err);
-    setCurrentTask(null); // Ensure no stale data is shown
-  } finally {
-    setLoading(false);
-  }
-};
+      if (!taskResponse.ok) {
+        // Throw a specific error if task fetch fails
+        throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
+      }
+
+      const taskData = await taskResponse.json();
+      console.log("Task Data Received:", taskData);
+      setAssignedBy(taskData?.createdBy); // Set the assignedBy state here
+      setCurrentTask(taskData);
+
+      // --- Step 2: Fetch Update History (in a separate try/catch) ---
+      try {
+        const historyResponse = await fetch(
+          `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+        );
+        if (!historyResponse.ok) {
+          // Don't throw an error that stops the page. Just log it and set an empty history.
+          console.warn("Could not fetch task history. Displaying task without it.");
+          setUpdateHistory([]); // Set to empty array to prevent render errors
+        } else {
+          const historyData = await historyResponse.json();
+          setUpdateHistory(historyData);
+        }
+      } catch (historyErr) {
+          console.error("A network or other error occurred while fetching history:", historyErr);
+          setUpdateHistory([]);
+      }
+
+    } catch (err) {
+      // This will only catch errors from the main task fetch now
+      setError(err.message || "Failed to fetch critical task details.");
+      console.error(err);
+      setCurrentTask(null); // Ensure no stale data is shown
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchTaskData();
-  }, [projectid, id]);
+  }, [projectid, id, assignedBy]); // Added assignedBy to dependency array
 
   const getPriorityClass = (priority) => {
     const upperPriority = priority ? priority.toUpperCase() : "";
@@ -628,7 +630,7 @@ const fetchTaskData = async () => {
                   <h4 className="text-xl font-semibold text-gray-800">
                     Update History
                   </h4>
-                  {position === "EMPLOYEE" && (
+                  {userData?.employeeId !== assignedBy && (
                     <button
                       onClick={() => setShowUpdateHistoryPopup(true)}
                       className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
@@ -797,7 +799,7 @@ const fetchTaskData = async () => {
                                 history.reviewedBy || "-"
                               )}
                             </td>
-                            {position ==="TEAM_LEAD"&& (
+                            {position === "TEAM_LEAD" && (
                               <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
                                 {editingRowId === history.id ? (
                                   <div className="flex gap-2">
@@ -840,7 +842,8 @@ const fetchTaskData = async () => {
             </div>
           </div>
 
-          {!isTaskCompleted && position ==="TEAM_LEAD"&& (
+          {/* New Conditional Rendering for the Mark as Completed button */}
+          {!isTaskCompleted && position === "TEAM_LEAD" && (userData?.employeeId === assignedBy) && (
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <button
                 onClick={handleSubmitTask}

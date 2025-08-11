@@ -79,6 +79,7 @@ const TaskPopup = ({
               placeholder="Created By"
               className="p-2 border rounded-md"
               required
+              disabled={!isEditing}
             />
             <input
               name="assignedTo"
@@ -169,6 +170,7 @@ const TaskPopup = ({
             placeholder="Remark"
             className="w-full p-2 border rounded-md"
           />
+
           <textarea
             name="completionNote"
             value={taskData.completionNote}
@@ -227,11 +229,12 @@ const TasksPage = () => {
   const { employeeId } = useParams();
   const sai = localStorage.getItem("logedempid");
   const role = localStorage.getItem("logedemprole");
-  
-  console.log(sai, role);
-  const { userData, setUserData,accessToken } = useContext(Context);
+
+  console.log("Logged in Employee ID:", sai, "Role:", role);
+  const { userData, setUserData, accessToken } = useContext(Context);
 
   const [tasks, setTasks] = useState([]);
+  const [assignedByMeTasks, setAssignedByMeTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -240,11 +243,11 @@ const TasksPage = () => {
   const [showTaskPopup, setShowTaskPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const initialFormState = {
+  const getInitialFormState = useCallback(() => ({
     id: "",
     title: "",
     description: "",
-    createdBy: "",
+    createdBy: userData?.employeeId || "",
     assignedTo: "",
     status: "PENDING",
     priority: "MEDIUM",
@@ -255,36 +258,97 @@ const TasksPage = () => {
     completionNote: "",
     relatedLinks: "",
     attachedFileLinks: [],
-  };
+  }), [userData]);
 
-  const [taskData, setTaskData] = useState(initialFormState);
+  const [taskData, setTaskData] = useState(getInitialFormState());
 
- const fetchTasks = useCallback(async (currentEmployeeId) => {
-  try {
-    setLoading(true);
-    const idToFetch = currentEmployeeId || "ACS00000003";
-    const response = await fetch(`http://192.168.0.120:8090/api/all/tasks/${idToFetch}`);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+  const fetchTasks = useCallback(async () => {
+    if (!userData) {
+      setLoading(false);
+      return;
     }
 
-    const data = await response.json();
-    setTasks(data);
-    console.log("Fetched tasks:", data);
-    setError(null);
-  } catch (err) {
-    setError("Failed to fetch tasks. Please make sure the server is running.");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+    try {
+      setLoading(true);
+      let apiUrl;
+      const userRole = userData.roles[0];
+      const userId = userData.employeeId;
 
+      if (userRole === "TEAM_LEAD" && employeeId) {
+        // Team Lead viewing a team member's tasks
+        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${employeeId}`;
+      } else {
+        // Employee viewing their own tasks, or Team Lead viewing their own tasks page
+        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
+      }
+
+      console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
+      const response = await fetch(apiUrl);
+
+      if (response.status === 404) {
+        console.warn("No tasks found for the user.");
+        setTasks([]);
+        setError(null);
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Response from fetchTasks:", data);
+      setTasks(data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to fetch tasks. Please make sure the server is running.");
+      console.error("Error in fetchTasks:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [userData, employeeId]);
+
+  const fetchTasksAssignedByMe = useCallback(async () => {
+    if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
+      setAssignedByMeTasks([]);
+      return;
+    }
+
+    try {
+      const tlId = userData.employeeId;
+      const url = `http://192.168.0.120:8090/api/${tlId}`;
+      
+      console.log(`Fetching tasks assigned by Team Lead from: ${url}`);
+      const response = await fetch(url);
+      
+      if (response.status === 404) {
+        console.warn(`No tasks found assigned by TEAM_LEAD ${tlId}.`);
+        setAssignedByMeTasks([]);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`Response from fetchTasksAssignedByMe:`, data);
+      setAssignedByMeTasks(data);
+
+    } catch (error) {
+      console.error("Failed to fetch tasks assigned by Team Lead:", error);
+      setAssignedByMeTasks([]);
+    }
+  }, [userData]);
 
   useEffect(() => {
-    fetchTasks(employeeId);
-  }, [fetchTasks, employeeId]);
+    if (userData) {
+      fetchTasks();
+      if (userData.roles[0] === "TEAM_LEAD") {
+        fetchTasksAssignedByMe();
+      }
+    }
+  }, [fetchTasks, fetchTasksAssignedByMe, userData]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -372,7 +436,7 @@ const TasksPage = () => {
 
   const handleCreateClick = () => {
     setIsEditing(false);
-    setTaskData(initialFormState);
+    setTaskData(getInitialFormState());
     setShowTaskPopup(true);
   };
 
@@ -399,25 +463,29 @@ const TasksPage = () => {
       rating: taskData.rating ? parseInt(taskData.rating, 10) : null,
     };
 
-    const employeeId = "ACS00000001";
+    const tlId = userData?.employeeId;
+    const assignedEmployeeId = taskData.assignedTo;
     const projectId = isEditing ? taskData.projectId : "PRO0001";
+
+    if (!tlId || !assignedEmployeeId || !projectId) {
+      setError("Missing required IDs for task creation/update.");
+      return;
+    }
+    
+    const apiUrl = `http://192.168.0.120:8090/api/${tlId}/${assignedEmployeeId}/${projectId}/task`;
 
     try {
       if (isEditing) {
-        const response = await axios.put(
-          `http://192.168.0.120:8090/api/${employeeId}/${projectId}/task`,
-          taskPayload
-        );
-        console.log("Task updated:", response.data);
+        console.log("Sending PUT request to:", apiUrl, "with payload:", taskPayload);
+        const response = await axios.put(apiUrl, taskPayload);
+        console.log("Task updated successfully. Response:", response.data);
       } else {
-        const response = await axios.post(
-          `http://192.168.0.120:8090/api/${employeeId}/${projectId}/task`,
-          taskPayload
-        );
-        console.log("Task created:", response.data);
+        console.log("Sending POST request to:", apiUrl, "with payload:", taskPayload);
+        const response = await axios.post(apiUrl, taskPayload);
+        console.log("Task created successfully. Response:", response.data);
       }
       setShowTaskPopup(false);
-      fetchTasks(employeeId);
+      fetchTasks();
     } catch (err) {
       console.error(`Error ${isEditing ? "updating" : "creating"} task:`, err);
       setError(`Failed to ${isEditing ? "update" : "create"} task.`);
@@ -448,6 +516,30 @@ const TasksPage = () => {
       });
   }, [tasks, filterStatus, sortOption]);
 
+  const filteredAndSortedAssignedByMeTasks = useMemo(() => {
+    return assignedByMeTasks
+      .filter((task) => {
+        if (filterStatus === "ALL") {
+          return true;
+        }
+        const normalizedTaskStatus = task.status
+          ? task.status.toUpperCase().replace(" ", "_")
+          : "";
+        return normalizedTaskStatus === filterStatus;
+      })
+      .sort((a, b) => {
+        if (sortOption === "startDateAsc") {
+          return new Date(a.startDate) - new Date(b.startDate);
+        } else if (sortOption === "priorityDesc") {
+          const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
+          const priorityA = a.priority ? a.priority.toUpperCase() : "";
+          const priorityB = b.priority ? b.priority.toUpperCase() : "";
+          return priorityOrder[priorityA] - priorityOrder[priorityB];
+        }
+        return 0;
+      });
+  }, [assignedByMeTasks, filterStatus, sortOption]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -466,32 +558,35 @@ const TasksPage = () => {
     );
   }
 
+  const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
+  const showActionsColumn = isTeamLead;
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
-              {userData?.roles[0] === "TEAM_LEAD" ? (
+              {userData?.roles[0] === "TEAM_LEAD" && (
                 <p>
-                  Welcome, {userData?.roles[0]} You are Viewing Employe's tasks
+                  Welcome, {userData?.roles[0]} You are Viewing Employee's tasks
                 </p>
-              ) : null}
-              {userData?.roles[0] === "HR" ? (
+              )}
+              {userData?.roles[0] === "HR" && (
                 <p>
-                  Welcome, {userData?.roles[0]} You are Viewing Employe's tasks
+                  Welcome, {userData?.roles[0]} You are Viewing Employee's tasks
                 </p>
-              ) : null}
-              {userData?.roles[0] === "MANAGER" ? (
+              )}
+              {userData?.roles[0] === "MANAGER" && (
                 <p>
-                  Welcome, {userData?.roles[0]} You are Viewing Employe's tasks
+                  Welcome, {userData?.roles[0]} You are Viewing Employee's tasks
                 </p>
-              ) : null}
-              {userData?.roles[0] === "EMPLOYEE" ? (
+              )}
+              {userData?.roles[0] === "EMPLOYEE" && (
                 <p>
-                  Welcome, {userData?.roles[0]} You are Viewing your's tasks
+                  Welcome, {userData?.roles[0]} You are Viewing your tasks
                 </p>
-              ) : null}
+              )}
               <h1 className="text-3xl font-extrabold text-slate-800">
                 {["TEAM_LEAD", "HR", "MANAGER"].includes(userData?.roles?.[0])
                   ? "Employee's Tasks"
@@ -513,6 +608,186 @@ const TasksPage = () => {
               </button>
             )}
           </div>
+          
+          {/* New Table for Tasks Assigned By You - Only for Team Leads */}
+          {isTeamLead && (
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-slate-800 mb-4">You assigned these tasks</h2>
+                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200/80">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-200">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Task Title
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Status
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Priority
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Assigned To
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Assigned By
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Start Date
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Due Date
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Progress
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                          >
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-200">
+                        {filteredAndSortedAssignedByMeTasks.length > 0 ? (
+                          filteredAndSortedAssignedByMeTasks.map((task) => {
+                            const timeCompletedBar = calculateTimeCompletedBar(
+                              task.createdDate,
+                              task.dueDate,
+                              today
+                            );
+                            let progressBarColor;
+
+                            if (timeCompletedBar <= 25) {
+                              progressBarColor = "bg-green-500";
+                            } else if (
+                              timeCompletedBar > 25 &&
+                              timeCompletedBar <= 50
+                            ) {
+                              progressBarColor = "bg-blue-500";
+                            } else if (
+                              timeCompletedBar > 50 &&
+                              timeCompletedBar <= 75
+                            ) {
+                              progressBarColor = "bg-yellow-500";
+                            } else {
+                              progressBarColor = "bg-red-500";
+                            }
+
+                            return (
+                              <tr
+                                key={task.id}
+                                onClick={() => clickHandler(task.projectId, task.id)}
+                                className="hover:bg-slate-50 cursor-pointer transition-colors duration-200"
+                              >
+                                <td className="px-6 py-4 whitespace-normal text-sm font-medium text-slate-800">
+                                  {task.title}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full ${getStatusStyles(
+                                      task.status
+                                    )}`}
+                                  >
+                                    <span
+                                      className={`h-2 w-2 rounded-full inline-block ${getStatusDot(
+                                        task.status
+                                      )} mr-1`}
+                                    ></span>
+                                    {task.status.replace("_", " ")}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`text-xs font-bold py-1 px-2.5 rounded-md border ${getPriorityStyles(
+                                      task.priority
+                                    )}`}
+                                  >
+                                    {task.priority}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
+                                  {task.assignedTo}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
+                                  {task.createdBy}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                  <div className="flex items-center">
+                                    <CalendarIcon />
+                                    {task.createdDate}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                  <div className="flex items-center">
+                                    <CalendarIcon />
+                                    {task.dueDate}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <div className="w-24 bg-gray-200 rounded-full h-2.5 overflow-hidden mb-1">
+                                    <div
+                                      className={`${progressBarColor} h-full rounded-full transition-all duration-500 ease-out`}
+                                      style={{ width: `${timeCompletedBar}%` }}
+                                    ></div>
+                                  </div>
+                                  <div className="text-right text-xs text-gray-600">
+                                    {timeCompletedBar}%
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <button
+                                    onClick={(e) => handleEditClick(e, task)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                  >
+                                    <Edit size={18} />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={9}
+                              className="text-center py-10 text-gray-500 text-lg"
+                            >
+                              You have not assigned any tasks yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="w-full sm:w-auto">
@@ -556,7 +831,10 @@ const TasksPage = () => {
               </select>
             </div>
           </div>
-
+          
+          <h2 className="text-2xl font-bold text-slate-800 mb-4">
+            {employeeId ? `Tasks Assigned to ${employeeId}` : "Tasks Assigned to You"}
+          </h2>
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200/80">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
@@ -580,12 +858,14 @@ const TasksPage = () => {
                     >
                       Priority
                     </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Assigned To
-                    </th>
+                    {userData?.roles[0] !== "EMPLOYEE" && (
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                      >
+                        Assigned To
+                      </th>
+                    )}
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
@@ -610,21 +890,14 @@ const TasksPage = () => {
                     >
                       Progress
                     </th>
-                    {userData?.roles[0] === "TEAM_LEAD" && (
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                      >
-                        Actions
-                      </th>
-                    )}
+                    
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {filteredAndSortedTasks.length > 0 ? (
                     filteredAndSortedTasks.map((task) => {
                       const timeCompletedBar = calculateTimeCompletedBar(
-                        task.startDate,
+                        task.startDate, // <<< FIX: Changed from task.createdDate
                         task.dueDate,
                         today
                       );
@@ -645,6 +918,8 @@ const TasksPage = () => {
                       } else {
                         progressBarColor = "bg-red-500";
                       }
+
+                      const showEditButton = isTeamLead && task.createdBy === userData?.employeeId;
 
                       return (
                         <tr
@@ -678,9 +953,11 @@ const TasksPage = () => {
                               {task.priority}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                            {task.assignedTo}
-                          </td>
+                          {userData?.roles[0] !== "EMPLOYEE" && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
+                              {task.assignedTo}
+                            </td>
+                          )}
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
                             {task.createdBy}
                           </td>
@@ -707,14 +984,17 @@ const TasksPage = () => {
                               {timeCompletedBar}%
                             </div>
                           </td>
-                          {userData?.roles[0] === "TEAM_LEAD" && (
+                          {/* Conditionally render Actions column and content */}
+                          {showActionsColumn && (
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <button
-                                onClick={(e) => handleEditClick(e, task)}
-                                className="text-indigo-600 hover:text-indigo-900"
-                              >
-                                <Edit size={18} />
-                              </button>
+                              {showEditButton && (
+                                <button
+                                  onClick={(e) => handleEditClick(e, task)}
+                                  className="text-indigo-600 hover:text-indigo-900"
+                                >
+                                  <Edit size={18} />
+                                </button>
+                              )}
                             </td>
                           )}
                         </tr>
@@ -723,7 +1003,7 @@ const TasksPage = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan={role === "MANAGER" ? 9 : 8}
+                        colSpan={isTeamLead ? 9 : 8}
                         className="text-center py-10 text-gray-500 text-lg"
                       >
                         No tasks match your current filters.
