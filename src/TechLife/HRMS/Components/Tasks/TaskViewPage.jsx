@@ -202,32 +202,48 @@ const TaskViewPage = () => {
   const [editRowData, setEditRowData] = useState(null);
 const fetchTaskData = async () => {
   if (!projectid || !id) return;
-  try {
-    setLoading(true);
+  
+  setLoading(true);
+  setError(null); // Reset error state on new fetch
 
-    // Task details fetch using fetch()
+  try {
+    // --- Step 1: Fetch Task Details ---
     const taskResponse = await fetch(
       `http://192.168.0.120:8090/api/task/${projectid}/${id}`
     );
-    if (!taskResponse.ok) throw new Error("Task fetch failed");
+
+    if (!taskResponse.ok) {
+      // Throw a specific error if task fetch fails
+      throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
+    }
+
     const taskData = await taskResponse.json();
-    console.log(taskData)
+    console.log("Task Data Received:", taskData);
     setCurrentTask(taskData);
 
-    // Update history fetch using fetch()
-    const historyResponse = await fetch(
-      `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
-    );
-    if (!historyResponse.ok) throw new Error("History fetch failed");
-    const historyData = await historyResponse.json();
-    setUpdateHistory(historyData);
+    // --- Step 2: Fetch Update History (in a separate try/catch) ---
+    try {
+      const historyResponse = await fetch(
+        `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+      );
+      if (!historyResponse.ok) {
+        // Don't throw an error that stops the page. Just log it and set an empty history.
+        console.warn("Could not fetch task history. Displaying task without it.");
+        setUpdateHistory([]); // Set to empty array to prevent render errors
+      } else {
+        const historyData = await historyResponse.json();
+        setUpdateHistory(historyData);
+      }
+    } catch (historyErr) {
+       console.error("A network or other error occurred while fetching history:", historyErr);
+       setUpdateHistory([]);
+    }
 
-    setError(null);
   } catch (err) {
-    setError(
-      "Failed to fetch task details"
-    );
+    // This will only catch errors from the main task fetch now
+    setError(err.message || "Failed to fetch critical task details.");
     console.error(err);
+    setCurrentTask(null); // Ensure no stale data is shown
   } finally {
     setLoading(false);
   }
@@ -413,7 +429,7 @@ const fetchTaskData = async () => {
         <div className="w-full bg-white p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl border border-gray-100">
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
             <button
-              onClick={() => navigate("/tasks")}
+              onClick={() => navigate(`/tasks/${userData?.employeeId}`)}
               className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
               aria-label="Go back to tasks list"
             >

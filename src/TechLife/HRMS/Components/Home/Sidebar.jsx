@@ -69,7 +69,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       icon: <LayoutDashboard size={18} />,
       path: empId ? `/dashboard/${empId}` : "/dashboard",
     },
-    { name: "Profile", icon: <UserCircle size={18} />, path: "/profile" },
+    { name: "Profile", icon: <UserCircle size={18} />, path:empId?`/profile/${empId}`: "/profile" },
     {
       name: "Attendance",
       icon: <CalendarCheck size={18} />,
