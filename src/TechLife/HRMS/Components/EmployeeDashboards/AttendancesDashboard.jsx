@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import  { useState, useEffect, useMemo, useCallback, use } from "react";
 import { CalendarDaysIcon, ClockIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import {
   PieChart,
@@ -15,39 +15,48 @@ import {
 import { FaHome, FaBuilding } from "react-icons/fa";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Box } from "@mui/material";
+import axios from 'axios';
 
 // --- Mock Data (moved outside component for clarity) ---
-const rawTableData = [
-  {  employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-  {  employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
-  {  employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-  {  employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-  {  employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
-  {  employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-  {  employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-  {  employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
-];
-const rawPieData = [
-  { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
-  { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
-  { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
-  { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
-  { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
-]
-const Data = [
-  { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-  { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-  { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-  { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-  { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-];
-const barChartData = [
-  { Date:"11",Month:"Aug",Year:"2025", Work_Hours: 8.3, break_Hours: 1.7 },
-  { Date:"12",Month:"Aug",Year:"2025", Work_Hours: 8.4, break_Hours: 1.6 },
-  { Date:"13",Month:"Aug",Year:"2025", Work_Hours: 8.2, break_Hours: 1.8 },
-  { Date:"14",Month:"Aug",Year:"2025", Work_Hours: 9.0, break_Hours: 1.0 },
-  { Date:"15",Month:"Aug",Year:"2025", Work_Hours: 8.0, break_Hours: 2.0 },
-];
+// const rawTableData = [
+//   {  employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//   {  employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
+//   {  employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//   {  employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//   {  employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
+//   {  employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//   {  employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//   {  employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+// ];
+
+// const rawPieData = [
+//   { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
+//   { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
+//   { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
+//   { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
+//   { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
+// ]
+
+// const Data = [
+//   { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+// ];
+
+
+
+// Remove this (do not use Promise directly for data):
+// const barChartData = axios.get(...).then(...);
+
+// Add state for bar chart data
+
+
+// Fetch bar chart data on mount
+
+
+
  const cardData=[
   {value:"8.5/10",description:"Total Hours Today",trend:"up",trendPercentage:"5",trendPeriod:"This week"},
   {value:"40.5/50",description:"Total Hours Week",trend:"up",trendPercentage:"7",trendPeriod:"Last week"},
@@ -57,8 +66,8 @@ const barChartData = [
  
  
 
-const MONTHS = ["All", "January", "February", "March", "April", "May", "June"];
-const dates = ["All", "11", "12", "13", "14", "15"];
+// const MONTHS = ["All", "January", "February", "March", "April", "May", "June"];
+// const dates = ["All", "11", "12", "13", "14", "15"];
 const Months=["Aug"];
 const Year=["2025"];
 const PIE_COLORS = ["#B027F5", "#F5A623"];
@@ -177,7 +186,13 @@ const AttendancesDashboard = () => {
   // Existing state for selected day, initialized to "Mon"
    const [selectedDate, setSelectedDate] = useState("All");
   const [hoveredHour, setHoveredHour] = useState(null);
-  const isMobile = window.innerWidth <= 768; // Simple check for mobile
+  const isMobile = window.innerWidth <= 768;
+  const [barChartData, setBarChartData] = useState([]);
+  const [rawPieData, setRawPieData] =useState([])
+  const [rawTableData, setrawTableData] = useState([]);
+  const [dates, setDates] = useState([]);
+  const [Data, setData] = useState([]);
+  // Simple check for mobile
 
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -189,6 +204,113 @@ const AttendancesDashboard = () => {
   const [canCancel, setCanCancel] = useState(false)
   const [isLogoutConfirmed, setIsLogoutConfirmed] = useState(false);
 
+
+
+
+
+
+
+
+
+
+
+useEffect(() => {
+  axios
+    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/bar-chart')
+    .then(response => {
+      // Map backend data to recharts format
+      const formatted = response.data.map(item => ({
+        Date: item.date, // x-axis label
+        month: item.month,
+        year: item.year,
+        Work_Hours: item.working_hour,
+        break_Hours: item.break_hour
+      }));
+      setBarChartData(formatted);
+      console.log('Bar chart data formatted:', formatted);
+    })
+    .catch(error => {
+      console.error('Error fetching bar chart data:', error);
+      setBarChartData([]);
+    });
+}, []);
+
+useEffect(() => {
+  axios
+    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/attendance')
+    .then(response => {
+
+      setrawTableData(response.data);
+      console.log('Bar chart data formatted:',  response.data);
+    })
+    .catch(error => {
+      console.error('Error fetching bar chart data:', error);
+      setBarChartData([]);
+    });
+}, []);
+
+
+useEffect(() => {
+  axios
+    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/pie-chart')
+    .then(response => {
+      const formatted = response.data.map(item => ({
+        Date: item.date,
+        Month: item.month,
+        Year: item.year,
+        Working_hour: item.working_hour,
+        Break_hour: item.break_hour,
+        EmployeeId: item.employeeId
+      }));
+      setRawPieData(formatted);
+      console.log('Bar chart data formatted:',  formatted);
+      const dates = ["All"];
+      for (let i = 0; i < formatted.length; i++) {
+        dates.push(formatted[i].Date);
+      }
+      setDates(dates);
+      console.log('Dates:', dates);
+    })
+    .catch(error => {
+      console.error('Error fetching bar chart data:', error);
+      setBarChartData([]);
+    });
+}, []);
+
+// const Data = [
+//   { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+// ];
+useEffect(() => {
+  axios
+    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/line-graph')
+    .then(response => {
+      // Map backend data to recharts format
+      const formatted = response.data.map(item => ({
+        EmployeeId: item.employeeId,
+        Date: item.date,
+        Month: item.month,
+        Year: item.year,
+        Start_time: item.start_time,
+        End_time: item.end_time,
+        Break_hour: item.breaks.map(b => ({
+          Time: b.time,
+          hour: b.hour
+        }))
+
+      }));
+      setData(formatted);
+      console.log('line graph formatted:', formatted);
+    })
+    .catch(error => {
+      console.error('Error fetching line chart data:', error);
+      setBarChartData([]);
+    });
+}, []);
+const MONTHS = ["All", "January", "February", "March", "April", "May", "June"];
 
   // --- Web Clock Logic (simplified using useCallback) ---
   useEffect(() => {
@@ -214,18 +336,18 @@ const AttendancesDashboard = () => {
 
 
 const handleLogout = useCallback(() => {
-  setIsLogoutConfirmed(true); // When logout is clicked, show the confirmation buttons
+  setIsLogoutConfirmed(true); 
+ 
 }, []);
 
 const handleConfirmLogout = useCallback(() => {
-  // This is the final logout logic
   setIsLoggedIn(false);
-  // ... other logout actions like setting endTime, etc.
-  setIsLogoutConfirmed(false); // Reset the confirmation state
+  setIsLogoutConfirmed(false);
+  setEndTime(new Date()); 
 }, []);
 
 const handleCancel = useCallback(() => {
-  setIsLogoutConfirmed(false); // Reset the confirmation state
+  setIsLogoutConfirmed(false); 
 }, []);
 
   const toggleMode = useCallback(() => {
@@ -280,7 +402,7 @@ const handleCancel = useCallback(() => {
 
   if (dayData.Break_hour) {
     dayData.Break_hour.forEach(b => {
-      const [start, end] = (b.Timer || b.Time).split(' - ');
+      const [start, end] = (b.Time).split(' - ');
       timePoints.add(start);
       timePoints.add(end);
     });
@@ -313,14 +435,14 @@ const handleCancel = useCallback(() => {
     type: 'working',
     time: `${dayData.Start_time} - ${dayData.End_time}`,
     duration: calculateDuration(dayData.Start_time, dayData.End_time),
-    keyType: 'Timer/hour'
+    keyType: 'Time/hour'
   };
 
   const mapBreakHours = (hoursArray, type) => (hoursArray || []).map(h => ({
     type,
-    time: h.Time || h.Timer,
-    duration: h.hours || h.hour,
-    keyType: h.Time ? 'Time/hours' : 'Timer/hour'
+    time: h.Time,
+    duration: h.hour,
+    keyType:  'Time/hour'
   }));
 
   const allHours = [workingHoursSegment, ...mapBreakHours(dayData.Break_hour, 'break')]
@@ -409,7 +531,7 @@ const handleCancel = useCallback(() => {
 const filteredBarChartData = useMemo(() => {
   return selectedDate === "All"
     ? barChartData
-    : barChartData.filter((d) => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+    : barChartData.filter((d) => `${d.date}-${d.month}-${d.year}` === selectedDate);
 }, [selectedDate, barChartData]);
 
   return (
@@ -534,7 +656,7 @@ const filteredBarChartData = useMemo(() => {
             onClick={handleConfirmLogout}
             className="flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
           >
-            <ClockIcon className="w-4 h-4 mr-2" />  Webclockout
+            <ClockIcon className="w-4 h-4 mr-2" />  clockout
           </button>
           <button
             onClick={handleCancel}
@@ -549,7 +671,7 @@ const filteredBarChartData = useMemo(() => {
           onClick={handleLogout}
           className="flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
         >
-          <ClockIcon className="w-4 h- mr-2" /> Clockout
+          <ClockIcon className="w-4 h- mr-2" /> WebClockout
         </button>
       )}
     </div>
@@ -687,7 +809,7 @@ const filteredBarChartData = useMemo(() => {
               data={filteredBarChartData}
               margin={{ top: 20, right: 10, left: 5, bottom: 5 }}
             >
-              <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }} className="text-sm" tickFormatter={(tick, index) => `${barChartData[index].Date}-${barChartData[index].Month}`} />
+              <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }} className="text-sm" tickFormatter={(tick, index) => `${barChartData[index].Date}-${barChartData[index].month}`} />
               <YAxis allowDecimals={false} hide />
               <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
               <Legend wrapperStyle={{ paddingTop: "10px" }} />
