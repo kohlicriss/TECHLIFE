@@ -1134,4 +1134,4 @@ function ChatApplication({ currentUser, initialChats }) {
     );
 }
 
-export default ChatApplication;
+export default ChatApplication; 
