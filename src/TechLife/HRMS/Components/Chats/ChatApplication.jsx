@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { Client } from '@stomp/stompjs';
 import {
     FaMicrophone, FaPaperclip, FaSmile, FaPaperPlane, FaArrowLeft, FaStop,
-    FaFilePdf, FaFileWord, FaFileExcel, FaFilePowerpoint, FaFileAlt, FaDownload, FaPlay, FaPause,
+    FaFileAlt, FaDownload, FaPlay, FaPause,
     FaVideo, FaPhone, FaReply, FaEdit, FaThumbtack, FaShare, FaTrash, FaTimes, FaCheck,
-    FaChevronDown, FaImage, FaFileAudio, FaEye, FaAngleDoubleRight, FaCamera, FaPen, FaUsers, FaUser
+    FaChevronDown, FaImage, FaFileAudio, FaEye, FaAngleDoubleRight, FaCamera, FaPen, FaUsers, FaUser,
+    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive
 } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
@@ -18,16 +19,57 @@ import {
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
 
 
-const FileIcon = ({ fileName, type, className = "text-3xl" }) => {
-    if (type === 'image') return <FaImage className={`text-purple-500 ${className}`} />;
-    if (type === 'audio') return <FaFileAudio className={`text-pink-500 ${className}`} />;
-    const extension = fileName?.split('.').pop().toLowerCase();
-    if (extension === 'pdf') return <FaFilePdf className={`text-red-500 ${className}`} />;
-    if (['doc', 'docx'].includes(extension)) return <FaFileWord className={`text-blue-500 ${className}`} />;
-    if (['xls', 'xlsx'].includes(extension)) return <FaFileExcel className={`text-green-500 ${className}`} />;
+// Helper to format file size
+const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Updated FileIcon to show specific icons for different file types
+const FileIcon = ({ fileName, className = "text-3xl" }) => {
+    const extension = fileName?.split('.').pop()?.toLowerCase();
+    if (['pdf'].includes(extension)) return <FaFilePdf className={`text-red-500 ${className}`} />;
+    if (['doc', 'docx'].includes(extension)) return <FaFileWord className={`text-blue-700 ${className}`} />;
     if (['ppt', 'pptx'].includes(extension)) return <FaFilePowerpoint className={`text-orange-500 ${className}`} />;
+    if (['xls', 'xlsx'].includes(extension)) return <FaFileExcel className={`text-green-600 ${className}`} />;
+    if (['zip', 'rar', '7z'].includes(extension)) return <FaFileArchive className={`text-yellow-500 ${className}`} />;
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) return <FaImage className={`text-purple-500 ${className}`} />;
+    if (['mp3', 'wav', 'ogg'].includes(extension)) return <FaFileAudio className={`text-pink-500 ${className}`} />;
     return <FaFileAlt className={`text-gray-500 ${className}`} />;
 };
+
+
+// New component to render file messages
+const FileMessage = ({ msg, isMyMessage }) => {
+    // FIXED: Use msg.messageId instead of msg.content to build the URL
+    const downloadUrl = `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
+
+    const containerClasses = `flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`;
+
+    const content = (
+        <div className={containerClasses}>
+            <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                 <FileIcon fileName={msg.fileName} className="text-4xl" />
+            </div>
+            <div className="flex-grow overflow-hidden mr-2">
+                <p className={`font-semibold truncate ${isMyMessage ? 'text-white' : 'text-gray-800'}`}>{msg.fileName}</p>
+                <p className={`text-sm ${isMyMessage ? 'text-blue-200' : 'text-gray-600'}`}>{formatFileSize(msg.fileSize)}</p>
+            </div>
+            {!isMyMessage && (
+                 <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
+                    <FaDownload size={18} />
+                </a>
+            )}
+        </div>
+    );
+
+    // Make the file clickable for download only for the receiver
+    return !isMyMessage ? <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer">{content}</a> : content;
+};
+
 
 const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
     const audioRef = useRef(null);
@@ -74,7 +116,7 @@ const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
         return (
             <div className="flex items-center gap-3 w-64">
                 <button onClick={onDownload} className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 bg-opacity-30 text-white hover:bg-opacity-40 transition-colors"><FaDownload size={16} /></button>
-                <div className="flex-grow"><p className="text-sm text-gray-700">Voice Message</p><p className="text-xs text-gray-500">Click to download</p></div>
+                <div className="flex-grow"><p className="text-sm text-gray-700">Voice Message</p><p className="text-xs text-gray-500">{formatFileSize(0)}</p></div>
             </div>
         );
     }
@@ -194,12 +236,14 @@ function ChatApplication({ currentUser, initialChats }) {
         const generatePreview = (msg) => {
             if (!msg) return 'Chat cleared';
             if (msg.type === 'deleted') return 'This message was deleted';
-            const prefix = msg.isForwarded ? 'Forwarded: ' : '';
+            
+            const prefix = msg.sender === currentUser.id ? 'You: ' : '';
+            
             if (msg.type === 'image') return prefix + '📷 Image';
             if (msg.type === 'audio') return prefix + '🎤 Voice Message';
-            if (msg.type === 'file') return prefix + `📄 ${msg.fileName || 'File'}`;
-            if (msg.content && typeof msg.content === 'string') return prefix + msg.content;
-            if (msg.fileName) return prefix + `📄 ${msg.fileName}`; // Fallback for files
+            if (msg.type === 'file') return prefix + `📄 ${msg.fileName}`;
+            if (msg.content) return prefix + msg.content;
+            
             return '...';
         };
 
@@ -242,8 +286,9 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        if (receivedMessage.fileName && !receivedMessage.content) {
-            return;
+        if (receivedMessage.fileName && !receivedMessage.content && !receivedMessage.id) {
+             console.warn("Received a file message stub, ignoring until full data arrives:", receivedMessage);
+             return;
         }
 
         setMessages(prevMessages => {
@@ -258,42 +303,31 @@ function ChatApplication({ currentUser, initialChats }) {
             if (messageAlreadyExists) {
                 return prevMessages;
             }
-
+            
             if (isAck) {
                 const optimisticIndex = newChatMessages.findIndex(m => m.id === receivedMessage.client_id);
                 if (optimisticIndex > -1) {
                     const optimisticMessage = newChatMessages[optimisticIndex];
+                    const transformedServerMessage = transformMessageDTOToUIMessage({
+                        ...receivedMessage,
+                        messageId: finalServerId,
+                        id: finalServerId,
+                    });
+
                     newChatMessages[optimisticIndex] = {
                         ...optimisticMessage,
-                        id: receivedMessage.id,
-                        messageId: finalServerId,
+                        ...transformedServerMessage,
                         status: 'sent',
-                        content: receivedMessage.fileName ? receivedMessage.id : receivedMessage.content,
-                        timestamp: new Date().toISOString(),
-                        fileName: receivedMessage.fileName || optimisticMessage.fileName,
-                        fileSize: receivedMessage.fileSize || optimisticMessage.fileSize,
                     };
                     finalMessageForUpdate = newChatMessages[optimisticIndex];
                     messageProcessed = true;
                 }
             } else if (isIncoming) {
-                let messageType = 'text';
-                if (receivedMessage.fileName) {
-                    messageType = receivedMessage.fileType?.startsWith('image/') ? 'image' :
-                                  receivedMessage.fileType?.startsWith('audio/') ? 'audio' : 'file';
-                } else if (receivedMessage.kind) {
-                    messageType = receivedMessage.kind === 'send' ? 'text' : receivedMessage.kind;
-                }
-
-                const finalMessage = {
+                const finalMessage = transformMessageDTOToUIMessage({
                     ...receivedMessage,
-                    timestamp: new Date().toISOString(),
-                    type: messageType,
-                    content: receivedMessage.fileName ? receivedMessage.id : receivedMessage.content,
-                    status: 'sent',
-                    id: receivedMessage.id,
+                    id: finalServerId,
                     messageId: finalServerId,
-                };
+                });
                 newChatMessages.push(finalMessage);
                 finalMessageForUpdate = finalMessage;
                 messageProcessed = true;
@@ -439,6 +473,8 @@ function ChatApplication({ currentUser, initialChats }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showEmojiPicker, showChatMenu, contextMenu.visible, showPinnedMenu]);
 
+    const handleSendMessage = () => { if (message.trim() && selectedChat) { addAndSendMessage({ type: 'text', content: message }); } };
+    
     const addAndSendMessage = (messageObject) => {
         if (!selectedChat || !stompClient.current?.active) return;
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
@@ -448,7 +484,7 @@ function ChatApplication({ currentUser, initialChats }) {
             sender: currentUser.id,
             content: messageObject.content,
             timestamp: new Date().toISOString(),
-            status: 'sent',
+            status: 'sending',
             type: messageObject.type,
             fileName: messageObject.fileName || null,
             fileSize: messageObject.fileSize || null,
@@ -485,7 +521,7 @@ function ChatApplication({ currentUser, initialChats }) {
         setReplyingTo(null);
     };
 
-    const handleSendMessage = () => { if (message.trim() && selectedChat) { addAndSendMessage({ type: 'text', content: message }); } };
+
     const handleKeyDown = (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (editingInfo.index !== null) handleSaveEdit(); else handleSendMessage(); } };
     const onEmojiClick = (emojiObject) => setMessage(prev => prev + emojiObject.emoji);
     const handleFileButtonClick = () => fileInputRef.current.click();
@@ -494,15 +530,25 @@ function ChatApplication({ currentUser, initialChats }) {
         const file = event.target.files[0];
         if (!file || !selectedChat) return;
 
+        let messageType = 'file';
+        if (file.type.startsWith('image/')) {
+            messageType = 'image';
+        } else if (file.type.startsWith('audio/')) {
+            messageType = 'audio';
+        }
+
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        
+        const localPreviewContent = (messageType === 'image' || messageType === 'audio') ? URL.createObjectURL(file) : file.name;
+
         const optimisticMessage = {
             id: clientId,
             messageId: clientId,
             sender: currentUser.id,
-            content: URL.createObjectURL(file),
+            content: localPreviewContent,
             timestamp: new Date().toISOString(),
-            status: 'sent',
-            type: file.type.startsWith('image/') ? 'image' : 'file',
+            status: 'sending',
+            type: messageType,
             fileName: file.name,
             fileSize: file.size,
         };
@@ -563,44 +609,8 @@ function ChatApplication({ currentUser, initialChats }) {
 
                 if (!selectedChat) return;
 
-                const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-                const optimisticMessage = {
-                    id: clientId, messageId: clientId, sender: currentUser.id,
-                    content: URL.createObjectURL(audioFile),
-                    timestamp: new Date().toISOString(), 
-                    status: 'sent',
-                    type: 'audio', fileName: audioFile.name, fileSize: audioFile.size,
-                };
-
-                updateLastMessage(selectedChat.chatId, optimisticMessage);
-
-                setMessages(prev => ({
-                    ...prev,
-                    [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
-                }));
-
-                const formData = new FormData();
-                formData.append('file', audioFile);
-                formData.append('sender', currentUser.id);
-                formData.append('client_id', clientId);
-                formData.append('fileType', audioFile.type);
-
-                if (selectedChat.type === 'group') {
-                    formData.append('groupId', selectedChat.chatId);
-                    formData.append('type', 'TEAM');
-                } else {
-                    formData.append('receiver', selectedChat.chatId);
-                    formData.append('type', 'PRIVATE');
-                }
-
-                uploadFile(formData).catch(error => {
-                    console.error("Voice message upload failed:", error);
-                    setMessages(prev => {
-                        const chatMessages = prev[selectedChat.chatId] || [];
-                        const newMessages = chatMessages.map(m => m.id === clientId ? { ...m, status: 'failed' } : m);
-                        return { ...prev, [selectedChat.chatId]: newMessages };
-                    });
-                });
+                const mockEvent = { target: { files: [audioFile], value: null } };
+                handleFileChange(mockEvent);
             };
             
             mediaRecorderRef.current.start();
@@ -622,7 +632,7 @@ function ChatApplication({ currentUser, initialChats }) {
         updateLastMessage(selectedChat.chatId, null);
         setShowChatMenu(false);
     };
-    const handleMediaDownload = (msgIndex, src, fileName) => { const link = document.createElement('a'); link.href = src; link.setAttribute('download', fileName || 'download'); document.body.appendChild(link); link.click(); document.body.removeChild(link); setDownloadedMedia(prev => ({ ...prev, [msgIndex]: true })); };
+    const handleMediaDownload = (src, fileName) => { const link = document.createElement('a'); link.href = src; link.setAttribute('download', fileName || 'download'); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
     const handleContextMenu = (event, message, index) => { event.preventDefault(); event.stopPropagation(); const menuWidth = 180; const menuHeight = 250; let x = event.pageX; let y = event.pageY; if (x + menuWidth > window.innerWidth) x -= menuWidth; if (y + menuHeight > window.innerHeight) y -= menuHeight; setContextMenu({ visible: true, x, y, message, index }); };
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
@@ -746,17 +756,6 @@ function ChatApplication({ currentUser, initialChats }) {
         }
     };
 
-    const extractLinks = (messages) => {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
-        return messages.reduce((acc, msg) => {
-            if (msg.type === 'text' && msg.content) {
-                const matches = msg.content.match(urlRegex);
-                if (matches) { acc.push(...matches); }
-            }
-            return acc;
-        }, []);
-    };
-
     const formatTimestamp = (isoString) => {
         if (!isoString) return '';
         const date = new Date(isoString);
@@ -804,6 +803,17 @@ function ChatApplication({ currentUser, initialChats }) {
             ? { name: member.name || member.employeeName, profile: member.profile || null }
             : { name: 'Unknown User', profile: null };
     };
+    
+    // FIXED: Use msg.messageId for confirmed messages to build the URL
+    const getFileUrl = (msg) => {
+        // Optimistic messages have a local blob URL in `content`
+        if (msg.status === 'sending' || msg.status === 'failed') {
+            return msg.content;
+        }
+        // Confirmed messages use the messageId to build the URL
+        return `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
+    };
+
 
     return (
         <div className="w-full h-full bg-gray-100 font-sans">
@@ -900,7 +910,8 @@ function ChatApplication({ currentUser, initialChats }) {
                                                 lastMessageDate = msgDate;
                                             }
                                             const senderInfo = !isMyMessage ? getSenderInfo(msg.sender) : null;
-                                            const isMedia = ['image', 'audio', 'file'].includes(msg.type);
+                                            
+                                            const fileUrl = getFileUrl(msg);
 
                                             return (
                                                 <React.Fragment key={msg.messageId || msg.id}>
@@ -925,9 +936,13 @@ function ChatApplication({ currentUser, initialChats }) {
                                                             {currentChatInfo.type === 'group' && !isMyMessage && (
                                                                 <p className="text-xs text-gray-500 mb-1 ml-2 font-semibold">{senderInfo?.name}</p>
                                                             )}
-                                                            <div onContextMenu={(e) => handleContextMenu(e, msg, index)} className={`rounded-lg max-w-xs md:max-w-md ${isMedia || msg.type === 'deleted' ? 'p-2' : 'p-3'} ${isMyMessage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>
+                                                            <div onContextMenu={(e) => handleContextMenu(e, msg, index)} className={`rounded-lg max-w-xs md:max-w-md group relative
+                                                                ${(msg.type === 'image' || msg.type === 'deleted') ? 'p-0 bg-transparent' : ''}
+                                                                ${(msg.type === 'text') ? (isMyMessage ? 'bg-blue-600 text-white p-3' : 'bg-gray-200 text-gray-800 p-3') : ''}
+                                                                ${(msg.type === 'audio' || msg.type === 'file') ? (isMyMessage ? 'bg-blue-600' : 'bg-gray-200') : ''}
+                                                                `}>
                                                                 {msg.type === 'deleted' ? (
-                                                                    <div className="flex items-center gap-2 italic text-sm opacity-70">
+                                                                    <div className="flex items-center gap-2 italic text-sm opacity-70 p-3">
                                                                         <span>This message was deleted</span>
                                                                         {lastDeleted?.index === index && <button onClick={handleUndoDelete} className="font-semibold hover:underline">Undo</button>}
                                                                     </div>
@@ -940,34 +955,31 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                                 <p className="opacity-80 truncate">{['image', 'audio', 'file'].includes(msg.replyTo.type) ? 'Media message' : msg.replyTo.content}</p>
                                                                             </div>
                                                                         )}
+                                                                        
                                                                         {msg.type === 'image' ? (
-                                                                            <button onClick={() => setImageInView(msg.status === 'sending' ? msg.content : `http://192.168.0.244:8082/api/chat/file/${msg.content}`)}><img src={msg.status === 'sending' ? msg.content : `http://192.168.0.244:8082/api/chat/file/${msg.content}`} alt={msg.fileName || 'image'} className="rounded-md max-w-full" /></button>
-                                                                        ) : msg.type === 'audio' ? (
-                                                                            <AudioPlayer src={msg.status === 'sending' ? msg.content : `http://192.168.0.244:8082/api/chat/file/${msg.content}`} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index]} onDownload={() => handleMediaDownload(index, `http://192.168.0.244:8082/api/chat/file/${msg.content}`, 'voice-message.wav')} />
-                                                                        ) : msg.type === 'file' ? (
-                                                                            <div className="flex items-center gap-3">
-                                                                                <FileIcon fileName={msg.fileName} type={msg.type} />
-                                                                                <div className="min-w-0">
-                                                                                    <p className={`font-bold text-sm truncate ${isMyMessage ? 'text-white' : 'text-gray-800'}`}>{msg.fileName}</p>
-                                                                                    <p className={`text-xs ${isMyMessage ? 'text-blue-200' : 'text-gray-500'}`}>{msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : ''}</p>
-                                                                                </div>
-                                                                                {msg.status !== 'sending' && (
-                                                                                    <a
-                                                                                        href={`http://192.168.0.244:8082/api/chat/file/${msg.content}`}
-                                                                                        download={msg.fileName}
-                                                                                        className={`p-2 rounded-full ${isMyMessage ? 'text-blue-200 hover:bg-blue-700' : 'text-gray-500 hover:bg-gray-300'} cursor-pointer`}
-                                                                                    >
+                                                                            <div className="relative">
+                                                                                <button onClick={() => setImageInView(fileUrl)}>
+                                                                                    <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{maxHeight: '300px'}}/>
+                                                                                </button>
+                                                                                {!isMyMessage && (
+                                                                                    <a href={fileUrl} download={msg.fileName} onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                                                                         <FaDownload />
                                                                                     </a>
                                                                                 )}
                                                                             </div>
+                                                                        ) : msg.type === 'audio' ? (
+                                                                            <div className="p-2">
+                                                                                <AudioPlayer src={fileUrl} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index] || isMyMessage} onDownload={() => handleMediaDownload(fileUrl, 'voice-message.wav')} />
+                                                                            </div>
+                                                                        ) : msg.type === 'file' ? (
+                                                                            <FileMessage msg={msg} isMyMessage={isMyMessage} />
                                                                         ) : (
                                                                             <p className="text-sm break-words">{msg.content}</p>
                                                                         )}
                                                                     </>
                                                                 )}
                                                             </div>
-                                                            <span className="text-xs text-gray-400 mt-1 px-1">{msg.status === 'sending' ? 'Sending...' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
+                                                            <span className="text-xs text-gray-400 mt-1 px-1">{msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
                                                         </div>
                                                         {isMyMessage && (
                                                             <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
@@ -1073,7 +1085,7 @@ function ChatApplication({ currentUser, initialChats }) {
                             <button onClick={() => setIsGroupInfoModalOpen(false)} className="p-2 rounded-full hover:bg-gray-200"><FaTimes /></button>
                         </div>
                         <div className="flex border-b flex-shrink-0">
-                            {['Overview', 'Members', 'Media', 'Files', 'Links'].map(tab => (
+                            {['Overview', 'Members', 'Media'].map(tab => (
                                 <button key={tab} onClick={() => setActiveGroupInfoTab(tab)} className={`flex-1 p-3 text-sm font-semibold ${activeGroupInfoTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}>
                                     {tab}
                                 </button>
@@ -1102,31 +1114,9 @@ function ChatApplication({ currentUser, initialChats }) {
                             {activeGroupInfoTab === 'Media' && (
                                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                                     {chatMessages.filter(msg => msg.type === 'image').map((msg, i) => (
-                                        <button key={i} onClick={() => setImageInView(`http://192.168.0.244:8082/api/chat/file/${msg.content}`)}>
-                                            <img src={`http://192.168.0.244:8082/api/chat/file/${msg.content}`} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
+                                        <button key={i} onClick={() => setImageInView(getFileUrl(msg))}>
+                                            <img src={getFileUrl(msg)} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
                                         </button>
-                                    ))}
-                                </div>
-                            )}
-                            {activeGroupInfoTab === 'Files' && (
-                                <div className="space-y-3">
-                                    {chatMessages.filter(msg => msg.type === 'file').map((msg, i) => (
-                                        <a key={i} href={`http://192.168.0.244:8082/api/chat/file/${msg.content}`} download={msg.fileName} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100">
-                                            <FileIcon fileName={msg.fileName} />
-                                            <div className="min-w-0">
-                                                <p className="font-bold text-sm truncate text-gray-800">{msg.fileName}</p>
-                                                <p className="text-xs text-gray-500">{msg.fileSize ? `${(msg.fileSize / 1024).toFixed(2)} KB` : ''}</p>
-                                            </div>
-                                        </a>
-                                    ))}
-                                </div>
-                            )}
-                            {activeGroupInfoTab === 'Links' && (
-                                <div className="space-y-3">
-                                    {extractLinks(chatMessages).map((link, i) => (
-                                        <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-blue-600 truncate">
-                                            {link}
-                                        </a>
                                     ))}
                                 </div>
                             )}

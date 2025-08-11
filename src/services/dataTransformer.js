@@ -21,7 +21,7 @@ export const transformOverviewToChatList = (overviewData) => {
       lastMessage: item.lastMessage,
       lastMessageTimestamp: item.lastSeen,
       unreadMessageCount: item.unreadMessageCount,
-      profile: item.profile || null, 
+      profile: item.profile || null,
       isOnline: item.isOnline,
       memberCount: item.memberCount || 0,
       type: item.chatType === 'GROUP' ? 'group' : 'private',
@@ -39,15 +39,11 @@ export const transformOverviewToChatList = (overviewData) => {
 
 /**
  * Transforms a single message DTO from the backend into the UI's message format.
+ * This now handles both text and file messages.
  * @param {Object} msgDto - A single ChatMessageOverviewDTO object
  * @returns {Object} A message object formatted for the UI
  */
 export const transformMessageDTOToUIMessage = (msgDto) => {
-    let messageType = 'text';
-    if (msgDto.kind && msgDto.kind.toLowerCase() !== 'send') {
-        messageType = msgDto.kind.toLowerCase();
-    }
-
     let timestamp;
     try {
         if (msgDto.date && msgDto.time) {
@@ -60,7 +56,28 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
         timestamp = new Date().toISOString();
         console.error("Failed to parse date-time from DTO:", msgDto, e);
     }
-    
+
+    const API_BASE_URL = 'http://192.168.0.244:8082/api';
+    const isFileMessage = msgDto.fileName && msgDto.fileType;
+    let messageType = 'text';
+    let fileUrl = null;
+
+    if (isFileMessage) {
+        fileUrl = `${API_BASE_URL}/chat/file/${msgDto.messageId}`;
+
+        if (msgDto.fileType.startsWith('image/')) {
+            messageType = 'image';
+        } else if (msgDto.fileType.startsWith('video/')) {
+            messageType = 'video';
+        } else if (msgDto.fileType.startsWith('audio/')) {
+            messageType = 'audio';
+        } else {
+            messageType = 'file'; 
+        }
+    } else if (msgDto.kind && msgDto.kind.toLowerCase() !== 'send') {
+        messageType = msgDto.kind.toLowerCase();
+    }
+
     return {
         id: msgDto.messageId,
         messageId: msgDto.messageId,
@@ -69,8 +86,9 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
         timestamp: timestamp,
         status: (msgDto.isSeen === 'true' || msgDto.isSeen === true) ? 'seen' : 'sent',
         type: messageType,
-        isEdited: false, 
-        fileName: null, 
-        fileSize: null,
+        isEdited: msgDto.isEdited || false,
+        fileName: msgDto.fileName || null,
+        fileUrl: fileUrl,
+        fileSize: msgDto.fileSize || null, 
     };
 };

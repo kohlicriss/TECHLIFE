@@ -13,13 +13,13 @@ const apiClient = axios.create({
  * Fetches the initial list of chats (groups and private) for a user.
  * @param {string} employeeId - The ID of the current user.
  */
-export const getChatOverview = async (employeeId) => {  
+export const getChatOverview = async (employeeId) => {
   try {
     const response = await apiClient.get(`/overview/${employeeId}`);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch chat overview:", error);
-    return []; 
+    return [];
   }
 };
 
@@ -32,7 +32,8 @@ export const getMessages = async (employeeId, chatId) => {
   try {
     const response = await apiClient.get(`/chat/${employeeId}/${chatId}`);
     return response.data;
-  } catch (error) {
+  } catch (error)
+{
     console.error(`Failed to fetch messages for chat ${chatId}:`, error);
     return [];
   }
