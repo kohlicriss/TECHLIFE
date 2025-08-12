@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Context } from "../HrmsContext";
-import { useContext } from "react";
 import {
   ChevronLeft,
   Edit,
@@ -28,7 +27,7 @@ const UpdateHistoryPopup = ({
   handleUpdateHistoryFileChange,
   position,
 }) => (
-  <div className="fixed inset-0  bg-opacity-100 flex justify-center items-center shadow-2xl z-201">
+  <div className="fixed inset-0 bg-opacity-100 flex justify-center items-center shadow-2xl z-201">
     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95">
       <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
@@ -210,7 +209,7 @@ const TaskViewPage = () => {
     try {
       // --- Step 1: Fetch Task Details ---
       const taskResponse = await fetch(
-        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
+        `http://localhost:8090/api/task/${projectid}/${id}`
       );
 
       if (!taskResponse.ok) {
@@ -226,7 +225,7 @@ const TaskViewPage = () => {
       // --- Step 2: Fetch Update History (in a separate try/catch) ---
       try {
         const historyResponse = await fetch(
-          `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+          `http://localhost:8090/api/task/status/${projectid}/${id}`
         );
         if (!historyResponse.ok) {
           // Don't throw an error that stops the page. Just log it and set an empty history.
@@ -316,7 +315,7 @@ const TaskViewPage = () => {
 
     try {
       const response = await axios.post(
-        `http://192.168.0.120:8090/api/history/${projectid}/${id}`,
+        `http://localhost:8090/api/history/${projectid}/${id}`,
         payload
       );
       console.log("Update History Response:", response.data);
@@ -348,7 +347,7 @@ const TaskViewPage = () => {
   const handleInlineSave = async () => {
     try {
       const response = await axios.put(
-        `http://192.168.0.120:8090/api/status/${projectid}/${id}`,
+        `http://localhost:8090/api/status/${projectid}/${id}`,
         editRowData
       );
       console.log("Inline Save Response:", response.data);
@@ -606,12 +605,12 @@ const TaskViewPage = () => {
                               (link, index) => (
                                 <li key={index}>
                                   <a
-                                    href={link}
+                                    href={`http://localhost:8090/files/${projectid}/${link}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
                                   >
-                                    File {index + 1}
+                                    {link}
                                   </a>
                                 </li>
                               )
@@ -763,7 +762,7 @@ const TaskViewPage = () => {
                                           className="text-purple-600 hover:underline"
                                         >
                                           <FileText className="inline-block h-3 w-3 mr-1" />
-                                          File {linkIndex + 1}
+                                          {link.split('/').pop()}
                                         </a>
                                       </li>
                                     )
