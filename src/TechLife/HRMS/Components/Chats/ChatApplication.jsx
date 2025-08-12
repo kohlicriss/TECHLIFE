@@ -19,7 +19,6 @@ import {
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
 
 
-// Helper to format file size
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -28,7 +27,6 @@ const formatFileSize = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-// Updated FileIcon to show specific icons for different file types
 const FileIcon = ({ fileName, className = "text-3xl" }) => {
     const extension = fileName?.split('.').pop()?.toLowerCase();
     if (['pdf'].includes(extension)) return <FaFilePdf className={`text-red-500 ${className}`} />;
@@ -42,9 +40,7 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
 };
 
 
-// New component to render file messages
 const FileMessage = ({ msg, isMyMessage }) => {
-    // FIXED: Use msg.messageId instead of msg.content to build the URL
     const downloadUrl = `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
 
     const containerClasses = `flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`;
@@ -66,7 +62,6 @@ const FileMessage = ({ msg, isMyMessage }) => {
         </div>
     );
 
-    // Make the file clickable for download only for the receiver
     return !isMyMessage ? <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer">{content}</a> : content;
 };
 
@@ -134,7 +129,6 @@ const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
     );
 };
 
-// Skeleton component for loading messages
 const MessageSkeleton = () => (
     <div className="space-y-4 p-4">
         <div className="flex items-end gap-2 justify-start">
@@ -254,7 +248,7 @@ function ChatApplication({ currentUser, initialChats }) {
                         ...g,
                         lastMessage: generatePreview(message),
                         lastMessageTimestamp: message?.timestamp || new Date(0).toISOString(),
-                        unreadMessageCount: (g.unreadMessageCount || 0) + (message && message.sender !== currentUser.id && selectedChat?.chatId !== chatId ? 1 : 0)
+                        unreadMessageCount: (g.unreadMessageCount || 0) + (message && message.type !== 'deleted' && message.sender !== currentUser.id && selectedChat?.chatId !== chatId ? 1 : 0)
                     };
                 }
                 return g;
@@ -265,7 +259,7 @@ function ChatApplication({ currentUser, initialChats }) {
                         ...p,
                         lastMessage: generatePreview(message),
                         lastMessageTimestamp: message?.timestamp || new Date(0).toISOString(),
-                        unreadMessageCount: (p.unreadMessageCount || 0) + (message && message.sender !== currentUser.id && selectedChat?.chatId !== chatId ? 1 : 0)
+                        unreadMessageCount: (p.unreadMessageCount || 0) + (message && message.type !== 'deleted' && message.sender !== currentUser.id && selectedChat?.chatId !== chatId ? 1 : 0)
                     };
                 }
                 return p;
@@ -276,15 +270,47 @@ function ChatApplication({ currentUser, initialChats }) {
 
     const onMessageReceived = useCallback((payload) => {
         const receivedMessage = JSON.parse(payload.body);
-
-        const isAck = receivedMessage.sender === currentUser.id && receivedMessage.client_id;
-        const isIncoming = receivedMessage.sender !== currentUser.id;
-        const messageChatId = receivedMessage.groupId || (isAck ? receivedMessage.receiver : receivedMessage.sender);
+        const messageChatId = receivedMessage.groupId || (receivedMessage.sender === currentUser.id ? receivedMessage.receiver : receivedMessage.sender);
 
         if (!messageChatId) {
             console.warn("Received message without a clear chat ID", receivedMessage);
             return;
         }
+
+        if (receivedMessage.type === 'deleted') {
+            setMessages(prevMessages => {
+                const chatMessages = prevMessages[messageChatId] || [];
+                let wasLastMessage = false;
+                if (chatMessages.length > 0) {
+                    const lastMessage = chatMessages[chatMessages.length - 1];
+                    wasLastMessage = lastMessage.messageId === receivedMessage.messageId || lastMessage.id === receivedMessage.messageId;
+                }
+
+                const updatedMessages = chatMessages.map(msg => {
+                    if (msg.messageId === receivedMessage.messageId || msg.id === receivedMessage.messageId) {
+                        return { 
+                            ...msg, 
+                            type: 'deleted', 
+                            content: 'This message was deleted',
+                            fileName: null,
+                            fileSize: null,
+                        };
+                    }
+                    return msg;
+                });
+
+                if (wasLastMessage) {
+                    const newLastMessage = updatedMessages.length > 0 ? updatedMessages[updatedMessages.length - 1] : null;
+                    updateLastMessage(messageChatId, newLastMessage);
+                }
+
+                return { ...prevMessages, [messageChatId]: updatedMessages };
+            });
+            return; 
+        }
+
+        const isAck = receivedMessage.sender === currentUser.id && receivedMessage.client_id;
+        const isIncoming = receivedMessage.sender !== currentUser.id;
 
         if (receivedMessage.fileName && !receivedMessage.content && !receivedMessage.id) {
              console.warn("Received a file message stub, ignoring until full data arrives:", receivedMessage);
@@ -314,11 +340,18 @@ function ChatApplication({ currentUser, initialChats }) {
                         id: finalServerId,
                     });
 
-                    newChatMessages[optimisticIndex] = {
+                    const updatedMessage = {
                         ...optimisticMessage,
                         ...transformedServerMessage,
                         status: 'sent',
                     };
+
+                    if (updatedMessage.type !== 'text' && !updatedMessage.fileSize && optimisticMessage.fileSize) {
+                        updatedMessage.fileSize = optimisticMessage.fileSize;
+                    }
+                    
+                    newChatMessages[optimisticIndex] = updatedMessage;
+
                     finalMessageForUpdate = newChatMessages[optimisticIndex];
                     messageProcessed = true;
                 }
@@ -365,9 +398,26 @@ function ChatApplication({ currentUser, initialChats }) {
                         onMessageReceivedRef.current(payload);
                     }
                 };
+
+                const presenceHandler = (payload) => {
+                    const statusUpdate = JSON.parse(payload.body);
+                    if (statusUpdate.userId === currentUser.id) return;
+
+                    setChatData(prev => {
+                        const newPrivateChats = prev.privateChatsWith.map(chat => {
+                            if (chat.chatId === statusUpdate.userId) {
+                                return { ...chat, isOnline: statusUpdate.isOnline };
+                            }
+                            return chat;
+                        });
+                        return { ...prev, privateChatsWith: newPrivateChats };
+                    });
+                };
+
                 subscriptions.current['private'] = client.subscribe(`/user/queue/private`, messageHandler);
                 subscriptions.current['private-ack'] = client.subscribe(`/user/queue/private-ack`, messageHandler);
                 subscriptions.current['group-ack'] = client.subscribe(`/user/queue/group-ack`, messageHandler);
+                subscriptions.current['presence'] = client.subscribe('/topic/presence', presenceHandler);
             },
             onWebSocketError: (error) => console.error('WebSocket Error:', error),
             onStompError: (frame) => console.error('STOMP Error:', frame.headers['message'], frame.body),
@@ -422,9 +472,9 @@ function ChatApplication({ currentUser, initialChats }) {
         });
 
     }, [isConnected, groupIds, chatData.groups]);
-
+    
     const openChat = useCallback((targetChat) => {
-        if (!stompClient.current || !stompClient.current.active) {
+        if (!currentUser?.id || !stompClient.current?.active) {
             return;
         }
         const destination = `/app/presence/open/${targetChat.chatId}`;
@@ -433,17 +483,40 @@ function ChatApplication({ currentUser, initialChats }) {
             type: targetChat.type === 'group' ? 'TEAM' : 'PRIVATE'
         };
         stompClient.current.publish({ destination, body: JSON.stringify(payload) });
+        
         setSelectedChat(targetChat);
         setIsChatOpen(true);
+
+        const newUrl = `/chat/${currentUser.id}/with?id=${targetChat.chatId}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
     }, [currentUser.id]);
 
     const closeChat = useCallback(() => {
-        if (!selectedChat || !stompClient.current?.active) return;
+        if (!selectedChat || !stompClient.current?.active || !currentUser?.id) return;
         const destination = `/app/presence/close/${selectedChat.chatId}`;
         stompClient.current.publish({ destination, body: "{}" });
+        
         setSelectedChat(null);
         setIsChatOpen(false);
-    }, [selectedChat]);
+
+        const newUrl = `/chat/${currentUser.id}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
+    }, [selectedChat, currentUser.id]);
+    
+    const handleChatSelect = useCallback((chat) => {
+        if ((chat.unreadMessageCount || 0) > 0) {
+            setChatData(prev => ({
+                ...prev,
+                groups: prev.groups.map(g => g.chatId === chat.chatId ? { ...g, unreadMessageCount: 0 } : g),
+                privateChatsWith: prev.privateChatsWith.map(p => p.chatId === chat.chatId ? { ...p, unreadMessageCount: 0 } : p),
+            }));
+        }
+        if (selectedChat && selectedChat.chatId !== chat.chatId) {
+        }
+        openChat(chat);
+    }, [selectedChat, openChat]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -473,55 +546,66 @@ function ChatApplication({ currentUser, initialChats }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showEmojiPicker, showChatMenu, contextMenu.visible, showPinnedMenu]);
 
-    const handleSendMessage = () => { if (message.trim() && selectedChat) { addAndSendMessage({ type: 'text', content: message }); } };
-    
-    const addAndSendMessage = (messageObject) => {
-        if (!selectedChat || !stompClient.current?.active) return;
+    const handleSendMessage = () => {
+        if (!message.trim() || !selectedChat) return;
+
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        const isReply = replyingTo !== null;
+        
         const optimisticMessage = {
             id: clientId,
             messageId: clientId,
             sender: currentUser.id,
-            content: messageObject.content,
+            content: message,
             timestamp: new Date().toISOString(),
             status: 'sending',
-            type: messageObject.type,
-            fileName: messageObject.fileName || null,
-            fileSize: messageObject.fileSize || null,
+            type: 'text',
+            fileName: null,
+            fileSize: null,
             isEdited: false,
             replyTo: replyingTo,
             isForwarded: false,
         };
-        
-        updateLastMessage(selectedChat.chatId, optimisticMessage);
 
+        updateLastMessage(selectedChat.chatId, optimisticMessage);
         setMessages(prev => ({
             ...prev,
             [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
         }));
-        const basePayload = {
-            sender: currentUser.id,
-            content: messageObject.content,
-            kind: messageObject.type === 'text' ? 'send' : messageObject.type,
-            fileName: messageObject.fileName || null,
-        };
+        
+        let destination;
         let payload;
-        if (selectedChat.type === 'group') {
-            payload = { ...basePayload, type: 'TEAM', groupId: selectedChat.chatId, receiver: null };
+
+        if (isReply) {
+            destination = '/app/chat/reply';
+            payload = {
+                replyToMessageId: replyingTo.messageId,
+                sender: currentUser.id,
+                content: message,
+                clientId: clientId,
+                receiver: selectedChat.type === 'private' ? selectedChat.chatId : null,
+                groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
+                type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
+            };
         } else {
-            payload = { ...basePayload, type: 'PRIVATE', groupId: null, receiver: selectedChat.chatId };
+            destination = '/app/chat/send';
+            payload = {
+                sender: currentUser.id,
+                content: message,
+                type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
+                receiver: selectedChat.type === 'private' ? selectedChat.chatId : null,
+                groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
+                clientId: clientId,
+            };
         }
-        const stompPayload = { ...payload, client_id: clientId };
-        const destination = '/app/chat/send';
-        stompClient.current.publish({ destination, body: JSON.stringify(stompPayload) });
-        if (messageObject.type === 'text') {
-            setMessage('');
-            setShowEmojiPicker(false);
-        }
+
+        stompClient.current.publish({ destination, body: JSON.stringify(payload) });
+        
+        setMessage('');
+        setShowEmojiPicker(false);
         setReplyingTo(null);
     };
-
-
+    
     const handleKeyDown = (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (editingInfo.index !== null) handleSaveEdit(); else handleSendMessage(); } };
     const onEmojiClick = (emojiObject) => setMessage(prev => prev + emojiObject.emoji);
     const handleFileButtonClick = () => fileInputRef.current.click();
@@ -680,8 +764,12 @@ function ChatApplication({ currentUser, initialChats }) {
             let nextMessages;
             if (forEveryone) {
                 await deleteMessageForEveryone(messageId, currentUser.id);
-                nextMessages = [...currentMessages];
-                nextMessages[contextMenu.index] = { ...messageToDelete, type: 'deleted', content: 'This message was deleted', originalMessage: messageToDelete };
+                nextMessages = currentMessages.map((msg, i) => {
+                    if (i === contextMenu.index) {
+                        return { ...messageToDelete, type: 'deleted', content: 'This message was deleted', originalMessage: messageToDelete };
+                    }
+                    return msg;
+                });
                 setLastDeleted({ index: contextMenu.index, message: messageToDelete });
                 setTimeout(() => setLastDeleted(null), 5000);
             } else {
@@ -703,51 +791,63 @@ function ChatApplication({ currentUser, initialChats }) {
     const handlePin = () => { setPinnedMessages(prev => ({ ...prev, [selectedChat.chatId]: { message: contextMenu.message, index: contextMenu.index } })); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); };
     const handleUnpin = () => { setPinnedMessages(prev => { const newPinned = { ...prev }; delete newPinned[selectedChat.chatId]; return newPinned; }); setShowPinnedMenu(false); };
     const handleGoToMessage = () => { setShowPinnedMenu(false); const pinnedInfo = pinnedMessages[selectedChat.chatId]; if (pinnedInfo) { const messageElement = document.querySelector(`[data-message-index='${pinnedInfo.index}']`); if (messageElement) { messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); messageElement.classList.add('animate-pulse', 'bg-blue-200'); setTimeout(() => messageElement.classList.remove('animate-pulse', 'bg-blue-200'), 2500); } } };
-    const handleForward = () => { setForwardingInfo({ visible: true, message: contextMenu.message }); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); };
+    
+    const handleForward = () => { 
+        setForwardingInfo({ visible: true, message: contextMenu.message }); 
+        setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); 
+    };
 
     const handleConfirmForward = () => {
         const originalMsg = forwardingInfo.message;
-        if (!originalMsg) return;
-        forwardRecipients.forEach(chatId => {
-            const forwardedMessage = {
-                type: originalMsg.type,
-                content: originalMsg.content,
-                fileName: originalMsg.fileName,
-                fileSize: originalMsg.fileSize,
-                isForwarded: true,
-                sender: currentUser?.id,
-                timestamp: new Date().toISOString(),
-                status: 'sent',
-                replyTo: null
-            };
-            setMessages(prev => ({ ...prev, [chatId]: [...(prev[chatId] || []), forwardedMessage] }));
-            updateLastMessage(chatId, forwardedMessage);
+        if (!originalMsg || forwardRecipients.length === 0) return;
+
+        const dto = {
+            forwardMessageId: originalMsg.messageId,
+            sender: currentUser.id,
+            content: null,
+            forwardTo: forwardRecipients.map(chatId => {
+                const chat = allChats.find(c => c.chatId === chatId);
+                return {
+                    receiver: chat.type === 'private' ? chat.chatId : null,
+                    groupId: chat.type === 'group' ? chat.chatId : null,
+                    type: chat.type === 'group' ? 'TEAM' : 'PRIVATE'
+                };
+            })
+        };
+
+        stompClient.current.publish({
+            destination: '/app/chat/forward',
+            body: JSON.stringify(dto)
         });
+
         setForwardingInfo({ visible: false, message: null });
         setForwardRecipients([]);
         setForwardSearchTerm('');
     };
 
-    const allChats = [
+    const allChats = useMemo(() => [
         ...chatData.privateChatsWith.filter(user => user.chatId !== currentUser?.id),
         ...chatData.groups,
-    ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp));
+    ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
     const filteredChats = allChats.filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    useEffect(() => {
+        if (isChatDataReady && !selectedChat && allChats.length > 0) {
+            if (window.location.pathname.includes('/with')) {
+                const params = new URLSearchParams(window.location.search);
+                const chatIdFromUrl = params.get('id');
 
-    const handleChatSelect = (chat) => {
-        if ((chat.unreadMessageCount || 0) > 0) {
-            setChatData(prev => ({
-                ...prev,
-                groups: prev.groups.map(g => g.chatId === chat.chatId ? { ...g, unreadMessageCount: 0 } : g),
-                privateChatsWith: prev.privateChatsWith.map(p => p.chatId === chat.chatId ? { ...p, unreadMessageCount: 0 } : p),
-            }));
+                if (chatIdFromUrl) {
+                    const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
+                    if (chatToSelect) {
+                        handleChatSelect(chatToSelect);
+                    }
+                }
+            }
         }
-        if (selectedChat && selectedChat.chatId !== chat.chatId) {
-            closeChat();
-        }
-        openChat(chat);
-    };
+    }, [isChatDataReady, allChats, selectedChat, handleChatSelect]);
+
 
     const openGroupInfoModal = () => {
         if (selectedChat?.type === 'group') {
@@ -804,13 +904,10 @@ function ChatApplication({ currentUser, initialChats }) {
             : { name: 'Unknown User', profile: null };
     };
     
-    // FIXED: Use msg.messageId for confirmed messages to build the URL
     const getFileUrl = (msg) => {
-        // Optimistic messages have a local blob URL in `content`
         if (msg.status === 'sending' || msg.status === 'failed') {
             return msg.content;
         }
-        // Confirmed messages use the messageId to build the URL
         return `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
     };
 
@@ -1134,4 +1231,4 @@ function ChatApplication({ currentUser, initialChats }) {
     );
 }
 
-export default ChatApplication; 
+export default ChatApplication;

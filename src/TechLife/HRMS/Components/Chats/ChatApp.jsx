@@ -4,7 +4,6 @@ import { getChatOverview } from '../../../../services/apiService';
 import { transformOverviewToChatList } from '../../../../services/dataTransformer';
 import ChatApplication from './ChatApplication';
 
-// Skeleton component for a single chat item in the list
 const ChatListItemSkeleton = () => (
     <div className="flex items-center space-x-4 p-3">
         <div className="w-11 h-11 bg-gray-200 rounded-full animate-pulse"></div>
@@ -15,7 +14,6 @@ const ChatListItemSkeleton = () => (
     </div>
 );
 
-// Skeleton component for the entire chat application layout
 const ChatAppSkeleton = () => (
     <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
         {/* Sidebar Skeleton */}
