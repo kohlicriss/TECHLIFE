@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Edit } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { useContext } from "react";
 
 const CalendarIcon = () => (
   <svg
@@ -29,6 +28,8 @@ const TaskPopup = ({
   taskData,
   setTaskData,
   isEditing,
+  taskFormError, // New prop for showing an error message
+  taskFormSuccess, // New prop for showing a success message
 }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -203,6 +204,18 @@ const TaskPopup = ({
             />
           </div>
 
+          {/* New: Display success or error message here */}
+          {taskFormSuccess && (
+            <div className="p-3 text-sm text-green-700 bg-green-100 rounded-md">
+              Success! The task has been saved.
+            </div>
+          )}
+          {taskFormError && (
+            <div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">
+              {taskFormError}
+            </div>
+          )}
+
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
@@ -227,16 +240,20 @@ const TaskPopup = ({
 const TasksPage = () => {
   const navigate = useNavigate();
   const { employeeId } = useParams();
-  const sai = localStorage.getItem("logedempid");
-  const role = localStorage.getItem("logedemprole");
-
-  console.log("Logged in Employee ID:", sai, "Role:", role);
-  const { userData, setUserData, accessToken } = useContext(Context);
+  const { userData } = useContext(Context);
 
   const [tasks, setTasks] = useState([]);
   const [assignedByMeTasks, setAssignedByMeTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // Existing global error state, now only for full page errors
+  const [error, setError] = useState(null); 
+  
+  // New state for handling errors within the task form popup
+  const [taskFormError, setTaskFormError] = useState(null);
+  
+  // New state for handling success message within the task form popup
+  const [taskFormSuccess, setTaskFormSuccess] = useState(false);
 
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [sortOption, setSortOption] = useState("none");
@@ -275,34 +292,41 @@ const TasksPage = () => {
       const userId = userData.employeeId;
 
       if (userRole === "TEAM_LEAD" && employeeId) {
-        // Team Lead viewing a team member's tasks
-        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${employeeId}`;
+        apiUrl = `http://192.168.137.91:8080/api/all/tasks/${employeeId}`;
       } else {
-        // Employee viewing their own tasks, or Team Lead viewing their own tasks page
-        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
+        apiUrl = `http://192.168.137.91:8080/api/all/tasks/${userId}`;
       }
 
       console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
       const response = await fetch(apiUrl);
-
-      if (response.status === 404) {
-        console.warn("No tasks found for the user.");
-        setTasks([]);
-        setError(null);
-        return;
-      }
       
       if (!response.ok) {
+        if (response.status === 404) {
+          console.warn("No tasks found for the user.");
+          setTasks([]);
+          setError(null);
+          return;
+        }
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const data = await response.json();
+      // Read response text first to handle empty bodies gracefully
+      const responseText = await response.text();
+      if (!responseText) {
+          console.warn("Received an empty response for user tasks. Setting tasks to empty array.");
+          setTasks([]);
+          return;
+      }
+      
+      const data = JSON.parse(responseText);
       console.log("Response from fetchTasks:", data);
       setTasks(data);
       setError(null);
     } catch (err) {
-      setError("Failed to fetch tasks. Please make sure the server is running.");
+      // Catches both network errors and JSON.parse errors
+      setError("Failed to fetch tasks. Please make sure the server is running and the API is returning valid JSON.");
       console.error("Error in fetchTasks:", err);
+      setTasks([]); // Ensure state is reset
     } finally {
       setLoading(false);
     }
@@ -316,26 +340,35 @@ const TasksPage = () => {
 
     try {
       const tlId = userData.employeeId;
-      const url = `http://192.168.0.120:8090/api/${tlId}`;
+      const url = `http://192.168.137.91:8080/api/${tlId}`;
       
       console.log(`Fetching tasks assigned by Team Lead from: ${url}`);
       const response = await fetch(url);
       
-      if (response.status === 404) {
-        console.warn(`No tasks found assigned by TEAM_LEAD ${tlId}.`);
-        setAssignedByMeTasks([]);
-        return;
-      }
-
       if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`No tasks found assigned by TEAM_LEAD ${tlId}.`);
+          setAssignedByMeTasks([]);
+          return;
+        }
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
-      const data = await response.json();
+      // Read response text first to handle empty bodies gracefully
+      const responseText = await response.text();
+      if (!responseText) {
+          console.warn("Received an empty response for assigned tasks. Setting tasks to empty array.");
+          setAssignedByMeTasks([]);
+          return;
+      }
+
+      const data = JSON.parse(responseText);
       console.log(`Response from fetchTasksAssignedByMe:`, data);
       setAssignedByMeTasks(data);
 
     } catch (error) {
+      // Catches both network errors and JSON.parse errors
+      setError("Failed to fetch tasks assigned by Team Lead. Please check your API endpoint.");
       console.error("Failed to fetch tasks assigned by Team Lead:", error);
       setAssignedByMeTasks([]);
     }
@@ -437,6 +470,8 @@ const TasksPage = () => {
   const handleCreateClick = () => {
     setIsEditing(false);
     setTaskData(getInitialFormState());
+    setTaskFormError(null); // Reset form error
+    setTaskFormSuccess(false); // Reset form success
     setShowTaskPopup(true);
   };
 
@@ -444,51 +479,95 @@ const TasksPage = () => {
     e.stopPropagation();
     setIsEditing(true);
     setTaskData(task);
+    setTaskFormError(null); // Reset form error
+    setTaskFormSuccess(false); // Reset form success
     setShowTaskPopup(true);
   };
 
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
-    const taskPayload = {
-      ...taskData,
-      relatedLinks: Array.isArray(taskData.relatedLinks)
-        ? taskData.relatedLinks
-        : taskData.relatedLinks
-            .split(",")
-            .map((link) => link.trim())
-            .filter((link) => link),
-      attachedFileLinks: Array.isArray(taskData.attachedFileLinks)
-        ? taskData.attachedFileLinks.map((f) => f.name)
-        : [],
-      rating: taskData.rating ? parseInt(taskData.rating, 10) : null,
-    };
+    setTaskFormError(null); // Clear any previous errors
+    setTaskFormSuccess(false); // Clear any previous success messages
 
-    const tlId = userData?.employeeId;
+    // File content ni backend ku pampadaniki, FormData ni vadali
+    const formData = new FormData();
+    
+    // Add all form data fields to the FormData object
+    formData.append("id", taskData.id);
+    formData.append("title", taskData.title);
+    formData.append("description", taskData.description);
+    formData.append("createdBy", taskData.createdBy);
+    formData.append("assignedTo", taskData.assignedTo);
+    formData.append("status", taskData.status);
+    formData.append("priority", taskData.priority);
+    formData.append("dueDate", taskData.dueDate);
+    formData.append("createdDate", taskData.createdDate);
+    
+    if (taskData.rating) {
+        formData.append("rating", taskData.rating);
+    }
+    if (taskData.remark) {
+        formData.append("remark", taskData.remark);
+    }
+    if (taskData.completionNote) {
+        formData.append("completionNote", taskData.completionNote);
+    }
+    
+    // Convert relatedLinks array to a string and append
+    const relatedLinksString = Array.isArray(taskData.relatedLinks)
+        ? taskData.relatedLinks.join(", ")
+        : taskData.relatedLinks;
+    formData.append("relatedLinks", relatedLinksString);
+
+    // Ippudu, files ni okkokka daaniki add cheyandi.
+    // Dhyanam ga chudandi: ikkada file object ni direct ga `append` chestunnamu,
+    // kevalam file name ni kaadu.
+    if (taskData.attachedFileLinks && taskData.attachedFileLinks.length > 0) {
+        taskData.attachedFileLinks.forEach((file) => {
+            // Check if it's a new file object (from the file input) or a string (from an existing task)
+            if (file instanceof File) {
+                formData.append("files", file); // Use the same key for all files
+            } else {
+                // If it's a string (an old file link), add it as a separate field
+                formData.append("existingFiles", file);
+            }
+        });
+    }
+
     const assignedEmployeeId = taskData.assignedTo;
     const projectId = isEditing ? taskData.projectId : "PRO0001";
 
-    if (!tlId || !assignedEmployeeId || !projectId) {
-      setError("Missing required IDs for task creation/update.");
+    if (!assignedEmployeeId || !projectId) {
+      setTaskFormError("Missing required IDs for task creation/update.");
       return;
     }
     
-    const apiUrl = `http://192.168.0.120:8090/api/${tlId}/${assignedEmployeeId}/${projectId}/task`;
+    const apiUrl = `http://192.168.137.91:8080/api/${assignedEmployeeId}/${projectId}/task`;
 
     try {
       if (isEditing) {
-        console.log("Sending PUT request to:", apiUrl, "with payload:", taskPayload);
-        const response = await axios.put(apiUrl, taskPayload);
-        console.log("Task updated successfully. Response:", response.data);
+        console.log("Sending PUT request to:", apiUrl, "with payload:", formData);
+        await axios.put(apiUrl, formData);
+        console.log("Task updated successfully.");
       } else {
-        console.log("Sending POST request to:", apiUrl, "with payload:", taskPayload);
-        const response = await axios.post(apiUrl, taskPayload);
-        console.log("Task created successfully. Response:", response.data);
+        console.log("Sending POST request to:", apiUrl, "with payload:", formData);
+        await axios.post(apiUrl, formData);
+        console.log("Task created successfully.");
       }
-      setShowTaskPopup(false);
-      fetchTasks();
+      
+      setTaskFormSuccess(true); // Show success message
+      setTimeout(() => {
+        setShowTaskPopup(false); // Close the popup
+        fetchTasks(); // Refresh the task list
+        if (isTeamLead) {
+          fetchTasksAssignedByMe();
+        }
+      }, 2000); // Close after 2 seconds
+      
     } catch (err) {
       console.error(`Error ${isEditing ? "updating" : "creating"} task:`, err);
-      setError(`Failed to ${isEditing ? "update" : "create"} task.`);
+      // Set the local form error, not the global one
+      setTaskFormError(`Failed to ${isEditing ? "update" : "create"} task. Please check your data and try again.`);
     }
   };
 
@@ -550,6 +629,7 @@ const TasksPage = () => {
     );
   }
 
+  // The global error state is now only for fetching data, not form submission.
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-red-50">
@@ -664,7 +744,7 @@ const TasksPage = () => {
                             scope="col"
                             className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
                           >
-                            Progress
+                            Time Completed
                           </th>
                           <th
                             scope="col"
@@ -896,8 +976,9 @@ const TasksPage = () => {
                 <tbody className="bg-white divide-y divide-slate-200">
                   {filteredAndSortedTasks.length > 0 ? (
                     filteredAndSortedTasks.map((task) => {
+                      // FIX: Using task.startDate instead of task.createdDate for progress bar calculation
                       const timeCompletedBar = calculateTimeCompletedBar(
-                        task.startDate, // <<< FIX: Changed from task.createdDate
+                        task.startDate,
                         task.dueDate,
                         today
                       );
@@ -1024,6 +1105,8 @@ const TasksPage = () => {
           taskData={taskData}
           setTaskData={setTaskData}
           isEditing={isEditing}
+          taskFormError={taskFormError}  
+          taskFormSuccess={taskFormSuccess}  
         />
       )}
     </>
