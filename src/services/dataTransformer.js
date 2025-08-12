@@ -39,18 +39,20 @@ export const transformOverviewToChatList = (overviewData) => {
 
 /**
  * Transforms a single message DTO from the backend into the UI's message format.
- * This now handles both text and file messages.
- * @param {Object} msgDto - A single ChatMessageOverviewDTO object
+ * This now handles text, files, replies, and forwarded messages.
+ * @param {Object} msgDto - A single ChatMessage object from backend
  * @returns {Object} A message object formatted for the UI
  */
 export const transformMessageDTOToUIMessage = (msgDto) => {
     let timestamp;
     try {
-        if (msgDto.date && msgDto.time) {
+        if (msgDto.timestamp) {
+            timestamp = new Date(msgDto.timestamp).toISOString();
+        } else if (msgDto.date && msgDto.time) {
             timestamp = new Date(`${msgDto.date} ${msgDto.time}`).toISOString();
         } else {
             timestamp = new Date().toISOString();
-            console.warn("Message DTO has invalid or missing date/time:", msgDto);
+            console.warn("Message DTO has invalid or missing timestamp:", msgDto);
         }
     } catch (e) {
         timestamp = new Date().toISOString();
@@ -63,7 +65,7 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
     let fileUrl = null;
 
     if (isFileMessage) {
-        fileUrl = `${API_BASE_URL}/chat/file/${msgDto.messageId}`;
+        fileUrl = `${API_BASE_URL}/chat/file/${msgDto.id}`;
 
         if (msgDto.fileType.startsWith('image/')) {
             messageType = 'image';
@@ -72,23 +74,34 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
         } else if (msgDto.fileType.startsWith('audio/')) {
             messageType = 'audio';
         } else {
-            messageType = 'file'; 
+            messageType = 'file';
         }
     } else if (msgDto.kind && msgDto.kind.toLowerCase() !== 'send') {
         messageType = msgDto.kind.toLowerCase();
     }
 
     return {
-        id: msgDto.messageId,
-        messageId: msgDto.messageId,
+        id: msgDto.id, 
+        messageId: msgDto.id, 
         content: msgDto.content,
         sender: msgDto.sender,
         timestamp: timestamp,
-        status: (msgDto.isSeen === 'true' || msgDto.isSeen === true) ? 'seen' : 'sent',
+        status: (msgDto.seen === true || String(msgDto.seen) === 'true') ? 'seen' : 'sent',
         type: messageType,
-        isEdited: msgDto.isEdited || false,
+        isEdited: msgDto.edited || false,
         fileName: msgDto.fileName || null,
         fileUrl: fileUrl,
-        fileSize: msgDto.fileSize || null, 
+        fileSize: msgDto.fileSize || null,
+        clientId: msgDto.clientId || null,
+
+        isForwarded: msgDto.forwarded || false,
+        forwardedFrom: msgDto.forwardedFrom || null,
+
+        isReply: !!msgDto.replyToMessage,
+        replyTo: msgDto.replyToMessage ? {
+            sender: msgDto.replyToMessage.sender,
+            content: msgDto.replyPreviewContent,
+            originalMessageId: msgDto.replyToMessage.id
+        } : null,
     };
 };
