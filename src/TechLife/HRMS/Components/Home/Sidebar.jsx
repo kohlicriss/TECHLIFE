@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,37 +17,12 @@ import {
   TicketCheck,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
-import axios from "axios";
-
-// This is a simple skeleton loader component you can create
-const SidebarSkeleton = () => (
-  <div className="animate-pulse p-4">
-    <div className="h-8 bg-gray-300 rounded mb-6"></div>
-    <div className="space-y-4">
-      {[...Array(9)].map((_, i) => (
-        <div key={i} className="h-8 bg-gray-300 rounded"></div>
-      ))}
-    </div>
-    <div className="mt-10 h-8 bg-gray-300 rounded"></div>
-  </div>
-);
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // New state for loading
   const location = useLocation();
   const { userData } = useContext(Context);
   const empId = userData?.employeeId;
-
-  // Use useEffect to set a timeout for the skeleton
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000); // 1-second delay
-
-    // Cleanup the timer if the component unmounts
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleLogoutClick = () => {
     console.log("Clearing user data from localStorage...");
@@ -69,7 +44,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       icon: <LayoutDashboard size={18} />,
       path: empId ? `/dashboard/${empId}` : "/dashboard",
     },
-    { name: "Profile", icon: <UserCircle size={18} />, path:empId?`/profile/${empId}`: "/profile" },
+    { name: "Profile", icon: <UserCircle size={18} />, path: empId ? `/profile/${empId}` : "/profile" },
     {
       name: "Attendance",
       icon: <CalendarCheck size={18} />,
@@ -88,21 +63,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
   ];
 
-  // Conditional rendering based on the loading state
-  if (isLoading) {
-    return (
-      <div
-        style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
-        className={`fixed top-0 left-0 h-full w-60 bg-white shadow-lg z-60 transform transition-all duration-200 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
-      >
-        <SidebarSkeleton />
-      </div>
-    );
-  }
-
-  // Once isLoading is false, render the actual sidebar
   return (
     <>
       {/* Overlay for mobile view when sidebar is open */}
