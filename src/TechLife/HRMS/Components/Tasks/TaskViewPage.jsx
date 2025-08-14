@@ -17,6 +17,7 @@ import {
   Upload,
   Star,
   MessageSquare,
+  Check,
 } from "lucide-react";
 
 // The popup component remains unchanged
@@ -94,43 +95,25 @@ const UpdateHistoryPopup = ({
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
-          {position === "admin" && (
-            <>
-              <div>
-                <label
-                  htmlFor="remark"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Remark
-                </label>
-                <input
-                  type="text"
-                  name="remark"
-                  id="remark"
-                  placeholder="Add a remark"
-                  value={updateHistoryData.remark}
-                  onChange={handleUpdateHistoryInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="reviewedBy"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Reviewed By
-                </label>
-                <input
-                  type="text"
-                  name="reviewedBy"
-                  id="reviewedBy"
-                  placeholder="Enter reviewer's name"
-                  value={updateHistoryData.reviewedBy}
-                  onChange={handleUpdateHistoryInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </>
+          {/* Only show remark field if user is a TEAM_LEAD */}
+          {position === "TEAM_LEAD" && (
+            <div>
+              <label
+                htmlFor="remark"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Remark
+              </label>
+              <input
+                type="text"
+                name="remark"
+                id="remark"
+                placeholder="Add a remark"
+                value={updateHistoryData.remark}
+                onChange={handleUpdateHistoryInputChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
           )}
           <div>
             <label
@@ -182,14 +165,13 @@ const TaskViewPage = () => {
 
   const [assignedBy, setAssignedBy] = useState("");
   const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);
-  const { userData, setUserData } = useContext(Context);
+  const { userData } = useContext(Context);
   const position = userData?.roles[0];
   const [updateHistoryData, setUpdateHistoryData] = useState({
     changes: "",
     note: "",
     relatedLinks: "",
     relatedFileLinks: [],
-    reviewedBy: "",
     remark: "",
   });
 
@@ -209,47 +191,44 @@ const TaskViewPage = () => {
     setError(null);
 
     try {
-      const taskResponse = await fetch(
-        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
-      );
-
-      if (!taskResponse.ok) {
-        throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
-      }
-
-      const taskData = await taskResponse.json();
-      console.log("Task Data Received:", taskData);
-      setAssignedBy(taskData?.createdBy);
-      setCurrentTask(taskData);
-
-      try {
-        const historyResponse = await fetch(
-          `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
+        const taskResponse = await fetch(
+            `http://localhost:8090/api/task/${projectid}/${id}`
         );
-        if (!historyResponse.ok) {
-          console.warn("Could not fetch task history. Displaying task without it.");
-          setUpdateHistory([]);
-        } else {
-          const historyData = await historyResponse.json();
-          setUpdateHistory(historyData);
+        
+        if (!taskResponse.ok) {
+            throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
         }
-      } catch (historyErr) {
-        console.error("A network or other error occurred while fetching history:", historyErr);
-        setUpdateHistory([]);
-      }
+
+        const taskData = await taskResponse.json();
+        console.log("Task Data Received:", taskData);
+        setAssignedBy(taskData?.createdBy);
+        setCurrentTask(taskData);
+
+        const historyResponse = await fetch(
+            `http://localhost:8090/api/${projectid}/${id}/updatetasks`
+        );
+        
+        if (!historyResponse.ok) {
+            console.warn("Could not fetch task history. Displaying task without it.");
+            setUpdateHistory([]);
+        } else {
+            const historyData = await historyResponse.json();
+            console.log("All task history responses:", historyData); // <-- Added console log here
+            setUpdateHistory(historyData);
+        }
 
     } catch (err) {
-      setError(err.message || "Failed to fetch critical task details.");
-      console.error(err);
-      setCurrentTask(null);
+        setError(err.message || "Failed to fetch critical task details.");
+        console.error(err);
+        setCurrentTask(null);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchTaskData();
-  }, [projectid, id, assignedBy]);
+  }, [projectid, id]); 
 
   const getPriorityClass = (priority) => {
     const upperPriority = priority ? priority.toUpperCase() : "";
@@ -299,41 +278,84 @@ const TaskViewPage = () => {
 
   const handleUpdateHistorySubmit = async (e) => {
     e.preventDefault();
-    const payload = {
-      ...updateHistoryData,
-      relatedLinks: updateHistoryData.relatedLinks
-        .split(",")
-        .map((link) => link.trim())
-        .filter((link) => link),
-      relatedFileLinks: updateHistoryData.relatedFileLinks.map(
-        (file) => file.name
-      ),
+
+    if (!updateHistoryData.changes) {
+      alert("Changes description is required.");
+      return;
+    }
+    
+    // Set reviewerId based on role
+    const reviewerId = position === "TEAM_LEAD" ? userData?.employeeId : null;
+    if (!reviewerId && position === "TEAM_LEAD") {
+        alert("User ID not found. Please log in again.");
+        return;
+    }
+
+    const formData = new FormData();
+    const newHistoryId = Date.now(); 
+
+    const taskUpdatePayload = {
+        id: newHistoryId,
+        changes: updateHistoryData.changes,
+        note: updateHistoryData.note || null,
+        relatedLinks: updateHistoryData.relatedLinks
+            .split(",")
+            .map((link) => link.trim())
+            .filter((link) => link),
+        reviewedBy: reviewerId, // Set to Team Lead ID or null
+        remark: updateHistoryData.remark || null,
+        updatedDate: new Date().toISOString()
     };
+    
+    formData.append(
+        'taskUpdateDTO',
+        new Blob([JSON.stringify(taskUpdatePayload)], { type: 'application/json' })
+    );
+
+    if (updateHistoryData.relatedFileLinks.length > 0) {
+        updateHistoryData.relatedFileLinks.forEach((file) => {
+            formData.append('relatedFileLinks', file);
+        });
+    }
+
+    console.log("Submitting new history update...");
+    console.log("URL:", `http://localhost:8090/api/${reviewerId || 'employee'}/history/${projectid}/${id}`); // Adjusted URL for logging
+    console.log("Payload:", taskUpdatePayload);
+    
+    for (var pair of formData.entries()) {
+        console.log(pair[0]+ ': ' + pair[1]);
+    }
 
     try {
-      const response = await axios.post(
-        `http://192.168.0.120:8090/api/history/${projectid}/${id}`,
-        payload
-      );
-      console.log("Update History Response:", response.data);
-      setShowUpdateHistoryPopup(false);
-      setUpdateHistoryData({
-        changes: "",
-        note: "",
-        relatedLinks: "",
-        relatedFileLinks: [],
-        reviewedBy: "",
-        remark: "",
-      });
-      fetchTaskData();
+        const response = await axios.post(
+            `http://localhost:8090/api/${reviewerId || userData?.employeeId}/history/${projectid}/${id}`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }
+        );
+        console.log("Update History Response:", response.data);
+        setShowUpdateHistoryPopup(false);
+        setUpdateHistoryData({
+            changes: "",
+            note: "",
+            relatedLinks: "",
+            relatedFileLinks: [],
+            remark: "",
+        });
+        fetchTaskData();
     } catch (error) {
-      console.error("Error updating history:", error);
+        console.error("Error updating history:", error.response || error.message);
     }
   };
 
   const handleInlineEdit = (historyItem) => {
     setEditingRowId(historyItem.id);
-    setEditRowData(historyItem);
+    // When a Team Lead edits, pre-populate with their ID
+    const reviewedByValue = position === "TEAM_LEAD" ? userData?.employeeId : historyItem.reviewedBy;
+    setEditRowData({ ...historyItem, reviewedBy: reviewedByValue });
   };
 
   const handleInlineCancel = () => {
@@ -343,22 +365,95 @@ const TaskViewPage = () => {
 
   const handleInlineSave = async () => {
     try {
+      if (!editRowData || !editRowData.id) {
+          alert("Cannot save. Invalid history item.");
+          return;
+      }
+      
+      const reviewerId = userData?.employeeId;
+      if (!reviewerId) {
+          alert("User ID not found. Please log in again.");
+          return;
+      }
+      
+      // We will create a clean payload to send, separate from the files.
+      const updatedPayload = {
+          id: editRowData.id,
+          changes: editRowData.changes,
+          note: editRowData.note,
+          relatedLinks: Array.isArray(editRowData.relatedLinks) ? editRowData.relatedLinks : [],
+          remark: editRowData.remark,
+          reviewedBy: reviewerId, // Automatically set to the logged-in Team Lead's ID
+          updatedDate: new Date().toISOString()
+      };
+      
+      console.log("Submitting inline update...");
+      console.log("URL:", `http://localhost:8090/api/status/update-details/${projectid}/${id}/${editRowData.id}`);
+      console.log("Payload:", updatedPayload);
+      
       const response = await axios.put(
-        `http://192.168.0.120:8090/api/status/${projectid}/${id}`,
-        editRowData
+        `http://localhost:8090/api/status/update-details/${projectid}/${id}/${editRowData.id}`,
+        updatedPayload
       );
+      
       console.log("Inline Save Response:", response.data);
       handleInlineCancel();
       fetchTaskData();
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Error updating status:", error.response?.data || error.message);
     }
   };
-
+  
   const handleInlineInputChange = (e) => {
     const { name, value } = e.target;
     setEditRowData((prev) => ({ ...prev, [name]: value }));
   };
+    // Helper function to render related links as a list
+    const renderRelatedLinks = (links) => {
+        if (!links || links.length === 0) {
+            return "-";
+        }
+        return (
+            <ul className="list-disc list-inside text-xs space-y-1">
+                {links.map((link, i) => (
+                    <li key={i}>
+                        <a 
+                          href={link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            {link}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+
+    // Helper function to render related files with a download icon
+    const renderRelatedFiles = (files) => {
+      if (!files || files.length === 0) {
+        return "-";
+      }
+      return (
+        <ul className="list-disc list-inside text-xs space-y-1">
+          {files.map((file, i) => (
+            <li key={i}>
+              <a
+                href={file}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:text-purple-800 hover:underline flex items-center"
+              >
+                <FileText size={14} className="mr-1" />
+                {decodeURIComponent(file.split('/').pop().split('?')[0])}
+              </a>
+            </li>
+          ))}
+        </ul>
+      );
+    };
 
   const handleSubmitTask = () => {
     const now = new Date();
@@ -559,16 +654,59 @@ const TaskViewPage = () => {
                 </div>
               )}
 
-              {/* ===== START OF CORRECTED CODE ===== */}
-              {(currentTask.relatedLinks &&
-                currentTask.relatedLinks.length > 0) ||
-                (currentTask.attachedFileLinks &&
-                  currentTask.attachedFileLinks.length > 0) ? (
+              {/* ===== Related Links & Files Section ===== */}
+              {(currentTask.relatedLinks && currentTask.relatedLinks.length > 0) ||
+              (currentTask.attachedFileLinks && currentTask.attachedFileLinks.length > 0) ? (
                 <div className="mb-8">
                   <h4 className="text-xl font-semibold text-gray-800 mb-3">
                     Related Links & Files
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {currentTask.relatedLinks && currentTask.relatedLinks.length > 0 && (
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
+                        <h5 className="font-medium text-blue-800 flex items-center mb-2">
+                          <GitFork className="h-4 w-4 mr-2" /> Related Links:
+                        </h5>
+                        <ul className="space-y-1">
+                          {currentTask.relatedLinks.map((link, index) => (
+                            <li key={index}>
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 hover:underline text-sm break-all"
+                              >
+                                {link}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {currentTask.attachedFileLinks && currentTask.attachedFileLinks.length > 0 && (
+                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 shadow-sm">
+                        <h5 className="font-medium text-purple-800 flex items-center mb-2">
+                          <FileText className="h-4 w-4 mr-2" /> Attached
+                          Files:
+                        </h5>
+                        <ul className="space-y-1">
+                          {currentTask.attachedFileLinks.map(
+                            (link, index) => (
+                              <li key={index}>
+                                <a
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
+                                >
+                                  {decodeURIComponent(link.split('/').pop().split('?')[0])}
+                                </a>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
                     {currentTask.relatedLinks &&
                       currentTask.relatedLinks.length > 0 && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
@@ -620,10 +758,9 @@ const TaskViewPage = () => {
                   </div>
                 </div>
               ) : null}
-              {/* ===== END OF CORRECTED CODE ===== */}
-
             </div>
 
+            {/* ===== Update History Section ===== */}
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
               <div className="mb-8">
                 <div className="flex justify-between items-center mb-3">
@@ -635,7 +772,7 @@ const TaskViewPage = () => {
                       onClick={() => setShowUpdateHistoryPopup(true)}
                       className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
                     >
-                      Update History
+                      Create History
                     </button>
                   )}
                 </div>
@@ -720,65 +857,20 @@ const TaskViewPage = () => {
                             <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
                               {history.note || "-"}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
-                              {history.relatedLinks &&
-                                history.relatedLinks.length > 0 ? (
-                                <ul className="list-disc list-inside space-y-0.5">
-                                  {history.relatedLinks.map(
-                                    (link, linkIndex) => (
-                                      <li
-                                        key={linkIndex}
-                                        className="break-words"
-                                      >
-                                        <a
-                                          href={link}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 hover:underline"
-                                        >
-                                          {link}
-                                        </a>
-                                      </li>
-                                    )
-                                  )}
-                                </ul>
-                              ) : (
-                                "-"
-                              )}
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
+                              {renderRelatedLinks(history.relatedLinks)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
-                              {history.relatedFileLinks &&
-                                history.relatedFileLinks.length > 0 ? (
-                                <ul className="list-disc list-inside space-y-0.5">
-                                  {history.relatedFileLinks.map(
-                                    (link, linkIndex) => (
-                                      <li
-                                        key={linkIndex}
-                                        className="break-words"
-                                      >
-                                        <a
-                                          href={link}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-purple-600 hover:underline"
-                                        >
-                                          <FileText className="inline-block h-3 w-3 mr-1" />
-                                          {decodeURIComponent(link.split('/').pop().split('?')[0])}
-                                        </a>
-                                      </li>
-                                    )
-                                  )}
-                                </ul>
-                              ) : (
-                                "-"
-                              )}
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
+                              {renderRelatedFiles(history.relatedFileLinks)}
                             </td>
+                            {/* Conditional Rendering for Remarks */}
                             <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
+                              {/* Only show input field in edit mode */}
                               {editingRowId === history.id ? (
                                 <input
                                   type="text"
                                   name="remark"
-                                  value={editRowData.remark || ""}
+                                  value={editRowData?.remark || ""}
                                   onChange={handleInlineInputChange}
                                   className="w-full p-1 border rounded"
                                 />
@@ -786,34 +878,26 @@ const TaskViewPage = () => {
                                 history.remark || "-"
                               )}
                             </td>
+                            {/* Reviewed By column - always displays the value */}
                             <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                              {editingRowId === history.id ? (
-                                <input
-                                  type="text"
-                                  name="reviewedBy"
-                                  value={editRowData.reviewedBy || ""}
-                                  onChange={handleInlineInputChange}
-                                  className="w-full p-1 border rounded"
-                                />
-                              ) : (
-                                history.reviewedBy || "-"
-                              )}
+                              {history.reviewedBy || "-"}
                             </td>
+                            {/* Conditional Rendering for Actions */}
                             {position === "TEAM_LEAD" && (
                               <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
                                 {editingRowId === history.id ? (
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={() =>
-                                        handleInlineSave(history.id)
-                                      }
+                                      onClick={handleInlineSave}
                                       className="text-green-600 hover:text-green-800"
+                                      aria-label="Save"
                                     >
-                                      <Save size={16} />
+                                      <Check size={16} />
                                     </button>
                                     <button
                                       onClick={handleInlineCancel}
                                       className="text-red-600 hover:text-red-800"
+                                      aria-label="Cancel"
                                     >
                                       <XCircle size={16} />
                                     </button>
@@ -822,6 +906,7 @@ const TaskViewPage = () => {
                                   <button
                                     onClick={() => handleInlineEdit(history)}
                                     className="text-blue-600 hover:text-blue-800"
+                                    aria-label="Edit"
                                   >
                                     <Edit size={16} />
                                   </button>

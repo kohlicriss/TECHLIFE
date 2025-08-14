@@ -62,6 +62,33 @@ const TasksPage = () => {
         projectId: ''
     });
 
+    const fetchTasks = useCallback(async () => {
+      if (!userData) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const userId = employeeId || userData.employeeId;
+        const apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          if (response.status === 404) {
+            setTasks([]);
+            return;
+          }
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        setTasks(data || []);
+        setError(null);
+      } catch (err) {
+        setError(`Failed to fetch tasks: ${err.message}`);
+        setTasks([]);
+      } finally {
+        setLoading(false);
+      }
+    }, [userData, employeeId]);
   const fetchTasks = useCallback(async () => {
     if (!userData) {
       setLoading(false);
@@ -115,47 +142,29 @@ const TasksPage = () => {
     }
   }, [userData, employeeId]);
 
-  const fetchTasksAssignedByMe = useCallback(async () => {
-    if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
-      setAssignedByMeTasks([]);
-      return;
-    }
-
-    try {
-      const tlId = userData.employeeId;
-      const url = `http://localhost:8090/api/${tlId}`;
-      
-      console.log(`Fetching tasks assigned by Team Lead from: ${url}`);
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.warn(`No tasks found assigned by TEAM_LEAD ${tlId}.`);
-          setAssignedByMeTasks([]);
-          return;
+    const fetchTasksAssignedByMe = useCallback(async () => {
+      if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
+        setAssignedByMeTasks([]);
+        return;
+      }
+      try {
+        const tlId = userData.employeeId;
+        const url = `http://192.168.0.120:8090/api/${tlId}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          if (response.status === 404) {
+            setAssignedByMeTasks([]);
+            return;
+          }
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        setAssignedByMeTasks(data || []);
+      } catch (err) {
+        setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
+        setAssignedByMeTasks([]);
       }
-      
-      // Read response text first to handle empty bodies gracefully
-      const responseText = await response.text();
-      if (!responseText) {
-          console.warn("Received an empty response for assigned tasks. Setting tasks to empty array.");
-          setAssignedByMeTasks([]);
-          return;
-      }
-
-      const data = JSON.parse(responseText);
-      console.log(`Response from fetchTasksAssignedByMe:`, data);
-      setAssignedByMeTasks(data);
-
-    } catch (error) {
-      // Catches both network errors and JSON.parse errors
-      setError("Failed to fetch tasks assigned by Team Lead. Please check your API endpoint.");
-      console.error("Failed to fetch tasks assigned by Team Lead:", error);
-      setAssignedByMeTasks([]);
-    }
-  }, [userData]);
+    }, [userData]);
 
     useEffect(() => {
         if (userData) {
@@ -247,101 +256,193 @@ const TasksPage = () => {
         setIsFormOpen(true);
     };
 
-  const handleEditClick = (e, task) => {
-    e.stopPropagation();
-    setIsEditing(true);
-    setTaskData(task);
-    setTaskFormError(null); // Reset form error
-    setTaskFormSuccess(false); // Reset form success
-    setShowTaskPopup(true);
-  };
-
-  const handleTaskSubmit = async (e) => {
-    e.preventDefault();
-    setTaskFormError(null); // Clear any previous errors
-    setTaskFormSuccess(false); // Clear any previous success messages
-
-    // File content ni backend ku pampadaniki, FormData ni vadali
-    const formData = new FormData();
-    
-    // Add all form data fields to the FormData object
-    formData.append("id", taskData.id);
-    formData.append("title", taskData.title);
-    formData.append("description", taskData.description);
-    formData.append("createdBy", taskData.createdBy);
-    formData.append("assignedTo", taskData.assignedTo);
-    formData.append("status", taskData.status);
-    formData.append("priority", taskData.priority);
-    formData.append("dueDate", taskData.dueDate);
-    formData.append("createdDate", taskData.createdDate);
-    
-    if (taskData.rating) {
-        formData.append("rating", taskData.rating);
-    }
-    if (taskData.remark) {
-        formData.append("remark", taskData.remark);
-    }
-    if (taskData.completionNote) {
-        formData.append("completionNote", taskData.completionNote);
-    }
-    
-    // Convert relatedLinks array to a string and append
-    const relatedLinksString = Array.isArray(taskData.relatedLinks)
-        ? taskData.relatedLinks.join(", ")
-        : taskData.relatedLinks;
-    formData.append("relatedLinks", relatedLinksString);
-
-    // Ippudu, files ni okkokka daaniki add cheyandi.
-    // Dhyanam ga chudandi: ikkada file object ni direct ga `append` chestunnamu,
-    // kevalam file name ni kaadu.
-    if (taskData.attachedFileLinks && taskData.attachedFileLinks.length > 0) {
-        taskData.attachedFileLinks.forEach((file) => {
-            // Check if it's a new file object (from the file input) or a string (from an existing task)
-            if (file instanceof File) {
-                formData.append("files", file); // Use the same key for all files
-            } else {
-                // If it's a string (an old file link), add it as a separate field
-                formData.append("existingFiles", file);
-            }
+    const handleEditClick = (e, task) => {
+        e.stopPropagation();
+        setFormMode('edit');
+        setFormData({
+            ...task,
+            relatedLinks: task.relatedLinks?.length ? task.relatedLinks : [''],
+            attachedFileLinks: task.attachedFileLinks || [],
+            createdDate: task.createdDate || new Date().toISOString().split('T')[0],
+            completedDate: task.completedDate || '',
+            dueDate: task.dueDate || '',
+            projectId: task.projectId || task.id?.projectId || ''
         });
-    }
+        setFiles([]);
+        setFormErrors({});
+        setSubmissionError('');
+        setIsFormOpen(true);
+    };
 
-    const assignedEmployeeId = taskData.assignedTo;
-    const projectId = isEditing ? taskData.projectId : "PRO0001";
+    const handleFormClose = () => {
+        setIsFormOpen(false);
+        resetFormData();
+    };
 
-    if (!assignedEmployeeId || !projectId) {
-      setTaskFormError("Missing required IDs for task creation/update.");
-      return;
-    }
-    
-    const apiUrl = `http://localhost:8090/api/${assignedEmployeeId}/${projectId}/task`;
+    const validateForm = () => {
+        const newErrors = {};
 
-    try {
-      if (isEditing) {
-        console.log("Sending PUT request to:", apiUrl, "with payload:", formData);
-        await axios.put(apiUrl, formData);
-        console.log("Task updated successfully.");
-      } else {
-        console.log("Sending POST request to:", apiUrl, "with payload:", formData);
-        await axios.post(apiUrl, formData);
-        console.log("Task created successfully.");
-      }
-      
-      setTaskFormSuccess(true); // Show success message
-      setTimeout(() => {
-        setShowTaskPopup(false); // Close the popup
-        fetchTasks(); // Refresh the task list
-        if (isTeamLead) {
-          fetchTasksAssignedByMe();
+        if (formMode === 'create' && (!formData.id || formData.id.trim() === '')) {
+            newErrors.id = 'Task ID is required';
         }
-      }, 2000); // Close after 2 seconds
-      
-    } catch (err) {
-      console.error(`Error ${isEditing ? "updating" : "creating"} task:`, err);
-      // Set the local form error, not the global one
-      setTaskFormError(`Failed to ${isEditing ? "update" : "create"} task. Please check your data and try again.`);
-    }
-  };
+        if (!formData.title || formData.title.trim().length < 3) {
+            newErrors.title = 'Title must be at least 3 characters';
+        }
+        if (formData.title && formData.title.length > 100) {
+            newErrors.title = 'Title cannot exceed 100 characters';
+        }
+        if (!formData.assignedTo) {
+            newErrors.assignedTo = 'Assigned to is required';
+        }
+        if (!formData.dueDate) {
+            newErrors.dueDate = 'Due date is required';
+        }
+        if (!formData.projectId) {
+            newErrors.projectId = 'Project ID is required';
+        }
+        if (formData.description && formData.description.length > 255) {
+            newErrors.description = 'Description cannot exceed 255 characters';
+        }
+        if (formData.remark && formData.remark.length > 200) {
+            newErrors.remark = 'Remark cannot exceed 200 characters';
+        }
+        if (formData.completionNote && formData.completionNote.length > 200) {
+            newErrors.completionNote = 'Completion note cannot exceed 200 characters';
+        }
+        if (formData.rating && (formData.rating < 1 || formData.rating > 5)) {
+            newErrors.rating = 'Rating must be between 1 and 5';
+        }
+
+        setFormErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        
+        if (formErrors[name]) {
+            setFormErrors(prev => ({ ...prev, [name]: '' }));
+        }
+        
+        if (submissionError) {
+            setSubmissionError('');
+        }
+    };
+
+    const handleRelatedLinkChange = (index, value) => {
+        const newLinks = [...formData.relatedLinks];
+        newLinks[index] = value;
+        setFormData(prev => ({ ...prev, relatedLinks: newLinks }));
+        
+        if (submissionError) {
+            setSubmissionError('');
+        }
+    };
+
+    const addRelatedLink = () => {
+        setFormData(prev => ({ ...prev, relatedLinks: [...prev.relatedLinks, ''] }));
+    };
+
+    const removeRelatedLink = (index) => {
+        setFormData(prev => ({ ...prev, relatedLinks: prev.relatedLinks.filter((_, i) => i !== index) }));
+    };
+
+    const handleFileChange = (e) => {
+        const selectedFiles = Array.from(e.target.files);
+        setFiles(selectedFiles);
+        
+        if (submissionError) {
+            setSubmissionError('');
+        }
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!validateForm()) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmissionError('');
+
+        try {
+            const formDataToSend = new FormData();
+            
+            const taskPayload = {
+                id: formData.id,
+                title: formData.title,
+                description: formData.description || null,
+                createdBy: userData.employeeId,
+                assignedTo: formData.assignedTo,
+                status: formData.status,
+                priority: formData.priority,
+                createdDate: formData.createdDate,
+                dueDate: formData.dueDate,
+                completedDate: formData.completedDate || null,
+                rating: formData.rating ? parseInt(formData.rating) : null,
+                remark: formData.remark || null,
+                completionNote: formData.completionNote || null,
+                relatedLinks: formData.relatedLinks.filter(link => link.trim() !== ''),
+                projectId: formData.projectId,
+            };
+
+            formDataToSend.append(
+                'taskDTO', 
+                new Blob([JSON.stringify(taskPayload)], { type: 'application/json' })
+            );
+
+            if (files?.length > 0) {
+                files.forEach(file => {
+                    formDataToSend.append('attachedFileLinks', file);
+                });
+            }
+
+            const url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+            const method = formMode === 'create' ? 'post' : 'put';
+
+            console.log("Submitting Request...");
+            console.log("URL:", method.toUpperCase(), url);
+            console.log("Payload (taskDTO):", taskPayload);
+            console.log("Files attached:", files.length);
+
+            // CRITICAL FIX: DO NOT manually set the 'Content-Type' header.
+            // Axios will do it correctly (with the required 'boundary') when it sees a FormData object.
+            const response = await axios({
+                method,
+                url,
+                data: formDataToSend,
+            });
+
+            console.log("Success:", response.data);
+            fetchTasks();
+            if (userData.roles[0] === "TEAM_LEAD") {
+                fetchTasksAssignedByMe();
+            }
+            handleFormClose();
+            alert(`Task ${formMode === 'create' ? 'created' : 'updated'} successfully!`);
+        } catch (error) {
+            console.error("Submission failed:", {
+                error: error.message,
+                response: error.response?.data
+            });
+
+            let errorMsg = error.message;
+            if (error.response?.data) {
+                errorMsg = typeof error.response.data === 'string' 
+                    ? error.response.data
+                    : JSON.stringify(error.response.data);
+            }
+
+            setSubmissionError(`Failed to ${formMode === 'create' ? 'create' : 'update'} task: ${errorMsg}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const filteredAndSortedTasks = useMemo(() => {
         return tasks
