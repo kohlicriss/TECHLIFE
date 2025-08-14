@@ -95,29 +95,30 @@ const UpdateHistoryPopup = ({
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
-          {/* Only show remark field if user is a TEAM_LEAD */}
           {position === "TEAM_LEAD" && (
-            <div>
-              <label
-                htmlFor="remark"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Remark
-              </label>
-              <input
-                type="text"
-                name="remark"
-                id="remark"
-                placeholder="Add a remark"
-                value={updateHistoryData.remark}
-                onChange={handleUpdateHistoryInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              />
-            </div>
+            <>
+              <div>
+                <label
+                  htmlFor="remark"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Remark
+                </label>
+                <input
+                  type="text"
+                  name="remark"
+                  id="remark"
+                  placeholder="Add a remark"
+                  value={updateHistoryData.remark}
+                  onChange={handleUpdateHistoryInputChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+            </>
           )}
           <div>
             <label
-              htmlFor="file"
+              htmlFor="files"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
               Upload Files (Max 5)
@@ -134,11 +135,9 @@ const UpdateHistoryPopup = ({
               <div className="mt-2 text-sm text-gray-600">
                 <p className="font-semibold">Selected files:</p>
                 <ul className="list-disc list-inside pl-2">
-                  {Array.from(updateHistoryData.relatedFileLinks).map(
-                    (file, index) => (
-                      <li key={index}>{file.name}</li>
-                    )
-                  )}
+                  {updateHistoryData.relatedFileLinks.map((file, index) => (
+                    <li key={index}>{file.name}</li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -157,7 +156,6 @@ const UpdateHistoryPopup = ({
     </div>
   </div>
 );
-
 
 const TaskViewPage = () => {
   const { projectid, id, empID } = useParams();
@@ -191,44 +189,45 @@ const TaskViewPage = () => {
     setError(null);
 
     try {
-        const taskResponse = await fetch(
-            `http://localhost:8090/api/task/${projectid}/${id}`
+      const taskResponse = await fetch(
+        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
+      );
+
+      if (!taskResponse.ok) {
+        throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
+      }
+
+      const taskData = await taskResponse.json();
+      console.log("Task Data Received:", taskData);
+      setAssignedBy(taskData?.createdBy);
+      setCurrentTask(taskData);
+
+      const historyResponse = await fetch(
+        `http://192.168.0.120:8090/api/${projectid}/${id}/updatetasks`
+      );
+
+      if (!historyResponse.ok) {
+        console.warn(
+          "Could not fetch task history. Displaying task without it."
         );
-        
-        if (!taskResponse.ok) {
-            throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
-        }
-
-        const taskData = await taskResponse.json();
-        console.log("Task Data Received:", taskData);
-        setAssignedBy(taskData?.createdBy);
-        setCurrentTask(taskData);
-
-        const historyResponse = await fetch(
-            `http://localhost:8090/api/${projectid}/${id}/updatetasks`
-        );
-        
-        if (!historyResponse.ok) {
-            console.warn("Could not fetch task history. Displaying task without it.");
-            setUpdateHistory([]);
-        } else {
-            const historyData = await historyResponse.json();
-            console.log("All task history responses:", historyData); // <-- Added console log here
-            setUpdateHistory(historyData);
-        }
-
+        setUpdateHistory([]);
+      } else {
+        const historyData = await historyResponse.json();
+        console.log("All task history responses:", historyData);
+        setUpdateHistory(historyData);
+      }
     } catch (err) {
-        setError(err.message || "Failed to fetch critical task details.");
-        console.error(err);
-        setCurrentTask(null);
+      setError(err.message || "Failed to fetch critical task details.");
+      console.error(err);
+      setCurrentTask(null);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchTaskData();
-  }, [projectid, id]); 
+  }, [projectid, id]);
 
   const getPriorityClass = (priority) => {
     const upperPriority = priority ? priority.toUpperCase() : "";
@@ -263,19 +262,32 @@ const TaskViewPage = () => {
     setUpdateHistoryData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // =================================================================
+  // == MODIFIED FUNCTION FOR HANDLING MULTIPLE FILES               ==
+  // == This function was changed to handle multiple files correctly ==
+  // =================================================================
   const handleUpdateHistoryFileChange = (e) => {
-    const files = [...e.target.files];
-    if (files.length > 5) {
-      const limitedFiles = files.slice(0, 5);
-      setUpdateHistoryData((prev) => ({
-        ...prev,
-        relatedFileLinks: limitedFiles,
-      }));
-    } else {
-      setUpdateHistoryData((prev) => ({ ...prev, relatedFileLinks: files }));
+    const selectedFiles = Array.from(e.target.files);
+
+    // This combines newly selected files with any already in the state
+    let allFiles = [...updateHistoryData.relatedFileLinks, ...selectedFiles];
+
+    if (allFiles.length > 5) {
+      alert("You can only upload a maximum of 5 files.");
+      // If more than 5, we only keep the first 5
+      allFiles = allFiles.slice(0, 5);
     }
+
+    setUpdateHistoryData((prev) => ({
+      ...prev,
+      relatedFileLinks: allFiles,
+    }));
   };
 
+  // =================================================================
+  // == THIS IS THE MODIFIED FUNCTION FOR CREATING THE HISTORY      ==
+  // == This function was changed for multiple file support.        ==
+  // =================================================================
   const handleUpdateHistorySubmit = async (e) => {
     e.preventDefault();
 
@@ -283,79 +295,80 @@ const TaskViewPage = () => {
       alert("Changes description is required.");
       return;
     }
-    
-    // Set reviewerId based on role
-    const reviewerId = position === "TEAM_LEAD" ? userData?.employeeId : null;
-    if (!reviewerId && position === "TEAM_LEAD") {
-        alert("User ID not found. Please log in again.");
-        return;
+
+    const creatorId = userData?.employeeId;
+    if (!creatorId) {
+      alert("User ID not found. Please log in again.");
+      return;
     }
 
     const formData = new FormData();
-    const newHistoryId = Date.now(); 
 
     const taskUpdatePayload = {
-        id: newHistoryId,
-        changes: updateHistoryData.changes,
-        note: updateHistoryData.note || null,
-        relatedLinks: updateHistoryData.relatedLinks
-            .split(",")
-            .map((link) => link.trim())
-            .filter((link) => link),
-        reviewedBy: reviewerId, // Set to Team Lead ID or null
-        remark: updateHistoryData.remark || null,
-        updatedDate: new Date().toISOString()
+      id: Date.now(),
+      changes: updateHistoryData.changes,
+      note: updateHistoryData.note || null,
+      relatedLinks: updateHistoryData.relatedLinks
+        .split(",")
+        .map((link) => link.trim())
+        .filter((link) => link),
+      reviewedBy: position === "TEAM_LEAD" ? creatorId : null,
+      remark: position === "TEAM_LEAD" ? updateHistoryData.remark : null,
+      updatedDate: new Date().toISOString(),
     };
-    
+
     formData.append(
-        'taskUpdateDTO',
-        new Blob([JSON.stringify(taskUpdatePayload)], { type: 'application/json' })
+      "taskUpdateDTO",
+      new Blob([JSON.stringify(taskUpdatePayload)], {
+        type: "application/json",
+      })
     );
 
-    if (updateHistoryData.relatedFileLinks.length > 0) {
-        updateHistoryData.relatedFileLinks.forEach((file) => {
-            formData.append('relatedFileLinks', file);
-        });
+    // This is the correct way to append multiple files to FormData
+    if (
+      updateHistoryData.relatedFileLinks &&
+      updateHistoryData.relatedFileLinks.length > 0
+    ) {
+      for (const file of updateHistoryData.relatedFileLinks) {
+        console.log(`Appending file to FormData: ${file.name}`);
+        formData.append("relatedFileLinks", file);
+      }
     }
 
-    console.log("Submitting new history update...");
-    console.log("URL:", `http://localhost:8090/api/${reviewerId || 'employee'}/history/${projectid}/${id}`); // Adjusted URL for logging
-    console.log("Payload:", taskUpdatePayload);
-    
-    for (var pair of formData.entries()) {
-        console.log(pair[0]+ ': ' + pair[1]);
-    }
+    // DEBUGGING: Verify how many files are in FormData before sending
+    const appendedFiles = formData.getAll("relatedFileLinks");
+    console.log(
+      `VERIFICATION: FormData now contains ${appendedFiles.length} file(s).`,
+      appendedFiles
+    );
 
     try {
-        const response = await axios.post(
-            `http://localhost:8090/api/${reviewerId || userData?.employeeId}/history/${projectid}/${id}`,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }
-        );
-        console.log("Update History Response:", response.data);
-        setShowUpdateHistoryPopup(false);
-        setUpdateHistoryData({
-            changes: "",
-            note: "",
-            relatedLinks: "",
-            relatedFileLinks: [],
-            remark: "",
-        });
-        fetchTaskData();
+      const response = await axios.post(
+        `http://192.168.0.120:8090/api/${creatorId}/history/${projectid}/${id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      console.log("Create History Response:", response.data);
+      setShowUpdateHistoryPopup(false);
+      setUpdateHistoryData({
+        changes: "",
+        note: "",
+        relatedLinks: "",
+        relatedFileLinks: [],
+        remark: "",
+      });
+      fetchTaskData();
     } catch (error) {
-        console.error("Error updating history:", error.response || error.message);
+      console.error("Error creating history:", error.response || error.message);
+      alert("Failed to create history. Please check the console for details.");
     }
   };
 
   const handleInlineEdit = (historyItem) => {
     setEditingRowId(historyItem.id);
-    // When a Team Lead edits, pre-populate with their ID
-    const reviewedByValue = position === "TEAM_LEAD" ? userData?.employeeId : historyItem.reviewedBy;
-    setEditRowData({ ...historyItem, reviewedBy: reviewedByValue });
+    setEditRowData(historyItem);
   };
 
   const handleInlineCancel = () => {
@@ -363,97 +376,113 @@ const TaskViewPage = () => {
     setEditRowData(null);
   };
 
+  // This function for UPDATING history remains UNCHANGED.
   const handleInlineSave = async () => {
     try {
       if (!editRowData || !editRowData.id) {
-          alert("Cannot save. Invalid history item.");
-          return;
+        alert("Cannot save. Invalid history item.");
+        return;
       }
-      
+
       const reviewerId = userData?.employeeId;
-      if (!reviewerId) {
-          alert("User ID not found. Please log in again.");
-          return;
+      if (!reviewerId || position !== "TEAM_LEAD") {
+        alert("Only Team Leads can save remarks.");
+        return;
       }
-      
-      // We will create a clean payload to send, separate from the files.
+
+      const cleanedFileLinks = (editRowData.relatedFileLinks || []).map(
+        (url) => {
+          try {
+            const urlObject = new URL(url);
+            return urlObject.pathname.substring(1);
+          } catch (e) {
+            return url;
+          }
+        }
+      );
+
       const updatedPayload = {
-          id: editRowData.id,
-          changes: editRowData.changes,
-          note: editRowData.note,
-          relatedLinks: Array.isArray(editRowData.relatedLinks) ? editRowData.relatedLinks : [],
-          remark: editRowData.remark,
-          reviewedBy: reviewerId, // Automatically set to the logged-in Team Lead's ID
-          updatedDate: new Date().toISOString()
+        ...editRowData,
+        reviewedBy: reviewerId,
+        updatedDate: new Date().toISOString(),
+        relatedLinks: Array.isArray(editRowData.relatedLinks)
+          ? editRowData.relatedLinks
+          : editRowData.relatedLinks
+          ? [editRowData.relatedLinks]
+          : [],
+        relatedFileLinks: cleanedFileLinks,
       };
-      
-      console.log("Submitting inline update...");
-      console.log("URL:", `http://localhost:8090/api/status/update-details/${projectid}/${id}/${editRowData.id}`);
-      console.log("Payload:", updatedPayload);
-      
-      const response = await axios.put(
-        `http://localhost:8090/api/status/update-details/${projectid}/${id}/${editRowData.id}`,
+
+      console.log(
+        "Submitting inline update with JSON payload:",
         updatedPayload
       );
-      
+
+      const response = await axios.put(
+        `http://192.168.0.120:8090/api/${reviewerId}/status/${projectid}/${id}`,
+        updatedPayload,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
       console.log("Inline Save Response:", response.data);
       handleInlineCancel();
       fetchTaskData();
     } catch (error) {
-      console.error("Error updating status:", error.response?.data || error.message);
+      console.error(
+        "Error updating status:",
+        error.response?.data || error.message
+      );
+      alert("An error occurred while saving. Please check the console.");
     }
   };
-  
+
   const handleInlineInputChange = (e) => {
     const { name, value } = e.target;
     setEditRowData((prev) => ({ ...prev, [name]: value }));
   };
-    // Helper function to render related links as a list
-    const renderRelatedLinks = (links) => {
-        if (!links || links.length === 0) {
-            return "-";
-        }
-        return (
-            <ul className="list-disc list-inside text-xs space-y-1">
-                {links.map((link, i) => (
-                    <li key={i}>
-                        <a 
-                          href={link} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                            {link}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        );
-    };
 
-    // Helper function to render related files with a download icon
-    const renderRelatedFiles = (files) => {
-      if (!files || files.length === 0) {
-        return "-";
-      }
-      return (
-        <ul className="list-disc list-inside text-xs space-y-1">
-          {files.map((file, i) => (
-            <li key={i}>
-              <a
-                href={file}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-purple-600 hover:text-purple-800 hover:underline flex items-center"
-              >
-                <FileText size={14} className="mr-1" />
-                {decodeURIComponent(file.split('/').pop().split('?')[0])}
-              </a>
-            </li>
-          ))}
-        </ul>
-      );
-    };
+  const renderRelatedLinks = (links) => {
+    if (!links || links.length === 0) return "-";
+    return (
+      <ul className="list-disc list-inside text-xs space-y-1">
+        {links.map((link, i) => (
+          <li key={i}>
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {link}
+            </a>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const renderRelatedFiles = (files) => {
+    if (!files || files.length === 0) return "-";
+    return (
+      <ul className="list-disc list-inside text-xs space-y-1">
+        {files.map((file, i) => (
+          <li key={i}>
+            <a
+              href={file}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-600 hover:text-purple-800 hover:underline flex items-center"
+            >
+              <FileText size={14} className="mr-1" />
+              {decodeURIComponent(file.split("/").pop().split("?")[0])}
+            </a>
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   const handleSubmitTask = () => {
     const now = new Date();
@@ -464,20 +493,15 @@ const TaskViewPage = () => {
       ...currentTask,
       status: "COMPLETED",
       completedDate: completedDate,
-      completionNote: currentTask.completionNote || "Task marked as completed.",
+      completionNote:
+        currentTask.completionNote || "Task marked as completed.",
     };
     const newHistoryEntry = {
-      updatedBy: {
-        id: currentTask.assignedTo,
-        name: currentTask.assignedTo,
-      },
+      updatedBy: { id: currentTask.assignedTo, name: currentTask.assignedTo },
       updatedDate: updatedDateTime,
       changes: {
         status: { from: currentTask.status, to: "COMPLETED" },
-        completedDate: {
-          from: currentTask.completedDate,
-          to: completedDate,
-        },
+        completedDate: { from: currentTask.completedDate, to: completedDate },
       },
       note: "Task submitted and marked as completed.",
     };
@@ -606,7 +630,9 @@ const TaskViewPage = () => {
                   {currentTask.completedDate && (
                     <div className="flex items-center text-gray-700">
                       <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
-                      <span className="font-semibold mr-2">Completed On:</span>
+                      <span className="font-semibold mr-2">
+                        Completed On:
+                      </span>
                       <span className="text-sm">
                         {currentTask.completedDate}
                       </span>
@@ -654,59 +680,15 @@ const TaskViewPage = () => {
                 </div>
               )}
 
-              {/* ===== Related Links & Files Section ===== */}
-              {(currentTask.relatedLinks && currentTask.relatedLinks.length > 0) ||
-              (currentTask.attachedFileLinks && currentTask.attachedFileLinks.length > 0) ? (
+              {(currentTask.relatedLinks &&
+                currentTask.relatedLinks.length > 0) ||
+              (currentTask.attachedFileLinks &&
+                currentTask.attachedFileLinks.length > 0) ? (
                 <div className="mb-8">
                   <h4 className="text-xl font-semibold text-gray-800 mb-3">
                     Related Links & Files
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {currentTask.relatedLinks && currentTask.relatedLinks.length > 0 && (
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
-                        <h5 className="font-medium text-blue-800 flex items-center mb-2">
-                          <GitFork className="h-4 w-4 mr-2" /> Related Links:
-                        </h5>
-                        <ul className="space-y-1">
-                          {currentTask.relatedLinks.map((link, index) => (
-                            <li key={index}>
-                              <a
-                                href={link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 hover:underline text-sm break-all"
-                              >
-                                {link}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {currentTask.attachedFileLinks && currentTask.attachedFileLinks.length > 0 && (
-                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 shadow-sm">
-                        <h5 className="font-medium text-purple-800 flex items-center mb-2">
-                          <FileText className="h-4 w-4 mr-2" /> Attached
-                          Files:
-                        </h5>
-                        <ul className="space-y-1">
-                          {currentTask.attachedFileLinks.map(
-                            (link, index) => (
-                              <li key={index}>
-                                <a
-                                  href={link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
-                                >
-                                  {decodeURIComponent(link.split('/').pop().split('?')[0])}
-                                </a>
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
                     {currentTask.relatedLinks &&
                       currentTask.relatedLinks.length > 0 && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
@@ -741,13 +723,14 @@ const TaskViewPage = () => {
                               (link, index) => (
                                 <li key={index}>
                                   <a
-                                    href={`http://localhost:8090/files/${projectid}/${link}`}
+                                    href={link}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
                                   >
-                                    {/* IMPROVED: Show only the file name */}
-                                    {decodeURIComponent(link.split('/').pop().split('?')[0])}
+                                    {decodeURIComponent(
+                                      link.split("/").pop().split("?")[0]
+                                    )}
                                   </a>
                                 </li>
                               )
@@ -760,7 +743,6 @@ const TaskViewPage = () => {
               ) : null}
             </div>
 
-            {/* ===== Update History Section ===== */}
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
               <div className="mb-8">
                 <div className="flex justify-between items-center mb-3">
@@ -781,91 +763,29 @@ const TaskViewPage = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-white">
                         <tr>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            S.No
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Updated Date
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Changes
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Note
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Related Links
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Related Files
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Remarks
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Reviewed By
-                          </th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated Date</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Changes</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Related Links</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Related Files</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewed By</th>
                           {position === "TEAM_LEAD" && (
-                            <th
-                              scope="col"
-                              className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              Actions
-                            </th>
+                            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {updateHistory.map((history, index) => (
-                          <tr
-                            key={history.id}
-                            className="hover:bg-gray-50 transition-colors duration-150"
-                          >
-                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                              {index + 1}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
-                              {new Date(history.updatedDate).toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                              {history.changes}
-                            </td>
+                          <tr key={history.id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{index + 1}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">{new Date(history.updatedDate).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{history.changes}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">{history.note || "-"}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{renderRelatedLinks(history.relatedLinks)}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{renderRelatedFiles(history.relatedFileLinks)}</td>
                             <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
-                              {history.note || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                              {renderRelatedLinks(history.relatedLinks)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                              {renderRelatedFiles(history.relatedFileLinks)}
-                            </td>
-                            {/* Conditional Rendering for Remarks */}
-                            <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
-                              {/* Only show input field in edit mode */}
                               {editingRowId === history.id ? (
                                 <input
                                   type="text"
@@ -878,38 +798,16 @@ const TaskViewPage = () => {
                                 history.remark || "-"
                               )}
                             </td>
-                            {/* Reviewed By column - always displays the value */}
-                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                              {history.reviewedBy || "-"}
-                            </td>
-                            {/* Conditional Rendering for Actions */}
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{history.reviewedBy || "-"}</td>
                             {position === "TEAM_LEAD" && (
                               <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
                                 {editingRowId === history.id ? (
                                   <div className="flex gap-2">
-                                    <button
-                                      onClick={handleInlineSave}
-                                      className="text-green-600 hover:text-green-800"
-                                      aria-label="Save"
-                                    >
-                                      <Check size={16} />
-                                    </button>
-                                    <button
-                                      onClick={handleInlineCancel}
-                                      className="text-red-600 hover:text-red-800"
-                                      aria-label="Cancel"
-                                    >
-                                      <XCircle size={16} />
-                                    </button>
+                                    <button onClick={handleInlineSave} className="text-green-600 hover:text-green-800" aria-label="Save"><Check size={16} /></button>
+                                    <button onClick={handleInlineCancel} className="text-red-600 hover:text-red-800" aria-label="Cancel"><XCircle size={16} /></button>
                                   </div>
                                 ) : (
-                                  <button
-                                    onClick={() => handleInlineEdit(history)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                    aria-label="Edit"
-                                  >
-                                    <Edit size={16} />
-                                  </button>
+                                  <button onClick={() => handleInlineEdit(history)} className="text-blue-600 hover:text-blue-800" aria-label="Edit"><Edit size={16} /></button>
                                 )}
                               </td>
                             )}
@@ -927,17 +825,19 @@ const TaskViewPage = () => {
             </div>
           </div>
 
-          {!isTaskCompleted && position === "TEAM_LEAD" && (userData?.employeeId === assignedBy) && (
-            <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-              <button
-                onClick={handleSubmitTask}
-                className="flex items-center justify-center bg-green-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-105"
-              >
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Mark as Completed
-              </button>
-            </div>
-          )}
+          {!isTaskCompleted &&
+            position === "TEAM_LEAD" &&
+            userData?.employeeId === assignedBy && (
+              <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+                <button
+                  onClick={handleSubmitTask}
+                  className="flex items-center justify-center bg-green-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-105"
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Mark as Completed
+                </button>
+              </div>
+            )}
         </div>
       </div>
       {showUpdateHistoryPopup && (
