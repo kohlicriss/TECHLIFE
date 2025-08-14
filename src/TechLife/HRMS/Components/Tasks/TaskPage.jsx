@@ -75,9 +75,9 @@ const TasksPage = () => {
             const userId = userData.employeeId;
 
             if (userRole === "TEAM_LEAD" && employeeId) {
-                apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
+                apiUrl = `http://192.168.0.120:8090/api/all/tasks/${employeeId}`;
             } else {
-                apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
+                apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
             }
 
             console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
@@ -93,7 +93,6 @@ const TasksPage = () => {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            // Read response text first to handle empty bodies gracefully
             const responseText = await response.text();
             if (!responseText) {
                 console.warn("Received an empty response for user tasks. Setting tasks to empty array.");
@@ -106,10 +105,9 @@ const TasksPage = () => {
             setTasks(data);
             setError(null);
         } catch (err) {
-            // Catches both network errors and JSON.parse errors
             setError("Failed to fetch tasks. Please make sure the server is running and the API is returning valid JSON.");
             console.error("Error in fetchTasks:", err);
-            setTasks([]); // Ensure state is reset
+            setTasks([]);
         } finally {
             setLoading(false);
         }
@@ -325,12 +323,16 @@ const TasksPage = () => {
     };
 
     const handleFileChange = (e) => {
-        const selectedFiles = Array.from(e.target.files);
-        setFiles(selectedFiles);
+        const newFiles = Array.from(e.target.files);
+        setFiles(prevFiles => [...prevFiles, ...newFiles]);
 
         if (submissionError) {
             setSubmissionError('');
         }
+    };
+
+    const removeFile = (fileIndex) => {
+        setFiles(prevFiles => prevFiles.filter((_, index) => index !== fileIndex));
     };
 
     const handleFormSubmit = async (e) => {
@@ -364,6 +366,7 @@ const TasksPage = () => {
                 projectId: formData.projectId,
             };
 
+            // This part is crucial for sending both JSON and files
             formDataToSend.append(
                 'taskDTO',
                 new Blob([JSON.stringify(taskPayload)], { type: 'application/json' })
@@ -375,20 +378,28 @@ const TasksPage = () => {
                 });
             }
 
-            const url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
-            const method = formMode === 'create' ? 'post' : 'put';
+            let url;
+            let method;
+
+            if (formMode === 'create') {
+                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+                method = 'post';
+            } else { // 'edit' mode
+                // This URL must match your backend's PUT endpoint
+                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+                method = 'put';
+            }
 
             console.log("Submitting Request...");
             console.log("URL:", method.toUpperCase(), url);
             console.log("Payload (taskDTO):", taskPayload);
-            console.log("Files attached:", files.length);
+            console.log("Files attached:", files.length, files.map(f => f.name));
 
-            // CRITICAL FIX: DO NOT manually set the 'Content-Type' header.
-            // Axios will do it correctly (with the required 'boundary') when it sees a FormData object.
             const response = await axios({
                 method,
                 url,
                 data: formDataToSend,
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             console.log("Success:", response.data);
@@ -571,7 +582,6 @@ const TasksPage = () => {
                             </div>
 
                             <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Task ID <span className="text-red-500">*</span></label>
@@ -732,7 +742,6 @@ const TasksPage = () => {
                                         {formErrors.rating && <p className="text-red-500 text-sm mt-1">{formErrors.rating}</p>}
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
@@ -790,7 +799,7 @@ const TasksPage = () => {
                                         Add Related Link
                                     </button>
                                 </div>
-
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Attached Files</label>
                                     <div className="flex items-center justify-center w-full">
@@ -812,11 +821,21 @@ const TasksPage = () => {
                                         </label>
                                     </div>
                                     {files.length > 0 && (
-                                        <div className="mt-2">
-                                            <p className="text-sm font-medium text-gray-700">Selected files:</p>
-                                            <ul className="text-sm text-gray-600">
+                                        <div className="mt-4">
+                                            <p className="text-sm font-medium text-gray-700 mb-2">Selected files:</p>
+                                            <ul className="space-y-2">
                                                 {files.map((file, index) => (
-                                                    <li key={index}>{file.name}</li>
+                                                    <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                                                        <span className="text-sm text-gray-800 truncate" title={file.name}>{file.name}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFile(index)}
+                                                            className="text-red-500 hover:text-red-700 ml-4"
+                                                            aria-label={`Remove ${file.name}`}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </li>
                                                 ))}
                                             </ul>
                                         </div>
@@ -834,7 +853,6 @@ const TasksPage = () => {
                                         </div>
                                     </div>
                                 )}
-
                                 <div className="flex justify-end space-x-4 pt-6 border-t">
                                     <button
                                         type="button"
@@ -849,12 +867,6 @@ const TasksPage = () => {
                                         disabled={isSubmitting}
                                         className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                                     >
-                                        {isSubmitting && (
-                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        )}
                                         {isSubmitting
                                             ? (formMode === 'edit' ? 'Updating...' : 'Creating...')
                                             : (formMode === 'edit' ? 'Update Task' : 'Create Task')
@@ -869,5 +881,5 @@ const TasksPage = () => {
         </div>
     );
 };
-
+    
 export default TasksPage;
