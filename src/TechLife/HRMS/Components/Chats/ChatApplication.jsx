@@ -11,7 +11,7 @@ import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 import {
     getMessages,
-    updateMessage,
+    // 🔄 MODIFIED: updateMessage is no longer needed as we use WebSockets for edits.
     deleteMessageForMe,
     deleteMessageForEveryone,
     uploadFile
@@ -56,7 +56,7 @@ const FileMessage = ({ msg, isMyMessage }) => {
             </div>
             {!isMyMessage && (
                  <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
-                     <FaDownload size={18} />
+                       <FaDownload size={18} />
                 </a>
             )}
         </div>
@@ -229,7 +229,6 @@ function ChatApplication({ currentUser, initialChats }) {
     const updateLastMessage = useCallback((chatId, message) => {
         const generatePreview = (msg) => {
             if (!msg) return 'Chat cleared';
-            // BUG FIX: Ensure deleted message preview is consistent
             if (msg.type === 'deleted' || msg.isDeleted) return 'This message was deleted';
             
             const prefix = msg.sender === currentUser.id ? 'You: ' : '';
@@ -264,7 +263,7 @@ function ChatApplication({ currentUser, initialChats }) {
     }, [currentUser.id, selectedChat]);
 
     // =================================================================================
-    // BUG FIX START: Modified onMessageReceived to better handle delete notifications
+    // 🔄 MODIFIED: onMessageReceived to handle EDITED messages
     // =================================================================================
     const onMessageReceived = useCallback((payload) => {
         const receivedMessage = JSON.parse(payload.body);
@@ -275,14 +274,12 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        // --- Change 1: Centralized delete logic ---
-        // Backend nunchi 'isDeleted: true' or 'type: "deleted"' vachina, ee block trigger avuthundi.
+        // --- Logic for DELETED messages (No changes here) ---
         if (receivedMessage.isDeleted || receivedMessage.type === 'deleted') {
             setMessages(prevMessages => {
                 const chatMessages = prevMessages[messageChatId] || [];
                 let wasLastMessage = false;
 
-                // Check if the deleted message was the last one
                 if (chatMessages.length > 0) {
                     const lastMessage = chatMessages[chatMessages.length - 1];
                     wasLastMessage = lastMessage.messageId === receivedMessage.messageId || lastMessage.id === receivedMessage.messageId;
@@ -290,21 +287,11 @@ function ChatApplication({ currentUser, initialChats }) {
 
                 const updatedMessages = chatMessages.map(msg => {
                     if (msg.messageId === receivedMessage.messageId || msg.id === receivedMessage.messageId) {
-                        return { 
-                            ...msg, 
-                            type: 'deleted', 
-                            content: 'This message was deleted',
-                            fileName: null,
-                            fileSize: null,
-                            isDeleted: true, // Ensure flag is set
-                        };
+                        return { ...msg, type: 'deleted', content: 'This message was deleted', fileName: null, fileSize: null, isDeleted: true };
                     }
                     return msg;
                 });
 
-                // --- Change 2: Explicitly update sidebar ---
-                // Okavela last message delete ayithe, sidebar ni kuda update cheyali.
-                // Manam updatedMessages array lo nunchi kottha last message ni theesukuni update chestham.
                 if (wasLastMessage) {
                     const newLastMessage = updatedMessages.length > 0 ? updatedMessages[updatedMessages.length - 1] : null;
                     updateLastMessage(messageChatId, newLastMessage);
@@ -312,10 +299,35 @@ function ChatApplication({ currentUser, initialChats }) {
 
                 return { ...prevMessages, [messageChatId]: updatedMessages };
             });
-            return; 
+            return;
         }
 
-        // Existing logic for new messages, acks, etc.
+        // ✅ NEW: Logic for EDITED messages
+        // We check for the 'edited' flag which our transform function sets to 'isEdited'.
+        const transformedForEditCheck = transformMessageDTOToUIMessage(receivedMessage);
+        if (transformedForEditCheck.isEdited) {
+            setMessages(prevMessages => {
+                const chatMessages = prevMessages[messageChatId] || [];
+                let wasLastMessage = false;
+                if (chatMessages.length > 0) {
+                    const lastMessage = chatMessages[chatMessages.length - 1];
+                    wasLastMessage = lastMessage.messageId === transformedForEditCheck.messageId;
+                }
+
+                const updatedMessages = chatMessages.map(msg =>
+                    (msg.messageId === transformedForEditCheck.messageId) ? transformedForEditCheck : msg
+                );
+
+                if (wasLastMessage) {
+                    updateLastMessage(messageChatId, transformedForEditCheck);
+                }
+
+                return { ...prevMessages, [messageChatId]: updatedMessages };
+            });
+            return; // Stop further processing after handling the edit.
+        }
+
+        // --- Logic for NEW messages and ACKs (No changes here) ---
         const isAck = receivedMessage.sender === currentUser.id && receivedMessage.client_id;
         const isIncoming = receivedMessage.sender !== currentUser.id;
 
@@ -341,33 +353,17 @@ function ChatApplication({ currentUser, initialChats }) {
                 const optimisticIndex = newChatMessages.findIndex(m => m.id === receivedMessage.client_id);
                 if (optimisticIndex > -1) {
                     const optimisticMessage = newChatMessages[optimisticIndex];
-                    const transformedServerMessage = transformMessageDTOToUIMessage({
-                        ...receivedMessage,
-                        messageId: finalServerId,
-                        id: finalServerId,
-                    });
-
-                    const updatedMessage = {
-                        ...optimisticMessage,
-                        ...transformedServerMessage,
-                        status: 'sent',
-                    };
-
+                    const transformedServerMessage = transformMessageDTOToUIMessage({ ...receivedMessage, messageId: finalServerId, id: finalServerId });
+                    const updatedMessage = { ...optimisticMessage, ...transformedServerMessage, status: 'sent' };
                     if (updatedMessage.type !== 'text' && !updatedMessage.fileSize && optimisticMessage.fileSize) {
                         updatedMessage.fileSize = optimisticMessage.fileSize;
                     }
-                    
                     newChatMessages[optimisticIndex] = updatedMessage;
-
                     finalMessageForUpdate = newChatMessages[optimisticIndex];
                     messageProcessed = true;
                 }
             } else if (isIncoming) {
-                const finalMessage = transformMessageDTOToUIMessage({
-                    ...receivedMessage,
-                    id: finalServerId,
-                    messageId: finalServerId,
-                });
+                const finalMessage = transformMessageDTOToUIMessage({ ...receivedMessage, id: finalServerId, messageId: finalServerId });
                 newChatMessages.push(finalMessage);
                 finalMessageForUpdate = finalMessage;
                 messageProcessed = true;
@@ -382,7 +378,7 @@ function ChatApplication({ currentUser, initialChats }) {
         });
     }, [currentUser.id, updateLastMessage]);
     // ===============================================================================
-    // BUG FIX END
+    // END OF MODIFICATIONS
     // ===============================================================================
 
 
@@ -731,30 +727,47 @@ function ChatApplication({ currentUser, initialChats }) {
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
 
-    const handleSaveEdit = async () => {
+    // =================================================================================
+    // 🔄 MODIFIED: handleSaveEdit to use WebSocket instead of HTTP API
+    // =================================================================================
+    const handleSaveEdit = () => {
         const updatedContent = message.trim();
-        if (updatedContent === '' || editingInfo.index === null) return;
+
+        // Basic validation
+        if (updatedContent === '' || editingInfo.index === null || !stompClient.current?.active) {
+            cancelEdit();
+            return;
+        }
 
         const chatId = selectedChat.chatId;
         const currentMessages = messages[chatId];
         const messageToEdit = currentMessages[editingInfo.index];
         const messageId = messageToEdit.messageId;
 
-        if (!messageId || messageId === editingInfo.originalContent) {
+        // Do not send request if content is unchanged or messageId is invalid
+        if (updatedContent === editingInfo.originalContent || typeof messageId !== 'number') {
             cancelEdit();
             return;
         }
 
-        try {
-            await updateMessage(messageId, updatedContent, selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE', currentUser.id);
-            const updatedMessages = [...currentMessages];
-            updatedMessages[editingInfo.index] = { ...updatedMessages[editingInfo.index], content: updatedContent, isEdited: true };
-            setMessages(prev => ({ ...prev, [chatId]: updatedMessages }));
-        } catch (error) {
-            console.error(`Failed to update message ${messageId} in component:`, error);
-        } finally {
-            cancelEdit();
-        }
+        // This payload matches the backend's ChatMessageRequest DTO for the edit endpoint
+        const payload = {
+            messageId: messageId,
+            content: updatedContent,
+            sender: currentUser.id,
+        };
+
+        // The destination for editing messages as defined in the backend controller
+        const destination = '/app/chat/edit';
+
+        stompClient.current.publish({
+            destination,
+            body: JSON.stringify(payload)
+        });
+
+        // We no longer update state manually. The WebSocket broadcast will handle it.
+        // Just reset the input form.
+        cancelEdit();
     };
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
@@ -775,7 +788,6 @@ function ChatApplication({ currentUser, initialChats }) {
             if (forEveryone) {
                 // For 'delete for everyone', we wait for the server's broadcast to update the UI
                 await deleteMessageForEveryone(messageId, currentUser.id);
-                // No local state update here, the WebSocket message from the backend handles it.
             } else {
                 // For 'delete for me', we update the local state immediately
                 await deleteMessageForMe(messageId, currentUser.id);
