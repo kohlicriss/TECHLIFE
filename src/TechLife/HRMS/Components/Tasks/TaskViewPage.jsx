@@ -209,7 +209,7 @@ const TaskViewPage = () => {
     try {
       // --- Step 1: Fetch Task Details ---
       const taskResponse = await fetch(
-        `http://localhost:8090/api/task/${projectid}/${id}`
+        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
       );
 
       if (!taskResponse.ok) {
@@ -225,7 +225,7 @@ const TaskViewPage = () => {
       // --- Step 2: Fetch Update History (in a separate try/catch) ---
       try {
         const historyResponse = await fetch(
-          `http://localhost:8090/api/task/status/${projectid}/${id}`
+          `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
         );
         if (!historyResponse.ok) {
           // Don't throw an error that stops the page. Just log it and set an empty history.
@@ -315,7 +315,7 @@ const TaskViewPage = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8090/api/history/${projectid}/${id}`,
+        `http://192.168.0.120:8090/api/history/${projectid}/${id}`,
         payload
       );
       console.log("Update History Response:", response.data);
@@ -347,7 +347,7 @@ const TaskViewPage = () => {
   const handleInlineSave = async () => {
     try {
       const response = await axios.put(
-        `http://localhost:8090/api/status/${projectid}/${id}`,
+        `http://192.168.0.120:8090/api/status/${projectid}/${id}`,
         editRowData
       );
       console.log("Inline Save Response:", response.data);
@@ -605,7 +605,7 @@ const TaskViewPage = () => {
                               (link, index) => (
                                 <li key={index}>
                                   <a
-                                    href={`http://localhost:8090/files/${projectid}/${link}`}
+                                    href={`http://192.168.0.120:8090/files/${projectid}/${link}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"

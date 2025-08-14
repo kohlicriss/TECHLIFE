@@ -292,9 +292,9 @@ const TasksPage = () => {
       const userId = userData.employeeId;
 
       if (userRole === "TEAM_LEAD" && employeeId) {
-        apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
+        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${employeeId}`;
       } else {
-        apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
+        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
       }
 
       console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
@@ -340,7 +340,7 @@ const TasksPage = () => {
 
     try {
       const tlId = userData.employeeId;
-      const url = `http://localhost:8090/api/${tlId}`;
+      const url = `http://192.168.0.120:8090/api/${tlId}`;
       
       console.log(`Fetching tasks assigned by Team Lead from: ${url}`);
       const response = await fetch(url);
@@ -542,7 +542,7 @@ const TasksPage = () => {
       return;
     }
     
-    const apiUrl = `http://localhost:8090/api/${assignedEmployeeId}/${projectId}/task`;
+    const apiUrl = `http://192.168.0.120:8090/api/${assignedEmployeeId}/${projectId}/task`;
 
     try {
       if (isEditing) {

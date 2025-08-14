@@ -56,7 +56,7 @@ const FileMessage = ({ msg, isMyMessage }) => {
             </div>
             {!isMyMessage && (
                  <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
-                    <FaDownload size={18} />
+                     <FaDownload size={18} />
                 </a>
             )}
         </div>
@@ -229,45 +229,43 @@ function ChatApplication({ currentUser, initialChats }) {
     const updateLastMessage = useCallback((chatId, message) => {
         const generatePreview = (msg) => {
             if (!msg) return 'Chat cleared';
-            if (msg.type === 'deleted') return 'This message was deleted';
+            // BUG FIX: Ensure deleted message preview is consistent
+            if (msg.type === 'deleted' || msg.isDeleted) return 'This message was deleted';
             
             const prefix = msg.sender === currentUser.id ? 'You: ' : '';
             
             if (msg.type === 'image') return prefix + '📷 Image';
             if (msg.type === 'audio') return prefix + '🎤 Voice Message';
-            if (msg.type === 'file') return prefix + `📄 ${msg.fileName}`;
+            if (msg.type === 'file') return prefix + `📎 ${msg.fileName}`;
             if (msg.content) return prefix + msg.content;
             
             return '...';
         };
 
         setChatData(prev => {
-            const newGroups = prev.groups.map(g => {
-                if (g.chatId === chatId) {
+            const updateChat = (chat) => {
+                if (chat.chatId === chatId) {
+                    const isNewUnread = message && message.type !== 'deleted' && !message.isDeleted && message.sender !== currentUser.id && selectedChat?.chatId !== chatId;
                     return {
-                        ...g,
+                        ...chat,
                         lastMessage: generatePreview(message),
                         lastMessageTimestamp: message?.timestamp || new Date(0).toISOString(),
-                        unreadMessageCount: (g.unreadMessageCount || 0) + (message && message.type !== 'deleted' && message.sender !== currentUser.id && selectedChat?.chatId !== chatId ? 1 : 0)
+                        unreadMessageCount: (chat.unreadMessageCount || 0) + (isNewUnread ? 1 : 0)
                     };
                 }
-                return g;
-            });
-            const newPrivate = prev.privateChatsWith.map(p => {
-                if (p.chatId === chatId) {
-                    return {
-                        ...p,
-                        lastMessage: generatePreview(message),
-                        lastMessageTimestamp: message?.timestamp || new Date(0).toISOString(),
-                        unreadMessageCount: (p.unreadMessageCount || 0) + (message && message.type !== 'deleted' && message.sender !== currentUser.id && selectedChat?.chatId !== chatId ? 1 : 0)
-                    };
-                }
-                return p;
-            });
+                return chat;
+            };
+
+            const newGroups = prev.groups.map(updateChat);
+            const newPrivate = prev.privateChatsWith.map(updateChat);
+
             return { groups: newGroups, privateChatsWith: newPrivate };
         });
     }, [currentUser.id, selectedChat]);
 
+    // =================================================================================
+    // BUG FIX START: Modified onMessageReceived to better handle delete notifications
+    // =================================================================================
     const onMessageReceived = useCallback((payload) => {
         const receivedMessage = JSON.parse(payload.body);
         const messageChatId = receivedMessage.groupId || (receivedMessage.sender === currentUser.id ? receivedMessage.receiver : receivedMessage.sender);
@@ -277,10 +275,14 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        if (receivedMessage.type === 'deleted') {
+        // --- Change 1: Centralized delete logic ---
+        // Backend nunchi 'isDeleted: true' or 'type: "deleted"' vachina, ee block trigger avuthundi.
+        if (receivedMessage.isDeleted || receivedMessage.type === 'deleted') {
             setMessages(prevMessages => {
                 const chatMessages = prevMessages[messageChatId] || [];
                 let wasLastMessage = false;
+
+                // Check if the deleted message was the last one
                 if (chatMessages.length > 0) {
                     const lastMessage = chatMessages[chatMessages.length - 1];
                     wasLastMessage = lastMessage.messageId === receivedMessage.messageId || lastMessage.id === receivedMessage.messageId;
@@ -294,11 +296,15 @@ function ChatApplication({ currentUser, initialChats }) {
                             content: 'This message was deleted',
                             fileName: null,
                             fileSize: null,
+                            isDeleted: true, // Ensure flag is set
                         };
                     }
                     return msg;
                 });
 
+                // --- Change 2: Explicitly update sidebar ---
+                // Okavela last message delete ayithe, sidebar ni kuda update cheyali.
+                // Manam updatedMessages array lo nunchi kottha last message ni theesukuni update chestham.
                 if (wasLastMessage) {
                     const newLastMessage = updatedMessages.length > 0 ? updatedMessages[updatedMessages.length - 1] : null;
                     updateLastMessage(messageChatId, newLastMessage);
@@ -309,6 +315,7 @@ function ChatApplication({ currentUser, initialChats }) {
             return; 
         }
 
+        // Existing logic for new messages, acks, etc.
         const isAck = receivedMessage.sender === currentUser.id && receivedMessage.client_id;
         const isIncoming = receivedMessage.sender !== currentUser.id;
 
@@ -374,6 +381,9 @@ function ChatApplication({ currentUser, initialChats }) {
             return prevMessages;
         });
     }, [currentUser.id, updateLastMessage]);
+    // ===============================================================================
+    // BUG FIX END
+    // ===============================================================================
 
 
     useEffect(() => {
@@ -754,32 +764,26 @@ function ChatApplication({ currentUser, initialChats }) {
         const currentMessages = [...(messages[chatId] || [])];
         const messageToDelete = currentMessages[contextMenu.index];
         const messageId = messageToDelete?.messageId;
-
-        if (!messageId || messageToDelete.status === 'sending' || messageToDelete.status === 'failed') {
+        
+        if (!messageId || typeof messageId !== 'number' || messageToDelete.status === 'sending' || messageToDelete.status === 'failed') {
+            console.error("Invalid messageId or message status for deletion:", messageId, messageToDelete.status);
             setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
             return;
         }
 
         try {
-            let nextMessages;
             if (forEveryone) {
+                // For 'delete for everyone', we wait for the server's broadcast to update the UI
                 await deleteMessageForEveryone(messageId, currentUser.id);
-                nextMessages = currentMessages.map((msg, i) => {
-                    if (i === contextMenu.index) {
-                        return { ...messageToDelete, type: 'deleted', content: 'This message was deleted', originalMessage: messageToDelete };
-                    }
-                    return msg;
-                });
-                setLastDeleted({ index: contextMenu.index, message: messageToDelete });
-                setTimeout(() => setLastDeleted(null), 5000);
+                // No local state update here, the WebSocket message from the backend handles it.
             } else {
+                // For 'delete for me', we update the local state immediately
                 await deleteMessageForMe(messageId, currentUser.id);
-                nextMessages = currentMessages.filter((_, i) => i !== contextMenu.index);
+                const nextMessages = currentMessages.filter((_, i) => i !== contextMenu.index);
+                setMessages(prev => ({ ...prev, [chatId]: nextMessages }));
+                const newLastMessage = nextMessages.length > 0 ? nextMessages[nextMessages.length - 1] : null;
+                updateLastMessage(chatId, newLastMessage);
             }
-
-            setMessages(prev => ({ ...prev, [chatId]: nextMessages }));
-            const newLastMessage = nextMessages.length > 0 ? nextMessages[nextMessages.length - 1] : null;
-            updateLastMessage(chatId, newLastMessage);
         } catch (error) {
             console.error(`Failed to delete message ${messageId} in component:`, error);
         } finally {
@@ -896,7 +900,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
     const getSenderInfo = (senderId) => {
         if (!currentUser) return { name: 'Unknown', profile: null };
-        if (senderId === currentUser.id) return { name: currentUser.name, profile: currentUser.profile };
+        if (senderId === currentUser.id) return { name: 'You', profile: currentUser.profile };
         const allUsers = [...chatData.privateChatsWith, ...(currentChatInfo?.members || [])];
         const member = allUsers.find(m => m.chatId === senderId || m.employeeId === senderId);
         return member

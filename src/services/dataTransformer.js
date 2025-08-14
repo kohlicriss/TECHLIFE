@@ -80,13 +80,15 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
         messageType = msgDto.kind.toLowerCase();
     }
 
+    const finalId = msgDto.id || msgDto.messageId; // FIX: Use messageId from overview DTO
+    
     return {
-        id: msgDto.id, 
-        messageId: msgDto.id, 
+        id: finalId, 
+        messageId: finalId, 
         content: msgDto.content,
         sender: msgDto.sender,
         timestamp: timestamp,
-        status: (msgDto.seen === true || String(msgDto.seen) === 'true') ? 'seen' : 'sent',
+        status: (msgDto.seen === true || String(msgDto.isSeen) === 'true') ? 'seen' : 'sent',
         type: messageType,
         isEdited: msgDto.edited || false,
         fileName: msgDto.fileName || null,
