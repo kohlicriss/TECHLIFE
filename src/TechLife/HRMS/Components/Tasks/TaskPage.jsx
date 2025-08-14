@@ -6,20 +6,20 @@ import { Context } from "../HrmsContext";
 
 // Icon component for the calendar
 const CalendarIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4 mr-1.5 text-gray-400"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-    />
-  </svg>
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4 mr-1.5 text-gray-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+    >
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
+    </svg>
 );
 
 const TasksPage = () => {
@@ -63,107 +63,80 @@ const TasksPage = () => {
     });
 
     const fetchTasks = useCallback(async () => {
-      if (!userData) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const userId = employeeId || userData.employeeId;
-        const apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          if (response.status === 404) {
-            setTasks([]);
+        if (!userData) {
+            setLoading(false);
             return;
-          }
-          throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        const data = await response.json();
-        setTasks(data || []);
-        setError(null);
-      } catch (err) {
-        setError(`Failed to fetch tasks: ${err.message}`);
-        setTasks([]);
-      } finally {
-        setLoading(false);
-      }
+
+        try {
+            setLoading(true);
+            let apiUrl;
+            const userRole = userData.roles[0];
+            const userId = userData.employeeId;
+
+            if (userRole === "TEAM_LEAD" && employeeId) {
+                apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
+            } else {
+                apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
+            }
+
+            console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
+            const response = await fetch(apiUrl);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    console.warn("No tasks found for the user.");
+                    setTasks([]);
+                    setError(null);
+                    return;
+                }
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            // Read response text first to handle empty bodies gracefully
+            const responseText = await response.text();
+            if (!responseText) {
+                console.warn("Received an empty response for user tasks. Setting tasks to empty array.");
+                setTasks([]);
+                return;
+            }
+
+            const data = JSON.parse(responseText);
+            console.log("Response from fetchTasks:", data);
+            setTasks(data);
+            setError(null);
+        } catch (err) {
+            // Catches both network errors and JSON.parse errors
+            setError("Failed to fetch tasks. Please make sure the server is running and the API is returning valid JSON.");
+            console.error("Error in fetchTasks:", err);
+            setTasks([]); // Ensure state is reset
+        } finally {
+            setLoading(false);
+        }
     }, [userData, employeeId]);
-  const fetchTasks = useCallback(async () => {
-    if (!userData) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      let apiUrl;
-      const userRole = userData.roles[0];
-      const userId = userData.employeeId;
-
-      if (userRole === "TEAM_LEAD" && employeeId) {
-        apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
-      } else {
-        apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
-      }
-
-      console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
-      const response = await fetch(apiUrl);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.warn("No tasks found for the user.");
-          setTasks([]);
-          setError(null);
-          return;
-        }
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      // Read response text first to handle empty bodies gracefully
-      const responseText = await response.text();
-      if (!responseText) {
-          console.warn("Received an empty response for user tasks. Setting tasks to empty array.");
-          setTasks([]);
-          return;
-      }
-      
-      const data = JSON.parse(responseText);
-      console.log("Response from fetchTasks:", data);
-      setTasks(data);
-      setError(null);
-    } catch (err) {
-      // Catches both network errors and JSON.parse errors
-      setError("Failed to fetch tasks. Please make sure the server is running and the API is returning valid JSON.");
-      console.error("Error in fetchTasks:", err);
-      setTasks([]); // Ensure state is reset
-    } finally {
-      setLoading(false);
-    }
-  }, [userData, employeeId]);
 
     const fetchTasksAssignedByMe = useCallback(async () => {
-      if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
-        setAssignedByMeTasks([]);
-        return;
-      }
-      try {
-        const tlId = userData.employeeId;
-        const url = `http://192.168.0.120:8090/api/${tlId}`;
-        const response = await fetch(url);
-        if (!response.ok) {
-          if (response.status === 404) {
+        if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
             setAssignedByMeTasks([]);
             return;
-          }
-          throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        const data = await response.json();
-        setAssignedByMeTasks(data || []);
-      } catch (err) {
-        setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
-        setAssignedByMeTasks([]);
-      }
+        try {
+            const tlId = userData.employeeId;
+            const url = `http://192.168.0.120:8090/api/${tlId}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    setAssignedByMeTasks([]);
+                    return;
+                }
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const data = await response.json();
+            setAssignedByMeTasks(data || []);
+        } catch (err) {
+            setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
+            setAssignedByMeTasks([]);
+        }
     }, [userData]);
 
     useEffect(() => {
@@ -323,11 +296,11 @@ const TasksPage = () => {
             ...prev,
             [name]: value
         }));
-        
+
         if (formErrors[name]) {
             setFormErrors(prev => ({ ...prev, [name]: '' }));
         }
-        
+
         if (submissionError) {
             setSubmissionError('');
         }
@@ -337,7 +310,7 @@ const TasksPage = () => {
         const newLinks = [...formData.relatedLinks];
         newLinks[index] = value;
         setFormData(prev => ({ ...prev, relatedLinks: newLinks }));
-        
+
         if (submissionError) {
             setSubmissionError('');
         }
@@ -354,7 +327,7 @@ const TasksPage = () => {
     const handleFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
         setFiles(selectedFiles);
-        
+
         if (submissionError) {
             setSubmissionError('');
         }
@@ -362,7 +335,7 @@ const TasksPage = () => {
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
@@ -372,7 +345,7 @@ const TasksPage = () => {
 
         try {
             const formDataToSend = new FormData();
-            
+
             const taskPayload = {
                 id: formData.id,
                 title: formData.title,
@@ -392,7 +365,7 @@ const TasksPage = () => {
             };
 
             formDataToSend.append(
-                'taskDTO', 
+                'taskDTO',
                 new Blob([JSON.stringify(taskPayload)], { type: 'application/json' })
             );
 
@@ -433,7 +406,7 @@ const TasksPage = () => {
 
             let errorMsg = error.message;
             if (error.response?.data) {
-                errorMsg = typeof error.response.data === 'string' 
+                errorMsg = typeof error.response.data === 'string'
                     ? error.response.data
                     : JSON.stringify(error.response.data);
             }
@@ -461,7 +434,7 @@ const TasksPage = () => {
         return assignedByMeTasks
             .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
             .sort((a, b) => {
-                 if (sortOption === "startDateAsc") return new Date(a.createdDate) - new Date(b.createdDate);
+                if (sortOption === "startDateAsc") return new Date(a.createdDate) - new Date(b.createdDate);
                 if (sortOption === "priorityDesc") {
                     const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
                     return priorityOrder[a.priority?.toUpperCase()] - priorityOrder[b.priority?.toUpperCase()];
@@ -477,7 +450,7 @@ const TasksPage = () => {
     if (error) {
         return <div className="flex justify-center items-center min-h-screen text-red-600">{error}</div>;
     }
-    
+
     const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
 
     const renderTaskTable = (taskList, tableTitle, noTasksMessage, showAssignedTo) => (
@@ -519,8 +492,8 @@ const TasksPage = () => {
                                         {isTeamLead && (
                                             <td className="px-6 py-4 text-sm">
                                                 {task.createdBy === userData?.employeeId && (
-                                                    <button 
-                                                        onClick={(e) => handleEditClick(e, task)} 
+                                                    <button
+                                                        onClick={(e) => handleEditClick(e, task)}
                                                         className="text-indigo-600 hover:text-indigo-900"
                                                     >
                                                         <Edit size={18} />
@@ -551,8 +524,8 @@ const TasksPage = () => {
                         </p>
                     </div>
                     {isTeamLead && (
-                        <button 
-                            onClick={handleCreateClick} 
+                        <button
+                            onClick={handleCreateClick}
                             className="mt-4 sm:mt-0 flex items-center justify-center bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700"
                         >
                             Create Task
@@ -579,9 +552,9 @@ const TasksPage = () => {
                         </select>
                     </div>
                 </div>
-                
+
                 {isTeamLead && renderTaskTable(filteredAndSortedAssignedByMeTasks, "Tasks Assigned By You", "You have not assigned any tasks yet.", true)}
-                
+
                 {renderTaskTable(filteredAndSortedTasks, employeeId ? `Tasks Assigned to ${employeeId}` : "Tasks Assigned to You", "No tasks to display.", false)}
 
                 {/* Task Form Modal */}
@@ -598,7 +571,7 @@ const TasksPage = () => {
                             </div>
 
                             <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Task ID <span className="text-red-500">*</span></label>
@@ -627,7 +600,7 @@ const TasksPage = () => {
                                         {formErrors.projectId && <p className="text-red-500 text-sm mt-1">{formErrors.projectId}</p>}
                                     </div>
                                 </div>
-                                
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Task Title <span className="text-red-500">*</span></label>
                                     <input
@@ -882,8 +855,8 @@ const TasksPage = () => {
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
                                         )}
-                                        {isSubmitting 
-                                            ? (formMode === 'edit' ? 'Updating...' : 'Creating...') 
+                                        {isSubmitting
+                                            ? (formMode === 'edit' ? 'Updating...' : 'Creating...')
                                             : (formMode === 'edit' ? 'Update Task' : 'Create Task')
                                         }
                                     </button>
