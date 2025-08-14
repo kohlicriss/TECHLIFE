@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Context } from "../HrmsContext";
@@ -19,6 +19,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+// The popup component remains unchanged
 const UpdateHistoryPopup = ({
   setShowUpdateHistoryPopup,
   handleUpdateHistorySubmit,
@@ -174,6 +175,7 @@ const UpdateHistoryPopup = ({
   </div>
 );
 
+
 const TaskViewPage = () => {
   const { projectid, id, empID } = useParams();
   const navigate = useNavigate();
@@ -202,49 +204,44 @@ const TaskViewPage = () => {
 
   const fetchTaskData = async () => {
     if (!projectid || !id) return;
-    
+
     setLoading(true);
-    setError(null); // Reset error state on new fetch
+    setError(null);
 
     try {
-      // --- Step 1: Fetch Task Details ---
       const taskResponse = await fetch(
         `http://192.168.0.120:8090/api/task/${projectid}/${id}`
       );
 
       if (!taskResponse.ok) {
-        // Throw a specific error if task fetch fails
         throw new Error(`Task fetch failed with status: ${taskResponse.status}`);
       }
 
       const taskData = await taskResponse.json();
       console.log("Task Data Received:", taskData);
-      setAssignedBy(taskData?.createdBy); // Set the assignedBy state here
+      setAssignedBy(taskData?.createdBy);
       setCurrentTask(taskData);
 
-      // --- Step 2: Fetch Update History (in a separate try/catch) ---
       try {
         const historyResponse = await fetch(
           `http://192.168.0.120:8090/api/task/status/${projectid}/${id}`
         );
         if (!historyResponse.ok) {
-          // Don't throw an error that stops the page. Just log it and set an empty history.
           console.warn("Could not fetch task history. Displaying task without it.");
-          setUpdateHistory([]); // Set to empty array to prevent render errors
+          setUpdateHistory([]);
         } else {
           const historyData = await historyResponse.json();
           setUpdateHistory(historyData);
         }
       } catch (historyErr) {
-          console.error("A network or other error occurred while fetching history:", historyErr);
-          setUpdateHistory([]);
+        console.error("A network or other error occurred while fetching history:", historyErr);
+        setUpdateHistory([]);
       }
 
     } catch (err) {
-      // This will only catch errors from the main task fetch now
       setError(err.message || "Failed to fetch critical task details.");
       console.error(err);
-      setCurrentTask(null); // Ensure no stale data is shown
+      setCurrentTask(null);
     } finally {
       setLoading(false);
     }
@@ -252,7 +249,7 @@ const TaskViewPage = () => {
 
   useEffect(() => {
     fetchTaskData();
-  }, [projectid, id, assignedBy]); // Added assignedBy to dependency array
+  }, [projectid, id, assignedBy]);
 
   const getPriorityClass = (priority) => {
     const upperPriority = priority ? priority.toUpperCase() : "";
@@ -562,10 +559,11 @@ const TaskViewPage = () => {
                 </div>
               )}
 
+              {/* ===== START OF CORRECTED CODE ===== */}
               {(currentTask.relatedLinks &&
                 currentTask.relatedLinks.length > 0) ||
-              (currentTask.attachedFileLinks &&
-                currentTask.attachedFileLinks.length > 0) ? (
+                (currentTask.attachedFileLinks &&
+                  currentTask.attachedFileLinks.length > 0) ? (
                 <div className="mb-8">
                   <h4 className="text-xl font-semibold text-gray-800 mb-3">
                     Related Links & Files
@@ -605,12 +603,13 @@ const TaskViewPage = () => {
                               (link, index) => (
                                 <li key={index}>
                                   <a
-                                    href={`http://192.168.0.120:8090/files/${projectid}/${link}`}
+                                    href={`http://localhost:8090/files/${projectid}/${link}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
                                   >
-                                    {link}
+                                    {/* IMPROVED: Show only the file name */}
+                                    {decodeURIComponent(link.split('/').pop().split('?')[0])}
                                   </a>
                                 </li>
                               )
@@ -621,6 +620,8 @@ const TaskViewPage = () => {
                   </div>
                 </div>
               ) : null}
+              {/* ===== END OF CORRECTED CODE ===== */}
+
             </div>
 
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
@@ -721,7 +722,7 @@ const TaskViewPage = () => {
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
                               {history.relatedLinks &&
-                              history.relatedLinks.length > 0 ? (
+                                history.relatedLinks.length > 0 ? (
                                 <ul className="list-disc list-inside space-y-0.5">
                                   {history.relatedLinks.map(
                                     (link, linkIndex) => (
@@ -747,7 +748,7 @@ const TaskViewPage = () => {
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">
                               {history.relatedFileLinks &&
-                              history.relatedFileLinks.length > 0 ? (
+                                history.relatedFileLinks.length > 0 ? (
                                 <ul className="list-disc list-inside space-y-0.5">
                                   {history.relatedFileLinks.map(
                                     (link, linkIndex) => (
@@ -762,7 +763,7 @@ const TaskViewPage = () => {
                                           className="text-purple-600 hover:underline"
                                         >
                                           <FileText className="inline-block h-3 w-3 mr-1" />
-                                          {link.split('/').pop()}
+                                          {decodeURIComponent(link.split('/').pop().split('?')[0])}
                                         </a>
                                       </li>
                                     )
@@ -841,7 +842,6 @@ const TaskViewPage = () => {
             </div>
           </div>
 
-          {/* New Conditional Rendering for the Mark as Completed button */}
           {!isTaskCompleted && position === "TEAM_LEAD" && (userData?.employeeId === assignedBy) && (
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <button

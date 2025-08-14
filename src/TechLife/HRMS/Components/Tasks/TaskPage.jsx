@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { Edit } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Edit, X, Plus, Trash2, Upload, AlertCircle } from "lucide-react";
 import { Context } from "../HrmsContext";
 
+// Icon component for the calendar
 const CalendarIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -21,263 +22,45 @@ const CalendarIcon = () => (
   </svg>
 );
 
-const TaskPopup = ({
-  show,
-  setShow,
-  handleSubmit,
-  taskData,
-  setTaskData,
-  isEditing,
-  taskFormError, // New prop for showing an error message
-  taskFormSuccess, // New prop for showing a success message
-}) => {
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setTaskData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    setTaskData((prev) => ({
-      ...prev,
-      attachedFileLinks: [...e.target.files],
-    }));
-  };
-
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-opacity-100 flex justify-center shadow-2xl items-center z-200">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          {isEditing ? "Edit Task" : "Create New Task"}
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 max-h-[70vh] overflow-y-auto pr-4"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="id"
-              value={taskData.id}
-              onChange={handleInputChange}
-              placeholder="Manual Task Id"
-              className="p-2 border rounded-md"
-              required
-              disabled={isEditing}
-            />
-            <input
-              name="title"
-              value={taskData.title}
-              onChange={handleInputChange}
-              placeholder="Title"
-              className="p-2 border rounded-md"
-              required
-            />
-            <input
-              name="createdBy"
-              value={taskData.createdBy}
-              onChange={handleInputChange}
-              placeholder="Created By"
-              className="p-2 border rounded-md"
-              required
-              disabled={!isEditing}
-            />
-            <input
-              name="assignedTo"
-              value={taskData.assignedTo}
-              onChange={handleInputChange}
-              placeholder="Assigned To"
-              className="p-2 border rounded-md"
-              required
-            />
-            <select
-              name="status"
-              value={taskData.status}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md"
-            >
-              <option value="PENDING">Pending</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="COMPLETED">Completed</option>
-            </select>
-            <select
-              name="priority"
-              value={taskData.priority}
-              onChange={handleInputChange}
-              className="p-2 border rounded-md"
-            >
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-            </select>
-            <div>
-              <label
-                htmlFor="dueDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Due Date
-              </label>
-              <input
-                id="dueDate"
-                name="dueDate"
-                type="date"
-                value={taskData.dueDate}
-                onChange={handleInputChange}
-                className="p-2 border rounded-md w-full"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="createdDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Created Date
-              </label>
-              <input
-                id="createdDate"
-                name="createdDate"
-                type="date"
-                value={taskData.createdDate}
-                onChange={handleInputChange}
-                className="p-2 border rounded-md w-full"
-                required
-              />
-            </div>
-            <input
-              name="rating"
-              type="number"
-              value={taskData.rating || ""}
-              onChange={handleInputChange}
-              placeholder="Rating (0-10)"
-              className="p-2 border rounded-md"
-              min="0"
-              max="10"
-            />
-          </div>
-
-          <textarea
-            name="description"
-            value={taskData.description}
-            onChange={handleInputChange}
-            placeholder="Description"
-            className="w-full p-2 border rounded-md"
-            required
-          />
-          <textarea
-            name="remark"
-            value={taskData.remark}
-            onChange={handleInputChange}
-            placeholder="Remark"
-            className="w-full p-2 border rounded-md"
-          />
-
-          <textarea
-            name="completionNote"
-            value={taskData.completionNote}
-            onChange={handleInputChange}
-            placeholder="Completion Note"
-            className="w-full p-2 border rounded-md"
-          />
-
-          <input
-            name="relatedLinks"
-            value={
-              Array.isArray(taskData.relatedLinks)
-                ? taskData.relatedLinks.join(", ")
-                : taskData.relatedLinks
-            }
-            onChange={handleInputChange}
-            placeholder="Related Links (comma-separated)"
-            className="w-full p-2 border rounded-md"
-          />
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Attach Files
-            </label>
-            <input
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
-            />
-          </div>
-
-          {/* New: Display success or error message here */}
-          {taskFormSuccess && (
-            <div className="p-3 text-sm text-green-700 bg-green-100 rounded-md">
-              Success! The task has been saved.
-            </div>
-          )}
-          {taskFormError && (
-            <div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">
-              {taskFormError}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-4 pt-4">
-            <button
-              type="button"
-              onClick={() => setShow(false)}
-              className="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              {isEditing ? "Update Task" : "Create Task"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 const TasksPage = () => {
-  const navigate = useNavigate();
-  const { employeeId } = useParams();
-  const { userData } = useContext(Context);
+    const navigate = useNavigate();
+    const { employeeId } = useParams();
+    const { userData } = useContext(Context);
 
-  const [tasks, setTasks] = useState([]);
-  const [assignedByMeTasks, setAssignedByMeTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Existing global error state, now only for full page errors
-  const [error, setError] = useState(null); 
-  
-  // New state for handling errors within the task form popup
-  const [taskFormError, setTaskFormError] = useState(null);
-  
-  // New state for handling success message within the task form popup
-  const [taskFormSuccess, setTaskFormSuccess] = useState(false);
+    const [tasks, setTasks] = useState([]);
+    const [assignedByMeTasks, setAssignedByMeTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [filterStatus, setFilterStatus] = useState("ALL");
+    const [sortOption, setSortOption] = useState("none");
 
-  const [filterStatus, setFilterStatus] = useState("ALL");
-  const [sortOption, setSortOption] = useState("none");
-  const [showTaskPopup, setShowTaskPopup] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+    // Form related states
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [formMode, setFormMode] = useState('create'); // 'create' or 'edit'
+    const [files, setFiles] = useState([]);
+    const [formErrors, setFormErrors] = useState({});
+    const [submissionError, setSubmissionError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getInitialFormState = useCallback(() => ({
-    id: "",
-    title: "",
-    description: "",
-    createdBy: userData?.employeeId || "",
-    assignedTo: "",
-    status: "PENDING",
-    priority: "MEDIUM",
-    dueDate: "",
-    createdDate: "",
-    rating: "",
-    remark: "",
-    completionNote: "",
-    relatedLinks: "",
-    attachedFileLinks: [],
-  }), [userData]);
-
-  const [taskData, setTaskData] = useState(getInitialFormState());
+    // Form data state
+    const [formData, setFormData] = useState({
+        id: '',
+        title: '',
+        description: '',
+        createdBy: '',
+        assignedTo: '',
+        status: 'Not Started',
+        priority: 'Medium',
+        createdDate: new Date().toISOString().split('T')[0],
+        completedDate: '',
+        dueDate: '',
+        rating: '',
+        remark: '',
+        completionNote: '',
+        relatedLinks: [''],
+        attachedFileLinks: [],
+        projectId: ''
+    });
 
   const fetchTasks = useCallback(async () => {
     if (!userData) {
@@ -292,9 +75,9 @@ const TasksPage = () => {
       const userId = userData.employeeId;
 
       if (userRole === "TEAM_LEAD" && employeeId) {
-        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${employeeId}`;
+        apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
       } else {
-        apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
+        apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
       }
 
       console.log(`Fetching tasks assigned to user from: ${apiUrl}`);
@@ -340,7 +123,7 @@ const TasksPage = () => {
 
     try {
       const tlId = userData.employeeId;
-      const url = `http://192.168.0.120:8090/api/${tlId}`;
+      const url = `http://localhost:8090/api/${tlId}`;
       
       console.log(`Fetching tasks assigned by Team Lead from: ${url}`);
       const response = await fetch(url);
@@ -374,106 +157,95 @@ const TasksPage = () => {
     }
   }, [userData]);
 
-  useEffect(() => {
-    if (userData) {
-      fetchTasks();
-      if (userData.roles[0] === "TEAM_LEAD") {
-        fetchTasksAssignedByMe();
-      }
-    }
-  }, [fetchTasks, fetchTasksAssignedByMe, userData]);
+    useEffect(() => {
+        if (userData) {
+            fetchTasks();
+            if (userData.roles[0] === "TEAM_LEAD") {
+                fetchTasksAssignedByMe();
+            }
+        }
+    }, [fetchTasks, fetchTasksAssignedByMe, userData]);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const calculateTimeCompletedBar = (startDateStr, dueDateStr, currentDate) => {
-    const startDate = new Date(startDateStr);
-    const dueDate = new Date(dueDateStr);
+    const calculateTimeCompletedBar = (startDateStr, dueDateStr, currentDate) => {
+        const startDate = new Date(startDateStr);
+        const dueDate = new Date(dueDateStr);
+        if (isNaN(startDate.getTime()) || isNaN(dueDate.getTime()) || startDate > dueDate) {
+            return 0;
+        }
+        const totalDuration = dueDate.getTime() - startDate.getTime();
+        if (totalDuration <= 0) {
+            return currentDate >= dueDate ? 100 : 0;
+        }
+        const elapsedDuration = currentDate.getTime() - startDate.getTime();
+        return Math.round(Math.max(0, Math.min(100, (elapsedDuration / totalDuration) * 100)));
+    };
 
-    startDate.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
+    const clickHandler = (projectId, id) => {
+        navigate(`taskview/${projectId}/${id}`);
+    };
 
-    if (
-      isNaN(startDate.getTime()) ||
-      isNaN(dueDate.getTime()) ||
-      startDate.getTime() > dueDate.getTime()
-    ) {
-      return 0;
-    }
+    const getPriorityStyles = (priority) => {
+        switch (priority?.toUpperCase()) {
+            case "HIGH": return "bg-red-50 text-red-700 border-red-100";
+            case "MEDIUM": return "bg-yellow-50 text-yellow-700 border-yellow-100";
+            case "LOW": return "bg-blue-50 text-blue-700 border-blue-100";
+            default: return "bg-gray-50 text-gray-700 border-gray-100";
+        }
+    };
 
-    const totalDuration = dueDate.getTime() - startDate.getTime();
-    const elapsedDuration = currentDate.getTime() - startDate.getTime();
+    const getStatusStyles = (status) => {
+        switch (status?.toUpperCase().replace(" ", "_")) {
+            case "IN_PROGRESS": return "bg-purple-50 text-purple-700";
+            case "PENDING": return "bg-orange-50 text-orange-700";
+            case "COMPLETED": return "bg-green-50 text-green-700";
+            default: return "bg-gray-50 text-gray-700";
+        }
+    };
 
-    if (totalDuration <= 0) {
-      return currentDate.getTime() >= dueDate.getTime() ? 100 : 0;
-    }
+    const getStatusDot = (status) => {
+        switch (status?.toUpperCase().replace(" ", "_")) {
+            case "IN_PROGRESS": return "bg-purple-500";
+            case "PENDING": return "bg-orange-500";
+            case "COMPLETED": return "bg-green-500";
+            default: return "bg-gray-500";
+        }
+    };
 
-    let percentage = (elapsedDuration / totalDuration) * 100;
-    percentage = Math.max(0, Math.min(100, percentage));
-    return Math.round(percentage);
-  };
+    const handleFilterChange = (event) => setFilterStatus(event.target.value);
+    const handleSortChange = (event) => setSortOption(event.target.value);
 
-  const clickHandler = (projectid, id) => {
-    navigate(`taskview/${projectid}/${id}`);
-  };
+    const resetFormData = () => {
+        setFormData({
+            id: '',
+            title: '',
+            description: '',
+            createdBy: userData?.employeeId || '',
+            assignedTo: '',
+            status: 'Not Started',
+            priority: 'Medium',
+            createdDate: new Date().toISOString().split('T')[0],
+            completedDate: '',
+            dueDate: '',
+            rating: '',
+            remark: '',
+            completionNote: '',
+            relatedLinks: [''],
+            attachedFileLinks: [],
+            projectId: ''
+        });
+        setFiles([]);
+        setFormErrors({});
+        setSubmissionError('');
+    };
 
-  const getPriorityStyles = (priority) => {
-    const upperPriority = priority ? priority.toUpperCase() : "";
-    switch (upperPriority) {
-      case "HIGH":
-        return "bg-red-50 text-red-700 border-red-100";
-      case "MEDIUM":
-        return "bg-yellow-50 text-yellow-700 border-yellow-100";
-      case "LOW":
-        return "bg-blue-50 text-blue-700 border-blue-100";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-100";
-    }
-  };
-
-  const getStatusStyles = (status) => {
-    const upperStatus = status ? status.toUpperCase().replace(" ", "_") : "";
-    switch (upperStatus) {
-      case "IN_PROGRESS":
-        return "bg-purple-50 text-purple-700";
-      case "PENDING":
-        return "bg-orange-50 text-orange-700";
-      case "COMPLETED":
-        return "bg-green-50 text-green-700";
-      default:
-        return "bg-gray-50 text-gray-700";
-    }
-  };
-
-  const getStatusDot = (status) => {
-    const upperStatus = status ? status.toUpperCase().replace(" ", "_") : "";
-    switch (upperStatus) {
-      case "IN_PROGRESS":
-        return "bg-purple-500";
-      case "PENDING":
-        return "bg-orange-500";
-      case "COMPLETED":
-        return "bg-green-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const handleFilterChange = (event) => {
-    setFilterStatus(event.target.value);
-  };
-
-  const handleSortChange = (event) => {
-    setSortOption(event.target.value);
-  };
-
-  const handleCreateClick = () => {
-    setIsEditing(false);
-    setTaskData(getInitialFormState());
-    setTaskFormError(null); // Reset form error
-    setTaskFormSuccess(false); // Reset form success
-    setShowTaskPopup(true);
-  };
+    const handleCreateClick = () => {
+        setFormMode('create');
+        resetFormData();
+        setIsFormOpen(true);
+    };
 
   const handleEditClick = (e, task) => {
     e.stopPropagation();
@@ -542,7 +314,7 @@ const TasksPage = () => {
       return;
     }
     
-    const apiUrl = `http://192.168.0.120:8090/api/${assignedEmployeeId}/${projectId}/task`;
+    const apiUrl = `http://localhost:8090/api/${assignedEmployeeId}/${projectId}/task`;
 
     try {
       if (isEditing) {
@@ -571,546 +343,457 @@ const TasksPage = () => {
     }
   };
 
-  const filteredAndSortedTasks = useMemo(() => {
-    return tasks
-      .filter((task) => {
-        if (filterStatus === "ALL") {
-          return true;
-        }
-        const normalizedTaskStatus = task.status
-          ? task.status.toUpperCase().replace(" ", "_")
-          : "";
-        return normalizedTaskStatus === filterStatus;
-      })
-      .sort((a, b) => {
-        if (sortOption === "startDateAsc") {
-          return new Date(a.startDate) - new Date(b.startDate);
-        } else if (sortOption === "priorityDesc") {
-          const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
-          const priorityA = a.priority ? a.priority.toUpperCase() : "";
-          const priorityB = b.priority ? b.priority.toUpperCase() : "";
-          return priorityOrder[priorityA] - priorityOrder[priorityB];
-        }
-        return 0;
-      });
-  }, [tasks, filterStatus, sortOption]);
+    const filteredAndSortedTasks = useMemo(() => {
+        return tasks
+            .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
+            .sort((a, b) => {
+                if (sortOption === "startDateAsc") return new Date(a.startDate) - new Date(b.startDate);
+                if (sortOption === "priorityDesc") {
+                    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
+                    return priorityOrder[a.priority?.toUpperCase()] - priorityOrder[b.priority?.toUpperCase()];
+                }
+                return 0;
+            });
+    }, [tasks, filterStatus, sortOption]);
 
-  const filteredAndSortedAssignedByMeTasks = useMemo(() => {
-    return assignedByMeTasks
-      .filter((task) => {
-        if (filterStatus === "ALL") {
-          return true;
-        }
-        const normalizedTaskStatus = task.status
-          ? task.status.toUpperCase().replace(" ", "_")
-          : "";
-        return normalizedTaskStatus === filterStatus;
-      })
-      .sort((a, b) => {
-        if (sortOption === "startDateAsc") {
-          return new Date(a.startDate) - new Date(b.startDate);
-        } else if (sortOption === "priorityDesc") {
-          const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
-          const priorityA = a.priority ? a.priority.toUpperCase() : "";
-          const priorityB = b.priority ? b.priority.toUpperCase() : "";
-          return priorityOrder[priorityA] - priorityOrder[priorityB];
-        }
-        return 0;
-      });
-  }, [assignedByMeTasks, filterStatus, sortOption]);
+    const filteredAndSortedAssignedByMeTasks = useMemo(() => {
+        return assignedByMeTasks
+            .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
+            .sort((a, b) => {
+                 if (sortOption === "startDateAsc") return new Date(a.createdDate) - new Date(b.createdDate);
+                if (sortOption === "priorityDesc") {
+                    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
+                    return priorityOrder[a.priority?.toUpperCase()] - priorityOrder[b.priority?.toUpperCase()];
+                }
+                return 0;
+            });
+    }, [assignedByMeTasks, filterStatus, sortOption]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
-        <div className="text-xl font-semibold text-gray-600">
-          Loading tasks...
-        </div>
-      </div>
-    );
-  }
+    if (loading) {
+        return <div className="flex justify-center items-center min-h-screen">Loading tasks...</div>;
+    }
 
-  // The global error state is now only for fetching data, not form submission.
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-red-50">
-        <div className="text-xl font-semibold text-red-600">{error}</div>
-      </div>
-    );
-  }
+    if (error) {
+        return <div className="flex justify-center items-center min-h-screen text-red-600">{error}</div>;
+    }
+    
+    const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
 
-  const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
-  const showActionsColumn = isTeamLead;
-
-  return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-            <div>
-              {userData?.roles[0] === "TEAM_LEAD" && (
-                <p>
-                  Welcome, {userData?.roles[0]} You are Viewing Employee's tasks
-                </p>
-              )}
-              {userData?.roles[0] === "HR" && (
-                <p>
-                  Welcome, {userData?.roles[0]} You are Viewing Employee's tasks
-                </p>
-              )}
-              {userData?.roles[0] === "MANAGER" && (
-                <p>
-                  Welcome, {userData?.roles[0]} You are Viewing Employee's tasks
-                </p>
-              )}
-              {userData?.roles[0] === "EMPLOYEE" && (
-                <p>
-                  Welcome, {userData?.roles[0]} You are Viewing your tasks
-                </p>
-              )}
-              <h1 className="text-3xl font-extrabold text-slate-800">
-                {["TEAM_LEAD", "HR", "MANAGER"].includes(userData?.roles?.[0])
-                  ? "Employee's Tasks"
-                  : "My Tasks"}
-              </h1>
-              {userData?.roles[0] === "EMPLOYEE" && (
-                <p className="mt-1 text-slate-500 text-lg">
-                  You have {filteredAndSortedTasks.length} tasks currently
-                  displayed.
-                </p>
-              )}
-            </div>
-            {userData?.roles[0] === "TEAM_LEAD" && (
-              <button
-                onClick={handleCreateClick}
-                className="mt-4 sm:mt-0 flex items-center justify-center bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
-              >
-                Create Task
-              </button>
-            )}
-          </div>
-          
-          {/* New Table for Tasks Assigned By You - Only for Team Leads */}
-          {isTeamLead && (
-            <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-800 mb-4">You assigned these tasks</h2>
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200/80">
-                  <div className="overflow-x-auto">
+    const renderTaskTable = (taskList, tableTitle, noTasksMessage, showAssignedTo) => (
+        <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">{tableTitle}</h2>
+            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200/80">
+                <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Task Title
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Status
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Priority
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Assigned To
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Assigned By
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Start Date
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Due Date
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Time Completed
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                          >
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-slate-200">
-                        {filteredAndSortedAssignedByMeTasks.length > 0 ? (
-                          filteredAndSortedAssignedByMeTasks.map((task) => {
-                            const timeCompletedBar = calculateTimeCompletedBar(
-                              task.createdDate,
-                              task.dueDate,
-                              today
-                            );
-                            let progressBarColor;
-
-                            if (timeCompletedBar <= 25) {
-                              progressBarColor = "bg-green-500";
-                            } else if (
-                              timeCompletedBar > 25 &&
-                              timeCompletedBar <= 50
-                            ) {
-                              progressBarColor = "bg-blue-500";
-                            } else if (
-                              timeCompletedBar > 50 &&
-                              timeCompletedBar <= 75
-                            ) {
-                              progressBarColor = "bg-yellow-500";
-                            } else {
-                              progressBarColor = "bg-red-500";
-                            }
-
-                            return (
-                              <tr
-                                key={task.id}
-                                onClick={() => clickHandler(task.projectId, task.id)}
-                                className="hover:bg-slate-50 cursor-pointer transition-colors duration-200"
-                              >
-                                <td className="px-6 py-4 whitespace-normal text-sm font-medium text-slate-800">
-                                  {task.title}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span
-                                    className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full ${getStatusStyles(
-                                      task.status
-                                    )}`}
-                                  >
-                                    <span
-                                      className={`h-2 w-2 rounded-full inline-block ${getStatusDot(
-                                        task.status
-                                      )} mr-1`}
-                                    ></span>
-                                    {task.status.replace("_", " ")}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <span
-                                    className={`text-xs font-bold py-1 px-2.5 rounded-md border ${getPriorityStyles(
-                                      task.priority
-                                    )}`}
-                                  >
-                                    {task.priority}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                                  {task.assignedTo}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                                  {task.createdBy}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                  <div className="flex items-center">
-                                    <CalendarIcon />
-                                    {task.createdDate}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                  <div className="flex items-center">
-                                    <CalendarIcon />
-                                    {task.dueDate}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  <div className="w-24 bg-gray-200 rounded-full h-2.5 overflow-hidden mb-1">
-                                    <div
-                                      className={`${progressBarColor} h-full rounded-full transition-all duration-500 ease-out`}
-                                      style={{ width: `${timeCompletedBar}%` }}
-                                    ></div>
-                                  </div>
-                                  <div className="text-right text-xs text-gray-600">
-                                    {timeCompletedBar}%
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  <button
-                                    onClick={(e) => handleEditClick(e, task)}
-                                    className="text-indigo-600 hover:text-indigo-900"
-                                  >
-                                    <Edit size={18} />
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={9}
-                              className="text-center py-10 text-gray-500 text-lg"
-                            >
-                              You have not assigned any tasks yet.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
+                        <thead className="bg-slate-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Task Title</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Priority</th>
+                                {showAssignedTo && <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Assigned To</th>}
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Assigned By</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Start Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Due Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Progress</th>
+                                {isTeamLead && <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>}
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-slate-200">
+                            {taskList.length > 0 ? taskList.map(task => {
+                                const timeCompletedBar = calculateTimeCompletedBar(task.startDate || task.createdDate, task.dueDate, today);
+                                const progressBarColor = timeCompletedBar <= 50 ? 'bg-green-500' : timeCompletedBar <= 75 ? 'bg-yellow-500' : 'bg-red-500';
+                                return (
+                                    <tr key={`${task.id}-${task.projectId}`} onClick={() => clickHandler(task.projectId, task.id)} className="hover:bg-slate-50 cursor-pointer">
+                                        <td className="px-6 py-4 text-sm font-medium text-slate-800">{task.title}</td>
+                                        <td className="px-6 py-4"><span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full ${getStatusStyles(task.status)}`}><span className={`h-2 w-2 rounded-full inline-block ${getStatusDot(task.status)} mr-1`}></span>{task.status.replace("_", " ")}</span></td>
+                                        <td className="px-6 py-4"><span className={`text-xs font-bold py-1 px-2.5 rounded-md border ${getPriorityStyles(task.priority)}`}>{task.priority}</span></td>
+                                        {showAssignedTo && <td className="px-6 py-4 text-sm text-slate-800">{task.assignedTo}</td>}
+                                        <td className="px-6 py-4 text-sm text-slate-800">{task.createdBy}</td>
+                                        <td className="px-6 py-4 text-sm text-slate-500"><div className="flex items-center"><CalendarIcon />{task.startDate || task.createdDate}</div></td>
+                                        <td className="px-6 py-4 text-sm text-slate-500"><div className="flex items-center"><CalendarIcon />{task.dueDate}</div></td>
+                                        <td className="px-6 py-4 text-sm">
+                                            <div className="w-24 bg-gray-200 rounded-full h-2.5"><div className={`${progressBarColor} h-full rounded-full`} style={{ width: `${timeCompletedBar}%` }}></div></div>
+                                            <div className="text-right text-xs text-gray-600">{timeCompletedBar}%</div>
+                                        </td>
+                                        {isTeamLead && (
+                                            <td className="px-6 py-4 text-sm">
+                                                {task.createdBy === userData?.employeeId && (
+                                                    <button 
+                                                        onClick={(e) => handleEditClick(e, task)} 
+                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                    >
+                                                        <Edit size={18} />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        )}
+                                    </tr>
+                                );
+                            }) : (
+                                <tr><td colSpan={isTeamLead ? (showAssignedTo ? 9 : 8) : (showAssignedTo ? 8 : 7)} className="text-center py-10 text-gray-500">{noTasksMessage}</td></tr>
+                            )}
+                        </tbody>
                     </table>
-                  </div>
                 </div>
             </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="w-full sm:w-auto">
-              <label
-                htmlFor="filterStatus"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Filter by Status:
-              </label>
-              <select
-                id="filterStatus"
-                name="filterStatus"
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm bg-white"
-                value={filterStatus}
-                onChange={handleFilterChange}
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="COMPLETED">Completed</option>
-              </select>
-            </div>
-
-            <div className="w-full sm:w-auto">
-              <label
-                htmlFor="sortOption"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Sort by:
-              </label>
-              <select
-                id="sortOption"
-                name="sortOption"
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm bg-white"
-                value={sortOption}
-                onChange={handleSortChange}
-              >
-                <option value="none">None</option>
-                <option value="startDateAsc">Start Date (Ascending)</option>
-                <option value="priorityDesc">Priority (High to Low)</option>
-              </select>
-            </div>
-          </div>
-          
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">
-            {employeeId ? `Tasks Assigned to ${employeeId}` : "Tasks Assigned to You"}
-          </h2>
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200/80">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Task Title
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Priority
-                    </th>
-                    {userData?.roles[0] !== "EMPLOYEE" && (
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                      >
-                        Assigned To
-                      </th>
-                    )}
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Assigned By
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Start Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Due Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
-                    >
-                      Progress
-                    </th>
-                    
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {filteredAndSortedTasks.length > 0 ? (
-                    filteredAndSortedTasks.map((task) => {
-                      // FIX: Using task.startDate instead of task.createdDate for progress bar calculation
-                      const timeCompletedBar = calculateTimeCompletedBar(
-                        task.startDate,
-                        task.dueDate,
-                        today
-                      );
-                      let progressBarColor;
-
-                      if (timeCompletedBar <= 25) {
-                        progressBarColor = "bg-green-500";
-                      } else if (
-                        timeCompletedBar > 25 &&
-                        timeCompletedBar <= 50
-                      ) {
-                        progressBarColor = "bg-blue-500";
-                      } else if (
-                        timeCompletedBar > 50 &&
-                        timeCompletedBar <= 75
-                      ) {
-                        progressBarColor = "bg-yellow-500";
-                      } else {
-                        progressBarColor = "bg-red-500";
-                      }
-
-                      const showEditButton = isTeamLead && task.createdBy === userData?.employeeId;
-
-                      return (
-                        <tr
-                          key={task.id}
-                          onClick={() => clickHandler(task.projectId, task.id)}
-                          className="hover:bg-slate-50 cursor-pointer transition-colors duration-200"
-                        >
-                          <td className="px-6 py-4 whitespace-normal text-sm font-medium text-slate-800">
-                            {task.title}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full ${getStatusStyles(
-                                task.status
-                              )}`}
-                            >
-                              <span
-                                className={`h-2 w-2 rounded-full inline-block ${getStatusDot(
-                                  task.status
-                                )} mr-1`}
-                              ></span>
-                              {task.status.replace("_", " ")}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`text-xs font-bold py-1 px-2.5 rounded-md border ${getPriorityStyles(
-                                task.priority
-                              )}`}
-                            >
-                              {task.priority}
-                            </span>
-                          </td>
-                          {userData?.roles[0] !== "EMPLOYEE" && (
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                              {task.assignedTo}
-                            </td>
-                          )}
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                            {task.createdBy}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                            <div className="flex items-center">
-                              <CalendarIcon />
-                              {task.startDate}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                            <div className="flex items-center">
-                              <CalendarIcon />
-                              {task.dueDate}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="w-24 bg-gray-200 rounded-full h-2.5 overflow-hidden mb-1">
-                              <div
-                                className={`${progressBarColor} h-full rounded-full transition-all duration-500 ease-out`}
-                                style={{ width: `${timeCompletedBar}%` }}
-                              ></div>
-                            </div>
-                            <div className="text-right text-xs text-gray-600">
-                              {timeCompletedBar}%
-                            </div>
-                          </td>
-                          {/* Conditionally render Actions column and content */}
-                          {showActionsColumn && (
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              {showEditButton && (
-                                <button
-                                  onClick={(e) => handleEditClick(e, task)}
-                                  className="text-indigo-600 hover:text-indigo-900"
-                                >
-                                  <Edit size={18} />
-                                </button>
-                              )}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={isTeamLead ? 9 : 8}
-                        className="text-center py-10 text-gray-500 text-lg"
-                      >
-                        No tasks match your current filters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
-      </div>
-      {showTaskPopup && (
-        <TaskPopup
-          show={showTaskPopup}
-          setShow={setShowTaskPopup}
-          handleSubmit={handleTaskSubmit}
-          taskData={taskData}
-          setTaskData={setTaskData}
-          isEditing={isEditing}
-          taskFormError={taskFormError}  
-          taskFormSuccess={taskFormSuccess}  
-        />
-      )}
-    </>
-  );
+    );
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-slate-800">Task Dashboard</h1>
+                        <p className="mt-1 text-slate-500 text-lg">
+                            Welcome, {userData?.firstName || userData?.employeeId}. You are viewing the task dashboard.
+                        </p>
+                    </div>
+                    {isTeamLead && (
+                        <button 
+                            onClick={handleCreateClick} 
+                            className="mt-4 sm:mt-0 flex items-center justify-center bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700"
+                        >
+                            Create Task
+                        </button>
+                    )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                    <div>
+                        <label htmlFor="filterStatus" className="block text-sm font-medium text-gray-700 mb-1">Filter by Status:</label>
+                        <select id="filterStatus" value={filterStatus} onChange={handleFilterChange} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm">
+                            <option value="ALL">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="sortOption" className="block text-sm font-medium text-gray-700 mb-1">Sort by:</label>
+                        <select id="sortOption" value={sortOption} onChange={handleSortChange} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm">
+                            <option value="none">None</option>
+                            <option value="startDateAsc">Start Date (Ascending)</option>
+                            <option value="priorityDesc">Priority (High to Low)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                {isTeamLead && renderTaskTable(filteredAndSortedAssignedByMeTasks, "Tasks Assigned By You", "You have not assigned any tasks yet.", true)}
+                
+                {renderTaskTable(filteredAndSortedTasks, employeeId ? `Tasks Assigned to ${employeeId}` : "Tasks Assigned to You", "No tasks to display.", false)}
+
+                {/* Task Form Modal */}
+                {isFormOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center p-6 border-b">
+                                <h2 className="text-2xl font-bold text-gray-800">
+                                    {formMode === 'edit' ? 'Edit Task' : 'Create New Task'}
+                                </h2>
+                                <button onClick={handleFormClose} className="text-gray-500 hover:text-gray-700">
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Task ID <span className="text-red-500">*</span></label>
+                                        <input
+                                            type="text"
+                                            name="id"
+                                            value={formData.id}
+                                            onChange={handleInputChange}
+                                            readOnly={formMode === 'edit'}
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.id ? 'border-red-500' : 'border-gray-300'} ${formMode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : 'focus:ring-2 focus:ring-indigo-500'}`}
+                                            placeholder="Enter a unique task ID"
+                                        />
+                                        {formErrors.id && <p className="text-red-500 text-sm mt-1">{formErrors.id}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Project ID <span className="text-red-500">*</span></label>
+                                        <input
+                                            type="text"
+                                            name="projectId"
+                                            value={formData.projectId}
+                                            onChange={handleInputChange}
+                                            readOnly={formMode === 'edit'}
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none ${formErrors.projectId ? 'border-red-500' : 'border-gray-300'} ${formMode === 'edit' ? 'bg-gray-100 cursor-not-allowed' : 'focus:ring-2 focus:ring-indigo-500'}`}
+                                            placeholder="Enter project ID"
+                                        />
+                                        {formErrors.projectId && <p className="text-red-500 text-sm mt-1">{formErrors.projectId}</p>}
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Task Title <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        value={formData.title}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.title ? 'border-red-500' : 'border-gray-300'}`}
+                                        placeholder="Enter task title"
+                                    />
+                                    {formErrors.title && <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                    <textarea
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.description ? 'border-red-500' : 'border-gray-300'}`}
+                                        placeholder="Enter task description"
+                                    />
+                                    {formErrors.description && <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To <span className="text-red-500">*</span></label>
+                                        <input
+                                            type="text"
+                                            name="assignedTo"
+                                            value={formData.assignedTo}
+                                            onChange={handleInputChange}
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.assignedTo ? 'border-red-500' : 'border-gray-300'}`}
+                                            placeholder="Enter employee ID"
+                                        />
+                                        {formErrors.assignedTo && <p className="text-red-500 text-sm mt-1">{formErrors.assignedTo}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
+                                        <input
+                                            type="text"
+                                            name="createdBy"
+                                            value={formData.createdBy}
+                                            readOnly
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none cursor-not-allowed"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Status <span className="text-red-500">*</span></label>
+                                        <select
+                                            name="status"
+                                            value={formData.status}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <option value="Not Started">Not Started</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="Completed">Completed</option>
+                                            <option value="On Hold">On Hold</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Priority <span className="text-red-500">*</span></label>
+                                        <select
+                                            name="priority"
+                                            value={formData.priority}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <option value="High">High</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="Low">Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
+                                        <input
+                                            type="date"
+                                            name="createdDate"
+                                            value={formData.createdDate}
+                                            readOnly
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none cursor-not-allowed"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Due Date <span className="text-red-500">*</span></label>
+                                        <input
+                                            type="date"
+                                            name="dueDate"
+                                            value={formData.dueDate}
+                                            onChange={handleInputChange}
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.dueDate ? 'border-red-500' : 'border-gray-300'}`}
+                                        />
+                                        {formErrors.dueDate && <p className="text-red-500 text-sm mt-1">{formErrors.dueDate}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Completed Date</label>
+                                        <input
+                                            type="date"
+                                            name="completedDate"
+                                            value={formData.completedDate}
+                                            onChange={handleInputChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Rating (1-5)</label>
+                                        <input
+                                            type="number"
+                                            name="rating"
+                                            value={formData.rating}
+                                            onChange={handleInputChange}
+                                            min="1"
+                                            max="5"
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.rating ? 'border-red-500' : 'border-gray-300'}`}
+                                            placeholder="1-5"
+                                        />
+                                        {formErrors.rating && <p className="text-red-500 text-sm mt-1">{formErrors.rating}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
+                                        <textarea
+                                            name="remark"
+                                            value={formData.remark}
+                                            onChange={handleInputChange}
+                                            rows={2}
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.remark ? 'border-red-500' : 'border-gray-300'}`}
+                                            placeholder="Enter remark"
+                                        />
+                                        {formErrors.remark && <p className="text-red-500 text-sm mt-1">{formErrors.remark}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Completion Note</label>
+                                        <textarea
+                                            name="completionNote"
+                                            value={formData.completionNote}
+                                            onChange={handleInputChange}
+                                            rows={2}
+                                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formErrors.completionNote ? 'border-red-500' : 'border-gray-300'}`}
+                                            placeholder="Enter completion note"
+                                        />
+                                        {formErrors.completionNote && <p className="text-red-500 text-sm mt-1">{formErrors.completionNote}</p>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Related Links</label>
+                                    {formData.relatedLinks.map((link, index) => (
+                                        <div key={index} className="flex gap-2 mb-2">
+                                            <input
+                                                type="url"
+                                                value={link}
+                                                onChange={(e) => handleRelatedLinkChange(index, e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                placeholder="Enter related link URL"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeRelatedLink(index)}
+                                                className="px-3 py-2 text-red-600 hover:text-red-800"
+                                                disabled={formData.relatedLinks.length === 1}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={addRelatedLink}
+                                        className="flex items-center text-indigo-600 hover:text-indigo-800"
+                                    >
+                                        <Plus size={18} className="mr-1" />
+                                        Add Related Link
+                                    </button>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Attached Files</label>
+                                    <div className="flex items-center justify-center w-full">
+                                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                                                <p className="mb-2 text-sm text-gray-500">
+                                                    <span className="font-semibold">Click to upload</span> or drag and drop
+                                                </p>
+                                                <p className="text-xs text-gray-500">Files (MAX. 10MB each)</p>
+                                            </div>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                                accept="*/*"
+                                            />
+                                        </label>
+                                    </div>
+                                    {files.length > 0 && (
+                                        <div className="mt-2">
+                                            <p className="text-sm font-medium text-gray-700">Selected files:</p>
+                                            <ul className="text-sm text-gray-600">
+                                                {files.map((file, index) => (
+                                                    <li key={index}>{file.name}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {submissionError && (
+                                    <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                                        <div className="flex">
+                                            <AlertCircle className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
+                                            <div>
+                                                <h3 className="text-sm font-medium text-red-800">Submission Error</h3>
+                                                <div className="mt-1 text-sm text-red-700">{submissionError}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end space-x-4 pt-6 border-t">
+                                    <button
+                                        type="button"
+                                        onClick={handleFormClose}
+                                        className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                    >
+                                        {isSubmitting && (
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        )}
+                                        {isSubmitting 
+                                            ? (formMode === 'edit' ? 'Updating...' : 'Creating...') 
+                                            : (formMode === 'edit' ? 'Update Task' : 'Create Task')
+                                        }
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
 export default TasksPage;
