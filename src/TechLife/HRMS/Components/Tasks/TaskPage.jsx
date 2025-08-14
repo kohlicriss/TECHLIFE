@@ -70,7 +70,7 @@ const TasksPage = () => {
       try {
         setLoading(true);
         const userId = employeeId || userData.employeeId;
-        const apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
+        const apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
         const response = await fetch(apiUrl);
         if (!response.ok) {
           if (response.status === 404) {
@@ -97,7 +97,7 @@ const TasksPage = () => {
       }
       try {
         const tlId = userData.employeeId;
-        const url = `http://192.168.0.120:8090/api/${tlId}`;
+        const url = `http://localhost:8090/api/${tlId}`;
         const response = await fetch(url);
         if (!response.ok) {
           if (response.status === 404) {
@@ -350,7 +350,7 @@ const TasksPage = () => {
                 });
             }
 
-            const url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+            const url = `http://localhost:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
             const method = formMode === 'create' ? 'post' : 'put';
 
             console.log("Submitting Request...");
