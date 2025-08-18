@@ -756,9 +756,6 @@ function ChatApplication({ currentUser, initialChats }) {
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
 
-    // =================================================================================
-    // ✅ BUG FIX STARTS HERE
-    // =================================================================================
     const handleSaveEdit = () => {
         const updatedContent = message.trim();
 
@@ -777,15 +774,16 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        // --- START OF FIX ---
-        // 1. Optimistic UI update: UI ni ventane update cheddam.
+        // ======================= BUG FIX #1 STARTS HERE =======================
+        // Optimistic UI update: UI ni ventane update cheddam.
+        // Ikkada replyTo details ni kuda preserve chesthunnam.
         const optimisticUpdatedMessage = {
-            ...messageToEdit,
+            ...messageToEdit, // Copy all existing properties, including replyTo
             content: updatedContent,
             isEdited: true,
         };
+        // ======================= BUG FIX #1 ENDS HERE =========================
 
-        // 2. Local state lo unna messages array ni update cheddam.
         const updatedMessagesList = currentMessages.map((msg, index) =>
             index === editingInfo.index ? optimisticUpdatedMessage : msg
         );
@@ -795,11 +793,9 @@ function ChatApplication({ currentUser, initialChats }) {
             [chatId]: updatedMessagesList,
         }));
         
-        // 3. Edit chesindhi last message aithe, chat list preview ni kuda update cheddam.
         if (editingInfo.index === currentMessages.length - 1) {
             updateLastMessage(chatId, optimisticUpdatedMessage);
         }
-        // --- END OF FIX ---
 
         const payload = {
             messageId: messageId,
@@ -809,18 +805,13 @@ function ChatApplication({ currentUser, initialChats }) {
 
         const destination = '/app/chat/edit';
 
-        // 4. Backend ki update pampinchadam.
         stompClient.current.publish({
             destination,
             body: JSON.stringify(payload)
         });
         
-        // 5. Input field ni reset cheyadam.
         cancelEdit();
     };
-    // =================================================================================
-    // ✅ BUG FIX ENDS HERE
-    // =================================================================================
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
@@ -1108,12 +1099,18 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                 ) : (
                                                                     <>
                                                                         {msg.isForwarded && <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 font-semibold"><FaShare /> Forwarded</div>}
+                                                                        
+                                                                        {/* ======================= BUG FIX #2 STARTS HERE ======================= */}
+                                                                        {/* Media message reply lo 'Media Message' ki badulu 'fileName' chupisthunnam */}
                                                                         {msg.replyTo && (
                                                                             <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : 'bg-gray-300'}`}>
                                                                                 <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
-                                                                                <p className="opacity-80 truncate">{['image', 'audio', 'file'].includes(msg.replyTo.type) ? 'Media message' : msg.replyTo.content}</p>
+                                                                                <p className="opacity-80 truncate">
+                                                                                    {['image', 'audio', 'file'].includes(msg.replyTo.type) ? msg.replyTo.content : msg.replyTo.content}
+                                                                                </p>
                                                                             </div>
                                                                         )}
+                                                                        {/* ======================= BUG FIX #2 ENDS HERE ========================= */}
                                                                         
                                                                         {msg.type === 'image' ? (
                                                                             <div className="relative">
@@ -1155,7 +1152,21 @@ function ChatApplication({ currentUser, initialChats }) {
                             
                             {/* Message Input Area */}
                             <div className="flex-shrink-0 flex flex-col p-4 border-t border-gray-200">
-                                {replyingTo && (<div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center"><div className="text-sm overflow-hidden"><p className="font-semibold text-blue-600">Replying to {replyingTo.sender === currentUser?.id ? 'yourself' : getSenderInfo(replyingTo.sender).name}</p><p className="text-gray-600 truncate">{['image', 'audio', 'file'].includes(replyingTo.type) ? 'Media message' : replyingTo.content}</p></div><button onClick={() => setReplyingTo(null)}><FaTimes /></button></div>)}
+                                {/* ======================= BUG FIX #2 STARTS HERE ======================= */}
+                                {/* Ikkada kuda media reply preview lo `fileName` chupisthunnam */}
+                                {replyingTo && (
+                                    <div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center">
+                                        <div className="text-sm overflow-hidden">
+                                            <p className="font-semibold text-blue-600">Replying to {replyingTo.sender === currentUser?.id ? 'yourself' : getSenderInfo(replyingTo.sender).name}</p>
+                                            <p className="text-gray-600 truncate">
+                                                {['image', 'audio', 'file'].includes(replyingTo.type) ? replyingTo.fileName : replyingTo.content}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => setReplyingTo(null)}><FaTimes /></button>
+                                    </div>
+                                )}
+                                {/* ======================= BUG FIX #2 ENDS HERE ========================= */}
+
                                 {editingInfo.index !== null && (<div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center"><div className="text-sm overflow-hidden"><p className="font-semibold text-blue-600">Editing message</p><p className="text-gray-600 truncate">{editingInfo.originalContent}</p></div><button onClick={cancelEdit}><FaTimes /></button></div>)}
                                 {currentChatInfo && (
                                     <div className={`relative flex items-center w-full space-x-2 ${(replyingTo || editingInfo.index !== null) ? 'pt-2' : ''}`}>
