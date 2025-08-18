@@ -11,7 +11,6 @@ import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 import {
     getMessages,
-    // 🔄 MODIFIED: updateMessage is no longer needed as we use WebSockets for edits.
     deleteMessageForMe,
     deleteMessageForEveryone,
     uploadFile
@@ -199,12 +198,32 @@ function ChatApplication({ currentUser, initialChats }) {
     const onMessageReceivedRef = useRef(null);
     const subscriptions = useRef({});
 
+    const chatIdFromUrl = useMemo(() => {
+        if (typeof window !== 'undefined' && window.location.pathname.includes('/with')) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+        return null;
+    }, []);
+
     useEffect(() => {
         if (initialChats) {
-            setChatData(initialChats);
+            const correctedChats = {
+                groups: initialChats.groups.map(chat =>
+                    chat.chatId.toString() === chatIdFromUrl
+                        ? { ...chat, unreadMessageCount: 0 }
+                        : chat
+                ),
+                privateChatsWith: initialChats.privateChatsWith.map(chat =>
+                    chat.chatId.toString() === chatIdFromUrl
+                        ? { ...chat, unreadMessageCount: 0 }
+                        : chat
+                ),
+            };
+            setChatData(correctedChats);
             setIsChatDataReady(true);
         }
-    }, [initialChats]);
+    }, [initialChats, chatIdFromUrl]);
 
     useEffect(() => {
         if (!selectedChat) return;
@@ -262,9 +281,6 @@ function ChatApplication({ currentUser, initialChats }) {
         });
     }, [currentUser.id, selectedChat]);
 
-    // =================================================================================
-    // 🔄 MODIFIED: onMessageReceived to handle EDITED messages
-    // =================================================================================
     const onMessageReceived = useCallback((payload) => {
         const receivedMessage = JSON.parse(payload.body);
         const messageChatId = receivedMessage.groupId || (receivedMessage.sender === currentUser.id ? receivedMessage.receiver : receivedMessage.sender);
@@ -274,7 +290,6 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        // --- Logic for DELETED messages (No changes here) ---
         if (receivedMessage.isDeleted || receivedMessage.type === 'deleted') {
             setMessages(prevMessages => {
                 const chatMessages = prevMessages[messageChatId] || [];
@@ -302,8 +317,6 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        // ✅ NEW: Logic for EDITED messages
-        // We check for the 'edited' flag which our transform function sets to 'isEdited'.
         const transformedForEditCheck = transformMessageDTOToUIMessage(receivedMessage);
         if (transformedForEditCheck.isEdited) {
             setMessages(prevMessages => {
@@ -324,49 +337,54 @@ function ChatApplication({ currentUser, initialChats }) {
 
                 return { ...prevMessages, [messageChatId]: updatedMessages };
             });
-            return; // Stop further processing after handling the edit.
-        }
-
-        // --- Logic for NEW messages and ACKs (No changes here) ---
-        const isAck = receivedMessage.sender === currentUser.id && receivedMessage.client_id;
-        const isIncoming = receivedMessage.sender !== currentUser.id;
-
-        if (receivedMessage.fileName && !receivedMessage.content && !receivedMessage.id) {
-             console.warn("Received a file message stub, ignoring until full data arrives:", receivedMessage);
-             return;
+            return;
         }
 
         setMessages(prevMessages => {
             const chatMessages = prevMessages[messageChatId] || [];
+            const finalServerId = receivedMessage.messageId || receivedMessage.id;
+
+            const messageAlreadyExists = chatMessages.some(m => m.messageId === finalServerId && m.status === 'sent');
+            if (messageAlreadyExists) {
+                return prevMessages;
+            }
+
             let newChatMessages = [...chatMessages];
             let messageProcessed = false;
             let finalMessageForUpdate = null;
 
-            const finalServerId = receivedMessage.messageId || receivedMessage.id;
+            const isProperAck = receivedMessage.sender === currentUser.id && receivedMessage.client_id;
+            const isBroadcastOfOwnMessage = receivedMessage.sender === currentUser.id && !receivedMessage.client_id;
+            const isIncoming = receivedMessage.sender !== currentUser.id;
 
-            const messageAlreadyExists = chatMessages.some(m => m.messageId === finalServerId && m.status !== 'sending');
-            if (messageAlreadyExists) {
-                return prevMessages;
-            }
-            
-            if (isAck) {
+            if (isProperAck) {
                 const optimisticIndex = newChatMessages.findIndex(m => m.id === receivedMessage.client_id);
                 if (optimisticIndex > -1) {
-                    const optimisticMessage = newChatMessages[optimisticIndex];
-                    const transformedServerMessage = transformMessageDTOToUIMessage({ ...receivedMessage, messageId: finalServerId, id: finalServerId });
-                    const updatedMessage = { ...optimisticMessage, ...transformedServerMessage, status: 'sent' };
-                    if (updatedMessage.type !== 'text' && !updatedMessage.fileSize && optimisticMessage.fileSize) {
-                        updatedMessage.fileSize = optimisticMessage.fileSize;
-                    }
-                    newChatMessages[optimisticIndex] = updatedMessage;
+                    const transformedServerMessage = transformMessageDTOToUIMessage(receivedMessage);
+                    newChatMessages[optimisticIndex] = { ...newChatMessages[optimisticIndex], ...transformedServerMessage, status: 'sent' };
                     finalMessageForUpdate = newChatMessages[optimisticIndex];
                     messageProcessed = true;
                 }
+            } else if (isBroadcastOfOwnMessage) {
+                const optimisticIndex = newChatMessages.findLastIndex(m => m.status === 'sending' && m.sender === currentUser.id);
+                if (optimisticIndex > -1) {
+                    const transformedServerMessage = transformMessageDTOToUIMessage(receivedMessage);
+                    newChatMessages[optimisticIndex] = { ...newChatMessages[optimisticIndex], ...transformedServerMessage, status: 'sent' };
+                    finalMessageForUpdate = newChatMessages[optimisticIndex];
+                    messageProcessed = true;
+                } else if (!chatMessages.some(m => m.messageId === finalServerId)) {
+                    const finalMessage = transformMessageDTOToUIMessage(receivedMessage);
+                    newChatMessages.push(finalMessage);
+                    finalMessageForUpdate = finalMessage;
+                    messageProcessed = true;
+                }
             } else if (isIncoming) {
-                const finalMessage = transformMessageDTOToUIMessage({ ...receivedMessage, id: finalServerId, messageId: finalServerId });
-                newChatMessages.push(finalMessage);
-                finalMessageForUpdate = finalMessage;
-                messageProcessed = true;
+                 if (!chatMessages.some(m => m.messageId === finalServerId)) {
+                    const finalMessage = transformMessageDTOToUIMessage(receivedMessage);
+                    newChatMessages.push(finalMessage);
+                    finalMessageForUpdate = finalMessage;
+                    messageProcessed = true;
+                }
             }
 
             if (messageProcessed) {
@@ -377,9 +395,6 @@ function ChatApplication({ currentUser, initialChats }) {
             return prevMessages;
         });
     }, [currentUser.id, updateLastMessage]);
-    // ===============================================================================
-    // END OF MODIFICATIONS
-    // ===============================================================================
 
 
     useEffect(() => {
@@ -511,7 +526,13 @@ function ChatApplication({ currentUser, initialChats }) {
 
     }, [selectedChat, currentUser.id]);
     
+    // =================================================================================
+    // ✅ FINAL UNREAD COUNT BUG FIX STARTS HERE
+    // =================================================================================
     const handleChatSelect = useCallback((chat) => {
+        // Step 1: Immediately update the UI to show unread count as 0.
+        // This is an "optimistic update" that makes the app feel instantly responsive
+        // and prevents the user from seeing the incorrect count due to backend delays.
         if ((chat.unreadMessageCount || 0) > 0) {
             setChatData(prev => ({
                 ...prev,
@@ -519,10 +540,18 @@ function ChatApplication({ currentUser, initialChats }) {
                 privateChatsWith: prev.privateChatsWith.map(p => p.chatId === chat.chatId ? { ...p, unreadMessageCount: 0 } : p),
             }));
         }
+
+        // Step 2: Now, proceed with the original logic to open the chat.
+        // This will notify the backend to mark messages as read. The backend will eventually
+        // send back an updated chat list, but by then, our UI is already correct.
         if (selectedChat && selectedChat.chatId !== chat.chatId) {
+            // You can optionally tell the backend to close the previous chat here if needed
         }
         openChat(chat);
-    }, [selectedChat, openChat]);
+    }, [selectedChat, openChat]); // Dependencies are crucial for useCallback
+    // =================================================================================
+    // ✅ FINAL FIX ENDS HERE
+    // =================================================================================
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -727,13 +756,9 @@ function ChatApplication({ currentUser, initialChats }) {
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
 
-    // =================================================================================
-    // 🔄 MODIFIED: handleSaveEdit to use WebSocket instead of HTTP API
-    // =================================================================================
     const handleSaveEdit = () => {
         const updatedContent = message.trim();
 
-        // Basic validation
         if (updatedContent === '' || editingInfo.index === null || !stompClient.current?.active) {
             cancelEdit();
             return;
@@ -744,29 +769,23 @@ function ChatApplication({ currentUser, initialChats }) {
         const messageToEdit = currentMessages[editingInfo.index];
         const messageId = messageToEdit.messageId;
 
-        // Do not send request if content is unchanged or messageId is invalid
         if (updatedContent === editingInfo.originalContent || typeof messageId !== 'number') {
             cancelEdit();
             return;
         }
 
-        // This payload matches the backend's ChatMessageRequest DTO for the edit endpoint
         const payload = {
             messageId: messageId,
             content: updatedContent,
             sender: currentUser.id,
         };
 
-        // The destination for editing messages as defined in the backend controller
         const destination = '/app/chat/edit';
 
         stompClient.current.publish({
             destination,
             body: JSON.stringify(payload)
         });
-
-        // We no longer update state manually. The WebSocket broadcast will handle it.
-        // Just reset the input form.
         cancelEdit();
     };
 
@@ -786,10 +805,8 @@ function ChatApplication({ currentUser, initialChats }) {
 
         try {
             if (forEveryone) {
-                // For 'delete for everyone', we wait for the server's broadcast to update the UI
                 await deleteMessageForEveryone(messageId, currentUser.id);
             } else {
-                // For 'delete for me', we update the local state immediately
                 await deleteMessageForMe(messageId, currentUser.id);
                 const nextMessages = currentMessages.filter((_, i) => i !== contextMenu.index);
                 setMessages(prev => ({ ...prev, [chatId]: nextMessages }));
@@ -850,19 +867,15 @@ function ChatApplication({ currentUser, initialChats }) {
     
     useEffect(() => {
         if (isChatDataReady && !selectedChat && allChats.length > 0) {
-            if (window.location.pathname.includes('/with')) {
-                const params = new URLSearchParams(window.location.search);
-                const chatIdFromUrl = params.get('id');
-
-                if (chatIdFromUrl) {
-                    const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
-                    if (chatToSelect) {
-                        handleChatSelect(chatToSelect);
-                    }
+            if (chatIdFromUrl) {
+                const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
+                if (chatToSelect) {
+                    // We call handleChatSelect which now contains the optimistic update logic
+                    handleChatSelect(chatToSelect);
                 }
             }
         }
-    }, [isChatDataReady, allChats, selectedChat, handleChatSelect]);
+    }, [isChatDataReady, allChats, selectedChat, handleChatSelect, chatIdFromUrl]);
 
 
     const openGroupInfoModal = () => {
