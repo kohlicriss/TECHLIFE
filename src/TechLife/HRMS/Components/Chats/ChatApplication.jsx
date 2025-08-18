@@ -55,7 +55,7 @@ const FileMessage = ({ msg, isMyMessage }) => {
             </div>
             {!isMyMessage && (
                  <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
-                       <FaDownload size={18} />
+                        <FaDownload size={18} />
                 </a>
             )}
         </div>
@@ -756,6 +756,9 @@ function ChatApplication({ currentUser, initialChats }) {
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
 
+    // =================================================================================
+    // ✅ BUG FIX STARTS HERE
+    // =================================================================================
     const handleSaveEdit = () => {
         const updatedContent = message.trim();
 
@@ -774,6 +777,30 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
+        // --- START OF FIX ---
+        // 1. Optimistic UI update: UI ni ventane update cheddam.
+        const optimisticUpdatedMessage = {
+            ...messageToEdit,
+            content: updatedContent,
+            isEdited: true,
+        };
+
+        // 2. Local state lo unna messages array ni update cheddam.
+        const updatedMessagesList = currentMessages.map((msg, index) =>
+            index === editingInfo.index ? optimisticUpdatedMessage : msg
+        );
+
+        setMessages(prev => ({
+            ...prev,
+            [chatId]: updatedMessagesList,
+        }));
+        
+        // 3. Edit chesindhi last message aithe, chat list preview ni kuda update cheddam.
+        if (editingInfo.index === currentMessages.length - 1) {
+            updateLastMessage(chatId, optimisticUpdatedMessage);
+        }
+        // --- END OF FIX ---
+
         const payload = {
             messageId: messageId,
             content: updatedContent,
@@ -782,12 +809,18 @@ function ChatApplication({ currentUser, initialChats }) {
 
         const destination = '/app/chat/edit';
 
+        // 4. Backend ki update pampinchadam.
         stompClient.current.publish({
             destination,
             body: JSON.stringify(payload)
         });
+        
+        // 5. Input field ni reset cheyadam.
         cancelEdit();
     };
+    // =================================================================================
+    // ✅ BUG FIX ENDS HERE
+    // =================================================================================
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
