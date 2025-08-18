@@ -20,7 +20,6 @@ import {
   Check,
 } from "lucide-react";
 
-// The popup component remains unchanged
 const UpdateHistoryPopup = ({
   setShowUpdateHistoryPopup,
   handleUpdateHistorySubmit,
@@ -262,19 +261,12 @@ const TaskViewPage = () => {
     setUpdateHistoryData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // =================================================================
-  // == MODIFIED FUNCTION FOR HANDLING MULTIPLE FILES               ==
-  // == This function was changed to handle multiple files correctly ==
-  // =================================================================
   const handleUpdateHistoryFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-
-    // This combines newly selected files with any already in the state
     let allFiles = [...updateHistoryData.relatedFileLinks, ...selectedFiles];
 
     if (allFiles.length > 5) {
       alert("You can only upload a maximum of 5 files.");
-      // If more than 5, we only keep the first 5
       allFiles = allFiles.slice(0, 5);
     }
 
@@ -284,10 +276,6 @@ const TaskViewPage = () => {
     }));
   };
 
-  // =================================================================
-  // == THIS IS THE MODIFIED FUNCTION FOR CREATING THE HISTORY      ==
-  // == This function was changed for multiple file support.        ==
-  // =================================================================
   const handleUpdateHistorySubmit = async (e) => {
     e.preventDefault();
 
@@ -324,7 +312,6 @@ const TaskViewPage = () => {
       })
     );
 
-    // This is the correct way to append multiple files to FormData
     if (
       updateHistoryData.relatedFileLinks &&
       updateHistoryData.relatedFileLinks.length > 0
@@ -335,7 +322,6 @@ const TaskViewPage = () => {
       }
     }
 
-    // DEBUGGING: Verify how many files are in FormData before sending
     const appendedFiles = formData.getAll("relatedFileLinks");
     console.log(
       `VERIFICATION: FormData now contains ${appendedFiles.length} file(s).`,
@@ -376,7 +362,6 @@ const TaskViewPage = () => {
     setEditRowData(null);
   };
 
-  // This function for UPDATING history remains UNCHANGED.
   const handleInlineSave = async () => {
     try {
       if (!editRowData || !editRowData.id) {
@@ -385,8 +370,8 @@ const TaskViewPage = () => {
       }
 
       const reviewerId = userData?.employeeId;
-      if (!reviewerId || position !== "TEAM_LEAD") {
-        alert("Only Team Leads can save remarks.");
+      if (!reviewerId || userData?.employeeId !== assignedBy) {
+        alert("Only the person who assigned the task can save remarks.");
         return;
       }
 
@@ -771,7 +756,7 @@ const TaskViewPage = () => {
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Related Files</th>
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewed By</th>
-                          {position === "TEAM_LEAD" && (
+                          {userData?.employeeId === assignedBy && (
                             <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           )}
                         </tr>
@@ -799,7 +784,7 @@ const TaskViewPage = () => {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{history.reviewedBy || "-"}</td>
-                            {position === "TEAM_LEAD" && (
+                            {userData?.employeeId === assignedBy && (
                               <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
                                 {editingRowId === history.id ? (
                                   <div className="flex gap-2">
