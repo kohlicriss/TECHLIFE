@@ -244,10 +244,10 @@ function ChatApplication({ currentUser, initialChats }) {
                      selectedChat.type,
                      currentUser.id
                  );
-                 setPinnedMessage(pinnedMsgData); // API నుంచి వచ్చిన డేటాని స్టేట్‌లో సెట్ చెయ్
+                 setPinnedMessage(pinnedMsgData); 
              } catch (error) {
                  console.error("Failed to fetch pinned message:", error);
-                 setPinnedMessage(null); // ఎర్రర్ వస్తే null సెట్ చెయ్
+                 setPinnedMessage(null); 
              }
         };
         
