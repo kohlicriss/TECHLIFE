@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom"; // useNavigate is no longer needed here
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -18,23 +18,33 @@ import {
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
-function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the onLogout prop from HrmsApp
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData } = useContext(Context);
   const empId = userData?.employeeId;
 
-  const handleLogoutClick = () => {
-    console.log("Clearing user data from localStorage...");
-    localStorage.removeItem("logedempid");
-    localStorage.removeItem("logedemprole");
-    localStorage.removeItem("emppayload");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    console.log("User data cleared.");
+  // ==========================================================
+  // SIMPLIFIED AND CORRECTED LOGOUT FUNCTION
+  // ==========================================================
+  const handleLogoutClick = async () => {
+    try {
+      // Step 1: Call backend to clear HttpOnly cookie (this is good practice)
+      await fetch("http://localhost:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Backend logout failed, proceeding with client-side cleanup.", error);
+    } finally {
+      // Step 2: Clear all local storage
+      localStorage.clear();
 
-    if (onLogout) {
-      onLogout();
+      // Step 3: Call the onLogout function passed from HrmsApp.jsx
+      // This will update the `isAuthenticated` state and trigger the redirect.
+      if (onLogout) {
+        onLogout();
+      }
     }
   };
 
@@ -134,7 +144,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           <div className="mt-10">
             <button
               onClick={handleLogoutClick}
-              className={`flex items-center ${
+              className={`flex items-center cursor-pointer ${
                 collapsed ? "justify-center" : "justify-start"
               } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
             >

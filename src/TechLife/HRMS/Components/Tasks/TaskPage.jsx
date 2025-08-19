@@ -2,22 +2,24 @@ import React, { useState, useEffect, useMemo, useCallback, useContext } from "re
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
+// Assuming HrmsContext.js is in a parent directory, adjust the path if needed.
+// For example: import { Context } from "../../HrmsContext";
 import { Context } from "../HrmsContext";
 
 const CalendarIcon = () => (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 mr-1.5 text-gray-400"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4 mr-1.5 text-gray-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
     </svg>
 );
 
@@ -41,6 +43,13 @@ const TasksPage = () => {
     const [formErrors, setFormErrors] = useState({});
     const [submissionError, setSubmissionError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State for pagination
+    const [currentNumber, setCurrentNumber] = useState(0); 
+    const [totalPages, setTotalPages] = useState(1); // State for total pages from API
+
+    // State for the dropdown
+    const [dropdownValue, setDropdownValue] = useState(1);
 
     const [formData, setFormData] = useState({
         id: '',
@@ -61,20 +70,33 @@ const TasksPage = () => {
         projectId: ''
     });
 
+    // Click handler for pagination
+    const handleNumberClick = (number) => {
+        setCurrentNumber(number);
+        console.log(`Page number ${number} was clicked.`);
+    };
+
+    // Handler function for the new dropdown
+    const handleDropdownChange = (event) => {
+        const value = parseInt(event.target.value, 10);
+        setDropdownValue(value);
+        console.log(`Dropdown value changed to: ${value}`);
+    };
+
     const fetchTasks = useCallback(async () => {
         if (!userData) {
             setLoading(false);
             return;
         }
-        try {
+        try { 
             setLoading(true);
             let apiUrl;
             const userRole = userData.roles[0];
             const userId = userData.employeeId;
             if (userRole === "TEAM_LEAD" && employeeId) {
-                apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
+                apiUrl = `http://192.168.0.120:8090/api/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${employeeId}`;
             } else {
-                apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
+                apiUrl = `http://192.168.0.120:8090/api/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${userId}`;
             }
             const response = await fetch(apiUrl);
             if (!response.ok) {
@@ -93,7 +115,9 @@ const TasksPage = () => {
                 return;
             }
             const data = JSON.parse(responseText);
-            setTasks(data);
+            // Handle both 'content' and 'tasks' keys for robustness
+            setTasks(data.content || data.tasks || []);
+            setTotalPages(data.totalPages || 1);
             setError(null);
         } catch (err) {
             setError("Failed to fetch tasks. Please make sure the server is running and the API is returning valid JSON.");
@@ -102,7 +126,7 @@ const TasksPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [userData, employeeId]);
+    }, [userData, employeeId, currentNumber, dropdownValue]);
 
     const fetchTasksAssignedByMe = useCallback(async () => {
         if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
@@ -111,7 +135,7 @@ const TasksPage = () => {
         }
         try {
             const tlId = userData.employeeId;
-            const url = `http://localhost:8090/api/${tlId}`;
+            const url = `http://192.168.0.120:8090/api/${currentNumber}/${dropdownValue}/id/asc/${tlId}`;
             const response = await fetch(url);
             if (!response.ok) {
                 if (response.status === 404) {
@@ -121,12 +145,17 @@ const TasksPage = () => {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             const data = await response.json();
-            setAssignedByMeTasks(data || []);
+            // === START OF FIX ===
+            // The API now returns a 'tasks' property instead of 'content' for this endpoint.
+            // This code now checks for 'content', then 'tasks', then defaults to an empty array.
+            setAssignedByMeTasks(data.content || data.tasks || []);
+            setTotalPages(data.totalPages || 1);
+            // === END OF FIX ===
         } catch (err) {
             setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
             setAssignedByMeTasks([]);
         }
-    }, [userData]);
+    }, [userData, currentNumber, dropdownValue]);
 
     useEffect(() => {
         if (userData) {
@@ -242,8 +271,7 @@ const TasksPage = () => {
             return;
         }
         try {
-            // Updated URL to match the backend endpoint
-            const url = `http://localhost:8090/api/${projectId}/${taskId}/delete/task`;
+            const url = `http://192.168.0.120:8090/api/${projectId}/${taskId}/delete/task`;
             await axios.delete(url);
             alert("Task deleted successfully!");
             fetchTasks();
@@ -376,10 +404,10 @@ const TasksPage = () => {
             let url;
             let method;
             if (formMode === 'create') {
-                url = `http://localhost:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
                 method = 'post';
             } else {
-                url = `http://localhost:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
                 method = 'put';
             }
             console.log("Submitting Request...");
@@ -417,6 +445,8 @@ const TasksPage = () => {
     };
 
     const filteredAndSortedTasks = useMemo(() => {
+        // Ensure tasks is an array before calling .filter
+        if (!Array.isArray(tasks)) return [];
         return tasks
             .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
             .sort((a, b) => {
@@ -430,6 +460,8 @@ const TasksPage = () => {
     }, [tasks, filterStatus, sortOption]);
 
     const filteredAndSortedAssignedByMeTasks = useMemo(() => {
+        // Ensure assignedByMeTasks is an array before calling .filter
+        if (!Array.isArray(assignedByMeTasks)) return [];
         return assignedByMeTasks
             .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
             .sort((a, b) => {
@@ -567,7 +599,7 @@ const TasksPage = () => {
                             )}
                         </div>
                     </div>
-
+                    
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div>
                             <label htmlFor="filterStatus" className="block text-sm font-medium text-gray-700 mb-1">Filter by Status:</label>
@@ -586,6 +618,19 @@ const TasksPage = () => {
                                 <option value="priorityDesc">Priority (High to Low)</option>
                             </select>
                         </div>
+                        <div>
+                            <label htmlFor="itemsPerPage" className="block text-sm font-medium text-gray-700 mb-1">Items per page:</label>
+                            <select 
+                                id="itemsPerPage" 
+                                value={dropdownValue} 
+                                onChange={handleDropdownChange} 
+                                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm"
+                            >
+                                {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                                    <option key={num} value={num}>{num}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     {isTeamLead ? (
@@ -598,8 +643,27 @@ const TasksPage = () => {
                         renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)
                     )}
 
+                    {/* === PAGINATION CONTROLS (NOW DYNAMIC) === */}
+                    <div className="mt-6 flex justify-center">
+                        <div className="flex space-x-2">
+                            {Array.from({ length: totalPages }, (_, i) => i).map((num) => (
+                                <button
+                                    key={num}
+                                    onClick={() => handleNumberClick(num)}
+                                    className={`px-4 py-2 font-semibold rounded-lg border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
+                                        currentNumber === num
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-slate-700 border-gray-300 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    {num}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {isFormOpen && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-151 backdrop-blur-sm p-4">
                             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                                 <div className="flex justify-between items-center p-6 border-b">
                                     <h2 className="text-2xl font-bold text-gray-800">

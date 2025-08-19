@@ -12,7 +12,7 @@ import {
 import { employees } from "./EmployeeApp";
 
 const EmployeeProfile = () => {
-  const { id } = useParams();
+  const { id,empID } = useParams();
   const navigate = useNavigate();
   const employee = employees.find((emp) => emp.empId === id);
 
@@ -41,11 +41,11 @@ const EmployeeProfile = () => {
       exit={{ opacity: 0 }}
       className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto  ">
         <button
           // FIX: Changed path to the correct absolute path for the directory
-          onClick={() => navigate("/employees")}
-          className="mb-8 inline-flex items-center text-indigo-600 hover:text-indigo-500"
+          onClick={() => navigate(`/employees/${empID}`)}
+          className="mb-8 inline-flex items-center text-indigo-600 hover:text-indigo-500 cursor-pointer"
         >
           <FiArrowLeft className="mr-2" /> Back to Directory
         </button>

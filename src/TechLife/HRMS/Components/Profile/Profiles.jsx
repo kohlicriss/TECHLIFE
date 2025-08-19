@@ -66,15 +66,15 @@ const Profiles = () => {
   ];
 
   const handleImageUpload = (event) => {
-    const file = event.target.files;
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const file = event.target.files[0]; 
+  if (file) {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -228,7 +228,7 @@ const Profiles = () => {
       </div>
 
       {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0   bg-opacity-100 flex items-center justify-center z-100">
           <div className="bg-white rounded-lg p-6 w-[500px] shadow-2xl">
             <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
             <form onSubmit={handleSave}>

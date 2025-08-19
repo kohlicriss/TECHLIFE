@@ -46,7 +46,10 @@ const LoginPage = ({ onLogin }) => {
   const [isLockedOut, setIsLockedOut] = useState(false);
   const [lockoutTimer, setLockoutTimer] = useState(0);
 
-  const { userData,setUserData, setAccessToken, setRefreshToken } = useContext(Context);
+  // --- START OF MODIFICATION ---
+  // Removed `setRefreshToken` as it is no longer provided in the API response.
+  const { userData, setUserData, setAccessToken } = useContext(Context);
+  // --- END OF MODIFICATION ---
   // const empID=userData?.employeeId
 
   const forgotOtpRefs = [
@@ -118,23 +121,26 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:9090/api/auth/login", {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, password: password }),
+        // ==========================================================
+        // THIS IS THE FIX: Include credentials to handle cookies
+        // ==========================================================
+        credentials: "include",
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Login Successful! Tokens Received:", data);
+        console.log("Login Successful! Access Token Received:", data);
 
+        // The browser has automatically handled the refreshToken cookie.
+        // Now, we just save the access token to local storage.
         localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        console.log("Tokens have been saved to Local Storage.");
-
+        console.log("Access token has been saved to Local Storage.");
         setAccessToken(data.accessToken);
-        setRefreshToken(data.refreshToken);
 
         try {
           const decodedPayload = jwtDecode(data.accessToken);
@@ -160,19 +166,19 @@ const LoginPage = ({ onLogin }) => {
         setWrongAttempts(newAttempts);
 
         if (newAttempts > MAX_ATTEMPTS_PHASE2) {
-            // Second lockout (5 minutes)
-            setIsLockedOut(true);
-            setLockoutTimer(LOCKOUT_DURATION_PHASE2);
-            setError(`Too many failed attempts. Please try again in 5 minutes.`);
+          // Second lockout (5 minutes)
+          setIsLockedOut(true);
+          setLockoutTimer(LOCKOUT_DURATION_PHASE2);
+          setError(`Too many failed attempts. Please try again in 5 minutes.`);
         } else if (newAttempts >= MAX_ATTEMPTS_PHASE1) {
-            // First lockout (1 minute)
-            setIsLockedOut(true);
-            setLockoutTimer(LOCKOUT_DURATION_PHASE1);
-            setError(`Too many failed attempts. Please try again in 60 seconds.`);
+          // First lockout (1 minute)
+          setIsLockedOut(true);
+          setLockoutTimer(LOCKOUT_DURATION_PHASE1);
+          setError(`Too many failed attempts. Please try again in 60 seconds.`);
         } else {
-            // Error message with remaining attempts
-            const attemptsLeft = MAX_ATTEMPTS_PHASE1 - newAttempts;
-            setError(`Invalid credentials. You have ${attemptsLeft} attempts left.`);
+          // Error message with remaining attempts
+          const attemptsLeft = MAX_ATTEMPTS_PHASE1 - newAttempts;
+          setError(`Invalid credentials. You have ${attemptsLeft} attempts left.`);
         }
       }
     } catch (error) {
@@ -362,8 +368,8 @@ const LoginPage = ({ onLogin }) => {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-200/50 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
       <div
-        className={`relative z-10 flex w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl bg-white/80 backdrop-blur-lg ring-1 ring-black/10 transition-all duration-700 ease-out 
-          ${isMounted ? "scale-100 opacity-100" : "scale-95 opacity-0"} 
+        className={`relative z-10 flex w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl bg-white/80 backdrop-blur-lg ring-1 ring-black/10 transition-all duration-700 ease-out
+          ${isMounted ? "scale-100 opacity-100" : "scale-95 opacity-0"}
           max-h-[90vh] min-h-[600px]`}
       >
         <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-800 text-white p-10 lg:p-14">
@@ -454,7 +460,7 @@ const LoginPage = ({ onLogin }) => {
                   <button
                     type="submit"
                     disabled={isLoading || isLockedOut} // Disable button when loading or locked out
-                    className={`w-full py-3 text-white rounded-full transition-all ${
+                    className={`w-full py-3 text-white rounded-full transition-all cursor-pointer ${
                       isLoading || isLockedOut
                         ? "bg-gray-500 cursor-not-allowed"
                         : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
@@ -715,7 +721,7 @@ const LoginPage = ({ onLogin }) => {
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showNewPassword ? (
                         <EyeOff size={20} />

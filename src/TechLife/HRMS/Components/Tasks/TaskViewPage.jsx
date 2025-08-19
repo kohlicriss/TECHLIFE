@@ -30,7 +30,7 @@ const UpdateHistoryPopup = ({
   assignedBy,
   employeeId,
 }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 transition-all duration-300">
+  <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-150 transition-all duration-300">
     <div className="bg-gradient-to-br from-white to-blue-50 p-1 rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95">
       <div className="bg-white p-5 sm:p-7 rounded-xl border border-blue-100">
         <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-200">
@@ -63,7 +63,7 @@ const UpdateHistoryPopup = ({
               required
             />
           </div>
-          
+
           <div>
             <label
               htmlFor="note"
@@ -81,7 +81,7 @@ const UpdateHistoryPopup = ({
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
-          
+
           <div>
             <label
               htmlFor="relatedLinks"
@@ -99,7 +99,7 @@ const UpdateHistoryPopup = ({
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
-          
+
           {employeeId === assignedBy && (
             <div>
               <label
@@ -119,7 +119,7 @@ const UpdateHistoryPopup = ({
               />
             </div>
           )}
-          
+
           <div>
             <label
               htmlFor="files"
@@ -132,7 +132,7 @@ const UpdateHistoryPopup = ({
                 <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
                   <Upload className="h-8 w-8 text-blue-400 mb-2" />
                   <p className="text-sm text-gray-500 text-center">
-                    <span className="font-semibold text-blue-600">Click to upload</span>  
+                    <span className="font-semibold text-blue-600">Click to upload</span>
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     Any files (Max 5 files)
@@ -148,14 +148,14 @@ const UpdateHistoryPopup = ({
                 />
               </label>
             </div>
-            
+
             {updateHistoryData.relatedFileLinks.length > 0 && (
               <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-sm font-medium text-blue-800 mb-1">Selected files:</p>
                 <ul className="space-y-1 max-h-32 overflow-y-auto">
                   {updateHistoryData.relatedFileLinks.map((file, index) => (
-                    <li 
-                      key={index} 
+                    <li
+                      key={index}
                       className="text-xs bg-white rounded px-3 py-1.5 border border-blue-100 flex items-center"
                     >
                       <FileText className="h-3 w-3 mr-2 text-blue-500 flex-shrink-0" />
@@ -166,7 +166,7 @@ const UpdateHistoryPopup = ({
               </div>
             )}
           </div>
-          
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -221,7 +221,7 @@ const TaskViewPage = () => {
 
     try {
       const taskResponse = await fetch(
-        `http://localhost:8090/api/task/${projectid}/${id}`
+        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
       );
 
       if (!taskResponse.ok) {
@@ -234,7 +234,7 @@ const TaskViewPage = () => {
       setCurrentTask(taskData);
 
       const historyResponse = await fetch(
-        `http://localhost:8090/api/${projectid}/${id}/updatetasks`
+        `http://192.168.0.120:8090/api/${projectid}/${id}/updatetasks`
       );
 
       if (!historyResponse.ok) {
@@ -334,7 +334,7 @@ const TaskViewPage = () => {
         .split(",")
         .map((link) => link.trim())
         .filter((link) => link),
-      reviewedBy: isAssigner ? creatorId : null, // Set to null if not assigner
+      reviewedBy: isAssigner ? creatorId : null,
       remark: isAssigner ? updateHistoryData.remark : null,
       updatedDate: new Date().toISOString(),
     };
@@ -364,7 +364,7 @@ const TaskViewPage = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8090/api/${creatorId}/history/${projectid}/${id}`,
+        `http://192.168.0.120:8090/api/${creatorId}/history/${projectid}/${id}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -438,7 +438,7 @@ const TaskViewPage = () => {
       );
 
       const response = await axios.put(
-        `http://localhost:8090/api/${reviewerId}/status/${projectid}/${id}`,
+        `http://192.168.0.120:8090/api/${reviewerId}/status/${projectid}/${id}`,
         updatedPayload,
         {
           headers: { "Content-Type": "application/json" },
@@ -473,9 +473,9 @@ const TaskViewPage = () => {
         alert("User ID not found. Please log in again.");
         return;
       }
-      
+
       const response = await axios.delete(
-        `http://localhost:8090/api/${projectid}/${id}/${historyId}/delete`
+        `http://192.168.0.120:8090/api/${projectid}/${id}/${historyId}/delete`
       );
 
       if (response.status === 200 || response.status === 204) {
@@ -797,7 +797,7 @@ const TaskViewPage = () => {
                   <h4 className="text-xl font-semibold text-gray-800">
                     Update History
                   </h4>
-                  {!isAssigner && (
+                  {!isTaskCompleted && !isAssigner && (
                     <button
                       onClick={() => setShowUpdateHistoryPopup(true)}
                       className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
@@ -874,7 +874,7 @@ const TaskViewPage = () => {
             </div>
           </div>
 
-          {!isTaskCompleted && isAssigner && (
+          {/* {!isTaskCompleted && isAssigner && (
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
                 <button
                   onClick={handleSubmitTask}
@@ -884,7 +884,7 @@ const TaskViewPage = () => {
                   Mark as Completed
                 </button>
               </div>
-            )}
+            )} */}
         </div>
       </div>
       {showUpdateHistoryPopup && (

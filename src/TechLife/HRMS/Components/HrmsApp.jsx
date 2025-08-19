@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Context } from "./HrmsContext";
-import { useContext } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -22,28 +20,24 @@ import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
 import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
 import Dashboard from "./EmployeeDashboards/Dashboard";
 import TasksApp from "./Tasks/TaskApp";
-
-// Assuming ProtectedRoute is located in a directory above HrmsApp.js
 import ProtectedRoute from "../../../ProtectedRoute";
-import axios from "axios";
 
 const MainLayout = ({
     isSidebarOpen,
     setSidebarOpen,
     currentUser,
-    onLogout,
+    onLogout, // Pass onLogout to Sidebar
 }) => (
     <div className="flex flex-col h-screen bg-gray-50">
         <Navbar
             setSidebarOpen={setSidebarOpen}
             currentUser={currentUser}
-            onLogout={onLogout}
         />
         <div className="flex flex-1 overflow-hidden pt-16">
             <Sidebar
                 isSidebarOpen={isSidebarOpen}
                 setSidebarOpen={setSidebarOpen}
-                onLogout={onLogout}
+                onLogout={onLogout} // Pass it down
             />
             <main className="flex-1 overflow-y-auto">
                 <Outlet />
@@ -53,38 +47,25 @@ const MainLayout = ({
 );
 
 const HrmsApp = () => {
-    const fulldata = localStorage.getItem("emppayload");
-    console.log(fulldata);
-
-    const [isAuthenticated, setIsAuthenticated] = useState(
-        !!localStorage.getItem("authToken")
-    );
+    // Check for token in localStorage to set initial state
+    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("accessToken"));
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    const [currentUser, setCurrentUser] = useState({
+    const [currentUser] = useState({
         name: "Johnes",
         designation: " Associate Software Engineer",
         avatar: "https://i.pravatar.cc/100",
     });
 
-
-    useEffect(() => {
-        const handleStorageChange = () => {
-            setIsAuthenticated(!!localStorage.getItem("authToken"));
-        };
-
-        window.addEventListener("storage", handleStorageChange);
-        return () => {
-            window.removeEventListener("storage", handleStorageChange);
-        };
-    }, []);
-
     const handleLogin = () => {
-        localStorage.setItem("authToken", "true");
         setIsAuthenticated(true);
     };
 
+    // ==========================================================
+    // THIS IS THE CENTRAL LOGOUT HANDLER
+    // ==========================================================
     const handleLogout = () => {
-        localStorage.removeItem("authToken");
+        // This function will be called from the Sidebar.
+        // It changes the state, which triggers the redirect in the Routes.
         setIsAuthenticated(false);
     };
 
@@ -100,6 +81,7 @@ const HrmsApp = () => {
                                 path="/login"
                                 element={<LoginPage onLogin={handleLogin} />}
                             />
+                            {/* This Navigate component will automatically redirect any other path to /login */}
                             <Route path="*" element={<Navigate to="/login" replace />} />
                         </>
                     ) : (
@@ -109,7 +91,7 @@ const HrmsApp = () => {
                                     isSidebarOpen={isSidebarOpen}
                                     setSidebarOpen={setSidebarOpen}
                                     currentUser={currentUser}
-                                    onLogout={handleLogout}
+                                    onLogout={handleLogout} // Pass the handler
                                 />
                             }
                         >
@@ -123,6 +105,7 @@ const HrmsApp = () => {
                             <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                             <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                             <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
+                            {/* This is the default route when authenticated */}
                             <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
                         </Route>
                     )}
