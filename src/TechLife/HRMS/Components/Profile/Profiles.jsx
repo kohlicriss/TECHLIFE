@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-  Route,
   Routes,
+  Route,
   Navigate,
   useLocation,
   useNavigate,
+  useParams,
 } from "react-router-dom";
 import About from "./tabs/About";
 import Profile from "./tabs/Profile";
@@ -24,6 +25,7 @@ import { FaPhone, FaBuilding } from "react-icons/fa";
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { empID } = useParams();
 
   const [activeTab, setActiveTab] = useState(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -48,21 +50,8 @@ const Profiles = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem("employeeData", JSON.stringify(employeeData));
-  }, [employeeData]);
-
-  useEffect(() => {
-    if (profileImage) {
-      localStorage.setItem("profileImage", profileImage);
-    }
-  }, [profileImage]);
-
-  useEffect(() => {
-    if (location.pathname === "/profile" || location.pathname === "/profile/") {
-      navigate("/profile/profile", { replace: true });
-    }
     setActiveTab(location.pathname);
-  }, [location.pathname, navigate]);
+  }, [location.pathname]);
 
   const initials = employeeData.name
     .split(" ")
@@ -70,14 +59,14 @@ const Profiles = () => {
     .join("");
 
   const tabs = [
-    { name: "About", path: "/profile/about", icon: MdPerson },
-    { name: "Profile", path: "/profile/profile", icon: HiIdentification },
-    { name: "Job", path: "/profile/job", icon: MdWork },
-    { name: "Documents", path: "/profile/documents", icon: MdBusiness },
+    { name: "About", path: `about`, icon: MdPerson },
+    { name: "Profile", path: `profile`, icon: HiIdentification },
+    { name: "Job", path: `job`, icon: MdWork },
+    { name: "Documents", path: `documents`, icon: MdBusiness },
   ];
 
   const handleImageUpload = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files;
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -104,6 +93,7 @@ const Profiles = () => {
     }));
   };
 
+  // This function now receives the full path to navigate to
   const handleTabClick = (path) => {
     navigate(path);
   };
@@ -186,12 +176,11 @@ const Profiles = () => {
       <div className="flex flex-1">
         <main className="flex-1 p-6 bg-gray-50">
           <Routes>
+            <Route index element={<Navigate to="profile" replace />} />
             <Route path="about" element={<About />} />
             <Route path="profile" element={<Profile />} />
             <Route path="job" element={<Job />} />
             <Route path="documents" element={<Document />} />
-            {/* FIX: Change index route to navigate to "profile" */}
-            <Route index element={<Navigate to="profile" replace />} />
           </Routes>
         </main>
 
@@ -208,33 +197,38 @@ const Profiles = () => {
           </button>
           <nav className="p-4 sticky top-0">
             <div className="space-y-1">
-              {tabs.map((tab) => (
-                <div
-                  key={tab.path}
-                  onClick={() => handleTabClick(tab.path)}
-                  className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === tab.path
-                      ? "bg-black text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <tab.icon
-                    className={`w-5 h-5 ${
-                      activeTab === tab.path ? "text-white" : "text-gray-500"
+              {tabs.map((tab) => {
+                // This is the full, absolute path for the tab
+                const tabPath = `/profile/${empID}/${tab.path}`;
+                return (
+                  <div
+                    key={tab.path}
+                    // ***FIX: Pass the full `tabPath` to the handler***
+                    onClick={() => handleTabClick(tabPath)}
+                    className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      activeTab === tabPath
+                        ? "bg-black text-white"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
-                  />
-                  {sidebarOpen && (
-                    <span className="font-medium">{tab.name}</span>
-                  )}
-                </div>
-              ))}
+                  >
+                    <tab.icon
+                      className={`w-5 h-5 ${
+                        activeTab === tabPath ? "text-white" : "text-gray-500"
+                      }`}
+                    />
+                    {sidebarOpen && (
+                      <span className="font-medium">{tab.name}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </nav>
         </div>
       </div>
 
       {isEditing && (
-        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-114 ">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-[500px] shadow-2xl">
             <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
             <form onSubmit={handleSave}>

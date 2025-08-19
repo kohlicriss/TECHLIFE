@@ -18,6 +18,7 @@ import {
   Star,
   MessageSquare,
   Check,
+  Trash2,
 } from "lucide-react";
 
 const UpdateHistoryPopup = ({
@@ -26,44 +27,47 @@ const UpdateHistoryPopup = ({
   updateHistoryData,
   handleUpdateHistoryInputChange,
   handleUpdateHistoryFileChange,
-  position,
+  assignedBy,
+  employeeId,
 }) => (
-  <div className="fixed inset-0 bg-opacity-100 flex justify-center items-center shadow-2xl z-201">
-    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95">
-      <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
-          Update Task History
-        </h3>
-        <button
-          onClick={() => setShowUpdateHistoryPopup(false)}
-          className="text-gray-400 hover:text-gray-700 transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-gray-400"
-        >
-          <XCircle className="h-7 w-7" />
-        </button>
-      </div>
-      <form onSubmit={handleUpdateHistorySubmit}>
-        <div className="space-y-4">
+  <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 transition-all duration-300">
+    <div className="bg-gradient-to-br from-white to-blue-50 p-1 rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95">
+      <div className="bg-white p-5 sm:p-7 rounded-xl border border-blue-100">
+        <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-200">
+          <h3 className="text-xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+            Update Task History
+          </h3>
+          <button
+            onClick={() => setShowUpdateHistoryPopup(false)}
+            className="text-gray-400 hover:text-red-500 transition-colors rounded-full p-1 focus:outline-none"
+          >
+            <XCircle className="h-6 w-6" />
+          </button>
+        </div>
+        <form onSubmit={handleUpdateHistorySubmit} className="space-y-4">
           <div>
             <label
               htmlFor="changes"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Changes
+              Changes <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="changes"
               id="changes"
-              placeholder="e.g., Status: IN_PROGRESS -> COMPLETED"
+              placeholder="e.g., Status: IN_PROGRESS → COMPLETED"
               value={updateHistoryData.changes}
               onChange={handleUpdateHistoryInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              required
             />
           </div>
+          
           <div>
             <label
               htmlFor="note"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
               Note
             </label>
@@ -74,84 +78,113 @@ const UpdateHistoryPopup = ({
               placeholder="Add a descriptive note"
               value={updateHistoryData.note}
               onChange={handleUpdateHistoryInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
+          
           <div>
             <label
               htmlFor="relatedLinks"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Related Links (comma-separated)
+              Related Links
             </label>
             <input
               type="text"
               name="relatedLinks"
               id="relatedLinks"
-              placeholder="https://example.com, https://another-link.com"
+              placeholder="https://example.com, https://another.com"
               value={updateHistoryData.relatedLinks}
               onChange={handleUpdateHistoryInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
-          {position === "TEAM_LEAD" && (
-            <>
-              <div>
-                <label
-                  htmlFor="remark"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Remark
-                </label>
-                <input
-                  type="text"
-                  name="remark"
-                  id="remark"
-                  placeholder="Add a remark"
-                  value={updateHistoryData.remark}
-                  onChange={handleUpdateHistoryInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </>
+          
+          {employeeId === assignedBy && (
+            <div>
+              <label
+                htmlFor="remark"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Remark
+              </label>
+              <input
+                type="text"
+                name="remark"
+                id="remark"
+                placeholder="Add a remark"
+                value={updateHistoryData.remark}
+                onChange={handleUpdateHistoryInputChange}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+            </div>
           )}
+          
           <div>
             <label
               htmlFor="files"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
               Upload Files (Max 5)
             </label>
-            <input
-              type="file"
-              name="files"
-              id="files"
-              multiple
-              onChange={handleUpdateHistoryFileChange}
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer"
-            />
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col w-full border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-lg cursor-pointer bg-blue-50 transition-all duration-200">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                  <Upload className="h-8 w-8 text-blue-400 mb-2" />
+                  <p className="text-sm text-gray-500 text-center">
+                    <span className="font-semibold text-blue-600">Click to upload</span>  
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Any files (Max 5 files)
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  name="files"
+                  id="files"
+                  multiple
+                  onChange={handleUpdateHistoryFileChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            
             {updateHistoryData.relatedFileLinks.length > 0 && (
-              <div className="mt-2 text-sm text-gray-600">
-                <p className="font-semibold">Selected files:</p>
-                <ul className="list-disc list-inside pl-2">
+              <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-100">
+                <p className="text-sm font-medium text-blue-800 mb-1">Selected files:</p>
+                <ul className="space-y-1 max-h-32 overflow-y-auto">
                   {updateHistoryData.relatedFileLinks.map((file, index) => (
-                    <li key={index}>{file.name}</li>
+                    <li 
+                      key={index} 
+                      className="text-xs bg-white rounded px-3 py-1.5 border border-blue-100 flex items-center"
+                    >
+                      <FileText className="h-3 w-3 mr-2 text-blue-500 flex-shrink-0" />
+                      <span className="truncate">{file.name}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
           </div>
-        </div>
-        <div className="mt-8 flex justify-end">
-          <button
-            type="submit"
-            className="flex items-center justify-center bg-indigo-600 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Update Changes
-          </button>
-        </div>
-      </form>
+          
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowUpdateHistoryPopup(false)}
+              className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
+            >
+              <Upload className="h-4 w-4 mr-2 text-blue-100" />
+              Update Changes
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 );
@@ -163,7 +196,6 @@ const TaskViewPage = () => {
   const [assignedBy, setAssignedBy] = useState("");
   const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);
   const { userData } = useContext(Context);
-  const position = userData?.roles[0];
   const [updateHistoryData, setUpdateHistoryData] = useState({
     changes: "",
     note: "",
@@ -189,7 +221,7 @@ const TaskViewPage = () => {
 
     try {
       const taskResponse = await fetch(
-        `http://192.168.0.120:8090/api/task/${projectid}/${id}`
+        `http://localhost:8090/api/task/${projectid}/${id}`
       );
 
       if (!taskResponse.ok) {
@@ -202,7 +234,7 @@ const TaskViewPage = () => {
       setCurrentTask(taskData);
 
       const historyResponse = await fetch(
-        `http://192.168.0.120:8090/api/${projectid}/${id}/updatetasks`
+        `http://localhost:8090/api/${projectid}/${id}/updatetasks`
       );
 
       if (!historyResponse.ok) {
@@ -290,6 +322,8 @@ const TaskViewPage = () => {
       return;
     }
 
+    const isAssigner = creatorId === assignedBy;
+
     const formData = new FormData();
 
     const taskUpdatePayload = {
@@ -300,8 +334,8 @@ const TaskViewPage = () => {
         .split(",")
         .map((link) => link.trim())
         .filter((link) => link),
-      reviewedBy: position === "TEAM_LEAD" ? creatorId : null,
-      remark: position === "TEAM_LEAD" ? updateHistoryData.remark : null,
+      reviewedBy: isAssigner ? creatorId : null, // Set to null if not assigner
+      remark: isAssigner ? updateHistoryData.remark : null,
       updatedDate: new Date().toISOString(),
     };
 
@@ -330,7 +364,7 @@ const TaskViewPage = () => {
 
     try {
       const response = await axios.post(
-        `http://192.168.0.120:8090/api/${creatorId}/history/${projectid}/${id}`,
+        `http://localhost:8090/api/${creatorId}/history/${projectid}/${id}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -404,7 +438,7 @@ const TaskViewPage = () => {
       );
 
       const response = await axios.put(
-        `http://192.168.0.120:8090/api/${reviewerId}/status/${projectid}/${id}`,
+        `http://localhost:8090/api/${reviewerId}/status/${projectid}/${id}`,
         updatedPayload,
         {
           headers: { "Content-Type": "application/json" },
@@ -426,6 +460,34 @@ const TaskViewPage = () => {
   const handleInlineInputChange = (e) => {
     const { name, value } = e.target;
     setEditRowData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDeleteHistory = async (historyId) => {
+    if (!window.confirm("Are you sure you want to delete this history entry?")) {
+      return;
+    }
+
+    try {
+      const deleterId = userData?.employeeId;
+      if (!deleterId) {
+        alert("User ID not found. Please log in again.");
+        return;
+      }
+      
+      const response = await axios.delete(
+        `http://localhost:8090/api/${projectid}/${id}/${historyId}/delete`
+      );
+
+      if (response.status === 200 || response.status === 204) {
+        alert("History entry deleted successfully.");
+        fetchTaskData();
+      } else {
+        alert("Failed to delete history entry.");
+      }
+    } catch (error) {
+      console.error("Error deleting history:", error.response?.data || error.message);
+      alert("An error occurred while deleting. Please check the console.");
+    }
   };
 
   const renderRelatedLinks = (links) => {
@@ -524,6 +586,7 @@ const TaskViewPage = () => {
   }
 
   const isTaskCompleted = currentTask.status.toUpperCase() === "COMPLETED";
+  const isAssigner = userData?.employeeId === assignedBy;
 
   return (
     <>
@@ -734,7 +797,7 @@ const TaskViewPage = () => {
                   <h4 className="text-xl font-semibold text-gray-800">
                     Update History
                   </h4>
-                  {userData?.employeeId !== assignedBy && (
+                  {!isAssigner && (
                     <button
                       onClick={() => setShowUpdateHistoryPopup(true)}
                       className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
@@ -756,9 +819,7 @@ const TaskViewPage = () => {
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Related Files</th>
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                           <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewed By</th>
-                          {userData?.employeeId === assignedBy && (
-                            <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                          )}
+                          <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -784,18 +845,21 @@ const TaskViewPage = () => {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{history.reviewedBy || "-"}</td>
-                            {userData?.employeeId === assignedBy && (
-                              <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
-                                {editingRowId === history.id ? (
-                                  <div className="flex gap-2">
-                                    <button onClick={handleInlineSave} className="text-green-600 hover:text-green-800" aria-label="Save"><Check size={16} /></button>
-                                    <button onClick={handleInlineCancel} className="text-red-600 hover:text-red-800" aria-label="Cancel"><XCircle size={16} /></button>
-                                  </div>
-                                ) : (
-                                  <button onClick={() => handleInlineEdit(history)} className="text-blue-600 hover:text-blue-800" aria-label="Edit"><Edit size={16} /></button>
+                            <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
+                              <div className="flex gap-2">
+                                {isAssigner && (
+                                  editingRowId === history.id ? (
+                                    <>
+                                      <button onClick={handleInlineSave} className="text-green-600 hover:text-green-800" aria-label="Save"><Check size={16} /></button>
+                                      <button onClick={handleInlineCancel} className="text-red-600 hover:text-red-800" aria-label="Cancel"><XCircle size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <button onClick={() => handleInlineEdit(history)} className="text-blue-600 hover:text-blue-800" aria-label="Edit"><Edit size={16} /></button>
+                                  )
                                 )}
-                              </td>
-                            )}
+                                <button onClick={() => handleDeleteHistory(history.id)} className="text-red-600 hover:text-red-800" aria-label="Delete"><Trash2 size={16} /></button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -810,9 +874,7 @@ const TaskViewPage = () => {
             </div>
           </div>
 
-          {!isTaskCompleted &&
-            position === "TEAM_LEAD" &&
-            userData?.employeeId === assignedBy && (
+          {!isTaskCompleted && isAssigner && (
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
                 <button
                   onClick={handleSubmitTask}
@@ -832,7 +894,8 @@ const TaskViewPage = () => {
           updateHistoryData={updateHistoryData}
           handleUpdateHistoryInputChange={handleUpdateHistoryInputChange}
           handleUpdateHistoryFileChange={handleUpdateHistoryFileChange}
-          position={position}
+          assignedBy={assignedBy}
+          employeeId={userData?.employeeId}
         />
       )}
     </>

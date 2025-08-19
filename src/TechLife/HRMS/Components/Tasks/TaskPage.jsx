@@ -72,9 +72,9 @@ const TasksPage = () => {
             const userRole = userData.roles[0];
             const userId = userData.employeeId;
             if (userRole === "TEAM_LEAD" && employeeId) {
-                apiUrl = `http://192.168.0.120:8090/api/all/tasks/${employeeId}`;
+                apiUrl = `http://localhost:8090/api/all/tasks/${employeeId}`;
             } else {
-                apiUrl = `http://192.168.0.120:8090/api/all/tasks/${userId}`;
+                apiUrl = `http://localhost:8090/api/all/tasks/${userId}`;
             }
             const response = await fetch(apiUrl);
             if (!response.ok) {
@@ -111,7 +111,7 @@ const TasksPage = () => {
         }
         try {
             const tlId = userData.employeeId;
-            const url = `http://192.168.0.120:8090/api/${tlId}`;
+            const url = `http://localhost:8090/api/${tlId}`;
             const response = await fetch(url);
             if (!response.ok) {
                 if (response.status === 404) {
@@ -236,6 +236,24 @@ const TasksPage = () => {
         setIsFormOpen(true);
     };
 
+    const handleDeleteTask = async (e, projectId, taskId) => {
+        e.stopPropagation();
+        if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+            return;
+        }
+        try {
+            // Updated URL to match the backend endpoint
+            const url = `http://localhost:8090/api/${projectId}/${taskId}/delete/task`;
+            await axios.delete(url);
+            alert("Task deleted successfully!");
+            fetchTasks();
+            fetchTasksAssignedByMe();
+        } catch (error) {
+            console.error("Failed to delete task:", error.response?.data || error.message);
+            alert("Failed to delete the task. Please try again.");
+        }
+    };
+
     const handleFormClose = () => {
         setIsFormOpen(false);
         resetFormData();
@@ -358,10 +376,10 @@ const TasksPage = () => {
             let url;
             let method;
             if (formMode === 'create') {
-                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+                url = `http://localhost:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
                 method = 'post';
             } else {
-                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+                url = `http://localhost:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
                 method = 'put';
             }
             console.log("Submitting Request...");
@@ -471,14 +489,22 @@ const TasksPage = () => {
                                             <div className="text-right text-xs text-gray-600">{timeCompletedBar}%</div>
                                         </td>
                                         {showAssignedTo && isTeamLead && (
-                                            <td className="px-6 py-4 text-sm">
+                                            <td className="px-6 py-4 text-sm flex items-center space-x-2">
                                                 {task.createdBy === userData?.employeeId && (
-                                                    <button
-                                                        onClick={(e) => handleEditClick(e, task)}
-                                                        className="text-indigo-600 hover:text-indigo-900"
-                                                    >
-                                                        <Edit size={18} />
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => handleEditClick(e, task)}
+                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                        >
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => handleDeleteTask(e, task.projectId, task.id)}
+                                                            className="text-red-600 hover:text-red-900"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </>
                                                 )}
                                             </td>
                                         )}
