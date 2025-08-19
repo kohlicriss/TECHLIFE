@@ -14,7 +14,10 @@ import {
     deleteMessageForMe,
     deleteMessageForEveryone,
     uploadFile,
-    forwardMessage
+    forwardMessage,
+    getPinnedMessage,
+    pinMessage,
+    unpinMessage
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
 
@@ -163,7 +166,7 @@ function ChatApplication({ currentUser, initialChats }) {
     const [editingInfo, setEditingInfo] = useState({ index: null, originalContent: '' });
     const [replyingTo, setReplyingTo] = useState(null);
     const [lastDeleted, setLastDeleted] = useState(null);
-    const [pinnedMessages, setPinnedMessages] = useState({});
+    const [pinnedMessage, setPinnedMessage] = useState(null);
     const [forwardingInfo, setForwardingInfo] = useState({ visible: false, message: null });
     const [forwardRecipients, setForwardRecipients] = useState([]);
     const [forwardSearchTerm, setForwardSearchTerm] = useState('');
@@ -234,8 +237,23 @@ function ChatApplication({ currentUser, initialChats }) {
                 setIsMessagesLoading(false);
             }
         };
+         const fetchPinnedMessage = async () => {
+             try {
+                 const pinnedMsgData = await getPinnedMessage(
+                     selectedChat.chatId,
+                     selectedChat.type,
+                     currentUser.id
+                 );
+                 setPinnedMessage(pinnedMsgData); // API నుంచి వచ్చిన డేటాని స్టేట్‌లో సెట్ చెయ్
+             } catch (error) {
+                 console.error("Failed to fetch pinned message:", error);
+                 setPinnedMessage(null); // ఎర్రర్ వస్తే null సెట్ చెయ్
+             }
+        };
+        
 
         fetchMessages();
+        fetchPinnedMessage();
     }, [selectedChat, currentUser.id]);
 
     const updateLastMessage = useCallback((chatId, message) => {
@@ -275,7 +293,35 @@ function ChatApplication({ currentUser, initialChats }) {
     }, [currentUser.id, selectedChat]);
 
     const onMessageReceived = useCallback((payload) => {
-        const receivedMessage = JSON.parse(payload.body);
+        const parsedData = JSON.parse(payload.body);
+
+        if (parsedData.type === 'PIN_UPDATE') {
+            const pinnedDto = parsedData.payload;
+            const eventChatId = pinnedDto.groupId || (pinnedDto.sender === currentUser.id ? pinnedDto.receiver : pinnedDto.sender);
+            
+            if (selectedChat?.chatId === eventChatId) {
+                setPinnedMessage(pinnedDto);
+            }
+            return;
+
+        } else if (parsedData.type === 'UNPIN_UPDATE') {
+            const unpinPayload = parsedData.payload;
+
+            let eventChatId;
+            if (selectedChat.type === 'group') {
+                eventChatId = unpinPayload.groupId;
+            } else {
+                eventChatId = unpinPayload.senderId === currentUser.id 
+            ? unpinPayload.receiverId 
+            : unpinPayload.senderId;
+            }
+            if (selectedChat?.chatId === eventChatId) {
+                setPinnedMessage(null);
+            }
+            return;
+        }
+        
+        const receivedMessage = parsedData;
         const messageChatId = receivedMessage.groupId || (receivedMessage.sender === currentUser.id ? receivedMessage.receiver : receivedMessage.sender);
 
         if (!messageChatId) {
@@ -820,9 +866,48 @@ function ChatApplication({ currentUser, initialChats }) {
     };
 
     const handleUndoDelete = () => { if (!lastDeleted) return; const currentMessages = [...messages[selectedChat.chatId]]; currentMessages[lastDeleted.index] = lastDeleted.message; setMessages(prev => ({ ...prev, [selectedChat.chatId]: currentMessages })); setLastDeleted(null); };
-    const handlePin = () => { setPinnedMessages(prev => ({ ...prev, [selectedChat.chatId]: { message: contextMenu.message, index: contextMenu.index } })); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); };
-    const handleUnpin = () => { setPinnedMessages(prev => { const newPinned = { ...prev }; delete newPinned[selectedChat.chatId]; return newPinned; }); setShowPinnedMenu(false); };
-    const handleGoToMessage = () => { setShowPinnedMenu(false); const pinnedInfo = pinnedMessages[selectedChat.chatId]; if (pinnedInfo) { const messageElement = document.querySelector(`[data-message-index='${pinnedInfo.index}']`); if (messageElement) { messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); messageElement.classList.add('animate-pulse', 'bg-blue-200'); setTimeout(() => messageElement.classList.remove('animate-pulse', 'bg-blue-200'), 2500); } } };
+    const handlePin = async () => {
+        if (!contextMenu.message?.messageId) return;
+
+        try {
+            const messageIdToPin = contextMenu.message.messageId;
+            const response = await pinMessage(messageIdToPin, currentUser.id);
+            setPinnedMessage(response); 
+        } catch (error) {
+            console.error("Failed to pin message:", error);
+        } finally {
+            setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
+        }
+    };
+
+    const handleUnpin = async () => {
+        if (!pinnedMessage?.messageId) return;
+
+        try {
+            await unpinMessage(pinnedMessage.messageId, currentUser.id);
+            setPinnedMessage(null); 
+        } catch (error) {
+            console.error("Failed to unpin message:", error);
+        } finally {
+            setShowPinnedMenu(false);
+        }
+    };
+    
+    const handleGoToMessage = () => {
+        setShowPinnedMenu(false);
+        if (pinnedMessage) {
+            const messageIndex = chatMessages.findIndex(m => m.messageId === pinnedMessage.messageId);
+
+            if (messageIndex !== -1) {
+                const messageElement = document.querySelector(`[data-message-index='${messageIndex}']`);
+                if (messageElement) {
+                    messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    messageElement.classList.add('animate-pulse', 'bg-blue-200');
+                    setTimeout(() => messageElement.classList.remove('animate-pulse', 'bg-blue-200'), 2500);
+                }
+            }
+        }
+    };
     
     const handleForward = () => { 
         setForwardingInfo({ visible: true, message: contextMenu.message }); 
@@ -920,7 +1005,6 @@ function ChatApplication({ currentUser, initialChats }) {
 
     const currentChatInfo = selectedChat ? allChats.find(c => c.chatId === selectedChat.chatId) : null;
     const chatMessages = currentChatInfo ? messages[currentChatInfo.chatId] || [] : [];
-    const pinnedMessageInfo = currentChatInfo ? pinnedMessages[currentChatInfo.chatId] : null;
 
     const getSenderInfo = (senderId) => {
         if (!currentUser) return { name: 'Unknown', profile: null };
@@ -1009,10 +1093,35 @@ function ChatApplication({ currentUser, initialChats }) {
                                 <div className="flex items-center space-x-2"><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaVideo size={20} /></button><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className="p-2 rounded-full hover:bg-gray-100"><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={handleClearChat} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
                             </div>
 
-                            {pinnedMessageInfo && (
+                            {pinnedMessage && (
                                 <div className="flex-shrink-0 flex items-center justify-between p-2 border-b border-gray-200 bg-gray-50">
-                                    <div className="flex items-center gap-2 text-sm overflow-hidden cursor-pointer flex-grow min-w-0" onClick={handleGoToMessage}><FaThumbtack className="text-gray-500 flex-shrink-0" /><FileIcon fileName={pinnedMessageInfo.message.fileName || ''} type={pinnedMessageInfo.message.type} className="text-lg flex-shrink-0" /><div className="truncate"><p className="font-bold text-blue-600">Pinned Message</p><p className="text-gray-600 truncate">{pinnedMessageInfo.message.type === 'text' ? pinnedMessageInfo.message.content : pinnedMessageInfo.message.fileName || 'Voice Message'}</p></div></div>
-                                    <div className="relative flex-shrink-0"><button ref={pinnedMenuButtonRef} onClick={() => setShowPinnedMenu(!showPinnedMenu)} className="p-2 rounded-full hover:bg-gray-200"><FaChevronDown /></button>{showPinnedMenu && (<div ref={pinnedMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 text-sm"><ul className="py-1"><li onClick={handleGoToMessage} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaAngleDoubleRight /> Go to message</li><li onClick={handleUnpin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTimes /> Unpin</li></ul></div>)}</div>
+                                    <div className="flex items-center gap-2 text-sm overflow-hidden cursor-pointer flex-grow min-w-0" onClick={handleGoToMessage}>
+                                        <FaThumbtack className="text-gray-500 flex-shrink-0" />
+                                        <FileIcon fileName={pinnedMessage.fileName || ''} type={pinnedMessage.messageType} className="text-lg flex-shrink-0" />
+                                        <div className="truncate">
+                                            <p className="font-bold text-blue-600">Pinned Message</p>
+                                            <p className="text-gray-600 truncate">
+                                                {pinnedMessage.messageType === 'text' ? pinnedMessage.content : pinnedMessage.fileName || 'Pinned Media'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="relative flex-shrink-0">
+                                        <button ref={pinnedMenuButtonRef} onClick={() => setShowPinnedMenu(!showPinnedMenu)} className="p-2 rounded-full hover:bg-gray-200">
+                                            <FaChevronDown />
+                                        </button>
+                                        {showPinnedMenu && (
+                                            <div ref={pinnedMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 text-sm">
+                                                <ul className="py-1">
+                                                   <li onClick={handleGoToMessage} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3">
+                                                        <FaAngleDoubleRight /> Go to message
+                                                   </li>
+                                                   <li onClick={handleUnpin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600">
+                                                        <FaTimes /> Unpin
+                                                   </li>
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
