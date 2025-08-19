@@ -26,7 +26,7 @@ const MainLayout = ({
     isSidebarOpen,
     setSidebarOpen,
     currentUser,
-    onLogout, // Pass onLogout to Sidebar
+    onLogout,
 }) => (
     <div className="flex flex-col h-screen bg-gray-50">
         <Navbar
@@ -37,7 +37,7 @@ const MainLayout = ({
             <Sidebar
                 isSidebarOpen={isSidebarOpen}
                 setSidebarOpen={setSidebarOpen}
-                onLogout={onLogout} // Pass it down
+                onLogout={onLogout}
             />
             <main className="flex-1 overflow-y-auto">
                 <Outlet />
@@ -47,8 +47,13 @@ const MainLayout = ({
 );
 
 const HrmsApp = () => {
-    // Check for token in localStorage to set initial state
-    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("accessToken"));
+    // ==========================================================
+    // FIX: Check for "accessToken" instead of "authToken"
+    // ==========================================================
+    const [isAuthenticated, setIsAuthenticated] = useState(
+        !!localStorage.getItem("accessToken")
+    );
+
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [currentUser] = useState({
         name: "Johnes",
@@ -56,16 +61,26 @@ const HrmsApp = () => {
         avatar: "https://i.pravatar.cc/100",
     });
 
+    // This effect ensures that if the token is removed from another tab, the user is logged out.
+    useEffect(() => {
+        const handleStorageChange = () => {
+            setIsAuthenticated(!!localStorage.getItem("accessToken"));
+        };
+
+        window.addEventListener("storage", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, []);
+
     const handleLogin = () => {
+        // We don't need to set a separate authToken. 
+        // The presence of "accessToken" is enough.
         setIsAuthenticated(true);
     };
 
-    // ==========================================================
-    // THIS IS THE CENTRAL LOGOUT HANDLER
-    // ==========================================================
     const handleLogout = () => {
-        // This function will be called from the Sidebar.
-        // It changes the state, which triggers the redirect in the Routes.
+        // This function is passed to the Sidebar to update the state here.
         setIsAuthenticated(false);
     };
 
@@ -81,7 +96,6 @@ const HrmsApp = () => {
                                 path="/login"
                                 element={<LoginPage onLogin={handleLogin} />}
                             />
-                            {/* This Navigate component will automatically redirect any other path to /login */}
                             <Route path="*" element={<Navigate to="/login" replace />} />
                         </>
                     ) : (
@@ -91,7 +105,7 @@ const HrmsApp = () => {
                                     isSidebarOpen={isSidebarOpen}
                                     setSidebarOpen={setSidebarOpen}
                                     currentUser={currentUser}
-                                    onLogout={handleLogout} // Pass the handler
+                                    onLogout={handleLogout}
                                 />
                             }
                         >
@@ -105,7 +119,6 @@ const HrmsApp = () => {
                             <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                             <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                             <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
-                            {/* This is the default route when authenticated */}
                             <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
                         </Route>
                     )}
