@@ -13,10 +13,10 @@ import {
     getMessages,
     deleteMessageForMe,
     deleteMessageForEveryone,
-    uploadFile
+    uploadFile,
+    forwardMessage
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
-
 
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -38,12 +38,9 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
     return <FaFileAlt className={`text-gray-500 ${className}`} />;
 };
 
-
 const FileMessage = ({ msg, isMyMessage }) => {
     const downloadUrl = `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
-
     const containerClasses = `flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`;
-
     const content = (
         <div className={containerClasses}>
             <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
@@ -60,10 +57,8 @@ const FileMessage = ({ msg, isMyMessage }) => {
             )}
         </div>
     );
-
     return !isMyMessage ? <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer">{content}</a> : content;
 };
-
 
 const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
     const audioRef = useRef(null);
@@ -77,7 +72,6 @@ const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
         const setAudioData = () => { if (audio.duration !== Infinity) setDuration(audio.duration); }
         const setAudioTime = () => setProgress(audio.currentTime);
         const handleEnded = () => setIsPlaying(false);
-
         audio.addEventListener('loadeddata', setAudioData);
         audio.addEventListener('timeupdate', setAudioTime);
         audio.addEventListener('ended', handleEnded);
@@ -152,7 +146,6 @@ const MessageSkeleton = () => (
         </div>
     </div>
 );
-
 
 function ChatApplication({ currentUser, initialChats }) {
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
@@ -396,7 +389,6 @@ function ChatApplication({ currentUser, initialChats }) {
         });
     }, [currentUser.id, updateLastMessage]);
 
-
     useEffect(() => {
         onMessageReceivedRef.current = onMessageReceived;
     });
@@ -526,13 +518,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
     }, [selectedChat, currentUser.id]);
     
-    // =================================================================================
-    // ✅ FINAL UNREAD COUNT BUG FIX STARTS HERE
-    // =================================================================================
     const handleChatSelect = useCallback((chat) => {
-        // Step 1: Immediately update the UI to show unread count as 0.
-        // This is an "optimistic update" that makes the app feel instantly responsive
-        // and prevents the user from seeing the incorrect count due to backend delays.
         if ((chat.unreadMessageCount || 0) > 0) {
             setChatData(prev => ({
                 ...prev,
@@ -541,18 +527,11 @@ function ChatApplication({ currentUser, initialChats }) {
             }));
         }
 
-        // Step 2: Now, proceed with the original logic to open the chat.
-        // This will notify the backend to mark messages as read. The backend will eventually
-        // send back an updated chat list, but by then, our UI is already correct.
         if (selectedChat && selectedChat.chatId !== chat.chatId) {
-            // You can optionally tell the backend to close the previous chat here if needed
         }
         openChat(chat);
-    }, [selectedChat, openChat]); // Dependencies are crucial for useCallback
-    // =================================================================================
-    // ✅ FINAL FIX ENDS HERE
-    // =================================================================================
-
+    }, [selectedChat, openChat]);
+    
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (selectedChat && stompClient.current && stompClient.current.active) {
@@ -773,17 +752,13 @@ function ChatApplication({ currentUser, initialChats }) {
             cancelEdit();
             return;
         }
-
-        // ======================= BUG FIX #1 STARTS HERE =======================
-        // Optimistic UI update: UI ni ventane update cheddam.
-        // Ikkada replyTo details ni kuda preserve chesthunnam.
+        
         const optimisticUpdatedMessage = {
-            ...messageToEdit, // Copy all existing properties, including replyTo
+            ...messageToEdit,
             content: updatedContent,
             isEdited: true,
         };
-        // ======================= BUG FIX #1 ENDS HERE =========================
-
+        
         const updatedMessagesList = currentMessages.map((msg, index) =>
             index === editingInfo.index ? optimisticUpdatedMessage : msg
         );
@@ -854,32 +829,34 @@ function ChatApplication({ currentUser, initialChats }) {
         setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); 
     };
 
-    const handleConfirmForward = () => {
+    const handleConfirmForward = async () => {
         const originalMsg = forwardingInfo.message;
-        if (!originalMsg || forwardRecipients.length === 0) return;
-
-        const dto = {
-            forwardMessageId: originalMsg.messageId,
+        if (!originalMsg || forwardRecipients.length === 0) {
+            return;
+        }
+    
+        const forwardData = {
             sender: currentUser.id,
-            content: null,
+            forwardMessageId: originalMsg.messageId,
             forwardTo: forwardRecipients.map(chatId => {
                 const chat = allChats.find(c => c.chatId === chatId);
-                return {
-                    receiver: chat.type === 'private' ? chat.chatId : null,
-                    groupId: chat.type === 'group' ? chat.chatId : null,
-                    type: chat.type === 'group' ? 'TEAM' : 'PRIVATE'
-                };
+                if (chat.type === 'private') {
+                    return { receiver: chat.chatId };
+                } else {
+                    return { groupId: chat.chatId };
+                }
             })
         };
-
-        stompClient.current.publish({
-            destination: '/app/chat/forward',
-            body: JSON.stringify(dto)
-        });
-
-        setForwardingInfo({ visible: false, message: null });
-        setForwardRecipients([]);
-        setForwardSearchTerm('');
+    
+        try {
+            await forwardMessage(forwardData);
+        } catch (error) {
+            console.error("Failed to forward message:", error);
+        } finally {
+            setForwardingInfo({ visible: false, message: null });
+            setForwardRecipients([]);
+            setForwardSearchTerm('');
+        }
     };
 
     const allChats = useMemo(() => [
@@ -894,13 +871,11 @@ function ChatApplication({ currentUser, initialChats }) {
             if (chatIdFromUrl) {
                 const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
                 if (chatToSelect) {
-                    // We call handleChatSelect which now contains the optimistic update logic
                     handleChatSelect(chatToSelect);
                 }
             }
         }
     }, [isChatDataReady, allChats, selectedChat, handleChatSelect, chatIdFromUrl]);
-
 
     const openGroupInfoModal = () => {
         if (selectedChat?.type === 'group') {
@@ -964,11 +939,9 @@ function ChatApplication({ currentUser, initialChats }) {
         return `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
     };
 
-
     return (
         <div className="w-full h-full bg-gray-100 font-sans">
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
-                {/* Chat List Panel */}
                 <div className={`relative w-full md:w-[30%] h-full p-4 bg-white flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'}`}>
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats or users..." className="w-full p-3 rounded-lg border border-gray-300 bg-gray-50" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                     <div className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
@@ -995,7 +968,6 @@ function ChatApplication({ currentUser, initialChats }) {
                     </div>
                 </div>
 
-                {/* Chat Window Panel */}
                 <div className={`w-full md:w-[70%] h-full flex flex-col bg-white md:rounded-lg shadow-xl ${isChatOpen ? 'flex' : 'hidden md:flex'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
@@ -1007,7 +979,6 @@ function ChatApplication({ currentUser, initialChats }) {
                         </div>
                     ) : (
                         <>
-                            {/* Chat Header */}
                             <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
                                     <button onClick={closeChat} className="md:hidden p-2 rounded-full hover:bg-gray-100"><FaArrowLeft /></button>
@@ -1038,7 +1009,6 @@ function ChatApplication({ currentUser, initialChats }) {
                                 <div className="flex items-center space-x-2"><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaVideo size={20} /></button><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className="p-2 rounded-full hover:bg-gray-100"><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={handleClearChat} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
                             </div>
 
-                            {/* Pinned Message Bar */}
                             {pinnedMessageInfo && (
                                 <div className="flex-shrink-0 flex items-center justify-between p-2 border-b border-gray-200 bg-gray-50">
                                     <div className="flex items-center gap-2 text-sm overflow-hidden cursor-pointer flex-grow min-w-0" onClick={handleGoToMessage}><FaThumbtack className="text-gray-500 flex-shrink-0" /><FileIcon fileName={pinnedMessageInfo.message.fileName || ''} type={pinnedMessageInfo.message.type} className="text-lg flex-shrink-0" /><div className="truncate"><p className="font-bold text-blue-600">Pinned Message</p><p className="text-gray-600 truncate">{pinnedMessageInfo.message.type === 'text' ? pinnedMessageInfo.message.content : pinnedMessageInfo.message.fileName || 'Voice Message'}</p></div></div>
@@ -1046,7 +1016,6 @@ function ChatApplication({ currentUser, initialChats }) {
                                 </div>
                             )}
 
-                            {/* Messages Area */}
                             <div ref={chatContainerRef} className="flex-grow p-4 overflow-y-auto bg-gray-50">
                                 {isMessagesLoading ? (
                                     <MessageSkeleton />
@@ -1100,8 +1069,6 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                     <>
                                                                         {msg.isForwarded && <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 font-semibold"><FaShare /> Forwarded</div>}
                                                                         
-                                                                        {/* ======================= BUG FIX #2 STARTS HERE ======================= */}
-                                                                        {/* Media message reply lo 'Media Message' ki badulu 'fileName' chupisthunnam */}
                                                                         {msg.replyTo && (
                                                                             <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : 'bg-gray-300'}`}>
                                                                                 <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
@@ -1110,7 +1077,6 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                                 </p>
                                                                             </div>
                                                                         )}
-                                                                        {/* ======================= BUG FIX #2 ENDS HERE ========================= */}
                                                                         
                                                                         {msg.type === 'image' ? (
                                                                             <div className="relative">
@@ -1150,10 +1116,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                 )}
                             </div>
                             
-                            {/* Message Input Area */}
                             <div className="flex-shrink-0 flex flex-col p-4 border-t border-gray-200">
-                                {/* ======================= BUG FIX #2 STARTS HERE ======================= */}
-                                {/* Ikkada kuda media reply preview lo `fileName` chupisthunnam */}
                                 {replyingTo && (
                                     <div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center">
                                         <div className="text-sm overflow-hidden">
@@ -1165,7 +1128,6 @@ function ChatApplication({ currentUser, initialChats }) {
                                         <button onClick={() => setReplyingTo(null)}><FaTimes /></button>
                                     </div>
                                 )}
-                                {/* ======================= BUG FIX #2 ENDS HERE ========================= */}
 
                                 {editingInfo.index !== null && (<div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center"><div className="text-sm overflow-hidden"><p className="font-semibold text-blue-600">Editing message</p><p className="text-gray-600 truncate">{editingInfo.originalContent}</p></div><button onClick={cancelEdit}><FaTimes /></button></div>)}
                                 {currentChatInfo && (
@@ -1200,7 +1162,6 @@ function ChatApplication({ currentUser, initialChats }) {
                 </div>
             </div>
 
-            {/* Modals and Context Menus */}
             {contextMenu.visible && (
                 <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className="absolute bg-white rounded-md shadow-lg z-50 text-sm">
                     <ul className="py-1">
