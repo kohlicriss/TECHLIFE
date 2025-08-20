@@ -116,3 +116,13 @@ export const getPinnedMessage = async (chatId, chatType, userId) => {
         return null;
     }
 };
+
+export const clearChatHistory = async (userId, chatId) => {
+  try {
+    const response = await apiClient.post(`/chat/clear?userId=${userId}&chatId=${chatId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to clear chat for ${chatId}:`, error);
+    throw error;
+  }
+};

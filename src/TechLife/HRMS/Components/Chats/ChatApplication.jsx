@@ -17,7 +17,8 @@ import {
     forwardMessage,
     getPinnedMessage,
     pinMessage,
-    unpinMessage
+    unpinMessage,
+    clearChatHistory
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
 
@@ -177,6 +178,8 @@ function ChatApplication({ currentUser, initialChats }) {
     const [imageInView, setImageInView] = useState(null);
     const [isChatDataReady, setIsChatDataReady] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
+
 
     const chatContainerRef = useRef(null);
     const stompClient = useRef(null);
@@ -776,12 +779,19 @@ function ChatApplication({ currentUser, initialChats }) {
         }
     };
 
-    const handleClearChat = () => {
+    const handleConfirmClearChat = async () => {
         if (!selectedChat) return;
-        setMessages(prev => ({ ...prev, [selectedChat.chatId]: [] }));
-        updateLastMessage(selectedChat.chatId, null);
-        setShowChatMenu(false);
+        try {
+            await clearChatHistory(currentUser.id, selectedChat.chatId);
+            setMessages(prev => ({ ...prev, [selectedChat.chatId]: [] }));
+            updateLastMessage(selectedChat.chatId, null);
+        } catch (error) {
+            console.error("Failed to clear chat:", error);
+        } finally {
+            setShowClearConfirm(false);
+        }
     };
+
     const handleMediaDownload = (src, fileName) => { const link = document.createElement('a'); link.href = src; link.setAttribute('download', fileName || 'download'); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
     const handleContextMenu = (event, message, index) => { event.preventDefault(); event.stopPropagation(); const menuWidth = 180; const menuHeight = 250; let x = event.pageX; let y = event.pageY; if (x + menuWidth > window.innerWidth) x -= menuWidth; if (y + menuHeight > window.innerHeight) y -= menuHeight; setContextMenu({ visible: true, x, y, message, index }); };
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
@@ -1105,7 +1115,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2"><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaVideo size={20} /></button><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className="p-2 rounded-full hover:bg-gray-100"><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={handleClearChat} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
+                                <div className="flex items-center space-x-2"><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaVideo size={20} /></button><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className="p-2 rounded-full hover:bg-gray-100"><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
                             </div>
 
                             {pinnedMessage && (
@@ -1383,6 +1393,23 @@ function ChatApplication({ currentUser, initialChats }) {
             {imageInView && (
                 <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[120]" onClick={() => setImageInView(null)}>
                     <img src={imageInView} alt="Full view" className="max-w-[90vw] max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} />
+                </div>
+            )}
+
+            {showClearConfirm && (
+                <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[110]">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+                        <h3 className="text-lg font-bold mb-4">Clear Chat?</h3>
+                        <p className="text-gray-600 mb-6">Are you sure you want to clear all messages in this chat? This action cannot be undone.</p>
+                        <div className="flex justify-end gap-4">
+                            <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300">
+                                Cancel
+                            </button>
+                            <button onClick={handleConfirmClearChat} className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700">
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
