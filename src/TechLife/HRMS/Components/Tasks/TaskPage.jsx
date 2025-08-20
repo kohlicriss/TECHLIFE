@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
-// Assuming HrmsContext.js is in a parent directory, adjust the path if needed.
-// For example: import { Context } from "../../HrmsContext";
 import { Context } from "../HrmsContext";
+import { tasksApi } from '../../../../axiosInstance'; // మీ ప్రాజెక్ట్ స్ట్రక్చర్ ప్రకారం సరైన మార్గాన్ని ఇవ్వండి
 
 const CalendarIcon = () => (
     <svg
@@ -44,11 +42,8 @@ const TasksPage = () => {
     const [submissionError, setSubmissionError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // State for pagination
     const [currentNumber, setCurrentNumber] = useState(0); 
-    const [totalPages, setTotalPages] = useState(1); // State for total pages from API
-
-    // State for the dropdown
+    const [totalPages, setTotalPages] = useState(1);
     const [dropdownValue, setDropdownValue] = useState(1);
 
     const [formData, setFormData] = useState({
@@ -70,17 +65,13 @@ const TasksPage = () => {
         projectId: ''
     });
 
-    // Click handler for pagination
     const handleNumberClick = (number) => {
         setCurrentNumber(number);
-        console.log(`Page number ${number} was clicked.`);
     };
 
-    // Handler function for the new dropdown
     const handleDropdownChange = (event) => {
         const value = parseInt(event.target.value, 10);
         setDropdownValue(value);
-        console.log(`Dropdown value changed to: ${value}`);
     };
 
     const fetchTasks = useCallback(async () => {
@@ -90,39 +81,25 @@ const TasksPage = () => {
         }
         try { 
             setLoading(true);
-            let apiUrl;
             const userRole = userData.roles[0];
             const userId = userData.employeeId;
-            if (userRole === "TEAM_LEAD" && employeeId) {
-                apiUrl = `http://192.168.0.120:8090/api/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${employeeId}`;
-            } else {
-                apiUrl = `http://192.168.0.120:8090/api/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${userId}`;
-            }
-            const response = await fetch(apiUrl);
-            if (!response.ok) {
-                if (response.status === 404) {
-                    console.warn("No tasks found for the user.");
-                    setTasks([]);
-                    setError(null);
-                    return;
-                }
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const responseText = await response.text();
-            if (!responseText) {
-                console.warn("Received an empty response for user tasks. Setting tasks to empty array.");
-                setTasks([]);
-                return;
-            }
-            const data = JSON.parse(responseText);
-            // Handle both 'content' and 'tasks' keys for robustness
-            setTasks(data.content || data.tasks || []);
-            setTotalPages(data.totalPages || 1);
+            const apiUrl = (userRole === "TEAM_LEAD" && employeeId)
+                ? `/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${employeeId}`
+                : `/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${userId}`;
+            
+            const response = await tasksApi.get(apiUrl);
+
+            console.log("API Response Data (fetchTasks):", response.data);
+            setTasks(response.data.content || response.data.tasks || []);
+            setTotalPages(response.data.totalPages || 1);
             setError(null);
         } catch (err) {
-            setError("Failed to fetch tasks. Please make sure the server is running and the API is returning valid JSON.");
             console.error("Error in fetchTasks:", err);
-            setTasks([]);
+            if (err.response?.status !== 404) {
+                setError("Failed to fetch tasks. Please make sure the server is running and you are logged in.");
+            } else {
+                setTasks([]);
+            }
         } finally {
             setLoading(false);
         }
@@ -135,25 +112,19 @@ const TasksPage = () => {
         }
         try {
             const tlId = userData.employeeId;
-            const url = `http://192.168.0.120:8090/api/${currentNumber}/${dropdownValue}/id/asc/${tlId}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setAssignedByMeTasks([]);
-                    return;
-                }
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = await response.json();
-            // === START OF FIX ===
-            // The API now returns a 'tasks' property instead of 'content' for this endpoint.
-            // This code now checks for 'content', then 'tasks', then defaults to an empty array.
-            setAssignedByMeTasks(data.content || data.tasks || []);
-            setTotalPages(data.totalPages || 1);
-            // === END OF FIX ===
+            const url = `/${currentNumber}/${dropdownValue}/id/asc/${tlId}`;
+            const response = await tasksApi.get(url);
+
+            console.log("API Response Data (fetchTasksAssignedByMe):", response.data);
+            setAssignedByMeTasks(response.data.content || response.data.tasks || []);
+            setTotalPages(response.data.totalPages || 1);
         } catch (err) {
-            setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
-            setAssignedByMeTasks([]);
+            console.error("Error in fetchTasksAssignedByMe:", err);
+             if (err.response?.status !== 404) {
+                setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
+            } else {
+                 setAssignedByMeTasks([]);
+            }
         }
     }, [userData, currentNumber, dropdownValue]);
 
@@ -172,13 +143,9 @@ const TasksPage = () => {
     const calculateTimeCompletedBar = (startDateStr, dueDateStr, currentDate) => {
         const startDate = new Date(startDateStr);
         const dueDate = new Date(dueDateStr);
-        if (isNaN(startDate.getTime()) || isNaN(dueDate.getTime()) || startDate > dueDate) {
-            return 0;
-        }
+        if (isNaN(startDate.getTime()) || isNaN(dueDate.getTime()) || startDate > dueDate) return 0;
         const totalDuration = dueDate.getTime() - startDate.getTime();
-        if (totalDuration <= 0) {
-            return currentDate >= dueDate ? 100 : 0;
-        }
+        if (totalDuration <= 0) return currentDate >= dueDate ? 100 : 0;
         const elapsedDuration = currentDate.getTime() - startDate.getTime();
         return Math.round(Math.max(0, Math.min(100, (elapsedDuration / totalDuration) * 100)));
     };
@@ -267,12 +234,11 @@ const TasksPage = () => {
 
     const handleDeleteTask = async (e, projectId, taskId) => {
         e.stopPropagation();
-        if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
-            return;
-        }
+        if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
+        
         try {
-            const url = `http://192.168.0.120:8090/api/${projectId}/${taskId}/delete/task`;
-            await axios.delete(url);
+            const url = `/${projectId}/${taskId}/delete/task`;
+            await tasksApi.delete(url);
             alert("Task deleted successfully!");
             fetchTasks();
             fetchTasksAssignedByMe();
@@ -289,61 +255,31 @@ const TasksPage = () => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (formMode === 'create' && (!formData.id || formData.id.trim() === '')) {
-            newErrors.id = 'Task ID is required';
-        }
-        if (!formData.title || formData.title.trim().length < 3) {
-            newErrors.title = 'Title must be at least 3 characters';
-        }
-        if (formData.title && formData.title.length > 100) {
-            newErrors.title = 'Title cannot exceed 100 characters';
-        }
-        if (!formData.assignedTo) {
-            newErrors.assignedTo = 'Assigned to is required';
-        }
-        if (!formData.dueDate) {
-            newErrors.dueDate = 'Due date is required';
-        }
-        if (!formData.projectId) {
-            newErrors.projectId = 'Project ID is required';
-        }
-        if (formData.description && formData.description.length > 255) {
-            newErrors.description = 'Description cannot exceed 255 characters';
-        }
-        if (formData.remark && formData.remark.length > 200) {
-            newErrors.remark = 'Remark cannot exceed 200 characters';
-        }
-        if (formData.completionNote && formData.completionNote.length > 200) {
-            newErrors.completionNote = 'Completion note cannot exceed 200 characters';
-        }
-        if (formData.rating && (formData.rating < 1 || formData.rating > 5)) {
-            newErrors.rating = 'Rating must be between 1 and 5';
-        }
+        if (formMode === 'create' && !formData.id.trim()) newErrors.id = 'Task ID is required';
+        if (!formData.title || formData.title.trim().length < 3) newErrors.title = 'Title must be at least 3 characters';
+        if (formData.title.length > 100) newErrors.title = 'Title cannot exceed 100 characters';
+        if (!formData.assignedTo) newErrors.assignedTo = 'Assigned to is required';
+        if (!formData.dueDate) newErrors.dueDate = 'Due date is required';
+        if (!formData.projectId) newErrors.projectId = 'Project ID is required';
+        if (formData.description && formData.description.length > 255) newErrors.description = 'Description cannot exceed 255 characters';
+        if (formData.remark && formData.remark.length > 200) newErrors.remark = 'Remark cannot exceed 200 characters';
+        if (formData.completionNote && formData.completionNote.length > 200) newErrors.completionNote = 'Completion note cannot exceed 200 characters';
+        if (formData.rating && (formData.rating < 1 || formData.rating > 5)) newErrors.rating = 'Rating must be between 1 and 5';
         setFormErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        if (formErrors[name]) {
-            setFormErrors(prev => ({ ...prev, [name]: '' }));
-        }
-        if (submissionError) {
-            setSubmissionError('');
-        }
+        setFormData(prev => ({ ...prev, [name]: value }));
+        if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: '' }));
+        if (submissionError) setSubmissionError('');
     };
 
     const handleRelatedLinkChange = (index, value) => {
         const newLinks = [...formData.relatedLinks];
         newLinks[index] = value;
         setFormData(prev => ({ ...prev, relatedLinks: newLinks }));
-        if (submissionError) {
-            setSubmissionError('');
-        }
     };
 
     const addRelatedLink = () => {
@@ -355,97 +291,65 @@ const TasksPage = () => {
     };
 
     const handleFileChange = (e) => {
-        const newFiles = Array.from(e.target.files);
-        setFiles(prevFiles => [...prevFiles, ...newFiles]);
-        if (submissionError) {
-            setSubmissionError('');
-        }
+        setFiles(prev => [...prev, ...Array.from(e.target.files)]);
     };
 
     const removeFile = (fileIndex) => {
-        setFiles(prevFiles => prevFiles.filter((_, index) => index !== fileIndex));
+        setFiles(prev => prev.filter((_, index) => index !== fileIndex));
     };
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        if (!validateForm()) {
-            return;
-        }
+        if (!validateForm()) return;
+
         setIsSubmitting(true);
         setSubmissionError('');
+
+        const formDataToSend = new FormData();
+        const taskPayload = {
+            id: formData.id,
+            title: formData.title,
+            description: formData.description || null,
+            createdBy: userData.employeeId,
+            assignedTo: formData.assignedTo,
+            status: formData.status,
+            priority: formData.priority,
+            createdDate: formData.createdDate,
+            dueDate: formData.dueDate,
+            completedDate: formData.completedDate || null,
+            rating: formData.rating ? parseInt(formData.rating) : null,
+            remark: formData.remark || null,
+            completionNote: formData.completionNote || null,
+            relatedLinks: formData.relatedLinks.filter(link => link.trim() !== ''),
+            projectId: formData.projectId,
+        };
+        formDataToSend.append('taskDTO', new Blob([JSON.stringify(taskPayload)], { type: 'application/json' }));
+        files.forEach(file => formDataToSend.append('attachedFileLinks', file));
+
         try {
-            const formDataToSend = new FormData();
-            const taskPayload = {
-                id: formData.id,
-                title: formData.title,
-                description: formData.description || null,
-                createdBy: userData.employeeId,
-                assignedTo: formData.assignedTo,
-                status: formData.status,
-                priority: formData.priority,
-                createdDate: formData.createdDate,
-                dueDate: formData.dueDate,
-                completedDate: formData.completedDate || null,
-                rating: formData.rating ? parseInt(formData.rating) : null,
-                remark: formData.remark || null,
-                completionNote: formData.completionNote || null,
-                relatedLinks: formData.relatedLinks.filter(link => link.trim() !== ''),
-                projectId: formData.projectId,
-            };
-            formDataToSend.append(
-                'taskDTO',
-                new Blob([JSON.stringify(taskPayload)], { type: 'application/json' })
-            );
-            if (files?.length > 0) {
-                files.forEach(file => {
-                    formDataToSend.append('attachedFileLinks', file);
-                });
-            }
-            let url;
-            let method;
-            if (formMode === 'create') {
-                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
-                method = 'post';
-            } else {
-                url = `http://192.168.0.120:8090/api/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
-                method = 'put';
-            }
-            console.log("Submitting Request...");
-            console.log("URL:", method.toUpperCase(), url);
-            console.log("Payload (taskDTO):", taskPayload);
-            console.log("Files attached:", files.length, files.map(f => f.name));
-            const response = await axios({
-                method,
-                url,
-                data: formDataToSend,
+            const url = `/${userData.employeeId}/${formData.assignedTo}/${formData.projectId}/task`;
+            const method = formMode === 'create' ? 'post' : 'put';
+            
+            await tasksApi[method](url, formDataToSend, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            console.log("Success:", response.data);
+
+            alert(`Task ${formMode}d successfully!`);
+            handleFormClose();
             fetchTasks();
             if (userData.roles[0] === "TEAM_LEAD") {
                 fetchTasksAssignedByMe();
             }
-            handleFormClose();
-            alert(`Task ${formMode === 'create' ? 'created' : 'updated'} successfully!`);
         } catch (error) {
-            console.error("Submission failed:", {
-                error: error.message,
-                response: error.response?.data
-            });
-            let errorMsg = error.message;
-            if (error.response?.data) {
-                errorMsg = typeof error.response.data === 'string'
-                    ? error.response.data
-                    : JSON.stringify(error.response.data);
-            }
-            setSubmissionError(`Failed to ${formMode === 'create' ? 'create' : 'update'} task: ${errorMsg}`);
+            console.error("Submission failed:", error);
+            const errorMsg = error.response?.data?.message || error.response?.data || error.message;
+            setSubmissionError(`Failed to ${formMode} task: ${errorMsg}`);
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const filteredAndSortedTasks = useMemo(() => {
-        // Ensure tasks is an array before calling .filter
         if (!Array.isArray(tasks)) return [];
         return tasks
             .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
@@ -460,7 +364,6 @@ const TasksPage = () => {
     }, [tasks, filterStatus, sortOption]);
 
     const filteredAndSortedAssignedByMeTasks = useMemo(() => {
-        // Ensure assignedByMeTasks is an array before calling .filter
         if (!Array.isArray(assignedByMeTasks)) return [];
         return assignedByMeTasks
             .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
@@ -585,7 +488,7 @@ const TasksPage = () => {
                         <div>
                             <h1 className="text-3xl font-extrabold text-slate-800">Task Dashboard</h1>
                             <p className="mt-1 text-slate-500 text-lg">
-                                Welcome, {userData?.firstName || userData?.employeeId}. You are viewing the task dashboard.
+                                Welcome, {userData?.fullName || userData?.employeeId}. You are viewing the task dashboard.
                             </p>
                         </div>
                         <div className="mt-4 sm:mt-0 flex gap-4">
@@ -643,20 +546,19 @@ const TasksPage = () => {
                         renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)
                     )}
 
-                    {/* === PAGINATION CONTROLS (NOW DYNAMIC) === */}
-                    <div className="mt-6 flex justify-center">
-                        <div className="flex space-x-2">
+                    <div className="mt-8 flex justify-center">
+                        <div className="flex items-center justify-center space-x-2">
                             {Array.from({ length: totalPages }, (_, i) => i).map((num) => (
                                 <button
                                     key={num}
                                     onClick={() => handleNumberClick(num)}
-                                    className={`px-4 py-2 font-semibold rounded-lg border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
+                                    className={`flex items-center justify-center h-10 w-10 rounded-full text-sm font-semibold transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
                                         currentNumber === num
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-white text-slate-700 border-gray-300 hover:bg-slate-100'
+                                        ? 'bg-indigo-600 text-white shadow-lg'
+                                        : 'text-slate-600 bg-white hover:bg-indigo-50 hover:text-indigo-600'
                                     }`}
                                 >
-                                    {num}
+                                    {num + 1}
                                 </button>
                             ))}
                         </div>

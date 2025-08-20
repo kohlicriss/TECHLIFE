@@ -1,33 +1,69 @@
-import axios from "axios";
+import axios from 'axios';
 
-const api = axios.create({
-    baseURL: "http://localhost:9090",
-    withCredentials: true
-});
+// మీ Authorization Server యొక్క URL
+const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
 
-api.interceptors.request.use(
-  (config) => {
-    const aToken = localStorage.getItem("accessToken");
-    if (aToken) {g
-      config.headers['Authorization'] = `Bearer ${aToken}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+const createAxiosInstance = (baseURL) => {
+    const instance = axios.create({
+        baseURL: baseURL,
+    });
 
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      console.log('Detected 401 Unauthorized error! Token expired or invalid.');
-    }
-    return Promise.reject(error);
-  }
-);
+    // 1. ప్రతి రిక్వెస్ట్‌కు ముందు టోకెన్‌ను జోడించడం
+    instance.interceptors.request.use(
+        (config) => {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+            return config;
+        },
+        (error) => Promise.reject(error)
+    );
 
-export default api;
+    // 2. రెస్పాన్స్ వచ్చిన తర్వాత ఎర్రర్‌లను హ్యాండిల్ చేయడం
+    instance.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+            const originalRequest = error.config;
+
+            // 3. 401 ఎర్రర్ వస్తే మరియు ఇది మొదటి ప్రయత్నం అయితే, టోకెన్‌ను రిఫ్రెష్ చేయండి
+            if (error.response?.status === 401 && !originalRequest._retry) {
+                originalRequest._retry = true;
+
+                try {
+                    const oldToken = localStorage.getItem('accessToken');
+                    console.log(`🔴 Old Token for ${baseURL}:`, oldToken);
+
+                    console.log(`Token expired for ${baseURL}. Refreshing...`);
+
+                    const refreshResponse = await axios.post(
+                        AUTH_API_URL,
+                        {},
+                        { withCredentials: true } // రిఫ్రెష్ టోకెన్ ఉన్న కుకీని పంపడానికి ఇది అవసరం
+                    );
+
+                    const { accessToken } = refreshResponse.data;
+                    localStorage.setItem('accessToken', accessToken);
+
+                    console.log(`🟢 New Token for ${baseURL}:`, accessToken);
+
+                    originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+
+                    console.log("Token refreshed. Retrying original request.");
+                    return instance(originalRequest);
+
+                } catch (refreshError) {
+                    console.error("Refresh token failed. Logging out.", refreshError);
+                    localStorage.clear();
+                    window.location.href = '/login'; // లాగిన్ పేజీకి రీడైరెక్ట్ చేయండి
+                    return Promise.reject(refreshError);
+                }
+            }
+            return Promise.reject(error);
+        }
+    );
+
+    return instance;
+};
+
+export const tasksApi = createAxiosInstance('http://localhost:8090/api');
