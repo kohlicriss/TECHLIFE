@@ -23,20 +23,19 @@ export const getMessages = async (employeeId, chatId) => {
   try {
     const response = await apiClient.get(`/chat/${employeeId}/${chatId}`);
     return response.data;
-  } catch (error)
-{
+  } catch (error) {
     console.error(`Failed to fetch messages for chat ${chatId}:`, error);
     return [];
   }
 };
 
-export const updateMessage = async (messageId, newContent, chatType) => {
+export const updateMessage = async (messageId, newContent, senderId) => {
   try {
     const requestBody = {
       content: newContent,
-      type: chatType,
+      sender: senderId, 
     };
-    const response = await apiClient.put(`/chat/update/${messageId}`, requestBody);
+    const response = await apiClient.put(`/update/${messageId}`, requestBody);
     return response.data;
   } catch (error) {
     console.error(`Failed to update message ${messageId}:`, error);

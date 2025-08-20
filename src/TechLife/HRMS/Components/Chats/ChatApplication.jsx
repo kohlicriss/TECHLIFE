@@ -54,7 +54,7 @@ const FileMessage = ({ msg, isMyMessage }) => {
                 <p className={`text-sm ${isMyMessage ? 'text-blue-200' : 'text-gray-600'}`}>{formatFileSize(msg.fileSize)}</p>
             </div>
             {!isMyMessage && (
-                 <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
+                <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
                         <FaDownload size={18} />
                 </a>
             )}
@@ -249,7 +249,7 @@ function ChatApplication({ currentUser, initialChats }) {
                  console.error("Failed to fetch pinned message:", error);
                  setPinnedMessage(null); 
              }
-        };
+         };
         
 
         fetchMessages();
@@ -356,28 +356,34 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        const transformedForEditCheck = transformMessageDTOToUIMessage(receivedMessage);
-        if (transformedForEditCheck.isEdited) {
+        if (receivedMessage.isEdited) {
             setMessages(prevMessages => {
                 const chatMessages = prevMessages[messageChatId] || [];
-                let wasLastMessage = false;
-                if (chatMessages.length > 0) {
-                    const lastMessage = chatMessages[chatMessages.length - 1];
-                    wasLastMessage = lastMessage.messageId === transformedForEditCheck.messageId;
-                }
+            
+                const updatedMessages = chatMessages.map(msg => {
+                    if (msg.messageId === receivedMessage.id || msg.messageId === receivedMessage.messageId) {
+                        const updatedMsg = { 
+                            ...msg, 
+                            content: receivedMessage.content, 
+                            isEdited: true 
+                        };
 
-                const updatedMessages = chatMessages.map(msg =>
-                    (msg.messageId === transformedForEditCheck.messageId) ? transformedForEditCheck : msg
-                );
+                        if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].messageId === msg.messageId) {
+                            updateLastMessage(messageChatId, updatedMsg);
+                        }
+                    
+                        return updatedMsg;
+                    }
 
-                if (wasLastMessage) {
-                    updateLastMessage(messageChatId, transformedForEditCheck);
-                }
+                    return msg;
+                });
 
                 return { ...prevMessages, [messageChatId]: updatedMessages };
             });
-            return;
+            return; 
         }
+
+        const transformedForEditCheck = transformMessageDTOToUIMessage(receivedMessage);
 
         setMessages(prevMessages => {
             const chatMessages = prevMessages[messageChatId] || [];
@@ -935,6 +941,15 @@ function ChatApplication({ currentUser, initialChats }) {
     
         try {
             await forwardMessage(forwardData);
+            const newLastMessageObject = {
+                ...forwardingInfo.message, 
+                sender: currentUser.id, 
+                timestamp: new Date().toISOString(), 
+            };
+            forwardRecipients.forEach(chatId => {
+                updateLastMessage(chatId, newLastMessageObject);
+            });
+
         } catch (error) {
             console.error("Failed to forward message:", error);
         } finally {
@@ -1112,12 +1127,12 @@ function ChatApplication({ currentUser, initialChats }) {
                                         {showPinnedMenu && (
                                             <div ref={pinnedMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 text-sm">
                                                 <ul className="py-1">
-                                                   <li onClick={handleGoToMessage} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3">
+                                                    <li onClick={handleGoToMessage} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3">
                                                         <FaAngleDoubleRight /> Go to message
-                                                   </li>
-                                                   <li onClick={handleUnpin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600">
+                                                    </li>
+                                                    <li onClick={handleUnpin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600">
                                                         <FaTimes /> Unpin
-                                                   </li>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         )}
@@ -1284,7 +1299,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                 
                                 {contextMenu.message.status !== 'sending' && contextMenu.message.status !== 'failed' && (
                                     <>
-                                        {contextMenu.message.sender === currentUser?.id && contextMenu.message.type === 'text' && (new Date() - new Date(contextMenu.message.timestamp) < 15 * 60 * 1000) && (
+                                        {contextMenu.message.sender === currentUser?.id && contextMenu.message.type === 'text' && !contextMenu.message.isForwarded && (new Date() - new Date(contextMenu.message.timestamp) < 15 * 60 * 1000) && (
                                             <li onClick={handleEdit} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaEdit /> Edit</li>
                                         )}
                                         <hr className="my-1" />
@@ -1300,7 +1315,7 @@ function ChatApplication({ currentUser, initialChats }) {
                 </div>
             )}
 
-            {forwardingInfo.visible && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"><div className="bg-white rounded-lg shadow-2xl w-full max-w-md"><div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-lg">Forward message to...</h3><button onClick={() => setForwardingInfo({ visible: false, message: null })}><FaTimes /></button></div><div className="p-4"><input type="text" placeholder="Search for users or groups" className="w-full p-2 border rounded-lg" value={forwardSearchTerm} onChange={(e) => setForwardSearchTerm(e.target.value)} /></div><div className="h-64 overflow-y-auto p-4">{allChats.filter(c => c.name?.toLowerCase().includes(forwardSearchTerm.toLowerCase())).map(chat => (<div key={chat.chatId} className="flex items-center p-2 rounded-lg hover:bg-gray-100"><input type="checkbox" id={`fwd-${chat.chatId}`} className="mr-3 h-4 w-4 accent-blue-600" checked={forwardRecipients.includes(chat.chatId)} onChange={(e) => { if (e.target.checked) setForwardRecipients([...forwardRecipients, chat.chatId]); else setForwardRecipients(forwardRecipients.filter(id => id !== chat.chatId)); }} />
+            {forwardingInfo.visible && (<div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[100]"><div className="bg-white rounded-lg shadow-2xl w-full max-w-md"><div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-lg">Forward message to...</h3><button onClick={() => setForwardingInfo({ visible: false, message: null })}><FaTimes /></button></div><div className="p-4"><input type="text" placeholder="Search for users or groups" className="w-full p-2 border rounded-lg" value={forwardSearchTerm} onChange={(e) => setForwardSearchTerm(e.target.value)} /></div><div className="h-64 overflow-y-auto p-4">{allChats.filter(c => c.name?.toLowerCase().includes(forwardSearchTerm.toLowerCase())).map(chat => (<div key={chat.chatId} className="flex items-center p-2 rounded-lg hover:bg-gray-100"><input type="checkbox" id={`fwd-${chat.chatId}`} className="mr-3 h-4 w-4 accent-blue-600" checked={forwardRecipients.includes(chat.chatId)} onChange={(e) => { if (e.target.checked) setForwardRecipients([...forwardRecipients, chat.chatId]); else setForwardRecipients(forwardRecipients.filter(id => id !== chat.chatId)); }} />
                 <label htmlFor={`fwd-${chat.chatId}`} className="flex-grow flex items-center gap-3 cursor-pointer">
                     {chat.type === 'group' ? (
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"><FaUsers className="text-gray-500" /></div>
@@ -1309,7 +1324,7 @@ function ChatApplication({ currentUser, initialChats }) {
                     )}
                     <span>{chat.name}</span>
                 </label>
-            </div>))}</div><div className="p-4 border-t text-right"><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400">Forward</button></div></div></div>)}
+            </div>))}</div><div className="p-4 border-t text-right"><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer">Forward</button></div></div></div>)}
 
             {isProfileModalOpen && currentChatInfo && currentChatInfo.type !== 'group' && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]" onClick={() => setIsProfileModalOpen(false)}>
@@ -1318,7 +1333,7 @@ function ChatApplication({ currentUser, initialChats }) {
             )}
 
             {isGroupInfoModalOpen && currentChatInfo?.type === 'group' && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={() => setIsGroupInfoModalOpen(false)}>
+                <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[100]" onClick={() => setIsGroupInfoModalOpen(false)}>
                     <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                             <h3 className="font-bold text-xl">Group Info</h3>

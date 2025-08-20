@@ -48,24 +48,23 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
     }
 
     const API_BASE_URL = 'http://192.168.0.244:8082/api';
-    const isFileMessage = msgDto.fileName && msgDto.fileType;
+    
     let messageType = 'text';
     let fileUrl = null;
 
-    if (isFileMessage) {
-        fileUrl = `${API_BASE_URL}/chat/file/${msgDto.id}`;
-
-        if (msgDto.fileType.startsWith('image/')) {
-            messageType = 'image';
-        } else if (msgDto.fileType.startsWith('video/')) {
-            messageType = 'video';
-        } else if (msgDto.fileType.startsWith('audio/')) {
-            messageType = 'audio';
-        } else {
-            messageType = 'file';
-        }
-    } else if (msgDto.kind && msgDto.kind.toLowerCase() !== 'send') {
+    if (msgDto.kind && msgDto.kind !== 'text') {
         messageType = msgDto.kind.toLowerCase();
+    }
+    
+    if (['image', 'video', 'audio', 'file'].includes(messageType)) {
+        const messageIdForUrl = msgDto.id || msgDto.messageId;
+        if (messageIdForUrl) {
+            fileUrl = `${API_BASE_URL}/chat/file/${messageIdForUrl}`;
+        }
+    }
+    
+    if (msgDto.isDeleted) {
+        messageType = 'deleted';
     }
 
     const finalId = msgDto.id || msgDto.messageId;
@@ -77,7 +76,7 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
         sender: msgDto.sender,
         timestamp: timestamp,
         status: (msgDto.seen === true || String(msgDto.isSeen) === 'true') ? 'seen' : 'sent',
-        type: msgDto.isDeleted ? 'deleted' : messageType,
+        type: messageType,
         isEdited: msgDto.isEdited || false,
         isPinned: msgDto.pinned || false,
         fileName: msgDto.fileName || null,
