@@ -16,7 +16,7 @@ const CalendarIcon = () => (
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 0 00-2 2v12a2 2 0 002 2z"
         />
     </svg>
 );
@@ -95,10 +95,13 @@ const TasksPage = () => {
             setError(null);
         } catch (err) {
             console.error("Error in fetchTasks:", err);
-            if (err.response?.status !== 404) {
-                setError("Failed to fetch tasks. Please make sure the server is running and you are logged in.");
-            } else {
+            // 403 error ప్రత్యేకించి చూపించడానికి ఇక్కడ లాజిక్ మార్చబడింది
+            if (err.response?.status === 403) {
+                setError("Authorization failed. You do not have permission to view these tasks. Please check your login status.");
+            } else if (err.response?.status === 404) {
                 setTasks([]);
+            } else {
+                setError("Failed to fetch tasks. Please make sure the server is running and you are logged in.");
             }
         } finally {
             setLoading(false);
@@ -120,10 +123,13 @@ const TasksPage = () => {
             setTotalPages(response.data.totalPages || 1);
         } catch (err) {
             console.error("Error in fetchTasksAssignedByMe:", err);
-             if (err.response?.status !== 404) {
+             // 403 error ప్రత్యేకించి చూపించడానికి ఇక్కడ లాజిక్ మార్చబడింది
+             if (err.response?.status === 403) {
+                setError("Authorization failed. You do not have permission to view tasks assigned by you.");
+            } else if (err.response?.status !== 404) {
                 setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
             } else {
-                 setAssignedByMeTasks([]);
+                setAssignedByMeTasks([]);
             }
         }
     }, [userData, currentNumber, dropdownValue]);
@@ -382,7 +388,18 @@ const TasksPage = () => {
     }
 
     if (error) {
-        return <div className="flex justify-center items-center min-h-screen text-red-600">{error}</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-4">
+                <div className="bg-white rounded-xl shadow-md p-8 max-w-md w-full text-center">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
+                    <p className="text-gray-700">{error}</p>
+                    <p className="mt-4 text-sm text-gray-500">
+                        If the issue persists, please contact support or check your network connection.
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
