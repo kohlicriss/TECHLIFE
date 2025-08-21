@@ -126,3 +126,13 @@ export const clearChatHistory = async (userId, chatId) => {
     throw error;
   }
 };
+
+export const uploadVoiceMessage = async (voiceData) => {
+    try {
+        const response = await apiClient.post('/voice/upload', voiceData); 
+        return response.data;
+    } catch (error) {
+        console.error("Voice message upload failed:", error);
+        throw error;
+    }
+};

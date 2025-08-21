@@ -18,7 +18,8 @@ import {
     getPinnedMessage,
     pinMessage,
     unpinMessage,
-    clearChatHistory
+    clearChatHistory,
+    uploadVoiceMessage
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
 
@@ -679,7 +680,7 @@ function ChatApplication({ currentUser, initialChats }) {
     const onEmojiClick = (emojiObject) => setMessage(prev => prev + emojiObject.emoji);
     const handleFileButtonClick = () => fileInputRef.current.click();
 
-    const handleFileChange = async (event) => {
+   const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedChat) return;
 
@@ -692,8 +693,8 @@ function ChatApplication({ currentUser, initialChats }) {
 
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
         
-        const localPreviewContent = (messageType === 'image' || messageType === 'audio') ? URL.createObjectURL(file) : file.name;
-
+        const localPreviewContent = URL.createObjectURL(file);
+        
         const optimisticMessage = {
             id: clientId,
             messageId: clientId,
@@ -704,6 +705,8 @@ function ChatApplication({ currentUser, initialChats }) {
             type: messageType,
             fileName: file.name,
             fileSize: file.size,
+            fileUrl: localPreviewContent,
+            isEdited: false,
         };
 
         updateLastMessage(selectedChat.chatId, optimisticMessage);
@@ -718,17 +721,18 @@ function ChatApplication({ currentUser, initialChats }) {
         formData.append('sender', currentUser.id);
         formData.append('client_id', clientId);
         formData.append('fileType', file.type);
+        formData.append('type', selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE');
 
         if (selectedChat.type === 'group') {
             formData.append('groupId', selectedChat.chatId);
-            formData.append('type', 'TEAM');
         } else {
             formData.append('receiver', selectedChat.chatId);
-            formData.append('type', 'PRIVATE');
         }
 
         try {
             await uploadFile(formData);
+            // WebSocket message lo vachche `client_id` ni use chesi,
+            // onMessageReceived function message ni update chestundi.
         } catch (error) {
             console.error("File upload failed in component:", error);
             setMessages(prev => {
@@ -748,32 +752,80 @@ function ChatApplication({ currentUser, initialChats }) {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             setIsRecording(true);
             audioChunksRef.current = [];
-            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
+        
+            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
             };
+        
+            recorder.onstop = async () => {
+                stream.getTracks().forEach(track => track.stop());
             
-            mediaRecorderRef.current.onstop = () => {
+                if (!selectedChat || audioChunksRef.current.length === 0) {
+                    return;
+                }
+
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                 const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
-                
-                stream.getTracks().forEach(track => track.stop());
-
-                if (!selectedChat) return;
-
-                const mockEvent = { target: { files: [audioFile], value: null } };
-                handleFileChange(mockEvent);
-            };
             
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64String = reader.result;
+
+                    const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+                    const localPreviewUrl = URL.createObjectURL(audioBlob);
+
+                    const optimisticMessage = {
+                        id: clientId, messageId: clientId, sender: currentUser.id,
+                        content: localPreviewUrl, timestamp: new Date().toISOString(),
+                        status: 'sending', type: 'audio', fileName: audioFile.name,
+                        fileSize: audioFile.size, fileUrl: localPreviewUrl, isEdited: false,
+                    };
+
+                    updateLastMessage(selectedChat.chatId, optimisticMessage);
+                    setMessages(prev => ({
+                        ...prev,
+                        [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
+                    }));
+
+                    const voiceData = {
+                        sender: currentUser.id,
+                        clientId: clientId,
+                        fileType: audioFile.type,
+                        fileName: audioFile.name,
+                        fileData: base64String, 
+                        type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
+                        groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
+                        receiver: selectedChat.type === 'private' ? selectedChat.chatId : null,
+                    };
+            
+                    try {
+                        await uploadVoiceMessage(voiceData);
+                    } catch (error) {
+                        console.error("Voice message upload failed:", error);
+                        setMessages(prev => {
+                            const chatMessages = prev[selectedChat.chatId] || [];
+                            const newMessages = chatMessages.map(m => m.id === clientId ? { ...m, status: 'failed' } : m);
+                            return { ...prev, [selectedChat.chatId]: newMessages };
+                        });
+                    }
+                };
+            };
+        
+            mediaRecorderRef.current = recorder;
             mediaRecorderRef.current.start();
+
         } catch (error) {
             console.error("Mic error:", error);
+            setIsRecording(false);
         }
     };
-
     const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
         }
@@ -1042,10 +1094,23 @@ function ChatApplication({ currentUser, initialChats }) {
     };
     
     const getFileUrl = (msg) => {
-        if (msg.status === 'sending' || msg.status === 'failed') {
-            return msg.content;
-        }
-        return `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
+        const API_HOST = 'http://192.168.0.244:8082';
+         if (msg.fileUrl) {
+            if (msg.fileUrl.startsWith('blob:')) {
+                return msg.fileUrl;
+            }
+
+            if (msg.fileUrl.startsWith('/')) {
+                return `${API_HOST}${msg.fileUrl}`;
+            }
+            return msg.fileUrl;
+         }
+         const messageIdForUrl = msg.id || msg.messageId;
+         if (messageIdForUrl) {
+            return `${API_HOST}/api/chat/file/${messageIdForUrl}`;
+         }
+
+          return msg.content;
     };
 
     return (
