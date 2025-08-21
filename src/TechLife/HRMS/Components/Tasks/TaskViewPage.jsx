@@ -21,6 +21,94 @@ import {
     Trash2,
 } from "lucide-react";
 
+// Customized Modal Components
+const Modal = ({ children, onClose, title, type }) => {
+    let titleClass = "";
+    let buttonClass = "";
+    let icon = null;
+
+    if (type === "confirm") {
+        titleClass = "text-yellow-600";
+        buttonClass = "bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500";
+        icon = <Info className="h-6 w-6 text-yellow-500" />;
+    } else if (type === "success") {
+        titleClass = "text-green-600";
+        buttonClass = "bg-green-500 hover:bg-green-600 focus:ring-green-500";
+        icon = <CheckCircle className="h-6 w-6 text-green-500" />;
+    } else if (type === "error") {
+        titleClass = "text-red-600";
+        buttonClass = "bg-red-500 hover:bg-red-600 focus:ring-red-500";
+        icon = <XCircle className="h-6 w-6 text-red-500" />;
+    }
+
+    return (
+        <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-200 transition-opacity duration-300 animate-in fade-in-0">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm mx-4 border border-gray-200 transform transition-all duration-300 scale-95 animate-in zoom-in-95">
+                <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                    <h3 className={`text-xl font-bold ${titleClass} flex items-center`}>
+                        {icon && <span className="mr-2">{icon}</span>}
+                        {title}
+                    </h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition-colors rounded-full p-1">
+                        <XCircle className="h-6 w-6" />
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const ErrorPopup = ({ message, onClose }) => (
+    <Modal onClose={onClose} title="An Error Occurred" type="error">
+        <p className="text-gray-700 mb-6 text-base whitespace-pre-wrap">{message}</p>
+        <div className="flex justify-end">
+            <button
+                onClick={onClose}
+                className="bg-red-500 text-white font-medium py-2 px-6 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all"
+            >
+                OK
+            </button>
+        </div>
+    </Modal>
+);
+
+const SuccessPopup = ({ message, onClose }) => (
+    <Modal onClose={onClose} title="Success" type="success">
+        <p className="text-gray-700 mb-6 text-base whitespace-pre-wrap">{message}</p>
+        <div className="flex justify-end">
+            <button
+                onClick={onClose}
+                className="bg-green-500 text-white font-medium py-2 px-6 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all"
+            >
+                OK
+            </button>
+        </div>
+    </Modal>
+);
+
+const ConfirmDeletePopup = ({ onConfirm, onCancel }) => (
+    <Modal onClose={onCancel} title="Confirm Deletion" type="confirm">
+        <p className="text-gray-700 mb-6 text-base">
+            Are you sure you want to permanently delete this history entry? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+            <button
+                onClick={onCancel}
+                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+            >
+                Cancel
+            </button>
+            <button
+                onClick={onConfirm}
+                className="bg-red-500 text-white font-medium py-2 px-6 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all"
+            >
+                Delete
+            </button>
+        </div>
+    </Modal>
+);
+
 const UpdateHistoryPopup = ({
     setShowUpdateHistoryPopup,
     handleUpdateHistorySubmit,
@@ -30,7 +118,7 @@ const UpdateHistoryPopup = ({
     assignedBy,
     employeeId,
 }) => (
-    <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-150 transition-all duration-300">
+    <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-150 transition-all duration-300 animate-in fade-in-0">
         <div className="bg-gradient-to-br from-white to-blue-50 p-1 rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95">
             <div className="bg-white p-5 sm:p-7 rounded-xl border border-blue-100">
                 <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-200">
@@ -190,7 +278,7 @@ const UpdateHistoryPopup = ({
 );
 
 const TaskViewPage = () => {
-    const { projectid, id, empID } = useParams();
+    const { projectid, id } = useParams();
     const navigate = useNavigate();
 
     const [assignedBy, setAssignedBy] = useState("");
@@ -209,9 +297,37 @@ const TaskViewPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+    const [successPopup, setSuccessPopup] = useState({ show: false, message: "" });
+    const [errorPopup, setErrorPopup] = useState({ show: false, message: "" });
+    const [confirmDeletePopup, setConfirmDeletePopup] = useState({ show: false, historyId: null });
+
     const [editingRowId, setEditingRowId] = useState(null);
     const [editRowData, setEditRowData] = useState(null);
+    
+    // New helper function to extract detailed error messages
+    const getErrorMessage = (error) => {
+        if (error.response) {
+            // Server responded with a status code outside the 2xx range
+            if (error.response.data) {
+                if (typeof error.response.data.message === 'string') {
+                    return error.response.data.message;
+                }
+                if (typeof error.response.data.error === 'string') {
+                    return error.response.data.error;
+                }
+                if (typeof error.response.data === 'string') {
+                    return error.response.data;
+                }
+            }
+            return `Error: ${error.response.status} - ${error.response.statusText}`;
+        } else if (error.request) {
+            // The request was made but no response was received
+            return "No response from the server. Please check your network connection.";
+        } else {
+            // Something else happened while setting up the request
+            return error.message || "An unknown error occurred.";
+        }
+    };
 
     const fetchTaskData = async () => {
         if (!projectid || !id) return;
@@ -235,7 +351,7 @@ const TaskViewPage = () => {
                 setError("Task not found. Please check the ID.");
                 setCurrentTask(null);
             } else {
-                setError(err.message || "Failed to fetch critical task details. Please ensure you are logged in and the server is running.");
+                setError(getErrorMessage(err) || "Failed to fetch critical task details.");
             }
         } finally {
             setLoading(false);
@@ -284,7 +400,7 @@ const TaskViewPage = () => {
         let allFiles = [...updateHistoryData.relatedFileLinks, ...selectedFiles];
 
         if (allFiles.length > 5) {
-            alert("You can only upload a maximum of 5 files.");
+            setErrorPopup({ show: true, message: "You can only upload a maximum of 5 files." });
             allFiles = allFiles.slice(0, 5);
         }
 
@@ -298,13 +414,13 @@ const TaskViewPage = () => {
         e.preventDefault();
 
         if (!updateHistoryData.changes) {
-            alert("Changes description is required.");
+            setErrorPopup({ show: true, message: "The 'Changes' field is required." });
             return;
         }
 
         const creatorId = userData?.employeeId;
         if (!creatorId) {
-            alert("User ID not found. Please log in again.");
+            setErrorPopup({ show: true, message: "User ID not found. Please log in again." });
             return;
         }
 
@@ -337,24 +453,14 @@ const TaskViewPage = () => {
             updateHistoryData.relatedFileLinks.length > 0
         ) {
             for (const file of updateHistoryData.relatedFileLinks) {
-                console.log(`Appending file to FormData: ${file.name}`);
                 formData.append("relatedFileLinks", file);
             }
         }
 
-        const appendedFiles = formData.getAll("relatedFileLinks");
-        console.log(
-            `VERIFICATION: FormData now contains ${appendedFiles.length} file(s).`,
-            appendedFiles
-        );
-
         try {
             const response = await tasksApi.post(
-                `/${creatorId}/history/${projectid}/${id}`,
-                formData,
-                {
-                    headers: { "Content-Type": "multipart/form-data" },
-                }
+                `/history/${projectid}/${id}`,
+                formData
             );
             console.log("Create History Response:", response.data);
             setShowUpdateHistoryPopup(false);
@@ -365,10 +471,12 @@ const TaskViewPage = () => {
                 relatedFileLinks: [],
                 remark: "",
             });
+            setSuccessPopup({ show: true, message: "Task history created successfully!" });
             fetchTaskData();
         } catch (error) {
-            console.error("Error creating history:", error.response || error.message);
-            alert("Failed to create history. Please check the console for details.");
+            console.error("Error creating history:", error);
+            const detailedError = getErrorMessage(error);
+            setErrorPopup({ show: true, message: `Failed to create history: ${detailedError}` });
         }
     };
 
@@ -385,13 +493,13 @@ const TaskViewPage = () => {
     const handleInlineSave = async () => {
         try {
             if (!editRowData || !editRowData.id) {
-                alert("Cannot save. Invalid history item.");
+                setErrorPopup({ show: true, message: "Cannot save. Invalid history item." });
                 return;
             }
 
             const reviewerId = userData?.employeeId;
             if (!reviewerId || userData?.employeeId !== assignedBy) {
-                alert("Only the person who assigned the task can save remarks.");
+                setErrorPopup({ show: true, message: "Only the task assigner can add remarks." });
                 return;
             }
 
@@ -418,12 +526,7 @@ const TaskViewPage = () => {
                 relatedFileLinks: cleanedFileLinks,
             };
 
-            console.log(
-                "Submitting inline update with JSON payload:",
-                updatedPayload
-            );
-
-            const response = await tasksApi.put(
+            await tasksApi.put(
                 `/${reviewerId}/status/${projectid}/${id}`,
                 updatedPayload,
                 {
@@ -431,15 +534,13 @@ const TaskViewPage = () => {
                 }
             );
             
-            console.log("Inline Save Response:", response.data);
             handleInlineCancel();
+            setSuccessPopup({ show: true, message: "Remark updated successfully!" });
             fetchTaskData();
         } catch (error) {
-            console.error(
-                "Error updating status:",
-                error.response?.data || error.message
-            );
-            alert("An error occurred while saving. Please check the console.");
+            console.error("Error updating status:", error);
+            const detailedError = getErrorMessage(error);
+            setErrorPopup({ show: true, message: `An error occurred while saving: ${detailedError}` });
         }
     };
 
@@ -448,15 +549,18 @@ const TaskViewPage = () => {
         setEditRowData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleDeleteHistory = async (historyId) => {
-        if (!window.confirm("Are you sure you want to delete this history entry?")) {
-            return;
-        }
+    const handleDeleteHistory = (historyId) => {
+        setConfirmDeletePopup({ show: true, historyId });
+    };
+
+    const confirmDelete = async () => {
+        const historyId = confirmDeletePopup.historyId;
+        setConfirmDeletePopup({ show: false, historyId: null });
 
         try {
             const deleterId = userData?.employeeId;
             if (!deleterId) {
-                alert("User ID not found. Please log in again.");
+                setErrorPopup({ show: true, message: "User ID not found. Please log in again." });
                 return;
             }
 
@@ -465,16 +569,18 @@ const TaskViewPage = () => {
             );
 
             if (response.status === 200 || response.status === 204) {
-                alert("History entry deleted successfully.");
+                setSuccessPopup({ show: true, message: "History entry deleted successfully." });
                 fetchTaskData();
             } else {
-                alert("Failed to delete history entry.");
+                setErrorPopup({ show: true, message: `Failed to delete history entry. Server responded with status ${response.status}.` });
             }
         } catch (error) {
-            console.error("Error deleting history:", error.response?.data || error.message);
-            alert("An error occurred while deleting. Please check the console.");
+            console.error("Error deleting history:", error);
+            const detailedError = getErrorMessage(error);
+            setErrorPopup({ show: true, message: `An error occurred while deleting: ${detailedError}` });
         }
     };
+
 
     const renderRelatedLinks = (links) => {
         if (!links || links.length === 0) return "-";
@@ -541,8 +647,7 @@ const TaskViewPage = () => {
 
         setCurrentTask(updatedTask);
         setUpdateHistory([...updateHistory, newHistoryEntry]);
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
+        setSuccessPopup({ show: true, message: "Task marked as completed successfully!" });
     };
 
     if (loading) {
@@ -558,7 +663,7 @@ const TaskViewPage = () => {
     if (error) {
         return (
             <div className="flex justify-center items-center h-screen bg-red-50">
-                <div className="text-xl font-semibold text-red-600">{error}</div>
+                <div className="text-xl font-semibold text-red-600 p-8 text-center">{error}</div>
             </div>
         );
     }
@@ -590,18 +695,6 @@ const TaskViewPage = () => {
                             Task Details
                         </h2>
                     </div>
-
-                    {showSuccessMessage && (
-                        <div
-                            className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-6"
-                            role="alert"
-                        >
-                            <strong className="font-bold">Success!</strong>
-                            <span className="block sm:inline ml-2">
-                                Task updated successfully.
-                            </span>
-                        </div>
-                    )}
 
                     <div className="flex flex-col gap-8">
                         <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
@@ -714,67 +807,57 @@ const TaskViewPage = () => {
                                 </div>
                             )}
 
-                            {(currentTask.relatedLinks &&
-                                currentTask.relatedLinks.length > 0) ||
-                                (currentTask.attachedFileLinks &&
-                                    currentTask.attachedFileLinks.length > 0) ? (
+                            {(currentTask.relatedLinks?.length > 0 || currentTask.attachedFileLinks?.length > 0) && (
                                 <div className="mb-8">
                                     <h4 className="text-xl font-semibold text-gray-800 mb-3">
                                         Related Links & Files
                                     </h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {currentTask.relatedLinks &&
-                                            currentTask.relatedLinks.length > 0 && (
-                                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
-                                                    <h5 className="font-medium text-blue-800 flex items-center mb-2">
-                                                        <GitFork className="h-4 w-4 mr-2" /> Related Links:
-                                                    </h5>
-                                                    <ul className="space-y-1">
-                                                        {currentTask.relatedLinks.map((link, index) => (
-                                                            <li key={index}>
-                                                                <a
-                                                                    href={link}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-blue-600 hover:text-blue-800 hover:underline text-sm break-all"
-                                                                >
-                                                                    {link}
-                                                                </a>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                        {currentTask.attachedFileLinks &&
-                                            currentTask.attachedFileLinks.length > 0 && (
-                                                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 shadow-sm">
-                                                    <h5 className="font-medium text-purple-800 flex items-center mb-2">
-                                                        <FileText className="h-4 w-4 mr-2" /> Attached
-                                                        Files:
-                                                    </h5>
-                                                    <ul className="space-y-1">
-                                                        {currentTask.attachedFileLinks.map(
-                                                            (link, index) => (
-                                                                <li key={index}>
-                                                                    <a
-                                                                        href={link}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
-                                                                    >
-                                                                        {decodeURIComponent(
-                                                                            link.split("/").pop().split("?")[0]
-                                                                        )}
-                                                                    </a>
-                                                                </li>
-                                                            )
-                                                        )}
-                                                    </ul>
-                                                </div>
-                                            )}
+                                        {currentTask.relatedLinks?.length > 0 && (
+                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
+                                                <h5 className="font-medium text-blue-800 flex items-center mb-2">
+                                                    <GitFork className="h-4 w-4 mr-2" /> Related Links:
+                                                </h5>
+                                                <ul className="space-y-1">
+                                                    {currentTask.relatedLinks.map((link, index) => (
+                                                        <li key={index}>
+                                                            <a
+                                                                href={link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:text-blue-800 hover:underline text-sm break-all"
+                                                            >
+                                                                {link}
+                                                            </a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {currentTask.attachedFileLinks?.length > 0 && (
+                                            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 shadow-sm">
+                                                <h5 className="font-medium text-purple-800 flex items-center mb-2">
+                                                    <FileText className="h-4 w-4 mr-2" /> Attached Files:
+                                                </h5>
+                                                <ul className="space-y-1">
+                                                    {currentTask.attachedFileLinks.map((link, index) => (
+                                                        <li key={index}>
+                                                            <a
+                                                                href={link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-purple-600 hover:text-purple-800 hover:underline text-sm break-all"
+                                                            >
+                                                                {decodeURIComponent(link.split("/").pop().split("?")[0])}
+                                                            </a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            ) : null}
+                            )}
                         </div>
 
                         <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
@@ -792,7 +875,7 @@ const TaskViewPage = () => {
                                         </button>
                                     )}
                                 </div>
-                                {updateHistory && updateHistory.length > 0 ? (
+                                {updateHistory?.length > 0 ? (
                                     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-white">
@@ -859,18 +942,6 @@ const TaskViewPage = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* {!isTaskCompleted && isAssigner && (
-                                    <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                                        <button
-                                            onClick={handleSubmitTask}
-                                            className="flex items-center justify-center bg-green-600 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-105"
-                                        >
-                                            <CheckCircle className="h-5 w-5 mr-2" />
-                                            Mark as Completed
-                                        </button>
-                                    </div>
-                                )} */}
                 </div>
             </div>
             {showUpdateHistoryPopup && (
@@ -882,6 +953,27 @@ const TaskViewPage = () => {
                     handleUpdateHistoryFileChange={handleUpdateHistoryFileChange}
                     assignedBy={assignedBy}
                     employeeId={userData?.employeeId}
+                />
+            )}
+            
+            {errorPopup.show && (
+                <ErrorPopup
+                    message={errorPopup.message}
+                    onClose={() => setErrorPopup({ show: false, message: "" })}
+                />
+            )}
+
+            {successPopup.show && (
+                <SuccessPopup
+                    message={successPopup.message}
+                    onClose={() => setSuccessPopup({ show: false, message: "" })}
+                />
+            )}
+
+            {confirmDeletePopup.show && (
+                <ConfirmDeletePopup
+                    onConfirm={confirmDelete}
+                    onCancel={() => setConfirmDeletePopup({ show: false, historyId: null })}
                 />
             )}
         </>
