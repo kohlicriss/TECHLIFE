@@ -88,6 +88,7 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
     fileName: msgDto.fileName || null,
     fileUrl: fileUrl,
     fileSize: msgDto.fileSize || null,
+    duration: msgDto.duration || 0,
     clientId: msgDto.clientId || null,
     isForwarded: msgDto.forwarded || false,
     forwardedFrom: msgDto.forwardedFrom || null,

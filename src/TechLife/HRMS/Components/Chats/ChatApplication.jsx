@@ -65,35 +65,58 @@ const FileMessage = ({ msg, isMyMessage }) => {
     return !isMyMessage ? <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer">{content}</a> : content;
 };
 
-const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
+const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0 }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [duration, setDuration] = useState(0);
     const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(initialDuration);
+    const [localSrc, setLocalSrc] = useState(isSender ? src : null);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
-        const setAudioData = () => { if (audio.duration !== Infinity) setDuration(audio.duration); }
+        
+        const setAudioData = () => {
+            if (audio.duration !== Infinity && audio.duration > 0) {
+                setDuration(audio.duration);
+            }
+        };
         const setAudioTime = () => setProgress(audio.currentTime);
         const handleEnded = () => setIsPlaying(false);
-        audio.addEventListener('loadeddata', setAudioData);
+
+        audio.addEventListener('loadedmetadata', setAudioData);
         audio.addEventListener('timeupdate', setAudioTime);
         audio.addEventListener('ended', handleEnded);
+
         return () => {
-            audio.removeEventListener('loadeddata', setAudioData);
+            audio.removeEventListener('loadedmetadata', setAudioData);
             audio.removeEventListener('timeupdate', setAudioTime);
             audio.removeEventListener('ended', handleEnded);
+        };
+    }, [localSrc]);
+
+    const handleDownload = async () => {
+        if (isDownloading) return;
+        setIsDownloading(true);
+        try {
+            const response = await fetch(fileUrl);
+            const blob = await response.blob();
+            const localUrl = URL.createObjectURL(blob);
+            setLocalSrc(localUrl);
+        } catch (error) {
+            console.error("Failed to download audio:", error);
+        } finally {
+            setIsDownloading(false);
         }
-    }, [src]);
+    };
 
     const togglePlayPause = () => {
-        const audio = audioRef.current;
-        if (!audio) return;
+        if (!audioRef.current) return;
         if (isPlaying) {
-            audio.pause();
+            audioRef.current.pause();
         } else {
-            audio.play().catch(e => console.error("Audio play failed:", e));
+            audioRef.current.play().catch(e => console.error("Audio play failed:", e));
         }
         setIsPlaying(!isPlaying);
     };
@@ -105,28 +128,51 @@ const AudioPlayer = ({ src, isSender, isDownloaded, onDownload }) => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    if (!isSender && !isDownloaded) {
+    const progressPercentage = duration ? (progress / duration) * 100 : 0;
+
+    if (!localSrc) { 
         return (
-            <div className="flex items-center gap-3 w-64">
-                <button onClick={onDownload} className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 bg-opacity-30 text-white hover:bg-opacity-40 transition-colors"><FaDownload size={16} /></button>
-                <div className="flex-grow"><p className="text-sm text-gray-700">Voice Message</p><p className="text-xs text-gray-500">{formatFileSize(0)}</p></div>
+            <div className="flex items-center gap-3 p-2 w-64">
+                {isDownloading ? (
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 bg-opacity-30">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    </div>
+                ) : (
+                    <button onClick={handleDownload} className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-400 bg-opacity-30 text-white hover:bg-opacity-40 transition-colors">
+                        <FaDownload size={16} />
+                    </button>
+                )}
+                <div className="flex-grow flex flex-col justify-center">
+                    <p className="text-sm text-gray-700">Voice Message</p>
+                    <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-500">{formatFileSize(fileSize)}</span>
+                        <span className="text-xs text-gray-500">{formatTime(duration)}</span>
+                    </div>
+                </div>
             </div>
         );
     }
-
-    const progressPercentage = duration ? (progress / duration) * 100 : 0;
     return (
-        <div className="flex items-center gap-3 w-64">
-            <audio ref={audioRef} src={src} preload="metadata" />
-            <button onClick={togglePlayPause} className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isSender ? 'bg-white text-blue-600' : 'bg-gray-400 bg-opacity-30 text-white'}`}>{isPlaying ? <FaPause size={16} /> : <FaPlay size={16} className="ml-1" />}</button>
+        <div className="flex items-center gap-3 p-2 w-64">
+            <audio ref={audioRef} src={localSrc} preload="metadata" />
+            <button onClick={togglePlayPause} className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isSender ? 'bg-white text-blue-600' : 'bg-gray-400 bg-opacity-30 text-white'}`}>
+                {isPlaying ? <FaPause size={16} /> : <FaPlay size={16} className="ml-1" />}
+            </button>
             <div className="flex-grow flex flex-col justify-center">
-                <div className="w-full h-1 bg-gray-400 bg-opacity-50 rounded-full"><div style={{ width: `${progressPercentage}%` }} className={`h-full rounded-full ${isSender ? 'bg-white' : 'bg-gray-300'}`}></div></div>
+                <div className="w-full h-1.5 bg-black/20 rounded-full cursor-pointer" onClick={(e) => {
+                    if (!duration) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const newTime = (clickX / rect.width) * duration;
+                    if (audioRef.current) audioRef.current.currentTime = newTime;
+                }}>
+                    <div style={{ width: `${progressPercentage}%` }} className={`h-full rounded-full ${isSender ? 'bg-white' : 'bg-gray-300'}`}></div>
+                </div>
                 <span className={`text-xs self-end mt-1 ${isSender ? 'text-blue-200' : 'text-gray-500'}`}>{formatTime(duration)}</span>
             </div>
         </div>
     );
 };
-
 const MessageSkeleton = () => (
     <div className="space-y-4 p-4">
         <div className="flex items-end gap-2 justify-start">
@@ -152,6 +198,33 @@ const MessageSkeleton = () => (
     </div>
 );
 
+const getAudioDuration = (audioBlob) => 
+    new Promise((resolve) => {
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.decodeAudioData(event.target.result,
+                (buffer) => {
+                    const duration = buffer.duration ? Math.round(buffer.duration) : 0;
+                    audioContext.close();
+                    resolve(duration);
+                },
+                (error) => {
+                    console.error("Error decoding audio data:", error);
+                    audioContext.close();
+                    resolve(0);
+                }
+            );
+        };
+
+        reader.onerror = (error) => {
+            console.error("Error reading blob as ArrayBuffer:", error);
+            resolve(0);
+        };
+
+        reader.readAsArrayBuffer(audioBlob);
+    });
 function ChatApplication({ currentUser, initialChats }) {
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
     const [searchTerm, setSearchTerm] = useState('');
@@ -546,7 +619,7 @@ function ChatApplication({ currentUser, initialChats }) {
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
         }
-        const destination = `/app/presence/open/${targetChat.chatId}`;
+        const destination = `/app/chat/presence/open/${targetChat.chatId}`;
         const payload = {
             userId: currentUser.id,
             type: targetChat.type === 'group' ? 'TEAM' : 'PRIVATE'
@@ -563,7 +636,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
     const closeChat = useCallback(() => {
         if (!selectedChat || !stompClient.current?.active || !currentUser?.id) return;
-        const destination = `/app/presence/close/${selectedChat.chatId}`;
+        const destination = `/app/chat/presence/close/${selectedChat.chatId}`;
         stompClient.current.publish({ destination, body: "{}" });
         
         setSelectedChat(null);
@@ -591,7 +664,7 @@ function ChatApplication({ currentUser, initialChats }) {
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (selectedChat && stompClient.current && stompClient.current.active) {
-                const destination = `/app/presence/close/${selectedChat.chatId}`;
+                const destination = `/app/chat/presence/close/${selectedChat.chatId}`;
                 stompClient.current.publish({ destination, body: "{}" });
             }
         };
@@ -731,8 +804,6 @@ function ChatApplication({ currentUser, initialChats }) {
 
         try {
             await uploadFile(formData);
-            // WebSocket message lo vachche `client_id` ni use chesi,
-            // onMessageReceived function message ni update chestundi.
         } catch (error) {
             console.error("File upload failed in component:", error);
             setMessages(prev => {
@@ -746,36 +817,34 @@ function ChatApplication({ currentUser, initialChats }) {
     };
 
     const handleMicButtonClick = () => { if (isRecording) stopRecording(); else startRecording(); };
-
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             setIsRecording(true);
             audioChunksRef.current = [];
-        
+
             const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        
+
             recorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
+                  audioChunksRef.current.push(event.data);
                 }
             };
-        
             recorder.onstop = async () => {
                 stream.getTracks().forEach(track => track.stop());
-            
+
                 if (!selectedChat || audioChunksRef.current.length === 0) {
                     return;
                 }
 
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                 const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
-            
+
+                const audioDuration = await getAudioDuration(audioBlob);
                 const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = async () => {
                     const base64String = reader.result;
-
                     const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
                     const localPreviewUrl = URL.createObjectURL(audioBlob);
 
@@ -784,13 +853,11 @@ function ChatApplication({ currentUser, initialChats }) {
                         content: localPreviewUrl, timestamp: new Date().toISOString(),
                         status: 'sending', type: 'audio', fileName: audioFile.name,
                         fileSize: audioFile.size, fileUrl: localPreviewUrl, isEdited: false,
+                        duration: audioDuration, 
                     };
 
                     updateLastMessage(selectedChat.chatId, optimisticMessage);
-                    setMessages(prev => ({
-                        ...prev,
-                        [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
-                    }));
+                    setMessages(prev => ({ ...prev, [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage] }));
 
                     const voiceData = {
                         sender: currentUser.id,
@@ -801,11 +868,12 @@ function ChatApplication({ currentUser, initialChats }) {
                         type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
                         groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
                         receiver: selectedChat.type === 'private' ? selectedChat.chatId : null,
+                        duration: audioDuration, 
                     };
-            
+
                     try {
                         await uploadVoiceMessage(voiceData);
-                    } catch (error) {
+                     } catch (error) {
                         console.error("Voice message upload failed:", error);
                         setMessages(prev => {
                             const chatMessages = prev[selectedChat.chatId] || [];
@@ -815,7 +883,7 @@ function ChatApplication({ currentUser, initialChats }) {
                     }
                 };
             };
-        
+
             mediaRecorderRef.current = recorder;
             mediaRecorderRef.current.start();
 
@@ -824,6 +892,7 @@ function ChatApplication({ currentUser, initialChats }) {
             setIsRecording(false);
         }
     };
+
     const stopRecording = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
@@ -1289,8 +1358,8 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                                 )}
                                                                             </div>
                                                                         ) : msg.type === 'audio' ? (
-                                                                            <div className="p-2">
-                                                                                <AudioPlayer src={fileUrl} isSender={isMyMessage} isDownloaded={!!downloadedMedia[index] || isMyMessage} onDownload={() => handleMediaDownload(fileUrl, 'voice-message.wav')} />
+                                                                            <div className={`${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'} rounded-lg`}>
+                                                                                <AudioPlayer src={fileUrl}  fileUrl={fileUrl} isSender={isMyMessage} initialDuration={msg.duration} fileSize={msg.fileSize} />
                                                                             </div>
                                                                         ) : msg.type === 'file' ? (
                                                                             <FileMessage msg={msg} isMyMessage={isMyMessage} />

@@ -11,7 +11,7 @@ const apiClient = axios.create({
 
 export const getChatOverview = async (employeeId) => {
   try {
-    const response = await apiClient.get(`/overview/${employeeId}`);
+    const response = await apiClient.get(`/chat/overview/${employeeId}`);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch chat overview:", error);
@@ -35,7 +35,7 @@ export const updateMessage = async (messageId, newContent, senderId) => {
       content: newContent,
       sender: senderId, 
     };
-    const response = await apiClient.put(`/update/${messageId}`, requestBody);
+    const response = await apiClient.put(`/chat/update/${messageId}`, requestBody);
     return response.data;
   } catch (error) {
     console.error(`Failed to update message ${messageId}:`, error);
@@ -65,7 +65,7 @@ export const deleteMessageForEveryone = async (messageId, userId) => {
 
 export const uploadFile = async (formData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
+        const response = await axios.post(`${API_BASE_URL}/chat/upload`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -129,7 +129,7 @@ export const clearChatHistory = async (userId, chatId) => {
 
 export const uploadVoiceMessage = async (voiceData) => {
     try {
-        const response = await apiClient.post('/voice/upload', voiceData); 
+        const response = await apiClient.post('/chat/voice/upload', voiceData); 
         return response.data;
     } catch (error) {
         console.error("Voice message upload failed:", error);
