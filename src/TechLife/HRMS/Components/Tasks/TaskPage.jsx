@@ -512,7 +512,7 @@ const TasksPage = () => {
                             {isTeamLead && (
                                 <button
                                     onClick={handleCreateClick}
-                                    className="flex items-center justify-center bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700"
+                                    className="flex cursor-pointer items-center justify-center bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700"
                                 >
                                     <Plus size={18} className="mr-2"/> Create Task
                                 </button>
@@ -588,7 +588,7 @@ const TasksPage = () => {
                                     <h2 className="text-2xl font-bold text-gray-800">
                                         {formMode === 'edit' ? 'Edit Task' : 'Create New Task'}
                                     </h2>
-                                    <button onClick={handleFormClose} className="text-gray-500 hover:text-gray-700">
+                                    <button onClick={handleFormClose} className="text-gray-500 hover:text-gray-700 cursor-pointer">
                                         <X size={24} />
                                     </button>
                                 </div>

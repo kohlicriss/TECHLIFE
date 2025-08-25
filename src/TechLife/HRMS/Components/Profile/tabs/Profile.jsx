@@ -273,7 +273,7 @@ function Profile() {
 
     if (editingSection === "professionalSummary") {
       return (
-        <div className="fixed inset-0  bg-opacity-100  flex items-center justify-center z-116">
+        <div className="fixed inset-0 backdrop-blur-sm  bg-opacity-100  flex items-center justify-center z-116">
           <div className="bg-white shadow-2xl rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-medium">Professional Summary</h2>
@@ -334,7 +334,7 @@ function Profile() {
     // File upload identity info
     if (editingSection === "identityInformation") {
       return (
-        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-117">
+        <div className="fixed inset-0 backdrop-blur-sm  bg-opacity-100 flex items-center justify-center z-117">
           <div className="bg-white shadow-2xl rounded-lg w-[550px] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-medium">Identity Information</h2>
@@ -421,7 +421,7 @@ function Profile() {
     // General case: all regular field sections
     const fields = sectionFields[editingSection] || [];
     return (
-      <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-115">
+      <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-115">
         <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto shadow-2xl">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-xl font-medium capitalize">

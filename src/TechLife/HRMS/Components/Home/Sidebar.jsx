@@ -77,7 +77,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the on
     <>
       {/* Overlay for mobile view when sidebar is open */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden transition-opacity ${
+        className={`fixed inset-0   bg-opacity-100 z-150 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
