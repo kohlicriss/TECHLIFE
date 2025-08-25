@@ -19,7 +19,8 @@ import {
     pinMessage,
     unpinMessage,
     clearChatHistory,
-    uploadVoiceMessage
+    uploadVoiceMessage,
+    getGroupMembers 
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
 
@@ -70,7 +71,7 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(initialDuration);
-    const [localSrc, setLocalSrc] = useState(isSender ? src : null);
+    const [localSrc, setLocalSrc] = useState(src || null);
     const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
@@ -249,6 +250,8 @@ function ChatApplication({ currentUser, initialChats }) {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isGroupInfoModalOpen, setIsGroupInfoModalOpen] = useState(false);
     const [activeGroupInfoTab, setActiveGroupInfoTab] = useState('Overview');
+    const [groupMembers, setGroupMembers] = useState([]);
+    const [isGroupDataLoading, setIsGroupDataLoading] = useState(false);
     const [imageInView, setImageInView] = useState(null);
     const [isChatDataReady, setIsChatDataReady] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -371,6 +374,33 @@ function ChatApplication({ currentUser, initialChats }) {
 
     const onMessageReceived = useCallback((payload) => {
         const parsedData = JSON.parse(payload.body);
+
+         console.log("Received WebSocket Message:", parsedData); 
+
+        if (parsedData.type === 'STATUS_UPDATE') {
+            const { status, chatId, messageIds } = parsedData;
+
+            setMessages(prevMessages => {
+                const chatKey = selectedChat?.type === 'group' ? parsedData.groupId : chatId;
+                const chatMessages = prevMessages[chatKey] || [];
+                const newStatus = status.toLowerCase(); 
+
+                const updatedMessages = chatMessages.map(msg => {
+                    if (messageIds.includes(msg.messageId)) {
+                        if (newStatus === 'seen') {
+                            return { ...msg, status: 'seen' };
+                        }
+                        if (newStatus === 'delivered' && msg.status === 'sent') {
+                            return { ...msg, status: 'delivered' };
+                        }
+                    }
+                    return msg;
+                });
+                 return { ...prevMessages, [chatKey]: updatedMessages };
+            });
+            return;
+        }
+
 
         if (parsedData.type === 'PIN_UPDATE') {
             const pinnedDto = parsedData.payload;
@@ -516,7 +546,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
             return prevMessages;
         });
-    }, [currentUser.id, updateLastMessage]);
+    }, [currentUser.id, updateLastMessage, selectedChat]);
 
     useEffect(() => {
         onMessageReceivedRef.current = onMessageReceived;
@@ -677,6 +707,33 @@ function ChatApplication({ currentUser, initialChats }) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages, selectedChat]);
+
+    useEffect(() => {
+        const fetchGroupData = async () => {
+            if (!isGroupInfoModalOpen || !selectedChat || selectedChat.type !== 'group') {
+                return;
+            }
+
+            if (activeGroupInfoTab === 'Members' && groupMembers.length === 0) {
+                try {
+                    setIsGroupDataLoading(true);
+                    const teamDetails = await getGroupMembers(selectedChat.chatId);
+                    if (teamDetails && teamDetails.employees) {
+                        setGroupMembers(teamDetails.employees);
+                    } else {
+                        setGroupMembers([]);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch group members:", error);
+                    setGroupMembers([]);
+                } finally {
+                    setIsGroupDataLoading(false);
+                }
+            }
+        };
+
+        fetchGroupData();
+    }, [isGroupInfoModalOpen, activeGroupInfoTab, selectedChat, groupMembers.length]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -1111,6 +1168,7 @@ function ChatApplication({ currentUser, initialChats }) {
     const openGroupInfoModal = () => {
         if (selectedChat?.type === 'group') {
             setActiveGroupInfoTab('Overview');
+            setGroupMembers([]);
             setIsGroupInfoModalOpen(true);
         }
     };
@@ -1484,7 +1542,7 @@ function ChatApplication({ currentUser, initialChats }) {
                             <button onClick={() => setIsGroupInfoModalOpen(false)} className="p-2 rounded-full hover:bg-gray-200"><FaTimes /></button>
                         </div>
                         <div className="flex border-b flex-shrink-0">
-                            {['Overview', 'Members', 'Media'].map(tab => (
+                            {['Overview', 'Members', 'Media', 'Files', 'Links'].map(tab => (
                                 <button key={tab} onClick={() => setActiveGroupInfoTab(tab)} className={`flex-1 p-3 text-sm font-semibold ${activeGroupInfoTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}>
                                     {tab}
                                 </button>
@@ -1502,21 +1560,78 @@ function ChatApplication({ currentUser, initialChats }) {
                             )}
                             {activeGroupInfoTab === 'Members' && (
                                 <div className="space-y-3">
-                                    {currentChatInfo.members?.map((member, i) => (
-                                        <div key={i} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50">
-                                            <img src={member.profile} alt={member.employeeName} className="w-10 h-10 rounded-full object-cover" />
-                                            <span className="font-semibold">{member.employeeName}</span>
-                                        </div>
-                                    ))}
+                                   {isGroupDataLoading ? (
+                                       <p className="text-center text-gray-500">Loading members...</p>
+                                   ) : (
+                                       groupMembers.map((member, i) => (
+                                           <div key={member.employeeId || i} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50">
+                                              {member.employeeImage ? (
+                                                  <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
+                                              ) : (
+                                                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                      <FaUser className="text-gray-500" size={20} />
+                                                  </div>
+                                              )}
+                                              <div>
+                                                   <span className="font-semibold">{member.displayName}</span>
+                                                   {member.jobTitlePrimary && <p className="text-sm text-gray-500">{member.jobTitlePrimary}</p>}
+                                              </div>
+                                           </div>
+                                       ))
+                                   )}
                                 </div>
-                            )}
+                            )} 
                             {activeGroupInfoTab === 'Media' && (
                                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                                    {chatMessages.filter(msg => msg.type === 'image').map((msg, i) => (
+                                    {chatMessages.filter(msg => ['image', 'video'].includes(msg.type)).map((msg, i) => (
                                         <button key={i} onClick={() => setImageInView(getFileUrl(msg))}>
                                             <img src={getFileUrl(msg)} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
                                         </button>
                                     ))}
+                                </div>
+                            )}
+
+                            {activeGroupInfoTab === 'Files' && (
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const files = chatMessages.filter(msg => msg.type === 'file');
+                                        return files.length > 0 ? (
+                                            files.map(fileMsg => (
+                                                <FileMessage key={fileMsg.id} msg={fileMsg} isMyMessage={false} />
+                                            ))
+                                        ) : (
+                                            <p className="text-center text-gray-500 p-4">No files found in this chat.</p>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+
+                            {activeGroupInfoTab === 'Links' && (
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const linkMessages = chatMessages.filter(msg => msg.type === 'text' && (msg.content.includes('http://') || msg.content.includes('https://')));
+                                        const allLinks = linkMessages.flatMap(linkMsg => {
+                                            const linkRegex = /(https?:\/\/[^\s]+)/g;
+                                            const links = linkMsg.content.match(linkRegex);
+                                            return links ? links.map(link => ({
+                                                id: linkMsg.id,
+                                                url: link,
+                                                sender: getSenderInfo(linkMsg.sender).name,
+                                                timestamp: linkMsg.timestamp
+                                            })) : [];
+                                        });
+
+                                        return allLinks.length > 0 ? (
+                                            allLinks.map((link, index) => (
+                                                <div key={`${link.id}-${index}`} className="p-3 bg-gray-100 rounded-lg">
+                                                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{link.url}</a>
+                                                    <p className="text-xs text-gray-500 mt-1">Shared by {link.sender} on {new Date(link.timestamp).toLocaleDateString()}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-center text-gray-500 p-4">No links found in this chat.</p>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>

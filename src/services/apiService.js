@@ -136,3 +136,13 @@ export const uploadVoiceMessage = async (voiceData) => {
         throw error;
     }
 };
+
+export const getGroupMembers = async (teamId) => {
+  try {
+    const response = await apiClient.get(`/chat/team/employee/${teamId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch members for team ${teamId}:`, error);
+    return null;
+  }
+};
