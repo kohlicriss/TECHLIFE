@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Link, useLocation } from "react-router-dom"; // useNavigate is no longer needed here
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -18,30 +18,22 @@ import {
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
-function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the onLogout prop from HrmsApp
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData } = useContext(Context);
   const empId = userData?.employeeId;
 
-  // ==========================================================
-  // SIMPLIFIED AND CORRECTED LOGOUT FUNCTION
-  // ==========================================================
   const handleLogoutClick = async () => {
     try {
-      // Step 1: Call backend to clear HttpOnly cookie (this is good practice)
-      await fetch("http://localhost:8080/api/auth/logout", {
+      await fetch("http://hrms.anasolconsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
     } catch (error) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
-      // Step 2: Clear all local storage
       localStorage.clear();
-
-      // Step 3: Call the onLogout function passed from HrmsApp.jsx
-      // This will update the `isAuthenticated` state and trigger the redirect.
       if (onLogout) {
         onLogout();
       }
@@ -75,25 +67,22 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the on
 
   return (
     <>
-      {/* Overlay for mobile view when sidebar is open */}
       <div
-        className={`fixed inset-0   bg-opacity-100 z-150 lg:hidden transition-opacity ${
+        className={`fixed inset-0  bg-opacity-100 z-[150] lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
 
-      {/* Sidebar container */}
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } bg-white shadow-lg z-60 transform transition-all duration-200 ease-in-out ${
+        } bg-white shadow-lg z-[160] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
-          {/* Close button for mobile view */}
           <div className="lg:hidden">
             <button
               className="text-gray-600 hover:text-black"
@@ -102,7 +91,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the on
               <X size={20} />
             </button>
           </div>
-          {/* Collapse/Expand button */}
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
@@ -117,7 +105,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the on
           </div>
         </div>
 
-        {/* Navigation links */}
         <nav className="mt-4">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -140,7 +127,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) { // We use the on
             );
           })}
 
-          {/* Logout button section */}
           <div className="mt-10">
             <button
               onClick={handleLogoutClick}

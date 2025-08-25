@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
+import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { tasksApi } from '../../../../axiosInstance'; // మీ ప్రాజెక్ట్ స్ట్రక్చర్ ప్రకారం సరైన మార్గాన్ని ఇవ్వండి
+import { tasksApi } from '../../../../axiosInstance';
 
 const CalendarIcon = () => (
     <svg
@@ -20,6 +20,83 @@ const CalendarIcon = () => (
         />
     </svg>
 );
+
+const Modal = ({ children, onClose, title, type }) => {
+    let titleClass = "";
+    let icon = null;
+
+    if (type === "success") {
+        titleClass = "text-green-600";
+        icon = <CheckCircle className="h-6 w-6 text-green-500" />;
+    } else if (type === "error") {
+        titleClass = "text-red-600";
+        icon = <AlertCircle className="h-6 w-6 text-red-500" />;
+    } else if (type === "confirm") {
+        titleClass = "text-yellow-600";
+        icon = <AlertCircle className="h-6 w-6 text-yellow-500" />;
+    }
+
+    return (
+        <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-[200]">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm m-4">
+                <div className="flex items-center mb-4">
+                    {icon && <span className="mr-3">{icon}</span>}
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+const SuccessPopup = ({ message, onClose }) => (
+    <Modal onClose={onClose} title="Success" type="success">
+        <p className="text-gray-700 mb-6">{message}</p>
+        <div className="flex justify-end">
+            <button
+                onClick={onClose}
+                className="bg-green-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-green-700"
+            >
+                OK
+            </button>
+        </div>
+    </Modal>
+);
+
+const ErrorPopup = ({ message, onClose }) => (
+    <Modal onClose={onClose} title="Error" type="error">
+        <p className="text-gray-700 mb-6">{message}</p>
+        <div className="flex justify-end">
+            <button
+                onClick={onClose}
+                className="bg-red-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-red-700"
+            >
+                OK
+            </button>
+        </div>
+    </Modal>
+);
+
+const ConfirmDeletePopup = ({ onConfirm, onCancel }) => (
+    <Modal onCancel={onCancel} title="Confirm Deletion" type="confirm">
+        <p className="text-gray-700 mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
+        <div className="flex justify-end gap-3">
+            <button
+                onClick={onCancel}
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+            >
+                Cancel
+            </button>
+            <button
+                onClick={onConfirm}
+                className="bg-red-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-red-700"
+            >
+                Delete
+            </button>
+        </div>
+    </Modal>
+);
+
 
 const TasksPage = () => {
     const navigate = useNavigate();
@@ -44,7 +121,11 @@ const TasksPage = () => {
     
     const [currentNumber, setCurrentNumber] = useState(0); 
     const [totalPages, setTotalPages] = useState(1);
-    const [dropdownValue, setDropdownValue] = useState(1);
+    const [dropdownValue, setDropdownValue] = useState(5);
+
+    const [successPopup, setSuccessPopup] = useState({ show: false, message: '' });
+    const [errorPopup, setErrorPopup] = useState({ show: false, message: '' });
+    const [confirmDeletePopup, setConfirmDeletePopup] = useState({ show: false, projectId: null, taskId: null });
 
     const [formData, setFormData] = useState({
         id: '',
@@ -95,7 +176,6 @@ const TasksPage = () => {
             setError(null);
         } catch (err) {
             console.error("Error in fetchTasks:", err);
-            // 403 error ప్రత్యేకించి చూపించడానికి ఇక్కడ లాజిక్ మార్చబడింది
             if (err.response?.status === 403) {
                 setError("Authorization failed. You do not have permission to view these tasks. Please check your login status.");
             } else if (err.response?.status === 404) {
@@ -123,7 +203,6 @@ const TasksPage = () => {
             setTotalPages(response.data.totalPages || 1);
         } catch (err) {
             console.error("Error in fetchTasksAssignedByMe:", err);
-             // 403 error ప్రత్యేకించి చూపించడానికి ఇక్కడ లాజిక్ మార్చబడింది
              if (err.response?.status === 403) {
                 setError("Authorization failed. You do not have permission to view tasks assigned by you.");
             } else if (err.response?.status !== 404) {
@@ -238,19 +317,26 @@ const TasksPage = () => {
         setIsFormOpen(true);
     };
 
-    const handleDeleteTask = async (e, projectId, taskId) => {
+    const handleDeleteTask = (e, projectId, taskId) => {
         e.stopPropagation();
-        if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
-        
+        setConfirmDeletePopup({ show: true, projectId, taskId });
+    };
+
+    const confirmDelete = async () => {
+        const { projectId, taskId } = confirmDeletePopup;
+        if (!projectId || !taskId) return;
+
         try {
             const url = `/${projectId}/${taskId}/delete/task`;
             await tasksApi.delete(url);
-            alert("Task deleted successfully!");
+            setSuccessPopup({ show: true, message: "Task deleted successfully!" });
             fetchTasks();
             fetchTasksAssignedByMe();
         } catch (error) {
             console.error("Failed to delete task:", error.response?.data || error.message);
-            alert("Failed to delete the task. Please try again.");
+            setErrorPopup({ show: true, message: "Failed to delete the task. Please try again." });
+        } finally {
+            setConfirmDeletePopup({ show: false, projectId: null, taskId: null });
         }
     };
 
@@ -340,7 +426,7 @@ const TasksPage = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            alert(`Task ${formMode}d successfully!`);
+            setSuccessPopup({ show: true, message: `Task ${formMode}d successfully!` });
             handleFormClose();
             fetchTasks();
             if (userData.roles[0] === "TEAM_LEAD") {
@@ -350,6 +436,7 @@ const TasksPage = () => {
             console.error("Submission failed:", error);
             const errorMsg = error.response?.data?.message || error.response?.data || error.message;
             setSubmissionError(`Failed to ${formMode} task: ${errorMsg}`);
+            setErrorPopup({ show: true, message: `Failed to ${formMode} task. Please try again.` });
         } finally {
             setIsSubmitting(false);
         }
@@ -446,13 +533,13 @@ const TasksPage = () => {
                                                     <>
                                                         <button
                                                             onClick={(e) => handleEditClick(e, task)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                            className="text-indigo-600 hover:text-indigo-900 cursor-pointer"
                                                         >
                                                             <Edit size={18} />
                                                         </button>
                                                         <button
                                                             onClick={(e) => handleDeleteTask(e, task.projectId, task.id)}
-                                                            className="text-red-600 hover:text-red-900"
+                                                            className="text-red-600 hover:text-red-900 cursor-pointer"
                                                         >
                                                             <Trash2 size={18} />
                                                         </button>
@@ -582,7 +669,7 @@ const TasksPage = () => {
                     </div>
 
                     {isFormOpen && (
-                        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-151 backdrop-blur-sm p-4">
+                        <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-151 backdrop-blur-sm p-4">
                             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                                 <div className="flex justify-between items-center p-6 border-b">
                                     <h2 className="text-2xl font-bold text-gray-800">
@@ -911,6 +998,24 @@ const TasksPage = () => {
                         </button>
                     </div>
                 </div>
+            )}
+             {successPopup.show && (
+                <SuccessPopup 
+                    message={successPopup.message} 
+                    onClose={() => setSuccessPopup({ show: false, message: '' })} 
+                />
+            )}
+            {errorPopup.show && (
+                <ErrorPopup 
+                    message={errorPopup.message} 
+                    onClose={() => setErrorPopup({ show: false, message: '' })} 
+                />
+            )}
+            {confirmDeletePopup.show && (
+                <ConfirmDeletePopup 
+                    onConfirm={confirmDelete} 
+                    onCancel={() => setConfirmDeletePopup({ show: false, projectId: null, taskId: null })} 
+                />
             )}
         </div>
     );

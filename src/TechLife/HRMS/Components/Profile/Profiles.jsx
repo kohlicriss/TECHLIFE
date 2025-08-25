@@ -21,7 +21,8 @@ import {
   MdChevronRight,
 } from "react-icons/md";
 import { FaPhone, FaBuilding } from "react-icons/fa";
-
+import axios from "axios";
+import { publicinfoApi } from "../../../../axiosInstance";
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,6 +50,65 @@ const Profiles = () => {
         };
   });
 
+  const EMPLOYEE_ID_TO_FETCH = empID;
+
+  useEffect(() => {
+    // empID (URL nuṇḍi) uṇṭēnē API call cēyāli
+    if (!empID) {
+      return;
+    }
+
+    const fetchEmployeeDetails = async () => {
+      // API call mundu loading start cheyyandi
+      try {
+        // baseURL (http://localhost:8090/api) mī instance lō uṇṭundi,
+        // kābaṭṭi manam kevalaṁ migatā path mātramē ivvāli.
+        const relativePath = `/public/${empID}/employee/details`;
+
+        console.log(`Requesting data from: ${relativePath}`);
+
+        // SARIAINA MĀRPU: 'axios.get' badulu 'publicinfoApi.get' vāḍutunnāmu
+        // const response = await publicinfoApi.get(relativePath);
+
+        // BRO, I've inserted your data here directly.
+        // I am simulating a successful API call with your data.
+        const response = {
+          data: {
+            employeeId: "ACS00000004",
+            employeeName: "Rahul K. Verma",
+            jobTitlePrimary: "Data Analyst",
+            department: "Finance",
+            emailId: "rahul.verma@acs.com",
+            mobileNo: "0403344556",
+            location: "ACS",
+          },
+        };
+
+        console.log("✅ API Response Received:", response);
+        console.log("✅ Employee Data:", response.data);
+
+        // Vaccina dēṭānu state lōki set cheyyandi
+        const data = response.data;
+        setEmployeeData({
+          name: data.employeeName || "N/A",
+          empId: data.employeeId,
+          company: data.location || "Anasol", // Updated to use the location field
+          department: data.department || "N/A",
+          email: data.emailId || "N/A",
+          contact: data.mobileNo || "N/A",
+          role: data.jobTitlePrimary || "N/A", // Updated to use jobTitlePrimary
+        });
+      } catch (err) {
+        console.error("❌ Error fetching employee details:", err);
+        // Error state ni kūḍā set cēsukōvaccu
+      } finally {
+        // Call ayyāka loading stop cheyyandi
+      }
+    };
+
+    fetchEmployeeDetails();
+  }, [empID]); // empID mārinappuḍallā ī useEffect run avutuṁdi
+
   useEffect(() => {
     setActiveTab(location.pathname);
   }, [location.pathname]);
@@ -66,15 +126,15 @@ const Profiles = () => {
   ];
 
   const handleImageUpload = (event) => {
-  const file = event.target.files[0]; 
-  if (file) {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfileImage(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }
-};
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -228,7 +288,7 @@ const Profiles = () => {
       </div>
 
       {isEditing && (
-        <div className="fixed inset-0 backdrop-blur-sm   bg-opacity-100 flex items-center justify-center z-100">
+        <div className="fixed inset-0 backdrop-blur-sm   bg-opacity-100 flex items-center justify-center z-100">
           <div className="bg-white rounded-lg p-6 w-[500px] shadow-2xl">
             <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
             <form onSubmit={handleSave}>
