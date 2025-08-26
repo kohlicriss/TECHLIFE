@@ -256,10 +256,12 @@ function ChatApplication({ currentUser, initialChats }) {
     const [isChatDataReady, setIsChatDataReady] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [showClearConfirm, setShowClearConfirm] = useState(false);
+    const [typingUsers, setTypingUsers] = useState({});
 
 
     const chatContainerRef = useRef(null);
     const stompClient = useRef(null);
+    const typingTimeoutRef = useRef({});
     const fileInputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -548,6 +550,45 @@ function ChatApplication({ currentUser, initialChats }) {
         });
     }, [currentUser.id, updateLastMessage, selectedChat]);
 
+    const allChats = useMemo(() => [
+        ...chatData.privateChatsWith.filter(user => user.chatId !== currentUser?.id),
+        ...chatData.groups,
+    ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
+
+    const handleTypingEvent = useCallback((payload) => {
+        const typingUpdate = JSON.parse(payload.body);
+
+        if (typingUpdate.senderId === currentUser.id) return;
+
+        const chatIdKey = typingUpdate.type === 'TEAM' ? typingUpdate.groupId : typingUpdate.senderId;
+        if (!chatIdKey) return;
+        const senderChatInfo = allChats.find(c => c.chatId === typingUpdate.senderId);
+        const senderName = senderChatInfo?.name || 'Someone';
+
+        setTypingUsers(prev => {
+            const newTypingUsers = { ...prev };
+        
+            if (typingTimeoutRef.current[chatIdKey]) {
+                clearTimeout(typingTimeoutRef.current[chatIdKey]);
+            }
+
+            if (typingUpdate.typing) {
+                newTypingUsers[chatIdKey] = `${senderName} is typing...`;
+                typingTimeoutRef.current[chatIdKey] = setTimeout(() => {
+                    setTypingUsers(p => {
+                        const updated = { ...p };
+                        delete updated[chatIdKey];
+                        return updated;
+                    });
+                }, 3000);
+
+            } else {
+                delete newTypingUsers[chatIdKey];
+            }
+            return newTypingUsers;
+        });
+    }, [currentUser.id, allChats]);
+
     useEffect(() => {
         onMessageReceivedRef.current = onMessageReceived;
     });
@@ -590,6 +631,7 @@ function ChatApplication({ currentUser, initialChats }) {
                 subscriptions.current['private-ack'] = client.subscribe(`/user/queue/private-ack`, messageHandler);
                 subscriptions.current['group-ack'] = client.subscribe(`/user/queue/group-ack`, messageHandler);
                 subscriptions.current['presence'] = client.subscribe('/topic/presence', presenceHandler);
+                subscriptions.current['typing'] = client.subscribe('/user/queue/typing-status', handleTypingEvent);
             },
             onWebSocketError: (error) => console.error('WebSocket Error:', error),
             onStompError: (frame) => console.error('STOMP Error:', frame.headers['message'], frame.body),
@@ -640,10 +682,12 @@ function ChatApplication({ currentUser, initialChats }) {
             if (!subscribedGroupIds.has(groupId)) {
                 const subId = `group-${groupId}`;
                 subscriptions.current[subId] = stompClient.current.subscribe(`/topic/team-${groupId}`, messageHandler);
+                const typingSubId = `group-typing-${groupId}`;
+                subscriptions.current[typingSubId] = stompClient.current.subscribe(`/topic/typing-status/${groupId}`, handleTypingEvent); 
             }
         });
 
-    }, [isConnected, groupIds, chatData.groups]);
+    }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
     
     const openChat = useCallback((targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
@@ -746,8 +790,27 @@ function ChatApplication({ currentUser, initialChats }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showEmojiPicker, showChatMenu, contextMenu.visible, showPinnedMenu]);
 
+    const sendTypingStatus = (isTyping) => {
+        if (!stompClient.current?.active || !selectedChat) return;
+
+        const payload = {
+            senderId: currentUser.id,
+            typing: isTyping,
+            type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
+            receiverId: selectedChat.type === 'private' ? selectedChat.chatId : null,
+            groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
+        };
+
+        stompClient.current.publish({
+            destination: '/app/chat/typing',
+            body: JSON.stringify(payload),
+        });
+    };
+
     const handleSendMessage = () => {
         if (!message.trim() || !selectedChat) return;
+
+        sendTypingStatus(false);
 
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
         const isReply = replyingTo !== null;
@@ -1030,6 +1093,8 @@ function ChatApplication({ currentUser, initialChats }) {
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
+
+
     const handleDelete = async (forEveryone) => {
         const chatId = selectedChat.chatId;
         const currentMessages = [...(messages[chatId] || [])];
@@ -1146,11 +1211,6 @@ function ChatApplication({ currentUser, initialChats }) {
             setForwardSearchTerm('');
         }
     };
-
-    const allChats = useMemo(() => [
-        ...chatData.privateChatsWith.filter(user => user.chatId !== currentUser?.id),
-        ...chatData.groups,
-    ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
     const filteredChats = allChats.filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()));
     
@@ -1438,6 +1498,23 @@ function ChatApplication({ currentUser, initialChats }) {
                                                 </React.Fragment>
                                             );
                                         })}
+
+                                        {typingUsers[selectedChat.chatId] && (
+                                            <div className="flex items-end gap-2 justify-start">
+                                               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center self-start flex-shrink-0">
+                                                   <FaUser className="text-gray-500" size={18} />
+                                               </div>
+                                               <div className="flex flex-col items-start">
+                                                   <div className="p-3 rounded-lg bg-gray-200 text-gray-800">
+                                                      <div className="flex items-center justify-center gap-1.5">
+                                                          <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                                          <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                                          <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></span>
+                                                      </div>
+                                                   </div>
+                                               </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1464,7 +1541,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                             </div>
                                         )}
                                         <div className="relative flex-grow">
-                                            <input ref={messageInputRef} type="text" placeholder={isRecording ? "Recording..." : "Type a message..."} className="w-full p-3 pr-24 rounded-full border bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={handleKeyDown} disabled={isRecording} />
+                                            <input ref={messageInputRef} type="text" placeholder={isRecording ? "Recording..." : "Type a message..."} className="w-full p-3 pr-24 rounded-full border bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" value={message} onChange={(e) => { setMessage(e.target.value); sendTypingStatus(true);}} onKeyDown={handleKeyDown} disabled={isRecording} />
                                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                                                 <button ref={emojiButtonRef} onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"><FaSmile size={20} /></button>
                                                 <button onClick={handleFileButtonClick} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"><FaPaperclip size={20} /></button>
