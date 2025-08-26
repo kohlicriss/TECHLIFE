@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext} from "react";
+import { Context } from "../HrmsContext";
 import {
   Routes,
   Route,
@@ -27,6 +28,7 @@ const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { empID } = useParams();
+  let {userprofiledata,setUserProfileData}=useContext(Context)
 
   const [activeTab, setActiveTab] = useState(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -52,62 +54,46 @@ const Profiles = () => {
 
   const EMPLOYEE_ID_TO_FETCH = empID;
 
-  useEffect(() => {
-    // empID (URL nuṇḍi) uṇṭēnē API call cēyāli
-    if (!empID) {
-      return;
+useEffect(() => {
+  // empID (URL నుండి) ఉంటేనే API కాల్ చేయాలి
+  if (!empID) {
+    return;
+  }
+
+  const fetchEmployeeDetails = async () => {
+    try {
+      // 1. ఎండ్‌పాయింట్ మార్గాన్ని సరిచేశాను
+      const relativePath = `/employee/${empID}`;
+
+      console.log(`Requesting data from: ${relativePath}`);
+
+      // publicinfoApi instance వాడుతున్నాను, దీని baseURL సరిగ్గా '/api'కి పాయింట్ చేయాలి
+      const response = await publicinfoApi.get(relativePath);
+
+      console.log("✅ API Response Received:", response);
+      console.log("✅ Employee Data:", response.data);
+      setUserProfileData(response.data)
+
+      const data = response.data;
+
+      // 2. EmployeeDTO ప్రకారం డేటా మ్యాపింగ్‌ను అప్‌డేట్ చేశాను
+      setEmployeeData({
+        name: data.employeeName || "N/A",
+        empId: data.employeeId,
+        company: data.jobDetails?.location || "Anasol",
+        department: data.jobDetails?.department || "N/A",
+        email: data.emailId || "N/A",
+        contact: data.mobileNo || "N/A",
+        role: data.jobDetails?.jobTitlePrimary || "N/A",
+      });
+
+    } catch (err) {
+      console.error("❌ Error fetching employee details:", err);
     }
+  };
 
-    const fetchEmployeeDetails = async () => {
-      // API call mundu loading start cheyyandi
-      try {
-        // baseURL (http://localhost:8090/api) mī instance lō uṇṭundi,
-        // kābaṭṭi manam kevalaṁ migatā path mātramē ivvāli.
-        const relativePath = `/public/${empID}/employee/details`;
-
-        console.log(`Requesting data from: ${relativePath}`);
-
-        // SARIAINA MĀRPU: 'axios.get' badulu 'publicinfoApi.get' vāḍutunnāmu
-        // const response = await publicinfoApi.get(relativePath);
-
-        // BRO, I've inserted your data here directly.
-        // I am simulating a successful API call with your data.
-        const response = {
-          data: {
-            employeeId: "ACS00000004",
-            employeeName: "Rahul K. Verma",
-            jobTitlePrimary: "Data Analyst",
-            department: "Finance",
-            emailId: "rahul.verma@acs.com",
-            mobileNo: "0403344556",
-            location: "ACS",
-          },
-        };
-
-        console.log("✅ API Response Received:", response);
-        console.log("✅ Employee Data:", response.data);
-
-        // Vaccina dēṭānu state lōki set cheyyandi
-        const data = response.data;
-        setEmployeeData({
-          name: data.employeeName || "N/A",
-          empId: data.employeeId,
-          company: data.location || "Anasol", // Updated to use the location field
-          department: data.department || "N/A",
-          email: data.emailId || "N/A",
-          contact: data.mobileNo || "N/A",
-          role: data.jobTitlePrimary || "N/A", // Updated to use jobTitlePrimary
-        });
-      } catch (err) {
-        console.error("❌ Error fetching employee details:", err);
-        // Error state ni kūḍā set cēsukōvaccu
-      } finally {
-        // Call ayyāka loading stop cheyyandi
-      }
-    };
-
-    fetchEmployeeDetails();
-  }, [empID]); // empID mārinappuḍallā ī useEffect run avutuṁdi
+  fetchEmployeeDetails();
+}, [empID]);
 
   useEffect(() => {
     setActiveTab(location.pathname);
@@ -201,32 +187,32 @@ const Profiles = () => {
 
           <div className="ml-8 text-gray-800">
             <h1 className="text-3xl font-bold tracking-wide mb-4">
-              {employeeData.name}
+              {userprofiledata?.displayName}
             </h1>
             <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-gray-700">
               <div className="flex items-center space-x-2">
                 <HiIdentification className="w-5 h-5" />
-                <p>{employeeData.empId}</p>
+                <p>{userprofiledata?.employeeId}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaBuilding className="w-5 h-5" />
-                <p>{employeeData.company}</p>
+                <p>{userprofiledata?.location}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdWork className="w-5 h-5" />
-                <p>{employeeData.department}</p>
+                <p>{userprofiledata?.jobTitlePrimary}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdEmail className="w-5 h-5" />
-                <p>{employeeData.email}</p>
+                <p>{userprofiledata?.workEmail}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaPhone className="w-5 h-5" />
-                <p>{employeeData.contact}</p>
+                <p>{userprofiledata?.workNumber}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdPerson className="w-5 h-5" />
-                <p>{employeeData.role}</p>
+                <p>{userprofiledata?.jobTitleSecondary}</p>
               </div>
             </div>
           </div>

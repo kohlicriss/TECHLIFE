@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { jwtDecode } from "jwt-decode";
-import logo from "../assets/anasol-logo.png";
 import { Context } from "../HrmsContext";
-import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/anasol-logo.png"
 
 // Note: For authenticated API calls, it's recommended to use the Axios instance
 // we previously discussed instead of the native fetch API.
@@ -13,6 +11,29 @@ const MAX_ATTEMPTS_PHASE1 = 5;
 const MAX_ATTEMPTS_PHASE2 = 7; // 5 + 2 additional attempts
 const LOCKOUT_DURATION_PHASE1 = 60; // 1 minute
 const LOCKOUT_DURATION_PHASE2 = 300; // 5 minutes
+
+// Helper function to decode JWT payload without an external library
+const decodeJwt = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("Failed to decode JWT:", error);
+    return null;
+  }
+};
+
+// The Context import is removed as it's not provided in the prompt.
+// We'll simulate the context functionality for this self-contained example.
+// const useDummyContext = () => {
+//   const [userData, setUserData] = useState(null);
+//   const [accessToken, setAccessToken] = useState(null);
+//   return { userData, setUserData, setAccessToken };
+// };
 
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -34,7 +55,10 @@ const LoginPage = ({ onLogin }) => {
   const [forgotPasswordScreen, setForgotPasswordScreen] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMobile, setForgotMobile] = useState(""); // New state for mobile
   const [forgotOtp, setForgotOtp] = useState(["", "", "", "", "", ""]);
+  const [forgotMobileOtp, setForgotMobileOtp] = useState(["", "", "", ""]); // New state for mobile OTP
+  const [forgotPasswordMethod, setForgotPasswordMethod] = useState(null); // New state for selection
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -46,15 +70,18 @@ const LoginPage = ({ onLogin }) => {
   const [isLockedOut, setIsLockedOut] = useState(false);
   const [lockoutTimer, setLockoutTimer] = useState(0);
 
-  // --- START OF MODIFICATION ---
-  // Removed `setRefreshToken` as it is no longer provided in the API response.
-  const { userData, setUserData, setAccessToken } = useContext(Context);
-  // --- END OF MODIFICATION ---
-  // const empID=userData?.employeeId
+  // const { setUserData, setAccessToken } = useDummyContext();
+  const { setUserData, setAccessToken } = useContext(Context);
 
   const forgotOtpRefs = [
     useRef(null),
     useRef(null),
+    useRef(null),
+    useRef(null),
+    useRef(null),
+    useRef(null),
+  ];
+  const forgotMobileOtpRefs = [
     useRef(null),
     useRef(null),
     useRef(null),
@@ -86,7 +113,6 @@ const LoginPage = ({ onLogin }) => {
     return () => clearInterval(interval);
   }, [timer, otpScreen, otpMethod, forgotPasswordScreen, forgotPasswordStep]);
 
-  // New useEffect to handle the lockout timer
   useEffect(() => {
     let timerId;
     if (isLockedOut && lockoutTimer > 0) {
@@ -95,8 +121,6 @@ const LoginPage = ({ onLogin }) => {
       }, 1000);
     } else if (lockoutTimer === 0 && isLockedOut) {
       setIsLockedOut(false);
-      // Don't reset attempts here, as the user gets 2 more tries
-      // after the first lockout
       setError("You can now try logging in again.");
     }
     return () => clearInterval(timerId);
@@ -121,7 +145,7 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const response = await fetch("http://hrms.anasolconsultancyservices.com/api/auth/login", {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, password: password }),
@@ -132,15 +156,13 @@ const LoginPage = ({ onLogin }) => {
 
       if (response.ok) {
         console.log("Login Successful! Access Token Received:", data);
-
-        // The browser has automatically handled the refreshToken cookie.
-        // Now, we just save the access token to local storage.
         localStorage.setItem("accessToken", data.accessToken);
         console.log("Access token has been saved to Local Storage.");
         setAccessToken(data.accessToken);
 
         try {
-          const decodedPayload = jwtDecode(data.accessToken);
+          const decodedPayload = decodeJwt(data.accessToken);
+           localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
           setUserData(decodedPayload);
           employeeIdFromToken = decodedPayload.employeeId;
           console.log("Decoded Access Token Payload:", decodedPayload);
@@ -151,7 +173,7 @@ const LoginPage = ({ onLogin }) => {
           console.error("Failed to decode access token:", decodeError);
         }
 
-        setWrongAttempts(0); // Reset on success
+        setWrongAttempts(0);
         onLogin(data);
         if (employeeIdFromToken) {
           navigate(`/dashboard/${employeeIdFromToken}`);
@@ -163,17 +185,14 @@ const LoginPage = ({ onLogin }) => {
         setWrongAttempts(newAttempts);
 
         if (newAttempts > MAX_ATTEMPTS_PHASE2) {
-          // Second lockout (5 minutes)
           setIsLockedOut(true);
           setLockoutTimer(LOCKOUT_DURATION_PHASE2);
           setError(`Too many failed attempts. Please try again in 5 minutes.`);
         } else if (newAttempts >= MAX_ATTEMPTS_PHASE1) {
-          // First lockout (1 minute)
           setIsLockedOut(true);
           setLockoutTimer(LOCKOUT_DURATION_PHASE1);
           setError(`Too many failed attempts. Please try again in 60 seconds.`);
         } else {
-          // Error message with remaining attempts
           const attemptsLeft = MAX_ATTEMPTS_PHASE1 - newAttempts;
           setError(`Invalid credentials. You have ${attemptsLeft} attempts left.`);
         }
@@ -192,24 +211,6 @@ const LoginPage = ({ onLogin }) => {
     setError("");
     setMobileOtp(["", "", "", ""]);
     setEmailOtp(["", "", "", "", "", ""]);
-  };
-
-  const handleOtpSubmit = (e) => {
-    e.preventDefault();
-    setError("");
-    if (otpMethod === "mobile") {
-      if (mobileOtp.join("").length === 4) {
-        onLogin();
-      } else {
-        setError("Invalid Mobile OTP.");
-      }
-    } else if (otpMethod === "email") {
-      if (emailOtp.join("").length === 6) {
-        onLogin();
-      } else {
-        setError("Invalid Email OTP.");
-      }
-    }
   };
 
   const handleOtpChange = (
@@ -241,6 +242,24 @@ const LoginPage = ({ onLogin }) => {
     }
   };
 
+  const handleOtpSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+    if (otpMethod === "mobile") {
+      if (mobileOtp.join("").length === 4) {
+        onLogin();
+      } else {
+        setError("Invalid Mobile OTP.");
+      }
+    } else if (otpMethod === "email") {
+      if (emailOtp.join("").length === 6) {
+        onLogin();
+      } else {
+        setError("Invalid Email OTP.");
+      }
+    }
+  };
+
   const resetTimer = () => {
     setTimer(59);
     setResendEnabled(false);
@@ -249,19 +268,29 @@ const LoginPage = ({ onLogin }) => {
   const handleBack = () => {
     if (forgotPasswordScreen) {
       if (forgotPasswordStep > 1) {
-        setForgotPasswordStep((prev) => prev - 1);
-        setError("");
-        if (forgotPasswordStep === 2) {
-          setForgotOtp(["", "", "", "", "", ""]);
-        }
-        if (forgotPasswordStep === 3) {
-          setNewPassword("");
-          setConfirmPassword("");
+        if (forgotPasswordStep === 2 && forgotPasswordMethod) {
+          // Go back to the method selection screen
+          setForgotPasswordStep(1);
+          setForgotPasswordMethod(null);
+          setError("");
+        } else {
+          setForgotPasswordStep((prev) => prev - 1);
+          setError("");
+          if (forgotPasswordStep === 2) {
+            setForgotOtp(["", "", "", "", "", ""]);
+            setForgotMobileOtp(["", "", "", ""]);
+          }
+          if (forgotPasswordStep === 3) {
+            setNewPassword("");
+            setConfirmPassword("");
+          }
         }
       } else {
         setForgotPasswordScreen(false);
         setForgotEmail("");
+        setForgotMobile("");
         setForgotPasswordStep(1);
+        setForgotPasswordMethod(null);
         setError("");
       }
     } else if (otpScreen) {
@@ -278,7 +307,7 @@ const LoginPage = ({ onLogin }) => {
   const handleResend = () => {
     resetTimer();
     if (forgotPasswordScreen && forgotPasswordStep === 2) {
-      console.log(`Resending Forgot Password OTP to ${forgotEmail}`);
+      console.log(`Resending Forgot Password OTP via ${forgotPasswordMethod}`);
     } else if (otpScreen && otpMethod) {
       console.log(`Resending Login OTP via ${otpMethod}`);
     }
@@ -288,34 +317,60 @@ const LoginPage = ({ onLogin }) => {
     setForgotPasswordScreen(true);
     setOtpScreen(false);
     setForgotEmail("");
+    setForgotMobile("");
     setForgotPasswordStep(1);
+    setForgotPasswordMethod(null);
     setForgotOtp(["", "", "", "", "", ""]);
+    setForgotMobileOtp(["", "", "", ""]);
     setNewPassword("");
     setConfirmPassword("");
     setError("");
   };
 
+  // New handler for selecting forgot password method
+  const handleForgotMethodSelect = (method) => {
+    setForgotPasswordMethod(method);
+    setError("");
+    setTimer(59);
+    setResendEnabled(false);
+  };
+
   const handleRequestOtp = (e) => {
     e.preventDefault();
     setError("");
-    if (!forgotEmail.trim()) {
-      setError("Please enter your email.");
-      return;
+    let contactInfo = "";
+
+    if (forgotPasswordMethod === 'email') {
+      if (!forgotEmail.trim()) {
+        setError("Please enter your email.");
+        return;
+      }
+      contactInfo = forgotEmail;
+    } else if (forgotPasswordMethod === 'mobile') {
+      if (!forgotMobile.trim()) {
+        setError("Please enter your mobile number.");
+        return;
+      }
+      contactInfo = forgotMobile;
     }
+
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       setForgotPasswordStep(2);
       resetTimer();
-      console.log(`OTP requested for: ${forgotEmail}`);
+      console.log(`OTP requested for ${forgotPasswordMethod}: ${contactInfo}`);
     }, 1500);
   };
 
   const handleVerifyForgotOtp = (e) => {
     e.preventDefault();
     setError("");
-    if (forgotOtp.join("").length !== 6) {
-      setError("Please enter the 6-digit OTP.");
+    const otp = forgotPasswordMethod === 'email' ? forgotOtp.join("") : forgotMobileOtp.join("");
+    const expectedLength = forgotPasswordMethod === 'email' ? 6 : 4;
+
+    if (otp.length !== expectedLength) {
+      setError(`Please enter the ${expectedLength}-digit OTP.`);
       return;
     }
     setIsLoading(true);
@@ -350,8 +405,11 @@ const LoginPage = ({ onLogin }) => {
       );
       setForgotPasswordScreen(false);
       setForgotEmail("");
+      setForgotMobile("");
       setForgotPasswordStep(1);
+      setForgotPasswordMethod(null);
       setForgotOtp(["", "", "", "", "", ""]);
+      setForgotMobileOtp(["", "", "", ""]);
       setNewPassword("");
       setConfirmPassword("");
     }, 2000);
@@ -425,7 +483,7 @@ const LoginPage = ({ onLogin }) => {
                     placeholder="Email or Username"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    disabled={isLockedOut} // Disable input when locked out
+                    disabled={isLockedOut}
                     className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
                   />
                   <div className="relative">
@@ -434,19 +492,18 @@ const LoginPage = ({ onLogin }) => {
                       placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      disabled={isLockedOut} // Disable input when locked out
+                      disabled={isLockedOut}
                       className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLockedOut} // Disable button when locked out
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      disabled={isLockedOut}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
-                  {/* Conditional rendering for error messages */}
                   {isLockedOut ? (
                     <p className="text-red-500 text-center">
                       Too many failed attempts. Please try again in {lockoutTimer} seconds.
@@ -456,7 +513,7 @@ const LoginPage = ({ onLogin }) => {
                   )}
                   <button
                     type="submit"
-                    disabled={isLoading || isLockedOut} // Disable button when loading or locked out
+                    disabled={isLoading || isLockedOut}
                     className={`w-full py-3 text-white rounded-full transition-all cursor-pointer ${
                       isLoading || isLockedOut
                         ? "bg-gray-500 cursor-not-allowed"
@@ -607,7 +664,28 @@ const LoginPage = ({ onLogin }) => {
                 </form>
               )}
 
-              {forgotPasswordScreen && forgotPasswordStep === 1 && (
+              {/* New "Forgot Password" method selection screen */}
+              {forgotPasswordScreen && forgotPasswordStep === 1 && !forgotPasswordMethod && (
+                <div className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Choose how you want to reset your password.
+                  </p>
+                  <button
+                    onClick={() => handleForgotMethodSelect("email")}
+                    className="w-full py-3 text-white rounded-full bg-blue-500 hover:bg-blue-600 transition"
+                  >
+                    Verify with Email OTP
+                  </button>
+                  <button
+                    onClick={() => handleForgotMethodSelect("mobile")}
+                    className="w-full py-3 text-white rounded-full bg-purple-500 hover:bg-purple-600 transition"
+                  >
+                    Verify with Mobile OTP
+                  </button>
+                </div>
+              )}
+
+              {forgotPasswordScreen && forgotPasswordStep === 1 && forgotPasswordMethod === 'email' && (
                 <form onSubmit={handleRequestOtp} className="space-y-4">
                   <p className="text-center text-gray-600">
                     Enter your email to receive a password reset OTP.
@@ -636,7 +714,36 @@ const LoginPage = ({ onLogin }) => {
                 </form>
               )}
 
-              {forgotPasswordScreen && forgotPasswordStep === 2 && (
+              {forgotPasswordScreen && forgotPasswordStep === 1 && forgotPasswordMethod === 'mobile' && (
+                <form onSubmit={handleRequestOtp} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Enter your mobile number to receive a password reset OTP.
+                  </p>
+                  <input
+                    type="tel"
+                    placeholder="Your Mobile Number"
+                    value={forgotMobile}
+                    onChange={(e) => setForgotMobile(e.target.value)}
+                    className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                  />
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 text-white rounded-full transition-all ${
+                      isLoading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
+                    }`}
+                  >
+                    {isLoading ? "Sending OTP..." : "Request OTP"}
+                  </button>
+                </form>
+              )}
+
+              {forgotPasswordScreen && forgotPasswordStep === 2 && forgotPasswordMethod === 'email' && (
                 <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
                   <p className="text-center text-gray-600">
                     Enter the 6-digit OTP sent to {forgotEmail}.
@@ -670,6 +777,72 @@ const LoginPage = ({ onLogin }) => {
                         }
                         ref={forgotOtpRefs[index]}
                         className="w-10 h-10 text-center text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 transition"
+                      />
+                    ))}
+                  </div>
+                  {error && (
+                    <p className="text-red-500 text-center">{error}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 text-white rounded-full transition-all ${
+                      isLoading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg"
+                    }`}
+                  >
+                    {isLoading ? "Verifying..." : "Verify OTP"}
+                  </button>
+                  <p className="text-center text-sm text-gray-500">
+                    Time remaining: {timer}s
+                    {resendEnabled ? (
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        className="ml-2 text-blue-500 hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    ) : null}
+                  </p>
+                </form>
+              )}
+
+              {forgotPasswordScreen && forgotPasswordStep === 2 && forgotPasswordMethod === 'mobile' && (
+                <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
+                  <p className="text-center text-gray-600">
+                    Enter the 4-digit OTP sent to {forgotMobile}.
+                  </p>
+                  <div className="flex justify-center space-x-2">
+                    {forgotMobileOtp.map((digit, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) =>
+                          handleOtpChange(
+                            forgotMobileOtp,
+                            setForgotMobileOtp,
+                            index,
+                            e.target.value,
+                            forgotMobileOtpRefs,
+                            e
+                          )
+                        }
+                        onKeyDown={(e) =>
+                          handleOtpChange(
+                            forgotMobileOtp,
+                            setForgotMobileOtp,
+                            index,
+                            e.target.value,
+                            forgotMobileOtpRefs,
+                            e
+                          )
+                        }
+                        ref={forgotMobileOtpRefs[index]}
+                        className="w-12 h-12 text-center text-2xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
                       />
                     ))}
                   </div>

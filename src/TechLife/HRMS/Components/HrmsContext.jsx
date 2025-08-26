@@ -9,7 +9,8 @@ const HrmsContext = ({ children }) => {
   const [lastSseMsgId, setLastSseMsgId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const username = "ACS00000005";
-  const [employeeId, setEmployeeId] = useState("");
+  const [userprofiledata,setUserProfileData]=useState(null)
+  // const [employeeId, setEmployeeId] = useState("");
   const [userData, setUserData] = useState(null);
 
   const [accessToken, setAccessToken] = useState(null);
@@ -169,6 +170,7 @@ const HrmsContext = ({ children }) => {
         setAccessToken,
         refreshToken,
         setRefreshToken,
+        userprofiledata,setUserProfileData
       }}
     >
       {children}

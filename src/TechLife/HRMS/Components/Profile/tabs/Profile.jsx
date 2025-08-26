@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext } from "react";
 import { IoClose } from "react-icons/io5";
+import { Context } from "../../HrmsContext";
 
 // ---- Default Profile ---
 const defaultProfile = {
@@ -173,6 +174,7 @@ const sectionFields = {
 // ---- Profile Component -----
 function Profile() {
   const [editingSection, setEditingSection] = useState(null);
+  let {userprofiledata,setUserProfileData}=useContext(Context)
   const [editingData, setEditingData] = useState({});
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("profileData");

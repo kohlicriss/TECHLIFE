@@ -21,12 +21,12 @@ import { Context } from "../HrmsContext";
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { userData } = useContext(Context);
+ const { userData, setUserData } = useContext(Context);
   const empId = userData?.employeeId;
 
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://hrms.anasolconsultancyservices.com/api/auth/logout", {
+      await fetch("http://localhost:8080/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -34,6 +34,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
       localStorage.clear();
+      setUserData(null);
       if (onLogout) {
         onLogout();
       }
