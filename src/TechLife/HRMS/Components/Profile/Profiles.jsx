@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext} from "react";
+import { Context } from "../HrmsContext";
 import {
-  Route,
   Routes,
+  Route,
   Navigate,
   useLocation,
   useNavigate,
+  useParams,
 } from "react-router-dom";
 import About from "./tabs/About";
 import Profile from "./tabs/Profile";
@@ -20,10 +22,13 @@ import {
   MdChevronRight,
 } from "react-icons/md";
 import { FaPhone, FaBuilding } from "react-icons/fa";
-
+import axios from "axios";
+import { publicinfoApi } from "../../../../axiosInstance";
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { empID } = useParams();
+  let {userprofiledata,setUserProfileData}=useContext(Context)
 
   const [activeTab, setActiveTab] = useState(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -47,22 +52,52 @@ const Profiles = () => {
         };
   });
 
-  useEffect(() => {
-    localStorage.setItem("employeeData", JSON.stringify(employeeData));
-  }, [employeeData]);
+  const EMPLOYEE_ID_TO_FETCH = empID;
+
+useEffect(() => {
+  // empID (URL నుండి) ఉంటేనే API కాల్ చేయాలి
+  if (!empID) {
+    return;
+  }
+
+  const fetchEmployeeDetails = async () => {
+    try {
+      // 1. ఎండ్‌పాయింట్ మార్గాన్ని సరిచేశాను
+      const relativePath = `/employee/${empID}`;
+
+      console.log(`Requesting data from: ${relativePath}`);
+
+      // publicinfoApi instance వాడుతున్నాను, దీని baseURL సరిగ్గా '/api'కి పాయింట్ చేయాలి
+      const response = await publicinfoApi.get(relativePath);
+
+      console.log("✅ API Response Received:", response);
+      console.log("✅ Employee Data:", response.data);
+      setUserProfileData(response.data)
+
+      const data = response.data;
+
+      // 2. EmployeeDTO ప్రకారం డేటా మ్యాపింగ్‌ను అప్‌డేట్ చేశాను
+      setEmployeeData({
+        name: data.employeeName || "N/A",
+        empId: data.employeeId,
+        company: data.jobDetails?.location || "Anasol",
+        department: data.jobDetails?.department || "N/A",
+        email: data.emailId || "N/A",
+        contact: data.mobileNo || "N/A",
+        role: data.jobDetails?.jobTitlePrimary || "N/A",
+      });
+
+    } catch (err) {
+      console.error("❌ Error fetching employee details:", err);
+    }
+  };
+
+  fetchEmployeeDetails();
+}, [empID]);
 
   useEffect(() => {
-    if (profileImage) {
-      localStorage.setItem("profileImage", profileImage);
-    }
-  }, [profileImage]);
-
-  useEffect(() => {
-    if (location.pathname === "/profile" || location.pathname === "/profile/") {
-      navigate("/profile/profile", { replace: true });
-    }
     setActiveTab(location.pathname);
-  }, [location.pathname, navigate]);
+  }, [location.pathname]);
 
   const initials = employeeData.name
     .split(" ")
@@ -70,10 +105,10 @@ const Profiles = () => {
     .join("");
 
   const tabs = [
-    { name: "About", path: "/profile/about", icon: MdPerson },
-    { name: "Profile", path: "/profile/profile", icon: HiIdentification },
-    { name: "Job", path: "/profile/job", icon: MdWork },
-    { name: "Documents", path: "/profile/documents", icon: MdBusiness },
+    { name: "About", path: `about`, icon: MdPerson },
+    { name: "Profile", path: `profile`, icon: HiIdentification },
+    { name: "Job", path: `job`, icon: MdWork },
+    { name: "Documents", path: `documents`, icon: MdBusiness },
   ];
 
   const handleImageUpload = (event) => {
@@ -104,6 +139,7 @@ const Profiles = () => {
     }));
   };
 
+  // This function now receives the full path to navigate to
   const handleTabClick = (path) => {
     navigate(path);
   };
@@ -151,32 +187,32 @@ const Profiles = () => {
 
           <div className="ml-8 text-gray-800">
             <h1 className="text-3xl font-bold tracking-wide mb-4">
-              {employeeData.name}
+              {userprofiledata?.displayName}
             </h1>
             <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-gray-700">
               <div className="flex items-center space-x-2">
                 <HiIdentification className="w-5 h-5" />
-                <p>{employeeData.empId}</p>
+                <p>{userprofiledata?.employeeId}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaBuilding className="w-5 h-5" />
-                <p>{employeeData.company}</p>
+                <p>{userprofiledata?.location}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdWork className="w-5 h-5" />
-                <p>{employeeData.department}</p>
+                <p>{userprofiledata?.jobTitlePrimary}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdEmail className="w-5 h-5" />
-                <p>{employeeData.email}</p>
+                <p>{userprofiledata?.workEmail}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaPhone className="w-5 h-5" />
-                <p>{employeeData.contact}</p>
+                <p>{userprofiledata?.workNumber}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdPerson className="w-5 h-5" />
-                <p>{employeeData.role}</p>
+                <p>{userprofiledata?.jobTitleSecondary}</p>
               </div>
             </div>
           </div>
@@ -186,12 +222,11 @@ const Profiles = () => {
       <div className="flex flex-1">
         <main className="flex-1 p-6 bg-gray-50">
           <Routes>
+            <Route index element={<Navigate to="profile" replace />} />
             <Route path="about" element={<About />} />
             <Route path="profile" element={<Profile />} />
             <Route path="job" element={<Job />} />
             <Route path="documents" element={<Document />} />
-            {/* FIX: Change index route to navigate to "profile" */}
-            <Route index element={<Navigate to="profile" replace />} />
           </Routes>
         </main>
 
@@ -208,33 +243,38 @@ const Profiles = () => {
           </button>
           <nav className="p-4 sticky top-0">
             <div className="space-y-1">
-              {tabs.map((tab) => (
-                <div
-                  key={tab.path}
-                  onClick={() => handleTabClick(tab.path)}
-                  className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === tab.path
-                      ? "bg-black text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <tab.icon
-                    className={`w-5 h-5 ${
-                      activeTab === tab.path ? "text-white" : "text-gray-500"
+              {tabs.map((tab) => {
+                // This is the full, absolute path for the tab
+                const tabPath = `/profile/${empID}/${tab.path}`;
+                return (
+                  <div
+                    key={tab.path}
+                    // ***FIX: Pass the full `tabPath` to the handler***
+                    onClick={() => handleTabClick(tabPath)}
+                    className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      activeTab === tabPath
+                        ? "bg-black text-white"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
-                  />
-                  {sidebarOpen && (
-                    <span className="font-medium">{tab.name}</span>
-                  )}
-                </div>
-              ))}
+                  >
+                    <tab.icon
+                      className={`w-5 h-5 ${
+                        activeTab === tabPath ? "text-white" : "text-gray-500"
+                      }`}
+                    />
+                    {sidebarOpen && (
+                      <span className="font-medium">{tab.name}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </nav>
         </div>
       </div>
 
       {isEditing && (
-        <div className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-114 ">
+        <div className="fixed inset-0 backdrop-blur-sm   bg-opacity-100 flex items-center justify-center z-100">
           <div className="bg-white rounded-lg p-6 w-[500px] shadow-2xl">
             <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
             <form onSubmit={handleSave}>

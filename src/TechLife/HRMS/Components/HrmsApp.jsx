@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Context } from "./HrmsContext";
-import { useContext } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -8,24 +6,49 @@ import {
     Navigate,
     Outlet,
 } from "react-router-dom";
+import logo from "./assets/anasol-logo.png";
 import HrmsContext from "./HrmsContext";
-import NotificationSystem from "./Notifications/NotificationSystem";
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
-import ChatApp from "./Chats/ChatApp";
-import Employees from "./Employees/Employees";
-import Profiles from "./Profile/Profiles";
 import LoginPage from "./Login/LoginPage";
-import AllTeams from "./Teams/AllTeams";
-import Tickets from "./AdminTickets/Tickets";
-import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
-import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
-import Dashboard from "./EmployeeDashboards/Dashboard";
-import TasksApp from "./Tasks/TaskApp";
-
-// Assuming ProtectedRoute is located in a directory above HrmsApp.js
 import ProtectedRoute from "../../../ProtectedRoute";
-import axios from "axios";
+
+// Lazy loading components
+const NotificationSystem = lazy(() => import("./Notifications/NotificationSystem"));
+const ChatApp = lazy(() => import("./Chats/ChatApp"));
+const Employees = lazy(() => import("./Employees/Employees"));
+const Profiles = lazy(() => import("./Profile/Profiles"));
+const AllTeams = lazy(() => import("./Teams/AllTeams"));
+const Tickets = lazy(() => import("./AdminTickets/Tickets"));
+const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
+const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
+const Dashboard = lazy(() => import("./EmployeeDashboards/Dashboard"));
+const TasksApp = lazy(() => import("./Tasks/TaskApp"));
+
+const FullPageSpinner = () => {
+    const [dots, setDots] = useState(1);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDots((prevDots) => (prevDots >= 3 ? 1 : prevDots + 1));
+        }, 500); 
+
+        return () => clearInterval(interval);  
+    }, []);
+
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-white">
+            <img 
+                src={logo} 
+                alt="Loading..." 
+                className="h-20 w-20 animate-pulse" 
+            />
+            <p className="mt-4 text-lg font-semibold text-gray-700">
+                Loading{'.'.repeat(dots)}
+            </p>
+        </div>
+    );
+};
 
 const MainLayout = ({
     isSidebarOpen,
@@ -37,7 +60,6 @@ const MainLayout = ({
         <Navbar
             setSidebarOpen={setSidebarOpen}
             currentUser={currentUser}
-            onLogout={onLogout}
         />
         <div className="flex flex-1 overflow-hidden pt-16">
             <Sidebar
@@ -53,23 +75,20 @@ const MainLayout = ({
 );
 
 const HrmsApp = () => {
-    const fulldata = localStorage.getItem("emppayload");
-    console.log(fulldata);
-
     const [isAuthenticated, setIsAuthenticated] = useState(
-        !!localStorage.getItem("authToken")
+        !!localStorage.getItem("accessToken")
     );
+
     const [isSidebarOpen, setSidebarOpen] = useState(false);
-    const [currentUser, setCurrentUser] = useState({
+    const [currentUser] = useState({
         name: "Johnes",
         designation: " Associate Software Engineer",
         avatar: "https://i.pravatar.cc/100",
     });
 
-
     useEffect(() => {
         const handleStorageChange = () => {
-            setIsAuthenticated(!!localStorage.getItem("authToken"));
+            setIsAuthenticated(!!localStorage.getItem("accessToken"));
         };
 
         window.addEventListener("storage", handleStorageChange);
@@ -79,12 +98,10 @@ const HrmsApp = () => {
     }, []);
 
     const handleLogin = () => {
-        localStorage.setItem("authToken", "true");
         setIsAuthenticated(true);
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("authToken");
         setIsAuthenticated(false);
     };
 
@@ -93,40 +110,42 @@ const HrmsApp = () => {
     return (
         <HrmsContext>
             <Router>
-                <Routes>
-                    {!isAuthenticated ? (
-                        <>
-                            <Route
-                                path="/login"
-                                element={<LoginPage onLogin={handleLogin} />}
-                            />
-                            <Route path="*" element={<Navigate to="/login" replace />} />
-                        </>
-                    ) : (
-                        <Route
-                            element={
-                                <MainLayout
-                                    isSidebarOpen={isSidebarOpen}
-                                    setSidebarOpen={setSidebarOpen}
-                                    currentUser={currentUser}
-                                    onLogout={handleLogout}
+                <Suspense fallback={<FullPageSpinner />}>
+                    <Routes>
+                        {!isAuthenticated ? (
+                            <>
+                                <Route
+                                    path="/login"
+                                    element={<LoginPage onLogin={handleLogin} />}
                                 />
-                            }
-                        >
-                            <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
-                            <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                            <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
-                            <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
-                            <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
-                            <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-                            <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
-                            <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
-                            <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
-                            <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
-                            <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
-                        </Route>
-                    )}
-                </Routes>
+                                <Route path="*" element={<Navigate to="/login" replace />} />
+                            </>
+                        ) : (
+                            <Route
+                                element={
+                                    <MainLayout
+                                        isSidebarOpen={isSidebarOpen}
+                                        setSidebarOpen={setSidebarOpen}
+                                        currentUser={currentUser}
+                                        onLogout={handleLogout}
+                                    />
+                                }
+                            >
+                                <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
+                                <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                                <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
+                                <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                                <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
+                                <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                                <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                                <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
+                                <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
+                                <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
+                            </Route>
+                        )}
+                    </Routes>
+                </Suspense>
             </Router>
         </HrmsContext>
     );

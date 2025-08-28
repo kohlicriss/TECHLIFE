@@ -9,25 +9,16 @@ const apiClient = axios.create({
   },
 });
 
-/**
- * Fetches the initial list of chats (groups and private) for a user.
- * @param {string} employeeId - The ID of the current user.
- */
-export const getChatOverview = async (employeeId) => {  
+export const getChatOverview = async (employeeId) => {
   try {
-    const response = await apiClient.get(`/overview/${employeeId}`);
+    const response = await apiClient.get(`/chat/overview/${employeeId}`);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch chat overview:", error);
-    return []; 
+    return [];
   }
 };
 
-/**
- * Fetches the message history for a specific chat.
- * @param {string} employeeId - The ID of the current user.
- * @param {string} chatId - The ID of the chat (private user or group).
- */
 export const getMessages = async (employeeId, chatId) => {
   try {
     const response = await apiClient.get(`/chat/${employeeId}/${chatId}`);
@@ -38,18 +29,11 @@ export const getMessages = async (employeeId, chatId) => {
   }
 };
 
-/**
- * BUG FIX: Updates an existing message.
- * Now accepts 'chatType' and sends it in the request body to prevent backend error.
- * @param {number} messageId - The ID of the message to update.
- * @param {string} newContent - The new text content for the message.
- * @param {string} chatType - The type of chat ('PRIVATE' or 'TEAM').
- */
-export const updateMessage = async (messageId, newContent, chatType) => {
+export const updateMessage = async (messageId, newContent, senderId) => {
   try {
     const requestBody = {
       content: newContent,
-      type: chatType, // This was the missing piece causing the 500 error.
+      sender: senderId, 
     };
     const response = await apiClient.put(`/chat/update/${messageId}`, requestBody);
     return response.data;
@@ -59,11 +43,6 @@ export const updateMessage = async (messageId, newContent, chatType) => {
   }
 };
 
-/**
- * Deletes a message for the current user only.
- * @param {number} messageId - The ID of the message to delete.
- * @param {string} userId - The ID of the current user.
- */
 export const deleteMessageForMe = async (messageId, userId) => {
   try {
     const response = await apiClient.post(`/chat/${messageId}/me?userId=${userId}`);
@@ -74,11 +53,6 @@ export const deleteMessageForMe = async (messageId, userId) => {
   }
 };
 
-/**
- * Deletes a message for everyone in the chat (sender only).
- * @param {number} messageId - The ID of the message to delete.
- * @param {string} userId - The ID of the sender.
- */
 export const deleteMessageForEveryone = async (messageId, userId) => {
   try {
     const response = await apiClient.post(`/chat/${messageId}/everyone?userId=${userId}`);
@@ -89,13 +63,9 @@ export const deleteMessageForEveryone = async (messageId, userId) => {
   }
 };
 
-/**
- * Uploads a file.
- * @param {FormData} formData - The form data containing the file and other info.
- */
 export const uploadFile = async (formData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
+        const response = await axios.post(`${API_BASE_URL}/chat/upload`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -105,4 +75,74 @@ export const uploadFile = async (formData) => {
         console.error("File upload failed:", error);
         throw error;
     }
+};
+
+export const forwardMessage = async (forwardData) => {
+    try {
+        const response = await apiClient.post('/chat/forward', forwardData);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to forward message ${forwardData.forwardMessageId}:`, error);
+        throw error;
+    }
+};
+
+export const pinMessage = async (messageId, userId) => {
+    try {
+        const response = await apiClient.post(`/chat/pin/${messageId}?userId=${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to pin message ${messageId}:`, error);
+        throw error;
+    }
+};
+
+export const unpinMessage = async (messageId, userId) => {
+    try {
+        const response = await apiClient.post(`/chat/unpin/${messageId}?userId=${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to unpin message ${messageId}:`, error);
+        throw error;
+    }
+};
+
+export const getPinnedMessage = async (chatId, chatType, userId) => {
+    try {
+        const response = await apiClient.get(`/chat/${chatId}/pinned?chatType=${chatType}&userId=${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Failed to fetch pinned message for chat ${chatId}:`, error);
+        return null;
+    }
+};
+
+export const clearChatHistory = async (userId, chatId) => {
+  try {
+    const response = await apiClient.post(`/chat/clear?userId=${userId}&chatId=${chatId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to clear chat for ${chatId}:`, error);
+    throw error;
+  }
+};
+
+export const uploadVoiceMessage = async (voiceData) => {
+    try {
+        const response = await apiClient.post('/chat/voice/upload', voiceData); 
+        return response.data;
+    } catch (error) {
+        console.error("Voice message upload failed:", error);
+        throw error;
+    }
+};
+
+export const getGroupMembers = async (teamId) => {
+  try {
+    const response = await apiClient.get(`/chat/team/employee/${teamId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch members for team ${teamId}:`, error);
+    return null;
+  }
 };
