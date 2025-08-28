@@ -26,7 +26,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
 
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://192.168.0.109:8080/api/auth/logout", {
+      await fetch("http://hrms.anasolconsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
