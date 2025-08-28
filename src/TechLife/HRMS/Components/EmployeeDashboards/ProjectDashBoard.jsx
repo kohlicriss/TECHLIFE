@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid'; // Not used in the final render, but kept from original
 import classNames from 'classnames'; // Not used in the final render, but kept from original
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { FaCalendarAlt, FaTrashAlt, FaFileAlt } from 'react-icons/fa';
+import axios from 'axios';
 
 // --- ProjectCard Data and Component ---
 const projects = [
@@ -254,7 +255,7 @@ const MyTeam = () => {
 
     return (
         <div className="bg-white shadow-xl rounded-lg p-6 border border-gray-200 h-full overflow-hidden">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Employee Attendance</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">My Team</h2>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white">
                     <thead>
@@ -321,18 +322,36 @@ const MyTeam = () => {
 };
 
 // --- ProjectStatus Data and Component ---
-const projectStatusData = [
-    { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
-    { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
-    { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
-    { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
-    { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
-    { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
-];
+//const projectStatusData = [
+//    { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
+//    { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
+//    { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
+//    { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
+//    { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
+//    { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
+//];
 
 const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
 
 function ProjectStatus() {
+    const [projectStatusData, setProjectStatusData] = useState([]);
+    useEffect(() => {
+        axios
+          .get('http://192.168.0.50:8090/api/all/projectStatus/ACS00000003')
+          .then(response => {
+           const formatted = response.data.map(item => ({
+            Project_id: item.project_id,
+            Project_name: item.project_name,
+            Status: item.status,
+            Duration: item.duration
+    
+          }));
+          setProjectStatusData(formatted);
+          console.log('ProjectStatus data formatted:',  formatted);
+            
+          })
+          
+      }, []);
     return (
         <div className="p-6 bg-white rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">Project Status Overview</h2>
@@ -377,110 +396,110 @@ function ProjectStatus() {
 }
 
 // --- Project (Table) Data and Component ---
-const projectTableData = [
-    {
-        project_id: "P_01",
-        project_name: "HRMS Project",
-        status: "Ongoing",
-        start_date: "2025-05-01",
-        end_date: "2025-09-30",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "High",
-        Open_task: 30,
-        Closed_task: 25,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_02",
-        project_name: "Employee Self-Service App",
-        status: "Upcoming",
-        start_date: "2025-10-15",
-        end_date: "2025-12-15",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "Medium",
-        Open_task: 20,
-        Closed_task: 10,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_03",
-        project_name: "Payroll Automation",
-        status: "Completed",
-        start_date: "2024-10-01",
-        end_date: "2025-02-15",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "High",
-        Open_task: 12,
-        Closed_task: 10,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_04",
-        project_name: "Attendance System Upgrade",
-        status: "Ongoing",
-        start_date: "2025-05-10",
-        end_date: "2025-08-10",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "Low", // Changed from "Small" to "Low" for consistency
-        Open_task: 40,
-        Closed_task: 25,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_05",
-        project_name: "AI-Based Recruitment Tool",
-        status: "Upcoming",
-        start_date: "2025-12-01",
-        end_date: "2026-02-28",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "Medium",
-        Open_task: 20,
-        Closed_task: 15,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P06",
-        project_name: "Internal Chatbot System",
-        status: "Completed",
-        start_date: "2024-05-01",
-        end_date: "2024-11-30",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "High",
-        Open_task: 30,
-        Closed_task: 25,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    }
-];
+//const projectTableData = [
+//    {
+//        project_id: "P_01",
+//        project_name: "HRMS Project",
+//        status: "Ongoing",
+//        start_date: "2025-05-01",
+//        end_date: "2025-09-30",
+//        Employee_team: [
+//            "https://randomuser.me/api/portraits/men/32.jpg",
+//            "https://randomuser.me/api/portraits/women/65.jpg",
+//            "https://randomuser.me/api/portraits/men/76.jpg"
+//        ],
+//        Priority: "High",
+//        Open_task: 30,
+//        Closed_task: 25,
+//        Details: "https://www.flaticon.com/free-icon/document_16702688",
+//        Action: "https://icons8.com/icon/102350/delete"
+//    },
+//    {
+//        project_id: "P_02",
+//        project_name: "Employee Self-Service App",
+//        status: "Upcoming",
+//        start_date: "2025-10-15",
+//        end_date: "2025-12-15",
+//        Employee_team: [
+//            "https://randomuser.me/api/portraits/men/32.jpg",
+//            "https://randomuser.me/api/portraits/women/65.jpg",
+//            "https://randomuser.me/api/portraits/men/76.jpg"
+//        ],
+//        Priority: "Medium",
+//        Open_task: 20,
+//        Closed_task: 10,
+//        Details: "https://www.flaticon.com/free-icon/document_16702688",
+//        Action: "https://icons8.com/icon/102350/delete"
+//    },
+//    {
+//        project_id: "P_03",
+//        project_name: "Payroll Automation",
+//        status: "Completed",
+//        start_date: "2024-10-01",
+//        end_date: "2025-02-15",
+//        Employee_team: [
+//            "https://randomuser.me/api/portraits/men/32.jpg",
+//            "https://randomuser.me/api/portraits/women/65.jpg",
+//            "https://randomuser.me/api/portraits/men/76.jpg"
+//        ],
+//        Priority: "High",
+//        Open_task: 12,
+//        Closed_task: 10,
+//        Details: "https://www.flaticon.com/free-icon/document_16702688",
+//        Action: "https://icons8.com/icon/102350/delete"
+//    },
+//    {
+//        project_id: "P_04",
+//        project_name: "Attendance System Upgrade",
+//        status: "Ongoing",
+//        start_date: "2025-05-10",
+//        end_date: "2025-08-10",
+//        Employee_team: [
+//            "https://randomuser.me/api/portraits/men/32.jpg",
+//            "https://randomuser.me/api/portraits/women/65.jpg",
+//            "https://randomuser.me/api/portraits/men/76.jpg"
+//        ],
+//        Priority: "Low", // Changed from "Small" to "Low" for consistency
+//        Open_task: 40,
+//        Closed_task: 25,
+//        Details: "https://www.flaticon.com/free-icon/document_16702688",
+//        Action: "https://icons8.com/icon/102350/delete"
+//    },
+//    {
+//        project_id: "P_05",
+//        project_name: "AI-Based Recruitment Tool",
+//        status: "Upcoming",
+//        start_date: "2025-12-01",
+//        end_date: "2026-02-28",
+//        Employee_team: [
+//            "https://randomuser.me/api/portraits/men/32.jpg",
+//            "https://randomuser.me/api/portraits/women/65.jpg",
+//            "https://randomuser.me/api/portraits/men/76.jpg"
+//        ],
+//        Priority: "Medium",
+//        Open_task: 20,
+//        Closed_task: 15,
+//        Details: "https://www.flaticon.com/free-icon/document_16702688",
+//        Action: "https://icons8.com/icon/102350/delete"
+//    },
+//    {
+//        project_id: "P06",
+//        project_name: "Internal Chatbot System",
+//        status: "Completed",
+//        start_date: "2024-05-01",
+//        end_date: "2024-11-30",
+//        Employee_team: [
+//            "https://randomuser.me/api/portraits/men/32.jpg",
+//            "https://randomuser.me/api/portraits/women/65.jpg",
+//            "https://randomuser.me/api/portraits/men/76.jpg"
+//        ],
+//        Priority: "High",
+//        Open_task: 30,
+//        Closed_task: 25,
+//        Details: "https://www.flaticon.com/free-icon/document_16702688",
+//        Action: "https://icons8.com/icon/102350/delete"
+//    }
+//];
 
 const getPriorityColor = (priority) => {
     switch (priority) {
@@ -497,11 +516,11 @@ const getPriorityColor = (priority) => {
 
 const getStatusColor = (status) => {
     switch (status) {
-        case "Completed":
+        case "In Progress":
             return "bg-green-100 text-green-800";
         case "Ongoing":
             return "bg-blue-100 text-blue-800";
-        case "Upcoming":
+        case "Planned":
             return "bg-yellow-100 text-yellow-800"; // Changed from red to yellow for upcoming
         default:
             return "bg-gray-100 text-gray-800";
@@ -509,6 +528,29 @@ const getStatusColor = (status) => {
 };
 
 function Project() {
+    const [projectTableData, setProjectTableData] = useState([]);
+    useEffect(() => {
+        axios
+          .get('http://192.168.0.50:8090/api/all/projectData/ACS00000003')
+          .then(response => {
+           const formatted = response.data.map(item => ({
+            project_id: item.project_id,
+            project_name: item.project_name,
+            status: item.status,
+            start_date: item.start_date,
+            end_date: item.end_date,
+            Employee_team: item.employee_team.map(emp => emp.image_url), // Assuming Employee_team is an array of objects with image_url
+            Priority: item.priority,
+            Details: item.details || "#", // Fallback to "#" if Details is not provided
+           
+    
+          }));
+          setProjectTableData(formatted);
+          console.log('ProjectStatus data formatted:',  formatted);
+            
+          })
+          
+      }, []);
     return (
         <div className="p-6 bg-white rounded-lg shadow-xl border border-gray-200 overflow-x-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Project Overview</h2>
@@ -520,8 +562,6 @@ function Project() {
                         <th className="p-3 text-sm md:text-base">Priority</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
-                        <th className="p-3 text-sm md:text-base">Open</th>
-                        <th className="p-3 text-sm md:text-base">Closed</th>
                         <th className="p-3 text-sm md:text-base">Status</th>
                         <th className="p-3 text-sm md:text-base">Details</th>
                         <th className="p-3 text-sm md:text-base">Delete</th>
@@ -550,8 +590,6 @@ function Project() {
                             </td>
                             <td className="p-3 text-sm md:text-base">{proj.start_date}</td>
                             <td className="p-3 text-sm md:text-base">{proj.end_date}</td>
-                            <td className="p-3 text-sm md:text-base">{proj.Open_task}</td>
-                            <td className="p-3 text-sm md:text-base">{proj.Closed_task}</td>
                             <td className="p-3 ">
                                 <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)}`}>
                                     {proj.status}

@@ -9,37 +9,25 @@ import {
 } from '@heroicons/react/24/solid';
 import AttendancesDashboard from './AttendancesDashboard';
 import LeavesDashboard from './LeavesDashboard';
-
-
-// Define your navigation items with their corresponding icons and components
+import CombinedDashboard from './CombinedDashBoard';
 const navItems = [
+  { id: 'Admin', name: 'Admin', icon: BriefcaseIcon, component: CombinedDashboard },
   { id: 'attendance', name: 'Attendance', icon: CalendarDaysIcon, component: AttendancesDashboard },
   { id: 'leaves', name: 'Leaves', icon: SwatchIcon, component: LeavesDashboard },
-  
 ];
-
 const Dashboard = () => {
-  // isSidebarOpen is true when the sidebar is expanded/visible, false when collapsed/hidden
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('attendance'); // Set initial active section
-
-  // Toggle function for the sidebar
+  const [activeSection, setActiveSection] = useState('Admin');
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  // Find the component to render based on the activeSection
   const ActiveComponent = navItems.find(item => item.id === activeSection)?.component;
-
   return (
     <div className="relative flex flex-col lg:flex-row-reverse w-full min-h-screen bg-gray-100 overflow-hidden">
-
       {/* Sidebar - Positioned fixed to the right */}
       <div
-        className={`fixed top-0 right-0 h-full bg-gray-100 text-white p-6 transition-all duration-300 border-l border-gray-200 ease-in-out flex-shrink-0 flex flex-col z-20
-          ${isSidebarOpen ? 'w-52' : 'w-0 lg:w-24'} 
-          ${isSidebarOpen ? 'block' : 'hidden lg:flex'} `} /* Mobile: completely hide when closed; Desktop: show collapsed */
+        className={`fixed top-0 right-0 h-full bg-gray-100 text-white p-4 transition-all duration-300 border-l border-gray-200 ease-in-out flex-shrink-0 flex flex-col z-20
+          ${isSidebarOpen ? 'w-52' : 'w-0 lg:w-20'} 
+          ${isSidebarOpen ? 'block' : 'hidden lg:flex'} `} 
       >
-        {/* Toggle Button for Desktop View (Always inside sidebar) */}
-        {/* This button both opens and closes the sidebar */}
         <div className="flex justify-end mb-8">
           <button
             onClick={toggleSidebar}
@@ -47,14 +35,14 @@ const Dashboard = () => {
             aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
             {isSidebarOpen ? (
-              <ChevronLeftIcon className="w-4 h-4" /> /* Show left arrow to close (collapse left) */
+              <ChevronLeftIcon className="w-4 h-4" /> 
             ) : (
-              <ChevronRightIcon className="w-4 h-4" /> /* Show right arrow to open (expand right) */
+              <ChevronRightIcon className="w-4 h-4" /> 
             )}
           </button>
         </div>
 
-        <div className={`font-bold mb-8 text-center text-gray-800 ${isSidebarOpen ? 'text-2xl' : 'text-xl'}`}>
+        <div className={`font-bold mb-8 text-center text-gray-800 ${isSidebarOpen ? 'text-xl' : 'text-xl'}`}>
           {isSidebarOpen && <span>Menu</span>}
         </div>
 
@@ -85,30 +73,21 @@ const Dashboard = () => {
           ))}
         </nav>
       </div>
-
-      {/* Main Content Area */}
       <div className={`flex-1 p-2 transition-all duration-300 ease-in-out flex flex-col
-        ${isSidebarOpen ? 'mr-52' : 'mr-0 lg:mr-24'} `} /* Adjust margin based on sidebar state for spacing */
-      >
-        {/* Header with Dashboard Title and Mobile Toggle Button */}
+        ${isSidebarOpen ? 'mr-52' : 'mr-0 lg:mr-24'} `}>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800 capitalize">
-            
           </h1>
-          {/* Mobile sidebar OPEN button (visible on mobile, hidden on desktop) */}
-          {/* This button is only shown if the sidebar is currently closed */}
           {!isSidebarOpen && ( 
              <button
                onClick={toggleSidebar}
-               className=" bg-white text-gray-800 shadow-md p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+               className="lg:hidden bg-white text-gray-800 shadow-md p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
                aria-label="Open sidebar"
              >
-               <ChevronLeftIcon className="w-4 h-4" /> /* Indicates opening the sidebar from the left */
+               <ChevronLeftIcon className="w-4 h-4" /> 
              </button>
            )}
         </div>
-
-        {/* Section Content - This remains scrollable */}
         <div className="flex-1 overflow-y-auto pb-4">
           {ActiveComponent && <ActiveComponent />}
         </div>
@@ -116,5 +95,4 @@ const Dashboard = () => {
     </div>
   );
 };
-
 export default Dashboard;

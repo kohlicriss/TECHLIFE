@@ -11,6 +11,8 @@ import AttendancesDashboard from './AttendancesDashboard';
 import LeavesDashboard from './LeavesDashboard';
 import PerformanceDashboard from './PerformanceDashBoard';
 import ProjectDashboard from './ProjectDashBoard';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LeaveForm from './LeaveForm';
 
 // Define your navigation items with their corresponding icons and components
 const navItems = [
@@ -118,5 +120,11 @@ const Dashboard = () => {
     </div>
   );
 };
+
+<Router>
+      <Routes>
+        <Route path="/leave-form" element={<LeaveForm />} />
+      </Routes>
+    </Router>
 
 export default Dashboard;

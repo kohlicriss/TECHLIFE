@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useMediaQuery } from "@mui/material";
 import { Box } from "@mui/material";
 import {
@@ -13,196 +13,315 @@ import {
   YAxis,
   Label,
 } from "recharts";
+import Calendar from "./Calendar";
+import axios from "axios";
 
-// --- Data Simulation (This would come from a backend in a real app) ---
-const initialLeaveTypeData = [
-  { employee: "Rajesh", leaveType: "Sick Leave", days: 5 },
-  { employee: "Rajesh", leaveType: "Paid Leave", days: 2 },
-  { employee: "Rajesh", leaveType: "Unpaid Leave", days: 4 },
-  { employee: "Rajesh", leaveType: "Casual Leave", days: 3 },
-];
-
-const currentLeaveHistoryData = [
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Unpaid Leave",
-    Leave_From: "2025-07-10",
-    Leave_to: "2025-05-12",
-    Days: 2,
-    status: "Reject",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-07-12",
-    "Rejection Reason": "Taking Continues leave in every month",
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Sick Leave",
-    Leave_From: "2025-07-20",
-    Days: 1,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-07-22",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Sick Leave",
-    Leave_From: "2025-06-22",
-    Leave_to: "2025-06-24",
-    Days: 2,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-06-26",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Casual Leave",
-    Leave_From: "2025-06-01",
-    Days: 1,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-06-03",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Sick Leave",
-    Leave_From: "2025-05-22",
-    Leave_to: "2025-05-23",
-    Days: 2,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-05-24",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Casual Leave",
-    Leave_From: "2025-05-12",
-    Days: 1,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-05-14",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Unpaid Leave",
-    Leave_From: "2025-04-01",
-    Leave_to: "2025-04-02",
-    Days: 2,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-04-03",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Casual Leave",
-    Leave_From: "2025-04-01",
-    Days: 1,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-07-12",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Paid Leave",
-    Leave_From: "2025-03-10",
-    Days: 1,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-03-12",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-  {
-    department: "IT",
-    Gender: "Male",
-    Leave_type: "Paid Leave",
-    Leave_From: "2025-03-20",
-    Days: 1,
-    status: "Approve",
-    "Request By": "Panalisation Policy",
-    Details:
-      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-    "Action Date": "2025-03-22",
-    "Rejection Reason": null,
-    Action: "https://icons8.com/icon/36944/ellipsis",
-  },
-];
-
-// --- Reusable LeaveTypeCard Component ---
-const LeaveTypeCard = ({ title, leaveData, color }) => {
-  const isMobile = useMediaQuery("(max-width:768px)");
-  const { leaveType, days, Available, "Annual Quota": annualQuota } = leaveData;
-
-  const chartData = [
-    { name: "Consumed", value: days },
-    { name: "Remaining", value: Math.max(annualQuota - days, 0) },
-  ];
-  const COLORS = [color, "#E0E0E0"]; // Dynamic color for consumed, light gray for remaining
+const AddLeaveForm = ({ onClose }) => {
+  // ... state for form inputs (fromDate, toDate, etc.) ...
+  const [showFromCalendar, setShowFromCalendar] = useState(false);
+  const [showToCalendar, setShowToCalendar] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">{title}</h1>
+    // This is the overlay div. It covers the entire screen,
+    // applies the background blur, and centers the content.
+    <div className="fixed inset-0 z-50 flex items-center justify-center  bg-opacity-25 backdrop-blur-sm">
+      {/* This is the main container for the form content */}
+      <div className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100">
+        {/* Close button at the top-right */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
+        >
+          &times;
+        </button>
+
+        <h2 className="text-xl font-semibold mb-4 text-center border-b pb-4">Add Leave</h2>
+
+        <div className="space-y-4">
+          {/* Employee Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Employee Name</label>
+            <input
+              type="text"
+              value=""
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            />
+          </div>
+
+          {/* Leave Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Leave Type</label>
+            <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+              <option>Select</option>
+              <option>Sick Leave</option>
+              <option>Casual Leave</option>
+              <option>Unpaid Leave</option>
+              <option>Paid Leave</option>
+            </select>
+          </div>
+
+          {/* Date Range with custom date pickers */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">From</label>
+              <div className="relative mt-1">
+                <input
+                  type="text"
+                  readOnly
+                  value={fromDate ? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"}
+                  onClick={() => setShowFromCalendar(!showFromCalendar)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
+                />
+                {showFromCalendar && (
+                  <Calendar
+                    selectedDate={fromDate}
+                    onSelectDate={(date) => {
+                      setFromDate(date);
+                      setShowFromCalendar(false);
+                    }}
+                    onClose={() => setShowFromCalendar(false)}
+                  />
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">To</label>
+              <div className="relative mt-1">
+                <input
+                  type="text"
+                  readOnly
+                  value={toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"}
+                  onClick={() => setShowToCalendar(!showToCalendar)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
+                />
+                {showToCalendar && (
+                  <Calendar
+                    selectedDate={toDate}
+                    onSelectDate={(date) => {
+                      setToDate(date);
+                      setShowToCalendar(false);
+                    }}
+                    onClose={() => setShowToCalendar(false)}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* New row for calculated days and leave duration */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">No. of Days</label>
+              <input
+                readOnly
+                type="text"
+                value={
+                  fromDate && toDate ? `${Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1} Days` : "0 Days"
+                }
+                className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Leave Duration</label>
+              <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                <option>Select</option>
+                <option>Full Day</option>
+                <option>First Half Day</option>
+                <option>Second Half Day</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* Remaining Days (placeholder for now) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Remaining Days</label>
+            <input
+              type="text"
+              readOnly
+              value="8"
+              className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
+            />
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Reason</label>
+            <textarea
+              rows="3"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            ></textarea>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
+          <button
+            onClick={onClose}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            Cancel
+          </button>
+          <button className="rounded-md border border-transparent bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+            Add Leave
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+//const initialLeaveTypeData = [
+//  { employee: "Rajesh", leaveType: "Sick Leave", days: 5 },
+//  { employee: "Rajesh", leaveType: "Paid Leave", days: 2 },
+//  { employee: "Rajesh", leaveType: "Unpaid Leave", days: 4 },
+//  { employee: "Rajesh", leaveType: "Casual Leave", days: 3 },
+//];
+//const currentLeaveHistoryData = [
+//  {
+//    Leave_type: "Unpaid Leave",
+//    Leave_On: ["2025/07/10", "-", "2025/05/12"],
+//    status: "Reject",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/07/12",
+//    Rejection_Reason: "Taking Continues leave in every month",
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Sick Leave",
+//    Leave_On: ["2025/07/20"],
+//    Days: 1,
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/07/22",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Sick Leave",
+//    Leave_On: ["2025/06/22", "-", "2025/06/24"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/06/26",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Casual Leave",
+//    Leave_On: ["2025/06/01"],
+//    status: "Approve",
+//    "Request By": "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/06/03",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Sick Leave",
+//    Leave_On: ["2025/05/22", "-", "2025/05/23"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/05/24",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Casual Leave",
+//    Leave_On: ["2025/05/12"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/05/14",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Unpaid Leave",
+//    Leave_On: ["2025/04/01", "-", "2025/04/02"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/04/03",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Casual Leave",
+//    Leave_On: ["2025/04/01"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/07/12",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Paid Leave",
+//    Leave_On: ["2025/03/10"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/03/12",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//  {
+//    Leave_type: "Paid Leave",
+//    Leave_On: ["2025/03/20"],
+//    status: "Approve",
+//    Request_By: "Panalisation Policy",
+//    Details:
+//      "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+//    Action_Date: "2025/03/22",
+//    Rejection_Reason: null,
+//    Action: "https://icons8.com/icon/36944/ellipsis",
+//  },
+//];
+const LeaveTypeCard = ({ title, leaveData = { type: title, consumed: 0, remaining: 0, total: 0 }, color }) => {
+  const isMobile = useMediaQuery("(max-width:500px)");
+  const { type, consumed, remaining, total } = leaveData;
+  const chartData = [
+    { name: "Consumed", value: consumed },
+    { name: "Remaining", value: Math.max(total - consumed, 0) },
+  ];
+  const COLORS = [color, "#E0E0E0"];
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
+      <h1 className="text-xl font-bold mb-4 text-center text-gray-800">
+        {title}
+      </h1>
       <Box
         display="flex"
-        flexDirection={isMobile ? "column" : "row"}
+        flexDirection="column"
         justifyContent="center"
         alignItems="center"
-        gap={2}
-        p={1}
         className="w-full"
       >
-        <ResponsiveContainer width={150} height={150}>
+        <ResponsiveContainer width={140} height={140}>
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={40}
-              outerRadius={70}
+              innerRadius={30}
+              outerRadius={60}
               paddingAngle={3}
               dataKey="value"
               stroke="none"
+              className="ml-0"
             >
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index]} />
@@ -213,44 +332,59 @@ const LeaveTypeCard = ({ title, leaveData, color }) => {
               y="50%"
               textAnchor="middle"
               dominantBaseline="middle"
-              className="text-lg font-bold text-gray-700"
+              className="text-large font-semibold text-gray-700"
             >
-              {leaveType.split(" ")[0]}
+              {type.split(" ")[0]}
             </text>
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
-
-        {/* Info Panel */}
-        <div className="text-left space-y-2 text-sm text-gray-700">
+        <div className="text-center mt-4 space-y-2 text-sm text-gray-700">
           <div>
-            <strong>Leave Type:</strong> {leaveType}
+            <strong>Consumed:</strong>{" "}
+            <span className="font-semibold text-sm text-red-600">
+              {consumed}
+            </span>{" "}
+            days
           </div>
           <div>
-            <strong>Consumed:</strong> <span className="font-semibold text-red-600">{days}</span> days
+            <strong>Available:</strong>{" "}
+            <span className="font-semibold text-sm text-green-600">
+              {" "}
+              {remaining}
+            </span>{" "}
+            days
           </div>
           <div>
-            <strong>Available:</strong> <span className="font-semibold text-green-600">{Available}</span> days
-          </div>
-          <div>
-            <strong>Annual Quota:</strong> {annualQuota} days
+            <strong>Total:</strong> {total} days
           </div>
         </div>
       </Box>
     </div>
   );
 };
-
-// --- LeaveType Component (Overall Leave Breakdown) ---
-const LeaveType = ({ leaveData }) => {
-  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"]; // Diverse colors for overall breakdown
-
-  const filteredData = leaveData.map(({ leaveType, days }) => ({
+const LeaveType = () => {
+  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"]; 
+  useEffect(() => {
+    axios
+      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/personalLeavesData')
+      .then(response => {
+       const formatted = response.data.map(item => ({
+        leaveType: item.leaveType,
+        days: item.days,
+      }));
+      setInitialLeaveTypeData(formatted);
+      console.log('personalleaveData data formatted:',  formatted);
+        
+      })
+      
+  }, []);
+   const [initialLeaveTypeData, setInitialLeaveTypeData] = useState([]);
+  const filteredData = initialLeaveTypeData.map(({ leaveType, days }) => ({
     name: leaveType,
     value: days,
   }));
   const isMobile = useMediaQuery("(max-width:768px)");
-
   const renderCenterLabel = () => {
     return (
       <text
@@ -264,20 +398,18 @@ const LeaveType = ({ leaveData }) => {
       </text>
     );
   };
-
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
+    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
       <h2 className="text-xl font-bold mb-2 text-center text-gray-800">
         Leave Type Breakdown
       </h2>
-
       <Box
         display="flex"
         flexDirection={isMobile ? "column" : "row"}
         justifyContent="center"
         alignItems="center"
         height="100%"
-        gap={isMobile ? 0 : 5}
+        gap={2}
         p={1}
       >
         <ResponsiveContainer width="100%" height={250}>
@@ -292,7 +424,9 @@ const LeaveType = ({ leaveData }) => {
               dataKey="value"
               paddingAngle={2}
               labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent }) =>
+                `${name} ${(percent * 100).toFixed(0)}%`
+              }
             >
               {filteredData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -306,32 +440,43 @@ const LeaveType = ({ leaveData }) => {
     </div>
   );
 };
-
-// --- WeeklyPattern Component (Bar Chart) ---
 const WeeklyPattern = () => {
-  const rawData = [
-    { Day: "Mon", Rate: 5 },
-    { Day: "Tues", Rate: 10 },
-    { Day: "Wed", Rate: 10 },
-    { Day: "Thu", Rate: 5 },
-    { Day: "Fri", Rate: 5 },
-    { Day: "Sat", Rate: 0 },
-    { Day: "Sun", Rate: 0 },
-  ];
-
+  //const rawData = [
+   // { Day: "Mon", Rate: 5 },
+   // { Day: "Tues", Rate: 10 },
+   // { Day: "Wed", Rate: 10 },
+   // { Day: "Thu", Rate: 5 },
+   // { Day: "Fri", Rate: 5 },
+   // { Day: "Sat", Rate: 0 },
+   // { Day: "Sun", Rate: 0 },
+  //];
+  useEffect(() => {
+    axios
+      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leavesbar-graph')
+      .then(response => {
+       const formatted = response.data.map(item => ({
+        Day: item.day,
+        Rate: item.rate,
+      }));
+      setrawData(formatted);
+      console.log('leavesbarchart data formatted:',  formatted);
+        
+      })
+      
+  }, []);
   const [selectedDay, setSelectedDay] = useState("All");
+  const [rawData, setrawData] = useState([]);
   const isMobile = useMediaQuery("(max-width:768px)");
-
   const filteredData =
     selectedDay === "All"
       ? rawData
       : rawData.filter((entry) => entry.Day === selectedDay);
-
   const dayOptions = ["All", ...rawData.map((d) => d.Day)];
-
   return (
-    <div className="bg-white shadow-lg rounded-xl p-4 h-full flex flex-col border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-2 text-center text-gray-800">Weekly Leave Pattern</h1>
+    <div className="bg-white shadow-lg rounded-xl p-4 h-full flex flex-col border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
+      <h1 className="text-xl font-bold mb-2 text-center text-gray-800">
+        Weekly Leave Pattern
+      </h1>
       <div className="mb-4 text-center">
         <label className="mr-2 font-semibold text-gray-700">Day:</label>
         <select
@@ -356,8 +501,16 @@ const WeeklyPattern = () => {
         p={isMobile ? 1 : 2}
       >
         <ResponsiveContainer width="100%" height={230}>
-          <BarChart data={filteredData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-            <XAxis dataKey="Day" axisLine={false} tickLine={false} className="text-sm text-gray-600" />
+          <BarChart
+            data={filteredData}
+            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+          >
+            <XAxis
+              dataKey="Day"
+              axisLine={false}
+              tickLine={false}
+              className="text-sm text-gray-600"
+            />
             <YAxis hide />
             <Tooltip />
             <Bar dataKey="Rate" fill="#4CAF50" radius={[8, 8, 0, 0]} />
@@ -367,28 +520,44 @@ const WeeklyPattern = () => {
     </div>
   );
 };
+const LeaveHistory = () => {
+  useEffect(() => {
+    axios
+      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leaves')
+      .then(response => {
+       const formatted = response.data.map(item => ({
+        Leave_type: item.leave_type,
+        Leave_On: item.leave_on,
+        status: item.status,
+        Request_By: item.request_By,
+        Details: item.details,
+        Action_Date: item.action_Date,
+        Rejection_Reason: item.rejection_Reason,
+        Action: item.action,
 
-// --- LeaveHistory Component (Table) ---
-const LeaveHistory = ({ leaveData: propLeaveData }) => {
+      }));
+      setCurrentLeaveHistoryData(formatted);
+      console.log('leavesHistory data formatted:',  formatted);
+        
+      })
+      
+  }, []);
+ const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-
-  const leaveTypes = ["All", ...new Set(propLeaveData.map((d) => d.Leave_type))];
-  const statuses = ["All", ...new Set(propLeaveData.map((d) => d.status))];
-
-  const filteredData = propLeaveData.filter((item) => {
+  const leaveTypes = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.Leave_type))];
+  const statuses = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.status))];
+  const filteredData = currentLeaveHistoryData.filter((item) => {
     return (
       (leaveTypeFilter === "All" || item.Leave_type === leaveTypeFilter) &&
       (statusFilter === "All" || item.status === statusFilter)
     );
   });
-
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 ease-in-out">
+    <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Employee Leave Requests History
       </h2>
-
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <div>
           <label className="text-base font-semibold mr-2 text-gray-700">
@@ -406,7 +575,6 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
             ))}
           </select>
         </div>
-
         <div>
           <label className="text-base font-semibold mr-2 text-gray-700">
             Status:
@@ -424,28 +592,15 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
           </select>
         </div>
       </div>
-
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-100">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Department
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Gender
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                 Leave Type
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Leave From
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Leave To
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Days
+                Leave On
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                 Status
@@ -459,7 +614,7 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                 Action Date
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+              <th className="px-4 py-3 whitespace-pre-wrap text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                 Rejection Reason
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
@@ -471,22 +626,11 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
             {filteredData.map((row, index) => (
               <tr key={index} className="hover:bg-gray-50">
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.department}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Gender}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                   {row.Leave_type}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Leave_From}
+                  {row.Leave_On}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Leave_to || "-"}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Days}</td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm">
                   <span
                     className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${
@@ -494,14 +638,14 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
                         ? "bg-green-500"
                         : row.status === "Reject"
                         ? "bg-red-500"
-                        : "bg-blue-500" // For "Pending" or other statuses
+                        : "bg-blue-500"
                     }`}
                   >
                     {row.status}
                   </span>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row["Request By"] || "-"}
+                  {row.Request_By || "-"}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                   <a
@@ -514,10 +658,10 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
                   </a>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row["Action Date"]}
+                  {row.Action_Date}
                 </td>
                 <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-900">
-                  {row["Rejection Reason"] || "-"}
+                  {row.Rejection_Reason || "-"}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                   <a
@@ -544,90 +688,214 @@ const LeaveHistory = ({ leaveData: propLeaveData }) => {
     </div>
   );
 };
+const LeavesDashboard = ({ isSidebarOpen }) => {
 
-// --- Main LeavesDashboard Component ---
-const LeavesDashboard = ({ isSidebarOpen }) => { // Accept isSidebarOpen prop
-  const [leaveTypesOverallData] = useState(initialLeaveTypeData);
-  const [leaveHistoryTableData] = useState(currentLeaveHistoryData);
+  const [leaveSummaryData, setLeaveSummaryData] = useState([]);
+useEffect(() => {
+  axios
+    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leave-summary')
+    .then(response => {
+      // Map backend data to recharts format and fix type names
+      const typeMap = {
+        Casual: "Casual Leave",
+        Paid: "Paid Leave",
+        Unpaid: "Unpaid Leave",
+        sick: "Sick Leave",
+        Sick: "Sick Leave"
+      };
+      const formattedData = response.data.map(item => ({
+        type: typeMap[item.type] || item.type,
+        consumed: item.consumed,
+        remaining: item.remaining,
+        total: item.total,
+      }));
+      setLeaveSummaryData(formattedData);
+    })
+    .catch(error => {
+      console.error('Error fetching line chart data:', error);
+    });
+}, []);
+  const [showAddLeaveForm, setShowAddLeaveForm] = useState(false);
 
-  // Simulate individual leave type quotas (these would also typically come from a dynamic source)
-  const [casualLeaveQuota] = useState({
-    employee: "Rajesh",
-    leaveType: "Casual Leave",
-    days: 3,
-    Available: 2.83, // Adjusted for clarity (Annual Quota - Consumed)
-    "Annual Quota": 5.83, // Example total
-  });
-  const [paidLeaveQuota] = useState({
-    employee: "Rajesh",
-    leaveType: "Paid Leave",
-    days: 2,
-    Available: 0.5, // Adjusted for clarity
-    "Annual Quota": 2.5, // Example total
-  });
-  const [sickLeaveQuota] = useState({
-    employee: "Rajesh",
-    leaveType: "Sick Leave",
-    days: 5,
-    Available: 4.83, // Adjusted for clarity
-    "Annual Quota": 9.83, // Example total
-  });
-  const [unpaidLeaveQuota] = useState({
-    employee: "Rajesh",
-    leaveType: "Unpaid Leave",
-    days: 4,
-    Available: "Infinity", // Unpaid usually has no limit
-    "Annual Quota": "N/A", // No annual quota for unpaid
-  });
-
+  // ...existing code...
+const casualLeaveQuota = leaveSummaryData.find(item => item.type === "Casual Leave");
+const paidLeaveQuota = leaveSummaryData.find(item => item.type === "Paid Leave");
+const sickLeaveQuota = leaveSummaryData.find(item => item.type === "Sick Leave");
+const unpaidLeaveQuota = leaveSummaryData.find(item => item.type === "Unpaid Leave");
+// ...existing code...
   const handleRequestLeave = () => {
-    alert("Initiating Leave Request Form...");
-    // In a real application, this would open a modal or navigate to a leave request form.
+    setShowAddLeaveForm(true);
   };
-
-  // Calculate dynamic margin based on sidebar state
-  const dynamicMarginClass = isSidebarOpen ? "ml-64" : "ml-0"; // Assuming sidebar width is 64 (256px)
-
+  const handleCloseForm = () => {
+    setShowAddLeaveForm(false);
+  };
   return (
-    <div className={`min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-2 font-sans ${dynamicMarginClass} transition-all duration-300 ease-in-out`}>
-      <header className="bg-white shadow-lg rounded-xl p-6 mb-6 flex justify-between items-center border border-gray-200">
-        <div className="text-left">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
+    <div className="min-h-screen bg-gray-100 p-6 sm:p-6 lg:p-8 font-sans">
+      <header className="">
+        <div className="text-center sm:text-left mb-4 sm:mb-0">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
             Leaves Dashboard
           </h1>
-          <p className="text-gray-600">Overview of employee leave statistics and history.</p>
         </div>
-        <button
-          onClick={handleRequestLeave}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-        >
-          Request Leave
-        </button>
       </header>
-
+      <div className="lg:col-span-2 bg-white shadow-xl rounded-lg p-6 flex flex-col sm:flex-row items-center justify-center sm:justify-start hover:translate-y-[-4px] mb-6 transition-transform duration-300 ease-in-out">
+        <div className="flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32 bg-indigo-100 rounded-full flex items-center justify-center mr-0 sm:mr-6 mb-4 sm:mb-0">
+          <span className="text-4xl sm:text-5xl font-semibold text-indigo-700">
+            JD
+          </span>
+        </div>
+        <div className="flex-grow text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-3 sm:mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-0">
+              JOHN DOE
+            </h2>
+            <button className="p-2 bg-gray-100 rounded-full shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-200">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={handleRequestLeave}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 w-full sm:w-auto"
+            >
+              Request Leave
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 text-gray-700 text-base sm:text-lg">
+            <div className="flex items-center justify-center sm:justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-5m-7-5a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-5 5v1h10v-1a5 5 0 00-5-5z"
+                />
+              </svg>
+              <span>E123</span>
+            </div>
+            <div className="flex items-center justify-center sm:justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m8-10v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2z"
+                />
+              </svg>
+              <span>ABC Services</span>
+            </div>
+            <div className="flex items-center justify-center sm:justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-1.208-8.455-3.245m16.91 0c.75.053 1.5.044 2.247-.027m-4.502 0c.266-.026.53-.06.792-.102M12 2v10m-3.486 1.848a3 3 0 000 4.31m6.972 0a3 3 0 000-4.31M12 22v-4m-3.93-2.618l-.928 2.062a1 1 0 01-1.488.587l-2.062-.928a1 1 0 01-.587-1.488l2.062-.928a1 1 0 011.488.587L9.93 19.382zM17.93 19.382l-.928-2.062a1 1 0 011.488-.587l2.062.928a1 1 0 01.587 1.488l-2.062.928a1 1 0 01-1.488-.587zM12 12h.01"
+                />
+              </svg>
+              <span>Software</span>
+            </div>
+            <div className="flex items-center justify-center sm:justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-9 13a9 9 0 100-18 9 9 0 000 18z"
+                />
+              </svg>
+              <span>john@gmail.com</span>
+            </div>
+            <div className="flex items-center justify-center sm:justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                />
+              </svg>
+              <span>+91123456789</span>
+            </div>
+            <div className="flex items-center justify-center sm:justify-start">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span>Associate Software</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {/* Individual Leave Type Cards */}
         <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
         <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />
         <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota} color="#FFC107" />
         <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Overall Leave Breakdown */}
-        <div className="col-span-1">
-          <LeaveType leaveData={leaveTypesOverallData} />
+      <div className="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="">
+          {/* Remove the prop leaveData here */}
+          <LeaveType />
         </div>
-        {/* Weekly Pattern Bar Chart */}
-        <div className="col-span-1">
+        <div className="">
           <WeeklyPattern />
         </div>
       </div>
-
-      {/* Leave History Table */}
-      <LeaveHistory leaveData={leaveHistoryTableData} />
+      <LeaveHistory />
+      {showAddLeaveForm && <AddLeaveForm onClose={handleCloseForm} />}
     </div>
   );
 };
-
 export default LeavesDashboard;
