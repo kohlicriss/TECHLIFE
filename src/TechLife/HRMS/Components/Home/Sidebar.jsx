@@ -21,25 +21,30 @@ import { Context } from "../HrmsContext";
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
- const { userData, setUserData } = useContext(Context);
+  const { userData } = useContext(Context);
   const empId = userData?.employeeId;
+const role = Array.isArray(userData?.roles) 
+  ? userData.roles[0]?.toLowerCase().replace("role_", "") 
+  : userData?.roles?.toLowerCase().replace("role_", "");
 
-  const handleLogoutClick = async () => {
-    try {
-      await fetch("http://localhost:8080/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("Backend logout failed, proceeding with client-side cleanup.", error);
-    } finally {
-      localStorage.clear();
-      setUserData(null);
-      if (onLogout) {
-        onLogout();
-      }
+
+  const handleLogoutClick = () => {
+    console.log("Clearing user data from localStorage...");
+    localStorage.removeItem("logedempid");
+    localStorage.removeItem("logedemprole");
+    localStorage.removeItem("emppayload");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    console.log("User data cleared.");
+
+    if (onLogout) {
+      onLogout();
     }
   };
+  const ticketsPath = role
+  ? `/tickets/${empId}/${role}`
+  : `/tickets/employee/${empId}`;
+
 
   const navItems = [
     {
@@ -61,9 +66,15 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       icon: <ListChecks size={18} />,
       path: empId ? `/tasks/${empId}` : "/tasks",
     },
-    { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
-    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
-    { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
+    { name: "Employees", icon: <BadgePlus size={18} />, path:empId?`/employees/${empId}`: "/employees" },
+    { name: "Chat", icon: <MessageCircle size={18} />, path:empId?`/chat/${empId}`:"/chat" },
+   {
+  name: "Tickets", 
+  icon: <TicketCheck size={18} />, 
+  path: ticketsPath
+}
+
+
   ];
 
   return (

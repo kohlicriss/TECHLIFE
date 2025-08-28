@@ -10,13 +10,16 @@ import logo from "./assets/anasol-logo.png";
 import HrmsContext from "./HrmsContext";
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
+// import ChatApp from "./Chats/ChatApp";
+
+// import Profiles from "./Profile/Profiles";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
 
 // Lazy loading components
 const NotificationSystem = lazy(() => import("./Notifications/NotificationSystem"));
 const ChatApp = lazy(() => import("./Chats/ChatApp"));
-const Employees = lazy(() => import("./Employees/Employees"));
+
 const Profiles = lazy(() => import("./Profile/Profiles"));
 const AllTeams = lazy(() => import("./Teams/AllTeams"));
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
@@ -110,42 +113,40 @@ const HrmsApp = () => {
     return (
         <HrmsContext>
             <Router>
-                <Suspense fallback={<FullPageSpinner />}>
-                    <Routes>
-                        {!isAuthenticated ? (
-                            <>
-                                <Route
-                                    path="/login"
-                                    element={<LoginPage onLogin={handleLogin} />}
-                                />
-                                <Route path="*" element={<Navigate to="/login" replace />} />
-                            </>
-                        ) : (
+                <Routes>
+                    {!isAuthenticated ? (
+                        <>
                             <Route
-                                element={
-                                    <MainLayout
-                                        isSidebarOpen={isSidebarOpen}
-                                        setSidebarOpen={setSidebarOpen}
-                                        currentUser={currentUser}
-                                        onLogout={handleLogout}
-                                    />
-                                }
-                            >
-                                <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
-                                <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                                <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
-                                <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
-                                <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
-                                <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-                                <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
-                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
-                                <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
-                                <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
-                                <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
-                            </Route>
-                        )}
-                    </Routes>
-                </Suspense>
+                                path="/login"
+                                element={<LoginPage onLogin={handleLogin} />}
+                            />
+                            <Route path="*" element={<Navigate to="/login" replace />} />
+                        </>
+                    ) : (
+                        <Route
+                            element={
+                                <MainLayout
+                                    isSidebarOpen={isSidebarOpen}
+                                    setSidebarOpen={setSidebarOpen}
+                                    currentUser={currentUser}
+                                    onLogout={handleLogout}
+                                />
+                            }
+                        >
+                            <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
+                            <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                            <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
+                            <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                            <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
+                          
+                            <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                            <Route path="/tickets/:empID/:role/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                            <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
+                            <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
+                            <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
+                        </Route>
+                    )}
+                </Routes>
             </Router>
         </HrmsContext>
     );
