@@ -189,9 +189,6 @@ const applyDateFilter = (ticket) => {
   return true;
 };
 
-
-
- 
   const filtered = tickets
   .filter(
     (t) => filterStatus === "all" || t.status?.toLowerCase() === filterStatus
