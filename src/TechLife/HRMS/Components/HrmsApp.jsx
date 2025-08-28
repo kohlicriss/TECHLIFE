@@ -141,7 +141,7 @@ const HrmsApp = () => {
                                 <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                                 <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
-                                <Route path="*" element={<Navigate to={`/dashboard/${loggedInEmpId}`} replace />} />
+                                <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                             </Route>
                         )}
                     </Routes>
