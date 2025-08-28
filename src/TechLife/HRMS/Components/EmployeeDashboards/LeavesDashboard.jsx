@@ -785,6 +785,22 @@ const LeaveHistory = () => {
     </div>
   );
 };
+const UserGreeting = () => (
+  <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
+    <div className="flex items-center space-x-4">
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-16 w-16" />
+      <div>
+        <h2 className="text-2xl font-semibold flex items-center">
+          Welcome, Rohit
+        </h2>
+        <p className="text-gray-500 mt-1">
+          You have <span className="font-bold text-red-500">21</span> Pending Approvals &{' '}
+          <span className="font-bold text-red-500">14</span> Leave Requests
+        </p>
+      </div>
+    </div>
+  </div>
+);
 const LeavesDashboard = ({ isSidebarOpen }) => {
 
   const [leaveSummaryData, setLeaveSummaryData] = useState([]);
@@ -826,153 +842,13 @@ const unpaidLeaveQuota = leaveSummaryData.find(item => item.type === "Unpaid Lea
   };
   return (
     <div className="min-h-screen bg-gray-100 p-6 sm:p-6 lg:p-8 font-sans">
-      <header className="">
-        <div className="text-center sm:text-left mb-4 sm:mb-0">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
-            Leaves Dashboard
-          </h1>
-        </div>
-      </header>
-      <div className="lg:col-span-2 bg-white shadow-xl rounded-lg p-6 flex flex-col sm:flex-row items-center justify-center sm:justify-start hover:translate-y-[-4px] mb-6 transition-transform duration-300 ease-in-out">
-        <div className="flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32 bg-indigo-100 rounded-full flex items-center justify-center mr-0 sm:mr-6 mb-4 sm:mb-0">
-          <span className="text-4xl sm:text-5xl font-semibold text-indigo-700">
-            JD
-          </span>
-        </div>
-        <div className="flex-grow text-center sm:text-left">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-3 sm:mb-2">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-0">
-              JOHN DOE
-            </h2>
-            <button className="p-2 bg-gray-100 rounded-full shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-200">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              </svg>
-            </button>
-            <button
-              onClick={handleRequestLeave}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:py-3 sm:px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 w-full sm:w-auto"
-            >
-              Request Leave
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 text-gray-700 text-base sm:text-lg">
-            <div className="flex items-center justify-center sm:justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-5m-7-5a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-5 5v1h10v-1a5 5 0 00-5-5z"
-                />
-              </svg>
-              <span>E123</span>
-            </div>
-            <div className="flex items-center justify-center sm:justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m8-10v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2z"
-                />
-              </svg>
-              <span>ABC Services</span>
-            </div>
-            <div className="flex items-center justify-center sm:justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-1.208-8.455-3.245m16.91 0c.75.053 1.5.044 2.247-.027m-4.502 0c.266-.026.53-.06.792-.102M12 2v10m-3.486 1.848a3 3 0 000 4.31m6.972 0a3 3 0 000-4.31M12 22v-4m-3.93-2.618l-.928 2.062a1 1 0 01-1.488.587l-2.062-.928a1 1 0 01-.587-1.488l2.062-.928a1 1 0 011.488.587L9.93 19.382zM17.93 19.382l-.928-2.062a1 1 0 011.488-.587l2.062.928a1 1 0 01.587 1.488l-2.062.928a1 1 0 01-1.488-.587zM12 12h.01"
-                />
-              </svg>
-              <span>Software</span>
-            </div>
-            <div className="flex items-center justify-center sm:justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-9 13a9 9 0 100-18 9 9 0 000 18z"
-                />
-              </svg>
-              <span>john@gmail.com</span>
-            </div>
-            <div className="flex items-center justify-center sm:justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                />
-              </svg>
-              <span>+91123456789</span>
-            </div>
-            <div className="flex items-center justify-center sm:justify-start">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              <span>Associate Software</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <header className="p-3 mb-6 text-left">
+                <h1 className="text-4xl font-bold text-gray-900 mb-8">
+                    Leaves Dashboard
+                </h1>
+                <UserGreeting />
+            </header>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
         <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />

@@ -1,4 +1,5 @@
-import  { useState, useEffect, useMemo, useCallback, use } from "react";
+import  { useState, useEffect, useMemo,useContext, useCallback, use } from "react";
+import { Context } from "../HrmsContext";
 import { CalendarDaysIcon, ClockIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import {
   PieChart,
@@ -16,6 +17,8 @@ import { FaHome, FaBuilding } from "react-icons/fa";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { Box } from "@mui/material";
 import axios from 'axios';
+import { useParams } from "react-router-dom";
+import { green } from "@mui/material/colors";
 // --- Mock Data (moved outside component for clarity) ---
 // const rawTableData = [
 //   {  employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
@@ -161,6 +164,8 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
   );
 };
 const AttendancesDashboard = ({onBack}) => {
+  const {empID}=useParams();
+  const {userData}=useContext(Context)
   const [selectedMonth, setSelectedMonth] = useState("All");
   const [selectedDate, setSelectedDate] = useState("All");
   const [hoveredHour, setHoveredHour] = useState(null);
@@ -184,11 +189,12 @@ const AttendancesDashboard = ({onBack}) => {
   const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
   const rowsPerPageOptions = [10, 25, 50, 100];
   const [cardData, setCardData] = useState([]);
+  console.log(empID)
  
   const MONTHS = ["All", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/bar-chart')
+    .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/bar-chart`)
     .then(response => {
       // Map backend data to recharts format
       const formatted = response.data.map(item => ({
@@ -215,7 +221,7 @@ useEffect(() => {
 
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/attendance?page=0&size=10')
+    .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/attendance?page=0&size=10`)
     .then(response => {
 
       setrawTableData(response.data);
@@ -229,7 +235,7 @@ useEffect(() => {
 }, []);
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/pie-chart')
+    .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/pie-chart`)
     .then(response => {
       const formatted = response.data.map(item => ({
         Date: item.date,
@@ -255,7 +261,7 @@ useEffect(() => {
 }, []);
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/line-graph')
+    .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/line-graph`)
     .then(response => {
       // Map backend data to recharts format
       const formatted = response.data.map(item => ({
@@ -282,7 +288,7 @@ useEffect(() => {
 
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/attendance/leaves/dashboard/ACS00000001')
+    .get(`http://192.168.0.123:8081/api/attendance/attendance/leaves/dashboard/${empID}`)
     .then(response => {
 
       setCardData(response.data);
@@ -544,146 +550,120 @@ const filteredBarChartData = useMemo(() => {
           Back to Dashboard
         </button>
       </header>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <section className="bg-white shadow-lg rounded-xl p-7 flex flex-col sm:flex-row items-center justify-center sm:justify-start transition-all duration-300 hover:shadow-2xl hover:scale-[1.005] h-[300px]">
-  <div className="flex-shrink-0 w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mr-0 sm:mr-8 mb-4 sm:mb-0 shadow-inner">
-    <span className="text-3xl font-semibold text-indigo-700">JD</span>
-  </div>
-
-  {/* Profile Details */}
-  <div className="flex-grow text-center sm:text-left">
-    {/* Name and Edit Button */}
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="text-2xl font-bold text-gray-800">JOHN DOE</h2>
-      <button
-        className="p-2 bg-gray-100 rounded-full shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-200"
-        aria-label="Edit Profile"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      </button>
+      <div className="bg-white shadow-xl rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-y-[-4px] transition-transform duration-300 ease-in-out">
+  {/* Profile Section on the left */}
+  <div className="flex justify-between items-center p-6 flex-1">
+    <div className="flex items-center space-x-4">
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-20 w-20" />
+      <div>
+        <h2 className="text-2xl font-semibold flex items-center">
+          Welcome, {userData?.employeeId}
+        </h2>
+        <p className="text-gray-500 mt-1">
+          You have <span className="font-bold text-red-500">100%</span> of Attendance &{' '}
+          <span className="font-bold text-red-500">10hr9min</span> of Avg Working Hours
+        </p>
+      </div>
     </div>
-
-    {/* Info Grid */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-3 text-sm text-gray-700 text-lg">
-      {[
-        { icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-5m-7-5a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-5 5v1h10v-1a5 5 0 00-5-5z" /></svg>, text: "E123" },
-        { icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m8-10v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2z" /></svg>, text: "ABC Services" },
-        { icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-1.208-8.455-3.245m16.91 0c.75.053 1.5.044 2.247-.027m-4.502 0c.266-.026.53-.06.792-.102M12 2v10m-3.486 1.848a3 3 0 000 4.31m6.972 0a3 3 0 000-4.31M12 22v-4m-3.93-2.618l-.928 2.062a1 1 0 01-1.488.587l-2.062-.928a1 1 0 01-.587-1.488l2.062-.928a1 1 0 011.488.587L9.93 19.382zM17.93 19.382l-.928-2.062a1 1 0 011.488-.587l2.062.928a1 1 0 01.587 1.488l-2.062.928a1 1 0 01-1.488-.587zM12 12h.01" /></svg>, text: "Software" },
-        { icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-9 13a9 9 0 100-18 9 9 0 000 18z" /></svg>, text: "john@gmail.com" },
-        { icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>, text: "+91123456789" },
-        { icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>, text: "Associate Software" },
-      ].map((item, idx) => (
-        <div key={idx} className="flex items-center justify-center sm:justify-start">
-          {item.icon}
-          <span>{item.text}</span>
+  </div>
+  {/* Web Clock Section on the right */}
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex-none mr-5">
+          <button
+            onClick={toggleMode}
+            className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
+          >
+            {mode === "office" ? (
+              <FaBuilding className="text-blue-500 text-2xl" />
+            ) : (
+              <FaHome className="text-green-500 text-2xl" />
+            )}
+            <span className="hidden sm:inline">
+              {mode === "office" ? "Office Mode" : "Home Mode"}
+            </span>
+            <span className="sm:hidden">
+              {mode === "office" ? "Office" : "Home"}
+            </span>
+          </button>
         </div>
-      ))}
-    </div>
-  </div>
-</section>
-
-        {/* Web Clock Section */}
-     <section className="bg-white shadow-lg rounded-xl p-7 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:scale-[1.005] h-[300px]">
-  <div>
-    <div className="flex justify-between items-center mb-6">
-      <div className="flex-none">
-        <button
-          onClick={toggleMode}
-          className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center gap-1 text-sm font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
-        >
-          {mode === "office" ? (
-            <FaBuilding className="text-blue-500 text-2xl" />
-          ) : (
-            <FaHome className="text-green-500 text-2xl" />
+        <h2 className="flex-1 text-center text-xl font-semibold text-gray-800">
+          <ClockIcon className="w-4 h-4 inline-block text-indigo-600 mr-1" />Work Timer
+        </h2>
+        <div className="flex-none text-right">
+          <p className="text-xl font-semibold text-gray-900 tracking-wide">
+            {formatClockTime(currentTime)}
+          </p>
+          <p className="text-sm text-gray-500">
+            {currentTime.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 items-center text-center my-1 mt-12">
+        {/* Left side: Gross Time */}
+        <div className="text-left">
+          <p className="text-lg text-gray-600 mb-0">Gross Time</p>
+          <p className="text-xl font-bold text-purple-800 tracking-wide mb-5">
+            {grossHoursFormatted}
+          </p>
+          {/* Login Time: placed here to be centered under Gross Time */}
+          {startTime && (
+            <p className="text-gray-500 text-sm">
+              Login Time: <span className="font-semibold text-gray-700">{startTime.toLocaleTimeString()}</span>
+            </p>
           )}
-          <span className="hidden sm:inline">
-            {mode === "office" ? "Office Mode" : "Home Mode"}
-          </span>
-          <span className="sm:hidden">
-            {mode === "office" ? "Office" : "Home"}
-          </span>
-        </button>
-      </div>
-      <h2 className="flex-1 text-center text-xl font-semibold text-gray-800">
-        <ClockIcon className="w-4 h-4 inline-block text-indigo-600 mr-2" />Work Timer
-      </h2>
-      <div className="flex-none text-right">
-        <p className="text-xl font-semibold text-gray-900 tracking-wide">
-          {formatClockTime(currentTime)}
-        </p>
-        <p className="text-sm text-gray-500">
-          {currentTime.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </p>
-      </div>
-    </div>
-    <div className="grid grid-cols-3 gap-2 items-center text-center my-1 mt-12">
-      {/* Left side: Gross Time */}
-      <div className="text-left">
-        <p className="text-lg text-gray-600 mb-0">Gross Time</p>
-        <p className="text-xl font-bold text-purple-800 tracking-wide mb-5">
-          {grossHoursFormatted}
-        </p>
-        {/* Login Time: placed here to be centered under Gross Time */}
-        {startTime && (
-          <p className="text-gray-500 text-sm">
-            Login Time: <span className="font-semibold text-gray-700">{startTime.toLocaleTimeString()}</span>
+        </div>
+        <div className="flex flex-col items-center justify-center h-full">
+          {!isLoggedIn ? (
+            <button
+              onClick={handleLogin}
+              className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 text-xl font-bold transform hover:scale-105 w-full"
+            >
+              <ClockIcon className="w-4 h-4 mr-2" /> Clockin
+            </button>
+          ) : (
+            <div className="flex flex-col items-center w-full">
+              {isLogoutConfirmed ? (
+                <>
+                  <button
+                    onClick={handleConfirmLogout}
+                    className="flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
+                  >
+                    <ClockIcon className="w-4 h-4 mr-2" />  clockout
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="mt-2 flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 text-sm font-medium w-full transform hover:scale-105"
+                    title="Cancel Logout"
+                  >
+                    <ArrowPathIcon className="w-4 h-4 mr-2"/>Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
+                >
+                  <ClockIcon className="w-4 h- mr-2" /> WebClockout
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-lg text-gray-600 mb-0">Effective Time</p>
+          <p className="text-xl font-bold text-orange-800 tracking-wide mb-5">
+            {effectiveHoursFormatted}
           </p>
-        )}
+          {endTime && (
+            <p className="text-gray-500 text-sm">
+              Logout Time: <span className="font-semibold text-sm text-gray-700">{endTime.toLocaleTimeString()}</span>
+            </p>
+          )}
+        </div>
       </div>
-<div className="flex flex-col items-center justify-center h-full">
-  {!isLoggedIn ? (
-    <button
-      onClick={handleLogin}
-      className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 text-xl font-bold transform hover:scale-105 w-full"
-    >
-      <ClockIcon className="w-4 h-4 mr-2" /> Clockin
-    </button>
-  ) : (
-    <div className="flex flex-col items-center w-full">
-      {isLogoutConfirmed ? (
-        <>
-          <button
-            onClick={handleConfirmLogout}
-            className="flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
-          >
-            <ClockIcon className="w-4 h-4 mr-2" />  clockout
-          </button>
-          <button
-            onClick={handleCancel}
-            className="mt-2 flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 text-sm font-medium w-full transform hover:scale-105"
-            title="Cancel Logout"
-          >
-            <ArrowPathIcon className="w-4 h-4 mr-2"/>Cancel
-          </button>
-        </>
-      ) : (
-        <button
-          onClick={handleLogout}
-          className="flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
-        >
-          <ClockIcon className="w-4 h- mr-2" /> WebClockout
-        </button>
-      )}
     </div>
-  )}
 </div>
-      <div className="text-right">
-        <p className="text-lg text-gray-600 mb-0">Effective Time</p>
-        <p className="text-xl font-bold text-orange-800 tracking-wide mb-5">
-          {effectiveHoursFormatted}
-        </p>
-        {endTime && (
-          <p className="text-gray-500 text-sm">
-            Logout Time: <span className="font-semibold text-sm text-gray-700">{endTime.toLocaleTimeString()}</span>
-          </p>
-        )}
-      </div>
-    </div>
-  </div>
-</section>
-      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         
        {cardData.map((card, index) => {

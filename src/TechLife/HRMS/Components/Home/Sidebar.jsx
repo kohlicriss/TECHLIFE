@@ -15,6 +15,7 @@ import {
   UserCircle,
   BadgePlus,
   TicketCheck,
+  ToolCase,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
@@ -26,7 +27,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
 
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://192.168.0.109:8080/api/auth/logout", {
+      await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -42,11 +43,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   };
 
   const navItems = [
-    {
-      name: "Dashboard",
-      icon: <LayoutDashboard size={18} />,
-      path: empId ? `/dashboard/${empId}` : "/dashboard",
-    },
     { name: "Profile", icon: <UserCircle size={18} />, path: empId ? `/profile/${empId}` : "/profile" },
     {
       name: "Attendance",
@@ -56,6 +52,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "My Leaves", icon: <FileText size={18} />, path: empId ? `/leaves/${empId}` : "/leaves" },
     { name: "My Team", icon: <Users size={18} />, path: empId ? `/my-teams/${empId}` : "/my-teams" },
     { name: "My Projects", icon: <Database size={18} />, path: empId ? `/projects/${empId}` : "/projects" },
+    { name: "My Performance", icon: <ToolCase size={18} />, path: empId ? `/performance/${empId}` : "/performance" },
     {
       name: "My Tasks",
       icon: <ListChecks size={18} />,
