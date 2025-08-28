@@ -1,3 +1,5 @@
+import { chatApi } from "../axiosInstance";
+
 export const transformOverviewToChatList = (overviewData) => {
   if (!overviewData || !Array.isArray(overviewData)) {
     return { groups: [], privateChatsWith: [] };
@@ -45,7 +47,7 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
     timestamp = new Date().toISOString();
   }
 
-  const API_BASE_URL = 'http://192.168.0.244:8082/api';
+  const API_BASE_URL = chatApi;
   
   let messageType = 'text';
   let fileUrl = msgDto.fileUrl || null;
@@ -66,7 +68,7 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
   
   const messageIdForUrl = msgDto.id || msgDto.messageId;
   if (!fileUrl && ['image', 'video', 'audio', 'file'].includes(messageType) && messageIdForUrl) {
-    fileUrl = `${API_BASE_URL}/chat/file/${messageIdForUrl}`;
+    fileUrl = `${chatApi}/chat/file/${messageIdForUrl}`;
   }
   
   if (msgDto.isDeleted) {
