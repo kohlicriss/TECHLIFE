@@ -17,35 +17,30 @@ import {
   TicketCheck,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
-
+ 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { userData } = useContext(Context);
+ const { userData, setUserData } = useContext(Context);
   const empId = userData?.employeeId;
-const role = Array.isArray(userData?.roles) 
-  ? userData.roles[0]?.toLowerCase().replace("role_", "") 
-  : userData?.roles?.toLowerCase().replace("role_", "");
-
-
-  const handleLogoutClick = () => {
-    console.log("Clearing user data from localStorage...");
-    localStorage.removeItem("logedempid");
-    localStorage.removeItem("logedemprole");
-    localStorage.removeItem("emppayload");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    console.log("User data cleared.");
-
-    if (onLogout) {
-      onLogout();
+ 
+  const handleLogoutClick = async () => {
+    try {
+      await fetch("http://192.168.0.109:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Backend logout failed, proceeding with client-side cleanup.", error);
+    } finally {
+      localStorage.clear();
+      setUserData(null);
+      if (onLogout) {
+        onLogout();
+      }
     }
   };
-  const ticketsPath = role
-  ? `/tickets/${empId}/${role}`
-  : `/tickets/employee/${empId}`;
-
-
+ 
   const navItems = [
     {
       name: "Dashboard",
@@ -66,17 +61,11 @@ const role = Array.isArray(userData?.roles)
       icon: <ListChecks size={18} />,
       path: empId ? `/tasks/${empId}` : "/tasks",
     },
-    { name: "Employees", icon: <BadgePlus size={18} />, path:empId?`/employees/${empId}`: "/employees" },
-    { name: "Chat", icon: <MessageCircle size={18} />, path:empId?`/chat/${empId}`:"/chat" },
-   {
-  name: "Tickets", 
-  icon: <TicketCheck size={18} />, 
-  path: ticketsPath
-}
-
-
+    { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
+    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
+    { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
   ];
-
+ 
   return (
     <>
       <div
@@ -85,7 +74,7 @@ const role = Array.isArray(userData?.roles)
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
-
+ 
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
@@ -116,7 +105,7 @@ const role = Array.isArray(userData?.roles)
             </button>
           </div>
         </div>
-
+ 
         <nav className="mt-4">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -138,7 +127,7 @@ const role = Array.isArray(userData?.roles)
               </Link>
             );
           })}
-
+ 
           <div className="mt-10">
             <button
               onClick={handleLogoutClick}
@@ -155,5 +144,6 @@ const role = Array.isArray(userData?.roles)
     </>
   );
 }
-
+ 
 export default Sidebar;
+ 
