@@ -23,33 +23,10 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData } = useContext(Context);
-  const empId = userData?.employeeId; // Use optional chaining for safety
-
-  // This function handles the logout process
-
-
-
-
-
-        useEffect(() => {
-  const apicall = async () => {
-    try {
-      const response = await fetch("http://192.168.0.120:8090/api/all/tasks/ACS00000003");
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log(data);
-    } catch (error) {
-      console.error("Fetch error:", error);
-    }
-  };
-
-  apicall();
-}, []);
-
-
-
+  const empId = userData?.employeeId;
+const role = Array.isArray(userData?.roles) 
+  ? userData.roles[0]?.toLowerCase().replace("role_", "") 
+  : userData?.roles?.toLowerCase().replace("role_", "");
 
 
   const handleLogoutClick = () => {
@@ -65,6 +42,10 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       onLogout();
     }
   };
+  const ticketsPath = role
+  ? `/tickets/${empId}/${role}`
+  : `/tickets/employee/${empId}`;
+
 
   // Define navItems inside the component to access the dynamic empId
   const navItems = [
@@ -90,7 +71,13 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     },
     { name: "Employees", icon: <BadgePlus size={18} />, path:empId?`/employees/${empId}`: "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path:empId?`/chat/${empId}`:"/chat" },
-    { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
+   {
+  name: "Tickets", 
+  icon: <TicketCheck size={18} />, 
+  path: ticketsPath
+}
+
+
   ];
 
   return (
