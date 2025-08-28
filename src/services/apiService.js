@@ -1,17 +1,130 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.0.244:8082/api';
+// This is a temporary setup to demonstrate logging headers.
+// In a real application, these instances would be defined in a separate file.
+const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+function cloneFormData(formData) {
+    const newFormData = new FormData();
+    for (let [key, value] of formData.entries()) {
+        newFormData.append(key, value);
+    }
+    return newFormData;
+}
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+const createAxiosInstance = (baseURL) => {
+    const instance = axios.create({
+        baseURL: baseURL,
+    });
+
+    // This interceptor will add the Authorization header
+    instance.interceptors.request.use(
+        (config) => {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+            // Log the headers here, where they are actually added
+            console.log('Request Headers (from Interceptor):', config.headers);
+            return config;
+        },
+        (error) => Promise.reject(error)
+    );
+
+    instance.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+            const originalRequest = error.config;
+
+            if (error.response?.status === 401 && !originalRequest._retry) {
+                if (isRefreshing) {
+                    return new Promise((resolve, reject) => {
+                        failedQueue.push({ resolve, reject });
+                    })
+                    .then(token => {
+                        originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                        return instance(originalRequest);
+                    })
+                    .catch(err => Promise.reject(err));
+                }
+
+                originalRequest._retry = true;
+                isRefreshing = true;
+
+                const oldToken = localStorage.getItem('accessToken');
+                console.log(`🔴 Token expired for ${baseURL}. Old Token:`, oldToken);
+
+                try {
+                    const refreshResponse = await axios.post(
+                        AUTH_API_URL,
+                        {},
+                        { withCredentials: true }
+                    );
+
+                    const { accessToken } = refreshResponse.data;
+                    localStorage.setItem('accessToken', accessToken);
+                    console.log(`🟢 New Token for ${baseURL}:`, accessToken);
+
+                    if (originalRequest.data instanceof FormData) {
+                        originalRequest.data = cloneFormData(originalRequest.data);
+                    }
+
+                    processQueue(null, accessToken);
+
+                    const newInstance = createAxiosInstance(baseURL);
+                    originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+
+                    return newInstance(originalRequest);
+
+                } catch (refreshError) {
+                    console.error("Refresh token failed. Logging out.", refreshError);
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    processQueue(refreshError);
+                    return Promise.reject(refreshError);
+
+                } finally {
+                    isRefreshing = false;
+                }
+            }
+
+            return Promise.reject(error);
+        }
+    );
+
+    return instance;
+};
+
+window.addEventListener('storage', (event) => {
+    if (event.key === 'accessToken') {
+        console.log("🔄 Token updated in another tab:", event.newValue);
+    }
 });
 
+export const tasksApi = createAxiosInstance('http://localhost:8090/api/a/employee');
+export const publicinfoApi = createAxiosInstance('http://localhost:8090/api');
+export const chatApi = createAxiosInstance('http://192.168.0.244:8082/api');
+
+// All your API calls from the chat-api-service file
 export const getChatOverview = async (employeeId) => {
   try {
-    const response = await apiClient.get(`/chat/overview/${employeeId}`);
+    const response = await chatApi.get(`/chat/overview/${employeeId}`);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch chat overview:", error);
@@ -21,7 +134,9 @@ export const getChatOverview = async (employeeId) => {
 
 export const getMessages = async (employeeId, chatId) => {
   try {
-    const response = await apiClient.get(`/chat/${employeeId}/${chatId}`);
+    const response = await chatApi.get(`/chat/${employeeId}/${chatId}`);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch messages for chat ${chatId}:`, error);
@@ -33,9 +148,11 @@ export const updateMessage = async (messageId, newContent, senderId) => {
   try {
     const requestBody = {
       content: newContent,
-      sender: senderId, 
+      sender: senderId,
     };
-    const response = await apiClient.put(`/chat/update/${messageId}`, requestBody);
+    const response = await chatApi.put(`/chat/update/${messageId}`, requestBody);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error(`Failed to update message ${messageId}:`, error);
@@ -45,7 +162,9 @@ export const updateMessage = async (messageId, newContent, senderId) => {
 
 export const deleteMessageForMe = async (messageId, userId) => {
   try {
-    const response = await apiClient.post(`/chat/${messageId}/me?userId=${userId}`);
+    const response = await chatApi.post(`/chat/${messageId}/me?userId=${userId}`);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error(`Failed to delete message ${messageId} for me:`, error);
@@ -55,7 +174,9 @@ export const deleteMessageForMe = async (messageId, userId) => {
 
 export const deleteMessageForEveryone = async (messageId, userId) => {
   try {
-    const response = await apiClient.post(`/chat/${messageId}/everyone?userId=${userId}`);
+    const response = await chatApi.post(`/chat/${messageId}/everyone?userId=${userId}`);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error(`Failed to delete message ${messageId} for everyone:`, error);
@@ -65,11 +186,13 @@ export const deleteMessageForEveryone = async (messageId, userId) => {
 
 export const uploadFile = async (formData) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/chat/upload`, formData, {
+        const response = await chatApi.post('/chat/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        // Log the full response object
+        console.log('Response:', response);
         return response.data;
     } catch (error) {
         console.error("File upload failed:", error);
@@ -79,7 +202,9 @@ export const uploadFile = async (formData) => {
 
 export const forwardMessage = async (forwardData) => {
     try {
-        const response = await apiClient.post('/chat/forward', forwardData);
+        const response = await chatApi.post('/chat/forward', forwardData);
+        // Log the full response object
+        console.log('Response:', response);
         return response.data;
     } catch (error) {
         console.error(`Failed to forward message ${forwardData.forwardMessageId}:`, error);
@@ -89,7 +214,9 @@ export const forwardMessage = async (forwardData) => {
 
 export const pinMessage = async (messageId, userId) => {
     try {
-        const response = await apiClient.post(`/chat/pin/${messageId}?userId=${userId}`);
+        const response = await chatApi.post(`/chat/pin/${messageId}?userId=${userId}`);
+        // Log the full response object
+        console.log('Response:', response);
         return response.data;
     } catch (error) {
         console.error(`Failed to pin message ${messageId}:`, error);
@@ -99,7 +226,9 @@ export const pinMessage = async (messageId, userId) => {
 
 export const unpinMessage = async (messageId, userId) => {
     try {
-        const response = await apiClient.post(`/chat/unpin/${messageId}?userId=${userId}`);
+        const response = await chatApi.post(`/chat/unpin/${messageId}?userId=${userId}`);
+        // Log the full response object
+        console.log('Response:', response);
         return response.data;
     } catch (error) {
         console.error(`Failed to unpin message ${messageId}:`, error);
@@ -108,18 +237,22 @@ export const unpinMessage = async (messageId, userId) => {
 };
 
 export const getPinnedMessage = async (chatId, chatType, userId) => {
-    try {
-        const response = await apiClient.get(`/chat/${chatId}/pinned?chatType=${chatType}&userId=${userId}`);
-        return response.data;
-    } catch (error) {
-        console.error(`Failed to fetch pinned message for chat ${chatId}:`, error);
-        return null;
-    }
+  try {
+    const response = await chatApi.get(`/chat/${chatId}/pinned?chatType=${chatType}&userId=${userId}`);
+    // Log the full response object
+    console.log('Response:', response);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch pinned message for chat ${chatId}:`, error);
+    return null;
+  }
 };
 
 export const clearChatHistory = async (userId, chatId) => {
   try {
-    const response = await apiClient.post(`/chat/clear?userId=${userId}&chatId=${chatId}`);
+    const response = await chatApi.post(`/chat/clear?userId=${userId}&chatId=${chatId}`);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error(`Failed to clear chat for ${chatId}:`, error);
@@ -128,18 +261,22 @@ export const clearChatHistory = async (userId, chatId) => {
 };
 
 export const uploadVoiceMessage = async (voiceData) => {
-    try {
-        const response = await apiClient.post('/chat/voice/upload', voiceData); 
-        return response.data;
-    } catch (error) {
-        console.error("Voice message upload failed:", error);
-        throw error;
-    }
+  try {
+    const response = await chatApi.post('/chat/voice/upload', voiceData);
+    // Log the full response object
+    console.log('Response:', response);
+    return response.data;
+  } catch (error) {
+    console.error("Voice message upload failed:", error);
+    throw error;
+  }
 };
 
 export const getGroupMembers = async (teamId) => {
   try {
-    const response = await apiClient.get(`/chat/team/employee/${teamId}`);
+    const response = await chatApi.get(`/chat/team/employee/${teamId}`);
+    // Log the full response object
+    console.log('Response:', response);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch members for team ${teamId}:`, error);
