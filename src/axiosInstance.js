@@ -1,22 +1,45 @@
 import axios from 'axios';
 
-const api = axios.create({
-    baseURL: "http://192.168.0.120:8090",
-    withCredentials: true
-});
+const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
 
-api.interceptors.request.use(
-  (config) => {
-    const aToken = localStorage.getItem("accessToken");
-    if (aToken) {g
-      config.headers['Authorization'] = `Bearer ${aToken}`;
+function cloneFormData(formData) {
+    const newFormData = new FormData();
+    for (let [key, value] of formData.entries()) {
+        newFormData.append(key, value);
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+    return newFormData;
+}
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+const createAxiosInstance = (baseURL) => {
+    const instance = axios.create({
+        baseURL: baseURL,
+    });
+
+    
+    instance.interceptors.request.use(
+        (config) => {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+            return config;
+        },
+        (error) => Promise.reject(error)
+    );
 
     instance.interceptors.response.use(
         (response) => response,
