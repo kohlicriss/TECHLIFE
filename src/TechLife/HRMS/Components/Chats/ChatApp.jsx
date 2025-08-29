@@ -60,7 +60,7 @@ function ChatApp() {
             setIsLoading(true);
             try {
                 const rawChatListData = await getChatOverview(userId);
-                const formattedChatList = transformOverviewToChatList(rawChatListData);
+                const formattedChatList = transformOverviewToChatList(rawChatListData, userId);
                 setChatList(formattedChatList);
             } catch (error) {
                 console.error("Error in ChatApp component:", error);

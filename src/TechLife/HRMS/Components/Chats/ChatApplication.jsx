@@ -10,6 +10,7 @@ import {
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 import {
+    chatApi,
     getMessages,
     deleteMessageForMe,
     deleteMessageForEveryone,
@@ -22,7 +23,7 @@ import {
     uploadVoiceMessage,
     getGroupMembers 
 } from '../../../../services/apiService';
-import { transformMessageDTOToUIMessage } from '../../../../services/dataTransformer';
+import { transformMessageDTOToUIMessage, generateChatListPreview } from '../../../../services/dataTransformer';
 
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -45,7 +46,7 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
 };
 
 const FileMessage = ({ msg, isMyMessage }) => {
-    const downloadUrl = `http://192.168.0.244:8082/api/chat/file/${msg.messageId}`;
+    const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
     const containerClasses = `flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`;
     const content = (
         <div className={containerClasses}>
@@ -339,27 +340,20 @@ function ChatApplication({ currentUser, initialChats }) {
     }, [selectedChat, currentUser.id]);
 
     const updateLastMessage = useCallback((chatId, message) => {
-        const generatePreview = (msg) => {
-            if (!msg) return 'Chat cleared';
-            if (msg.type === 'deleted' || msg.isDeleted) return 'This message was deleted';
-            
-            const prefix = msg.sender === currentUser.id ? 'You: ' : '';
-            
-            if (msg.type === 'image') return prefix + '📷 Image';
-            if (msg.type === 'audio') return prefix + '🎤 Voice Message';
-            if (msg.type === 'file') return prefix + `📎 ${msg.fileName}`;
-            if (msg.content) return prefix + msg.content;
-            
-            return '...';
-        };
-
         setChatData(prev => {
             const updateChat = (chat) => {
                 if (chat.chatId === chatId) {
                     const isNewUnread = message && message.type !== 'deleted' && !message.isDeleted && message.sender !== currentUser.id && selectedChat?.chatId !== chatId;
+
+                    const overviewItem = {
+                        lastMessage: message ? (message.fileName || message.content) : '',
+                        lastMessageType: message ? message.type.toUpperCase() : null,
+                        lastMessageSenderId: message ? message.sender : null
+                    };
+
                     return {
                         ...chat,
-                        lastMessage: generatePreview(message),
+                        lastMessage: message ? generateChatListPreview(overviewItem, currentUser.id) : 'Chat cleared',
                         lastMessageTimestamp: message?.timestamp || new Date(0).toISOString(),
                         unreadMessageCount: (chat.unreadMessageCount || 0) + (isNewUnread ? 1 : 0)
                     };
@@ -1281,23 +1275,24 @@ function ChatApplication({ currentUser, initialChats }) {
     };
     
     const getFileUrl = (msg) => {
-        const API_HOST = 'http://192.168.0.244:8082';
-         if (msg.fileUrl) {
-            if (msg.fileUrl.startsWith('blob:')) {
-                return msg.fileUrl;
-            }
+        const baseUrl = chatApi.defaults.baseURL;
 
-            if (msg.fileUrl.startsWith('/')) {
-                return `${API_HOST}${msg.fileUrl}`;
-            }
+        if (msg.fileUrl && msg.fileUrl.startsWith('blob:')) {
             return msg.fileUrl;
-         }
-         const messageIdForUrl = msg.id || msg.messageId;
-         if (messageIdForUrl) {
-            return `${API_HOST}/api/chat/file/${messageIdForUrl}`;
-         }
+        }
 
-          return msg.content;
+        if (msg.fileUrl && msg.fileUrl.startsWith('/api')) {
+             const origin = new URL(baseUrl).origin;
+             return `${origin}${msg.fileUrl}`;
+        } else if (msg.fileUrl) {
+            return msg.fileUrl; 
+        }
+
+        const messageIdForUrl = msg.id || msg.messageId;
+        if (messageIdForUrl) {
+            return `${baseUrl}/chat/file/${messageIdForUrl}`;
+        }
+        return msg.content; 
     };
 
     return (

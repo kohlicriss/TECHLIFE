@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// This is a temporary setup to demonstrate logging headers.
-// In a real application, these instances would be defined in a separate file.
 const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
 
 function cloneFormData(formData) {
@@ -31,14 +29,12 @@ const createAxiosInstance = (baseURL) => {
         baseURL: baseURL,
     });
 
-    // This interceptor will add the Authorization header
     instance.interceptors.request.use(
         (config) => {
             const token = localStorage.getItem('accessToken');
             if (token) {
                 config.headers['Authorization'] = `Bearer ${token}`;
             }
-            // Log the headers here, where they are actually added
             console.log('Request Headers (from Interceptor):', config.headers);
             return config;
         },
@@ -119,11 +115,9 @@ export const tasksApi = createAxiosInstance('http://localhost:8090/api/a/employe
 export const publicinfoApi = createAxiosInstance('http://localhost:8090/api');
 export const chatApi = createAxiosInstance('http://192.168.0.244:8082/api');
 
-// All your API calls from the chat-api-service file
 export const getChatOverview = async (employeeId) => {
   try {
     const response = await chatApi.get(`/chat/overview/${employeeId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -135,7 +129,6 @@ export const getChatOverview = async (employeeId) => {
 export const getMessages = async (employeeId, chatId) => {
   try {
     const response = await chatApi.get(`/chat/${employeeId}/${chatId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -151,7 +144,6 @@ export const updateMessage = async (messageId, newContent, senderId) => {
       sender: senderId,
     };
     const response = await chatApi.put(`/chat/update/${messageId}`, requestBody);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -163,7 +155,6 @@ export const updateMessage = async (messageId, newContent, senderId) => {
 export const deleteMessageForMe = async (messageId, userId) => {
   try {
     const response = await chatApi.post(`/chat/${messageId}/me?userId=${userId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -175,7 +166,6 @@ export const deleteMessageForMe = async (messageId, userId) => {
 export const deleteMessageForEveryone = async (messageId, userId) => {
   try {
     const response = await chatApi.post(`/chat/${messageId}/everyone?userId=${userId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -191,7 +181,6 @@ export const uploadFile = async (formData) => {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        // Log the full response object
         console.log('Response:', response);
         return response.data;
     } catch (error) {
@@ -203,7 +192,6 @@ export const uploadFile = async (formData) => {
 export const forwardMessage = async (forwardData) => {
     try {
         const response = await chatApi.post('/chat/forward', forwardData);
-        // Log the full response object
         console.log('Response:', response);
         return response.data;
     } catch (error) {
@@ -215,7 +203,6 @@ export const forwardMessage = async (forwardData) => {
 export const pinMessage = async (messageId, userId) => {
     try {
         const response = await chatApi.post(`/chat/pin/${messageId}?userId=${userId}`);
-        // Log the full response object
         console.log('Response:', response);
         return response.data;
     } catch (error) {
@@ -227,7 +214,6 @@ export const pinMessage = async (messageId, userId) => {
 export const unpinMessage = async (messageId, userId) => {
     try {
         const response = await chatApi.post(`/chat/unpin/${messageId}?userId=${userId}`);
-        // Log the full response object
         console.log('Response:', response);
         return response.data;
     } catch (error) {
@@ -239,7 +225,6 @@ export const unpinMessage = async (messageId, userId) => {
 export const getPinnedMessage = async (chatId, chatType, userId) => {
   try {
     const response = await chatApi.get(`/chat/${chatId}/pinned?chatType=${chatType}&userId=${userId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -251,7 +236,6 @@ export const getPinnedMessage = async (chatId, chatType, userId) => {
 export const clearChatHistory = async (userId, chatId) => {
   try {
     const response = await chatApi.post(`/chat/clear?userId=${userId}&chatId=${chatId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -263,7 +247,6 @@ export const clearChatHistory = async (userId, chatId) => {
 export const uploadVoiceMessage = async (voiceData) => {
   try {
     const response = await chatApi.post('/chat/voice/upload', voiceData);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -275,7 +258,6 @@ export const uploadVoiceMessage = async (voiceData) => {
 export const getGroupMembers = async (teamId) => {
   try {
     const response = await chatApi.get(`/chat/team/employee/${teamId}`);
-    // Log the full response object
     console.log('Response:', response);
     return response.data;
   } catch (error) {

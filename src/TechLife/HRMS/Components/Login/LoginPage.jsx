@@ -145,7 +145,7 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const response = await fetch("http://192.168.0.109:8080/api/auth/login", {
+      const response = await fetch("http://hrms.anasolconsultancyservices.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, password: password }),
