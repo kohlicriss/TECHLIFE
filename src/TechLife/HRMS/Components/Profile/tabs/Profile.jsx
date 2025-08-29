@@ -1,6 +1,8 @@
-import React, { useState, useEffect,useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { IoClose } from "react-icons/io5";
 import { Context } from "../../HrmsContext";
+import { publicinfoApi } from "../../../../../axiosInstance";
+import { useParams } from "react-router-dom";
 
 // ---- Default Profile ---
 const defaultProfile = {
@@ -174,12 +176,95 @@ const sectionFields = {
 // ---- Profile Component -----
 function Profile() {
   const [editingSection, setEditingSection] = useState(null);
-  let {userprofiledata,setUserProfileData}=useContext(Context)
+  const [primarydata, setPrimaryData] = useState(null);
+  const [contactdetails, setContactDetails] = useState(null);
+  const [addressData, setAddressData] = useState(null);
+  const [eduData, setEduData] = useState(null);
+  const [experience, setExperience] = useState(null);
+  let { userprofiledata, setUserProfileData } = useContext(Context);
   const [editingData, setEditingData] = useState({});
+  const { empID } = useParams();
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("profileData");
     return saved ? JSON.parse(saved) : defaultProfile;
   });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch primary data
+  useEffect(() => {
+    const fetchPrimaryData = async () => {
+      try {
+        let response = await publicinfoApi.get(`employee/${empID}/primary/details`);
+        console.log("Primary Information:", response.data);
+        setPrimaryData(response.data);
+      } catch (err) {
+        console.error("Failed to fetch primary details:", err);
+        setPrimaryData(null);
+      }
+    };
+    if (empID) {
+      fetchPrimaryData();
+    }
+  }, [empID]);
+
+
+
+
+
+  useEffect(()=>{
+    let edudataFetch=async()=>{
+        try {
+          let response= await publicinfoApi.get(`employee/${empID}/previousExperience`);
+          setExperience(response.data);
+          console.log("Experience data :",response.data)
+        } catch (error) {
+          console.log("Experience error:",error);
+        }
+    }
+    edudataFetch();
+  },[empID])
+
+  useEffect(() => {
+    const fetchContactInfo = async () => {
+      try {
+        let response = await publicinfoApi.get(`employee/${empID}/contact`);
+        console.log("Contact Information:", response.data);
+        setContactDetails(response.data);
+      } catch (err) {
+        console.error("Failed to fetch contact details:", err);
+        setContactDetails(null);
+      }
+    };
+    if (empID) {
+      fetchContactInfo();
+    }
+  }, [empID]);
+
+  // Fetch address data
+  useEffect(() => {
+    const fetchAddressData = async () => {
+      try {
+        let response = await publicinfoApi.get(`employee/${empID}/address`); 
+        console.log("Address Information:", response.data); // Added this line
+        setAddressData(response.data);
+      } catch (err) {
+        console.error("Failed to fetch address details:", err);
+        setAddressData(null);
+      }
+    };
+    if (empID) {
+      fetchAddressData();
+    }
+  }, [empID]);
+
+
+  // Set loading to false once all data sets have been fetched
+  useEffect(() => {
+    if (primarydata !== null && contactdetails !== null && addressData !== null) {
+      setLoading(false);
+    }
+  }, [primarydata, contactdetails, addressData]);
+
 
   useEffect(() => {
     localStorage.setItem("profileData", JSON.stringify(formData));
@@ -188,12 +273,41 @@ function Profile() {
   const getFileName = (file, name) =>
     file ? (file.name ? file.name : name) : name || "";
 
-  // ---- Helper: Get Display Value with Defaults -----
+  // ---- Helper: Get Display Value with Dynamic Data -----
   const getDisplayValue = (sectionKey, fieldName) => {
+    const apiFieldMapping = {
+      email: 'workEmail',
+      alternateEmail: 'personalEmail',
+      phone: 'mobileNumber',
+      displayName: 'displayName',
+      permanentAddress: 'street',
+      permanentCity: 'city',
+      permanentState: 'state',
+      permanentZip: 'zip',
+      permanentCountry: 'country',
+      currentAddress: 'street',
+      currentCity: 'city',
+      currentState: 'state',
+      currentZip: 'zip',
+      currentCountry: 'country',
+    };
+    
+    if (sectionKey === "primaryDetails" && primarydata) {
+      return primarydata[apiFieldMapping[fieldName] || fieldName] || "-Not Set-";
+    }
+    if (sectionKey === "contactDetails" && contactdetails) {
+      return contactdetails[apiFieldMapping[fieldName] || fieldName] || "-Not Set-";
+    }
+    if (sectionKey === "address" && addressData) {
+      const apiAddressField = apiFieldMapping[fieldName] || fieldName;
+      return addressData[apiAddressField] || "-Not Set-";
+    }
+
     const val = formData[sectionKey]?.[fieldName];
     if (val !== undefined && val !== "") {
       return val;
     }
+
     const defaultVal = defaultProfile[sectionKey]?.[fieldName];
     if (defaultVal !== undefined && defaultVal !== "") {
       return defaultVal;
@@ -203,7 +317,6 @@ function Profile() {
 
   // ---- Edit / Modal Section Logic -----
   const openEditSection = (section) => {
-    // Merge the default and user values, user takes precedence
     const merged = { ...defaultProfile[section], ...formData[section] };
     setEditingData(merged);
     setEditingSection(section);
@@ -275,7 +388,7 @@ function Profile() {
 
     if (editingSection === "professionalSummary") {
       return (
-        <div className="fixed inset-0 backdrop-blur-sm  bg-opacity-100  flex items-center justify-center z-116">
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-116">
           <div className="bg-white shadow-2xl rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-medium">Professional Summary</h2>
@@ -333,15 +446,14 @@ function Profile() {
       );
     }
 
-    // File upload identity info
     if (editingSection === "identityInformation") {
       return (
-        <div className="fixed inset-0 backdrop-blur-sm  bg-opacity-100 flex items-center justify-center z-117">
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-117">
           <div className="bg-white shadow-2xl rounded-lg w-[550px] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-xl font-medium">Identity Information</h2>
               <button
-                onClick={() => setEditingSection(null)} 
+                onClick={() => setEditingSection(null)}
                 className="text-gray-400 hover:text-gray-600"
                 aria-label="Close"
               >
@@ -420,7 +532,6 @@ function Profile() {
       );
     }
 
-    // General case: all regular field sections
     const fields = sectionFields[editingSection] || [];
     return (
       <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-115">
@@ -474,7 +585,6 @@ function Profile() {
     );
   };
 
-  // ---- Section Renderer ----
   const Section = ({ sectionKey, title, singleField, isFileSection }) => (
     <div className="bg-white rounded-lg p-6 mt-6 bg-opacity-100 z-[116] shadow-2xl">
       <div className="flex justify-between items-center mb-4">
@@ -489,7 +599,6 @@ function Profile() {
       <div
         className={singleField ? "mb-2" : "grid grid-cols-2 gap-x-8 gap-y-4"}
       >
-        {/* Textarea only for Professional Summary */}
         {singleField ? (
           <div>
             <label className="block text-sm text-gray-500">SUMMARY</label>
@@ -533,22 +642,30 @@ function Profile() {
 
   return (
     <div className="p-6">
-      <Section sectionKey="primaryDetails" title="Primary Details" />
-      <Section sectionKey="contactDetails" title="Contact Details" />
-      <Section sectionKey="address" title="Address" />
-      <Section sectionKey="relations" title="Relations" />
-      <Section sectionKey="education" title="Education" />
-      <Section
-        sectionKey="professionalSummary"
-        title="Professional Summary"
-        singleField
-      />
-      <Section
-        sectionKey="identityInformation"
-        title="Identity Information"
-        isFileSection
-      />
-      {renderEditModal()}
+      {loading || !primarydata || !contactdetails || !addressData ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-xl font-semibold">Loading Profile...</p>
+        </div>
+      ) : (
+        <>
+          <Section sectionKey="primaryDetails" title="Primary Details" />
+          <Section sectionKey="contactDetails" title="Contact Details" />
+          <Section sectionKey="address" title="Address" />
+          <Section sectionKey="relations" title="Relations" />
+          <Section sectionKey="education" title="Education" />
+          <Section
+            sectionKey="professionalSummary"
+            title="Professional Summary"
+            singleField
+          />
+          <Section
+            sectionKey="identityInformation"
+            title="Identity Information"
+            isFileSection
+          />
+          {renderEditModal()}
+        </>
+      )}
     </div>
   );
 }

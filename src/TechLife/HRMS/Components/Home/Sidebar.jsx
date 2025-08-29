@@ -27,7 +27,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
 
   const handleLogoutClick = async () => {
     try {
+<<<<<<< HEAD
       await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
+=======
+      await fetch("http://hrms.anasolconsultancyservices.com/api/auth/logout", {
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
         method: "POST",
         credentials: "include",
       });

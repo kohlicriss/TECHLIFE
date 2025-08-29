@@ -1,7 +1,13 @@
 import axios from 'axios';
+<<<<<<< HEAD
  
 const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
  
+=======
+
+const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
+
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
 function cloneFormData(formData) {
     const newFormData = new FormData();
     for (let [key, value] of formData.entries()) {
@@ -9,10 +15,17 @@ function cloneFormData(formData) {
     }
     return newFormData;
 }
+<<<<<<< HEAD
  
 let isRefreshing = false;
 let failedQueue = [];
  
+=======
+
+let isRefreshing = false;
+let failedQueue = [];
+
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
 const processQueue = (error, token = null) => {
     failedQueue.forEach(prom => {
         if (error) {
@@ -23,13 +36,22 @@ const processQueue = (error, token = null) => {
     });
     failedQueue = [];
 };
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
 const createAxiosInstance = (baseURL) => {
     const instance = axios.create({
         baseURL: baseURL,
     });
+<<<<<<< HEAD
  
    
+=======
+
+    
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
     instance.interceptors.request.use(
         (config) => {
             const token = localStorage.getItem('accessToken');
@@ -40,7 +62,11 @@ const createAxiosInstance = (baseURL) => {
         },
         (error) => Promise.reject(error)
     );
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
     instance.interceptors.response.use(
         (response) => response,
         async (error) => {
@@ -110,9 +136,15 @@ window.addEventListener('storage', (event) => {
         console.log("🔄 Token updated in another tab:", event.newValue);
     }
 });
+<<<<<<< HEAD
  
 export const tasksApi = createAxiosInstance('http://localhost:8090/api/a/employee');
 export const publicinfoApi = createAxiosInstance('http://localhost:8090/api');
+=======
+
+export const tasksApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api/employee');
+export const publicinfoApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
+>>>>>>> 9527752e61815f8d2a5ad0c528630203e7e112b2
 export const chatApi = createAxiosInstance('http://192.168.0.244:8082/api');
  
  
