@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useMediaQuery } from "@mui/material";
 import { Box } from "@mui/material";
+import ReactPaginate from "react-paginate";
 import {
   PieChart,
   Pie,
@@ -15,6 +16,8 @@ import {
 } from "recharts";
 import Calendar from "./Calendar";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+import { Context } from "../HrmsContext";
 
 const AddLeaveForm = ({ onClose }) => {
   // ... state for form inputs (fromDate, toDate, etc.) ...
@@ -365,9 +368,10 @@ const LeaveTypeCard = ({ title, leaveData = { type: title, consumed: 0, remainin
 };
 const LeaveType = () => {
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"]; 
+  const {empID}=useParams();
   useEffect(() => {
     axios
-      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/personalLeavesData')
+      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`)
       .then(response => {
        const formatted = response.data.map(item => ({
         leaveType: item.leaveType,
@@ -452,7 +456,7 @@ const WeeklyPattern = () => {
   //];
   useEffect(() => {
     axios
-      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leavesbar-graph')
+      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`)
       .then(response => {
        const formatted = response.data.map(item => ({
         Day: item.day,
@@ -464,6 +468,7 @@ const WeeklyPattern = () => {
       })
       
   }, []);
+  const {empID}=useParams();
   const [selectedDay, setSelectedDay] = useState("All");
   const [rawData, setrawData] = useState([]);
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -521,44 +526,111 @@ const WeeklyPattern = () => {
   );
 };
 const LeaveHistory = () => {
-  useEffect(() => {
-    axios
-      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leaves')
-      .then(response => {
-       const formatted = response.data.map(item => ({
-        Leave_type: item.leave_type,
-        Leave_On: item.leave_on,
-        status: item.status,
-        Request_By: item.request_By,
-        Details: item.details,
-        Action_Date: item.action_Date,
-        Rejection_Reason: item.rejection_Reason,
-        Action: item.action,
-
-      }));
-      setCurrentLeaveHistoryData(formatted);
-      console.log('leavesHistory data formatted:',  formatted);
-        
-      })
-      
-  }, []);
- const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
+  const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [sortOption, setSortOption] = useState("Recently added");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [apiPageSize, setApiPageSize] = useState(10); // Change this value to 2, 3, 4, etc.
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const {empID}=useParams();
+
+  // useEffect to fetch data based on the current page
+  useEffect(() => {
+    const fetchLeaveData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get(
+          `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${currentPage - 1}&size=${apiPageSize}`
+        );
+        const newData = Array.isArray(response.data) ? response.data : [];
+
+        // Check if there are more records to fetch
+        if (newData.length < apiPageSize) {
+          setHasMoreData(false);
+        } else {
+          setHasMoreData(true);
+        }
+
+        const formatted = newData.map(item => ({
+          Leave_type: item.leave_type,
+          Leave_On: item.leave_on,
+          status: item.status,
+          Request_By: item.request_By,
+          Details: item.details,
+          Action_Date: item.action_Date,
+          Rejection_Reason: item.rejection_Reason,
+          Action: item.action,
+        }));
+
+        // Append the new data to the existing data for cumulative display
+        setCurrentLeaveHistoryData(prevData => [...prevData, ...formatted]);
+      } catch (error) {
+        console.error("Failed to fetch leave data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLeaveData();
+  }, [currentPage, apiPageSize]);
+
+  // Reset data and page number when filters or sorting change
+  useEffect(() => {
+    setCurrentLeaveHistoryData([]);
+    setCurrentPage(1);
+  }, [leaveTypeFilter, statusFilter, sortOption]);
+
   const leaveTypes = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.Leave_type))];
   const statuses = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.status))];
-  const filteredData = currentLeaveHistoryData.filter((item) => {
-    return (
-      (leaveTypeFilter === "All" || item.Leave_type === leaveTypeFilter) &&
-      (statusFilter === "All" || item.status === statusFilter)
-    );
-  });
+  const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
+
+  const filterAndSortData = () => {
+    let data = [...currentLeaveHistoryData];
+    // Filtering logic
+    data = data.filter((item) => {
+      return (
+        (leaveTypeFilter === "All" || item.Leave_type === leaveTypeFilter) &&
+        (statusFilter === "All" || item.status === statusFilter)
+      );
+    });
+    // Sorting logic
+    switch (sortOption) {
+      case "Ascending":
+        data.sort((a, b) => a.Leave_type.localeCompare(b.Leave_type));
+        break;
+      case "Descending":
+        data.sort((a, b) => b.Leave_type.localeCompare(a.Leave_type));
+        break;
+      case "Last Month":
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        data = data.filter(item => new Date(item.Leave_On) >= lastMonth);
+        break;
+      case "Last 7 Days":
+        const last7Days = new Date();
+        last7Days.setDate(last7Days.getDate() - 7);
+        data = data.filter(item => new Date(item.Leave_On) >= last7Days);
+        break;
+      case "Recently added":
+      default:
+        data.sort((a, b) => new Date(b.Action_Date) - new Date(a.Action_Date));
+        break;
+    }
+    return data;
+  };
+
+  const filteredAndSortedData = filterAndSortData();
+  const totalPages = Math.ceil(filteredAndSortedData.length / apiPageSize);
+
+  
   return (
     <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Employee Leave Requests History
+        Leave Requests History
       </h2>
       <div className="flex flex-wrap items-center gap-4 mb-6">
+        {/* Leave Type Filter */}
         <div>
           <label className="text-base font-semibold mr-2 text-gray-700">
             Leave Type:
@@ -575,6 +647,7 @@ const LeaveHistory = () => {
             ))}
           </select>
         </div>
+        {/* Status Filter */}
         <div>
           <label className="text-base font-semibold mr-2 text-gray-700">
             Status:
@@ -591,7 +664,25 @@ const LeaveHistory = () => {
             ))}
           </select>
         </div>
+        {/* Sort Button with Dropdown */}
+        <div className="relative">
+          <label className="text-base font-semibold mr-2 text-gray-700">
+            Sort by:
+          </label>
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+          >
+            {sortOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+      {/* Table Section */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-100">
@@ -623,77 +714,115 @@ const LeaveHistory = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredData.map((row, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Leave_type}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Leave_On}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm">
-                  <span
-                    className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${
-                      row.status === "Approve"
-                        ? "bg-green-500"
-                        : row.status === "Reject"
-                        ? "bg-red-500"
-                        : "bg-blue-500"
-                    }`}
-                  >
-                    {row.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Request_By || "-"}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                  <a
-                    href={row.Details}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-lg"
-                  >
-                    📄
-                  </a>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {row.Action_Date}
-                </td>
-                <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-900">
-                  {row.Rejection_Reason || "-"}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                  <a
-                    href={row.Action}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-gray-600 hover:text-gray-800 text-lg"
-                  >
-                    ⋯
-                  </a>
-                </td>
-              </tr>
-            ))}
-            {filteredData.length === 0 && (
+            {filteredAndSortedData.length > 0 ? (
+              filteredAndSortedData.map((row, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {row.Leave_type}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {row.Leave_On}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <span
+                      className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${
+                        row.status === "Approve"
+                          ? "bg-green-500"
+                          : row.status === "Reject"
+                          ? "bg-red-500"
+                          : "bg-blue-500"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {row.Request_By || "-"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <a
+                      href={row.Details}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:text-blue-800 text-lg"
+                    >
+                      📄
+                    </a>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {row.Action_Date}
+                  </td>
+                  <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-900">
+                    {row.Rejection_Reason || "-"}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                    <a
+                      href={row.Action}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-gray-600 hover:text-gray-800 text-lg"
+                    >
+                      ⋯
+                    </a>
+                  </td>
+                </tr>
+              ))
+            ) : (
               <tr>
                 <td colSpan="12" className="text-center py-4 text-gray-500">
-                  No matching records found.
+                  {isLoading ? "Loading..." : "No matching records found."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
+        <nav className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={!hasMoreData || isLoading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Load More
+          </button>
+        </nav>
+      </div>
     </div>
   );
+};
+const UserGreeting = ({currentUser}) => {
+    const {userData}=useContext(Context)
+  return(
+  <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
+    <div className="flex items-center space-x-4">
+     <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
+          <img
+            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+            alt="Profile"
+            className="w-20 h-20 object-cover"
+          />
+        </div>
+      <div>
+        <h2 className="text-2xl font-semibold flex items-center">
+          Welcome, {userData?.employeeId}, {userData?.fullName}
+        </h2>
+        <p className="text-gray-500 mt-1">
+          You have <span className="font-bold text-red-500">10</span>  Approved &{' '}
+          <span className="font-bold text-red-500">2</span> Rejected
+        </p>
+      </div>
+    </div>
+  </div>
+);
 };
 const LeavesDashboard = ({ isSidebarOpen }) => {
 
   const [leaveSummaryData, setLeaveSummaryData] = useState([]);
+  const {empID}=useParams();
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leave-summary')
+    .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`)
     .then(response => {
       // Map backend data to recharts format and fix type names
       const typeMap = {
@@ -717,12 +846,10 @@ useEffect(() => {
 }, []);
   const [showAddLeaveForm, setShowAddLeaveForm] = useState(false);
 
-  // ...existing code...
 const casualLeaveQuota = leaveSummaryData.find(item => item.type === "Casual Leave");
 const paidLeaveQuota = leaveSummaryData.find(item => item.type === "Paid Leave");
 const sickLeaveQuota = leaveSummaryData.find(item => item.type === "Sick Leave");
 const unpaidLeaveQuota = leaveSummaryData.find(item => item.type === "Unpaid Leave");
-// ...existing code...
   const handleRequestLeave = () => {
     setShowAddLeaveForm(true);
   };
@@ -731,35 +858,13 @@ const unpaidLeaveQuota = leaveSummaryData.find(item => item.type === "Unpaid Lea
   };
   return (
     <div className="min-h-screen bg-gray-100 p-6 sm:p-6 lg:p-8 font-sans">
-      <header className="">
-        <div className="text-center sm:text-left mb-4 sm:mb-0">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
-            Leaves Dashboard
-          </h1>
-        </div>
-      </header>
-      <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
-    <div className="flex items-center space-x-4">
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-16 w-16" />
-      <div>
-        <h2 className="text-2xl font-semibold flex items-center">
-          Welcome, Rohit
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 ml-2 text-gray-500"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-4.604 4.549l2.828 2.829-5.46 5.46a1 1 0 01-.453.298l-3.268.817a1 1 0 01-1.218-1.218l.817-3.268a1 1 0 01.298-.453l5.46-5.46z" />
-          </svg>
-        </h2>
-        <p className="text-gray-500 mt-1">
-          You have <span className="font-bold text-red-500">21</span> Pending Approvals &{' '}
-          <span className="font-bold text-red-500">14</span> Leave Requests
-        </p>
-      </div>
-    </div>
-  </div>
+      <header className="p-3 mb-6 text-left">
+                <h1 className="text-4xl font-bold text-gray-900 mb-8">
+                    Leaves Dashboard
+                </h1>
+                <UserGreeting />
+            </header>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
         <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />

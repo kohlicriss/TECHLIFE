@@ -1,7 +1,6 @@
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarDays, BriefcaseMedical,PackageSearch,MessageSquareCode,CircleUserRound,UserRoundCog } from 'lucide-react';
 import React, { Fragment,useState } from 'react';
 import Calendar from './Calendar'; // Assuming Calendar component exists
-import { FaPlusCircle } from 'react-icons/fa';
 import { PieChart, Pie, Cell,Tooltip , ResponsiveContainer } from 'recharts';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
@@ -72,45 +71,23 @@ const UserGreeting = () => (
     </div>
   </div>
 );
-
-const StatCard = ({ title, value, total, percentage, isPositive, icon, onViewAll }) => (
+const StatCard = ({ title, value, total, icon, onViewAll }) => (
   <div className="flex flex-col p-4 bg-white rounded-lg shadow-md">
     <div className="flex items-center justify-between">
       <div
-        className={`p-2 rounded-full ${
-          isPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-        }`}
+        className={`p-2 rounded-full  bg-opacity-20`}
       >
         {icon}
       </div>
     </div>
-    <h3 className="mt-4 text-sm text-gray-500">{title}</h3>
+    <h3 className="mt-4 text-lg text-gray-500">{title}</h3>
     <p className="text-2xl font-bold mt-1">
       {value}
       {total && <span className="text-base text-gray-500 font-normal">/{total}</span>}
     </p>
-    <div className="flex items-center mt-2">
-      <span className={`text-sm font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-        {percentage}
-      </span>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className={`h-4 w-4 ml-1 ${isPositive ? 'text-green-500' : 'text-red-500'} transform ${
-          isPositive ? 'rotate-0' : 'rotate-180'
-        }`}
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fillRule="evenodd"
-          d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
-          clipRule="evenodd"
-        />
-      </svg>
-    </div>
     <button
       onClick={onViewAll}
-      className="text-blue-500 text-sm mt-4 text-left hover:underline"
+      className="text-blue-500 text-lg mt-4 text-left hover:underline"
     >
       View All
     </button>
@@ -304,10 +281,10 @@ const Attendance = ({onViewAll}) => {
   const [selectedPeriod, setSelectedPeriod] = useState('Today');
   const totalAttendance = 104; 
   const data = [
-    { name: 'Present', value: 60, color: '#10b981' }, // Green
-    { name: 'Late', value: 20, color: '#1e3a8a' }, // Dark Blue
-    { name: 'Permission', value: 20, color: '#facc15' }, // Yellow
-    { name: 'Absent', value: 4, color: '#ef4444' }, // Red
+    { name: 'Present', value: 60, color: '#10b981' }, 
+    { name: 'Late', value: 20, color: '#1e3a8a' }, 
+    { name: 'Permission', value: 20, color: '#facc15' },
+    { name: 'Absent', value: 4, color: '#ef4444' }, 
   ];
   const totalPercentage = data.reduce((sum, item) => sum + item.value, 0);
   const fillerValue = 100 - totalPercentage;
@@ -749,11 +726,25 @@ const ChartsLayout = ({onViewAll}) => {
 const TaskStatistics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('Today');
   const tasks = [
-    { label: 'Ongoing', percentage: 24, color: '#facc15' }, // Tailwind yellow-400
-    { label: 'On Hold', percentage: 10, color: '#3b82f6' }, // Tailwind blue-500
-    { label: 'Overdue', percentage: 16, color: '#ef4444' }, // Tailwind red-500
-    { label: 'Ongoing', percentage: 40, color: '#22c55e' }, // Tailwind green-500
+    { label: 'Ongoing', percentage: 24 }, 
+    { label: 'On Hold', percentage: 10 }, 
+    { label: 'Overdue', percentage: 16 },
+    { label: 'Completed', percentage: 40 }, 
   ];
+  const getlabelColor = (label) => {
+    switch (label) {
+        case "Ongoing":
+            return " text-yellow-400";
+        case "On Hold":
+            return " text-blue-500";
+        case "Overdue":
+            return "text-red-500";
+        case "Completed":
+            return " text-green-800";    
+        default:
+            return  " text-black-800";
+    }
+};
 
   const totalTasks = 60;
   const totalTasksPossible = 80; // Example total tasks possibl
@@ -849,7 +840,7 @@ const TaskStatistics = () => {
           {tasks.map((task, index) => (
             <div key={index} className="flex items-center space-x-1">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.color }}></div>
-              <span className="text-sm text-gray-600">{task.label}</span>
+              <span className={`text-sm text-gray-600 ${getlabelColor(task.label)}`}>{task.label}</span>
               <span className="text-sm font-semibold">{task.percentage}%</span>
             </div>
           ))}
@@ -1125,50 +1116,32 @@ const CombinedDashboard = () => {
     const StatsOverview=[
     {
         title: 'Attendance Overview',
-        value: '120',
-        total: '154',
-        percentage: '+2.1%',
-        isPositive: true,
-        icon: <CalendarIcon className="h-6 w-6" />
+        value: '104',
+        total: '108',
     },
     {
         title: 'Total No of Projects',
-        value: '90',
-        total: '125',
-        percentage: '-2.1%',
-        isPositive: false,
-        icon: <FaPlusCircle className="h-6 w-6" />
+        value: '5',
+        total: '10',
     },
     {
         title: 'Total No of Tasks',
-        value: '225',
-        total: '28',
-        percentage: '+11.2%',
-        isPositive: true,
-        icon: <CalendarIcon className="h-6 w-6" />
+        value: '60',
+        total: '80',
     },
     {
         title: 'Job Applicants',
-        value: '98',
-        percentage: '+2.1%',
-        isPositive: true,
-        icon: <CalendarIcon className="h-6 w-6" />
+        value: '20',
     },
     {
         title: 'New Hire',
-        value: '45',
-        total: '48',
-        percentage: '-11.2%',
-        isPositive: false,
-        icon: <CalendarIcon className="h-6 w-6" />
+        value: '30',
+        total: '20',
     },
     {
         title: 'Total No of Clients',
-        value: '69',
-        total: '86',
-        percentage: '-11.2%',
-        isPositive: false,
-        icon: <CalendarIcon className="h-6 w-6" />
+        value: '2',
+        total: '5',
     }
 ]
   return (
@@ -1178,107 +1151,56 @@ const CombinedDashboard = () => {
         <UserGreeting />
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <StatCard 
-                    title="Attendance Overview"
-                    value="104"
-                    total="108"
-                    percentage="+2.1%"
-                    isPositive={true}
-                    icon={
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                    }
-                    onViewAll={handleViewAtteandances}
-                />
-            <StatCard
-              title="Total No of Projects"
-              value="90"
-              total="125"
-              percentage="-2.1%"
-              isPositive={false}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7m-9 4h2m-2 4h2m4-4h2m-2 4h2"
-                  />
-                </svg>
-              }
-              onViewAll={() => alert('View All Projects')}
-            />
-            <StatCard
-              title="Total No of Tasks"
-              value="60"
-              total="80"
-              percentage="+11.2%"
-              isPositive={true}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-              }
-              onViewAll={() => alert('View All Tasks')}
-            />
-            <StatCard
-              title="Job Applicants"
-              value="98"
-              percentage="+2.1%"
-              isPositive={true}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a4 4 0 014-4h.247M17 16l4-4m0 0l-4-4m4 4H7"
-                  />
-                </svg>
-              }
-              onViewAll={handleViewJobs}
-            />
-            <StatCard
-              title="New Hire"
-              value="45"
-              total="48"
-              percentage="-11.2%"
-              isPositive={false}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              }
-              onViewAll={handleViewApplicants}
-            />
-            <StatCard
-              title="Total No of Clients"
-              value="69"
-              total="86"
-              percentage="-11.2%"
-              isPositive={false}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5m-2 0h-3.268a2 2 0 01-1.89-1.332L10 2l-2.482 7.493a2 2 0 00-1.89 1.332L2 20h5m-4 0h12"
-                  />
-                </svg>
-              }
-              onViewAll={() => alert('View All Clients')}
-            />
+           {StatsOverview.map((Stats, index) => {
+    let icon, titlecolor, onViewAllHandler;
+
+    switch (Stats.title) {
+        case "Attendance Overview":
+            icon = <CalendarDays className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-orange-600 mr-2" />
+            titlecolor = "text-orange-500";
+            onViewAllHandler = handleViewAtteandances;
+            break;
+        case "Total No of Projects":
+            icon = < BriefcaseMedical className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" />
+            titlecolor = "text-blue-500";
+            onViewAllHandler = handleViewAtteandances; 
+            break;
+        case "Total No of Tasks":
+            icon = <PackageSearch className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-pink-600 mr-2" />
+            titlecolor = "text-pink-500";
+            onViewAllHandler = handleViewJobs; 
+        case "Job Applicants":
+            icon = <MessageSquareCode className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-yellow-600 mr-2" />
+            titlecolor = "text-yellow-500";
+            onViewAllHandler = handleViewJobs;
+            break;
+        case "New Hire": 
+            icon = <CircleUserRound className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-purple-600 mr-2" />
+            titlecolor = "text-purple-500";
+            onViewAllHandler = handleViewApplicants;
+            break;
+        case "Total No of Clients":
+            icon = <UserRoundCog className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-indigo-600 mr-2" />
+            titlecolor = "text-indigo-500";
+            onViewAllHandler =handleViewApplicants; 
+            break;
+        default:
+            onViewAllHandler = () => console.log('No handler defined');
+    }
+        
+              return (
+                <StatCard
+                  key={index}
+                  icon={icon}
+                  title={Stats.title}
+                  titlecolor={titlecolor}
+                  value={Stats.value}
+                  total={Stats.total}
+                  onViewAll={onViewAllHandler}
+                 />
+                
+              );
+            })}
           </div>
           <div className="lg:col-span-2">
             <EmployeeChart/>

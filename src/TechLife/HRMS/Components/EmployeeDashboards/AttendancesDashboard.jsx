@@ -163,7 +163,7 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
     </div>
   );
 };
-const AttendancesDashboard = ({onBack}) => {
+const AttendancesDashboard = ({onBack,currentUser}) => {
   const {empID}=useParams();
   const {userData}=useContext(Context)
   const [selectedMonth, setSelectedMonth] = useState("All");
@@ -550,56 +550,67 @@ const filteredBarChartData = useMemo(() => {
           Back to Dashboard
         </button>
       </header>
-      <div className="bg-white shadow-xl rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-y-[-4px] transition-transform duration-300 ease-in-out">
+      <div className="bg-white shadow-xl rounded-lg p-3 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-y-[-1px] transition-transform duration-300 ease-in-out">
   {/* Profile Section on the left */}
-  <div className="flex justify-between items-center p-6 flex-1">
-    <div className="flex items-center space-x-4">
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-20 w-20" />
-      <div>
-        <h2 className="text-2xl font-semibold flex items-center">
-          Welcome, {userData?.employeeId}
-        </h2>
-        <p className="text-gray-500 mt-1">
-          You have <span className="font-bold text-red-500">100%</span> of Attendance &{' '}
-          <span className="font-bold text-red-500">10hr9min</span> of Avg Working Hours
-        </p>
-      </div>
+  <div className="flex flex-col">
+  <div className="flex justify-between items-center p-3 flex-1">
+    <div className="flex-none mr-2">
+      <button
+        onClick={toggleMode}
+        className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
+      >
+        {mode === "office" ? (
+          <FaBuilding className="text-blue-500 text-2xl" />
+        ) : (
+          <FaHome className="text-green-500 text-2xl" />
+        )}
+        <span className="hidden sm:inline">
+          {mode === "office" ? "Office Mode" : "Home Mode"}
+        </span>
+        <span className="sm:hidden">
+          {mode === "office" ? "Office" : "Home"}
+        </span>
+      </button>
+    </div>
+    <h2 className="flex-1 text-center text-xl font-semibold text-gray-800">
+      <ClockIcon className="w-4 h-4 inline-block text-indigo-600 mr-1" />Work Timer
+    </h2>
+    <div className="flex-none text-right">
+      <p className="text-xl font-semibold text-gray-900 tracking-wide">
+        {formatClockTime(currentTime)}
+      </p>
+      <p className="text-sm text-gray-500">
+        {currentTime.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </p>
     </div>
   </div>
+  <div className="flex items-center space-x-4 p-6">
+    <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
+      <img
+        src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+        alt="Profile"
+        className="w-20 h-20 object-cover"
+      />
+    </div>
+    <div>
+      <h2 className="text-2xl font-semibold flex items-center">
+        Welcome, {userData?.employeeId} {userData?.fullName}
+      </h2>
+      <p className="text-gray-500 mt-1">
+        You have <span className="font-bold text-red-500">100%</span> of Attendance &{" "}
+        <span className="font-bold text-red-500">10hr9min</span> of Avg Working Hours
+      </p>
+    </div>
+  </div>
+</div>
   {/* Web Clock Section on the right */}
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex-none mr-5">
-          <button
-            onClick={toggleMode}
-            className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
-          >
-            {mode === "office" ? (
-              <FaBuilding className="text-blue-500 text-2xl" />
-            ) : (
-              <FaHome className="text-green-500 text-2xl" />
-            )}
-            <span className="hidden sm:inline">
-              {mode === "office" ? "Office Mode" : "Home Mode"}
-            </span>
-            <span className="sm:hidden">
-              {mode === "office" ? "Office" : "Home"}
-            </span>
-          </button>
-        </div>
-        <h2 className="flex-1 text-center text-xl font-semibold text-gray-800">
-          <ClockIcon className="w-4 h-4 inline-block text-indigo-600 mr-1" />Work Timer
-        </h2>
-        <div className="flex-none text-right">
-          <p className="text-xl font-semibold text-gray-900 tracking-wide">
-            {formatClockTime(currentTime)}
-          </p>
-          <p className="text-sm text-gray-500">
-            {currentTime.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </p>
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-2 items-center text-center my-1 mt-12">
+      <div className="grid grid-cols-3 gap-2 items-center text-center my-1 mt-10">
         {/* Left side: Gross Time */}
         <div className="text-left">
           <p className="text-lg text-gray-600 mb-0">Gross Time</p>

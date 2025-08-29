@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useMediaQuery } from "@mui/material";
 import { Box } from "@mui/material";
 import ReactPaginate from "react-paginate";
@@ -16,6 +16,8 @@ import {
 } from "recharts";
 import Calendar from "./Calender";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+import { Context } from "../HrmsContext";
 
 const AddLeaveForm = ({ onClose }) => {
   // ... state for form inputs (fromDate, toDate, etc.) ...
@@ -366,9 +368,10 @@ const LeaveTypeCard = ({ title, leaveData = { type: title, consumed: 0, remainin
 };
 const LeaveType = () => {
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"]; 
+  const {empID}=useParams();
   useEffect(() => {
     axios
-      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/personalLeavesData')
+      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`)
       .then(response => {
        const formatted = response.data.map(item => ({
         leaveType: item.leaveType,
@@ -453,7 +456,7 @@ const WeeklyPattern = () => {
   //];
   useEffect(() => {
     axios
-      .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leavesbar-graph')
+      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`)
       .then(response => {
        const formatted = response.data.map(item => ({
         Day: item.day,
@@ -465,6 +468,7 @@ const WeeklyPattern = () => {
       })
       
   }, []);
+  const {empID}=useParams();
   const [selectedDay, setSelectedDay] = useState("All");
   const [rawData, setrawData] = useState([]);
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -530,6 +534,7 @@ const LeaveHistory = () => {
   const [apiPageSize, setApiPageSize] = useState(10); // Change this value to 2, 3, 4, etc.
   const [isLoading, setIsLoading] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
+  const {empID}=useParams();
 
   // useEffect to fetch data based on the current page
   useEffect(() => {
@@ -537,7 +542,7 @@ const LeaveHistory = () => {
       setIsLoading(true);
       try {
         const response = await axios.get(
-          `http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leaves?page=${currentPage - 1}&size=${apiPageSize}`
+          `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${currentPage - 1}&size=${apiPageSize}`
         );
         const newData = Array.isArray(response.data) ? response.data : [];
 
@@ -618,6 +623,7 @@ const LeaveHistory = () => {
   const filteredAndSortedData = filterAndSortData();
   const totalPages = Math.ceil(filteredAndSortedData.length / apiPageSize);
 
+  
   return (
     <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
@@ -785,28 +791,38 @@ const LeaveHistory = () => {
     </div>
   );
 };
-const UserGreeting = () => (
+const UserGreeting = ({currentUser}) => {
+    const {userData}=useContext(Context)
+  return(
   <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
     <div className="flex items-center space-x-4">
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-16 w-16" />
+     <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
+          <img
+            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+            alt="Profile"
+            className="w-20 h-20 object-cover"
+          />
+        </div>
       <div>
         <h2 className="text-2xl font-semibold flex items-center">
-          Welcome, Rohit
+          Welcome, {userData?.employeeId}, {userData?.fullName}
         </h2>
         <p className="text-gray-500 mt-1">
-          You have <span className="font-bold text-red-500">21</span> Pending Approvals &{' '}
-          <span className="font-bold text-red-500">14</span> Leave Requests
+          You have <span className="font-bold text-red-500">10</span>  Approved &{' '}
+          <span className="font-bold text-red-500">2</span> Rejected
         </p>
       </div>
     </div>
   </div>
 );
+};
 const LeavesDashboard = ({ isSidebarOpen }) => {
 
   const [leaveSummaryData, setLeaveSummaryData] = useState([]);
+  const {empID}=useParams();
 useEffect(() => {
   axios
-    .get('http://192.168.0.123:8081/api/attendance/employee/ACS00000001/leave-summary')
+    .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`)
     .then(response => {
       // Map backend data to recharts format and fix type names
       const typeMap = {

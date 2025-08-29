@@ -1,19 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell,
     PieChart, Pie,
     AreaChart, Area, Legend, CartesianGrid
 } from 'recharts';
+import { useParams } from "react-router-dom";
+import { Context } from "../HrmsContext";
 
 // --- EmployeeProfile Component ---
-const UserGreeting = () => (
+const UserGreeting = ({currentUser}) => {
+     const {userData}=useContext(Context)
+    return(
   <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
     <div className="flex items-center space-x-4">
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-16 w-16" />
+      <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
+          <img
+            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+            alt="Profile"
+            className="w-20 h-20 object-cover"
+          />
+        </div>
       <div>
         <h2 className="text-2xl font-semibold flex items-center">
-          Welcome, Rohit
+          Welcome, {userData?.employeeId}, {userData?.fullName}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-5 w-5 ml-2 text-gray-500"
@@ -24,13 +34,14 @@ const UserGreeting = () => (
           </svg>
         </h2>
         <p className="text-gray-500 mt-1">
-          You have <span className="font-bold text-red-500">21</span> Pending Approvals &{' '}
-          <span className="font-bold text-red-500">14</span> Leave Requests
+          You have to <span className="font-bold text-red-500">Improve work progress</span> as compare to {' '}
+          <span className="font-bold text-red-500">Last month's </span> performance
         </p>
       </div>
     </div>
   </div>
 );
+};
 
 // --- Assignment Component (Line Chart) ---
 const weeklyTaskData = [
@@ -253,14 +264,14 @@ const Preformancerating = () => {
                         tickLine={false}
                         axisLine={{ stroke: '#ccc' }}
                         tickFormatter={(value) => `${value}%`}
-                        className="text-sm fill-gray-600" hide
+                        className="text-sm fill-gray-600"  
                         // removed 'hide' prop to show X-axis labels
                     />
                     <YAxis
                         label={{ value: "User Count", angle: -90, position: "insideLeft" }}
                         tickLine={false}
                         axisLine={{ stroke: '#ccc' }}
-                        className="text-sm fill-gray-600" hide
+                        className="text-sm fill-gray-600" 
                         // removed 'hide' prop to show Y-axis labels
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.1)' }} />

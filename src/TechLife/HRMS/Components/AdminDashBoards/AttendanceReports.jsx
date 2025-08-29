@@ -2,19 +2,19 @@ import { CalendarDaysIcon, ClockIcon, ArrowPathIcon } from "@heroicons/react/24/
 import { useMemo, useState } from "react";
 const ChartData=[
      {
-      title:"Total Working Days",
+      title:"Total Working Days in Month",
       value:"25" 
      },
      {
-       title:"Total Leave Taken",
+       title:"Total Leave Taken Today",
        value:"12"  
      },
      {
-       title:"Total Holidays",
+       title:"Total Holidays per Year",
        value:"6"
      },
      {
-       title:"Total Halfdays",
+       title:"Total Halfdays per Day",
        value:"5"
       }
 ]
@@ -43,19 +43,19 @@ const DashboardGrid = () => {
               let icon,titlecolor;
         
               switch (Chart.title){
-                case "Total Working Days":
+                case "Total Working Days in Month":
                   icon = <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-orange-600 mr-2" />
                   titlecolor="text-orange-500"
                   break;
-                case "Total Leave Taken":
+                case "Total Leave Taken Today":
                   icon = <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" />
                   titlecolor="text-blue-500";
                   break;
-                case "Total Holidays":
+                case "Total Holidays per Year":
                   icon = <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-pink-600 mr-2" />
                   titlecolor="text-pink-500";
                   break;
-                case "Total Halfdays":
+                case "Total Halfdays per Day":
                   icon = <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-yellow-600 mr-2" />
                   titlecolor="text-yellow-500";
                   break;
