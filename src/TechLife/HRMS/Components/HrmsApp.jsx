@@ -24,6 +24,7 @@ const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
 const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
 const Dashboard = lazy(() => import("./EmployeeDashboards/Dashboard"));
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
+const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
 
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
@@ -133,6 +134,7 @@ const HrmsApp = () => {
                             >
                                 <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
                                 <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                                <Route path="/employees/:empID/employee/:employeeID" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
                                 <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
