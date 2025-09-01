@@ -22,7 +22,10 @@ const AllTeams = lazy(() => import("./Teams/AllTeams"));
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
 const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
 const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
-const Dashboard = lazy(() => import("./EmployeeDashboards/Dashboard"));
+const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
+const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
+const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
+const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
 const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
 
@@ -133,8 +136,10 @@ const HrmsApp = () => {
                                 }
                             >
                                 <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
-                                <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                                <Route path="/employees/:empID/employee/:employeeID" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
+                                <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
+                                <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
+                                <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
+                                <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
                                 <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
