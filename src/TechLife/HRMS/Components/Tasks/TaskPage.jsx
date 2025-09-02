@@ -669,7 +669,7 @@ const TasksPage = () => {
                     </div>
 
                     {isFormOpen && (
-                        <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-151 backdrop-blur-sm p-4">
+                        <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[200] backdrop-blur-sm p-4">
                             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                                 <div className="flex justify-between items-center p-6 border-b">
                                     <h2 className="text-2xl font-bold text-gray-800">

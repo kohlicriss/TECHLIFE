@@ -137,6 +137,7 @@ const HrmsApp = () => {
                                 <Route path="/employees/:empID/employee/:employeeID" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
                                 <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                                {/* <Route path="/chat/:userId/with?id=:userID" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} /> */}
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
                                 <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                                 <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />

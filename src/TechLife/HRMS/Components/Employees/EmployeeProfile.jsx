@@ -8,6 +8,7 @@ import {
   FiArrowLeft,
   FiPhone,
   FiHash,
+  FiAward,
 } from "react-icons/fi";
 import { publicinfoApi } from "../../../../axiosInstance";
 
@@ -33,12 +34,12 @@ const EmployeeProfile = () => {
       setLoading(false);
       return;
     }
-    
+
     const fetchEmployee = async () => {
       setLoading(true);
       try {
         let response = await publicinfoApi.get(
-          `/employee/public/${employeeID}/employee/details`
+          `employee/public/${employeeID}/details`
         );
         console.log("Employee details:", response.data);
         setEmployee(response.data);
@@ -162,11 +163,44 @@ const EmployeeProfile = () => {
               </motion.div>
             </div>
 
-            {/* Projects Section */}
+            {/* Achievements Section - Moved to the top */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.8 }}
+              className="mt-12 pt-8 border-t-2 border-gray-300"
+            >
+              <h2 className="text-2xl font-bold mb-6">ACHIEVEMENTS</h2>
+              <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
+                {employee.achievements?.length > 0 ? (
+                  employee.achievements.map((achievement, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      className="border-2 border-gray-300 p-4 flex items-center space-x-4"
+                    >
+                      <FiAward className="text-xl text-yellow-500 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{achievement.certificationName || 'N/A'}</h3>
+                        <p className="text-gray-600 mt-1 text-sm">
+                          <span className="font-semibold">Issuing Authority:</span> {achievement.issuingAuthorityName || 'N/A'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 italic">No achievements available</p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Projects Section - Moved below Achievements */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.0 }}
               className="mt-12 pt-8 border-t-2 border-gray-300"
             >
               <h2 className="text-2xl font-bold mb-6">PROJECTS</h2>
