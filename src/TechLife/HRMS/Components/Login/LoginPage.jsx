@@ -944,18 +944,18 @@ const LoginPage = ({ onLogin }) => {
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm text-blue-500 hover:underline cursor-pointer"
                   >
                     Back
                   </button>
                 </div>
               )}
               {!otpScreen && !forgotPasswordScreen && (
-                <div className="text-center">
+                <div className="text-center ">
                   <button
                     type="button"
                     onClick={handleForgotPasswordClick}
-                    className="text-sm text-blue-500 hover:underline mt-2"
+                    className="text-sm text-blue-500 hover:underline cursor-pointer mt-2"
                   >
                     Forgot Password?
                   </button>

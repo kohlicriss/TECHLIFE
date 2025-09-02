@@ -118,7 +118,7 @@ const UpdateHistoryPopup = ({
     assignedBy,
     employeeId,
 }) => (
-    <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-150 transition-all duration-300 animate-in fade-in-0">
+    <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-[200] transition-all duration-300 animate-in fade-in-0">
         <div className="bg-gradient-to-br from-white to-blue-50 p-1 rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95">
             <div className="bg-white p-5 sm:p-7 rounded-xl border border-blue-100">
                 <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-200">

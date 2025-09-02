@@ -236,7 +236,7 @@ function EmployeeApp() {
                   boxShadow: "inset 5px 5px 10px #cacaca, inset -5px -5px 10px #ffffff"
                 }}
                 className="bg-[#f0f2f5] rounded-3xl p-8 cursor-pointer shadow-[5px_5px_10px_#cacaca,-5px_-5px_10px_#ffffff] transition-all duration-300"
-                onClick={() => navigate(`employee/${employee.employeeId}`)}
+                onClick={() => navigate(`employee/public/${employee.employeeId}`)}
                 onContextMenu={(e) => handleContextMenu(e, employee)}
               >
                 <div className="flex flex-col items-center text-center">
