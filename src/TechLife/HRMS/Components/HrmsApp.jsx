@@ -135,7 +135,7 @@ const HrmsApp = () => {
                                     />
                                 }
                             >
-                                <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
+                                <Route path="/AdminDashBoard/:empID/*" element={<AdminDashBoard />} />
                                 <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
                                 <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />

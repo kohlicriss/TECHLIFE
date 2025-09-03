@@ -19,49 +19,8 @@ import { Box } from "@mui/material";
 import axios from 'axios';
 import { useParams } from "react-router-dom";
 import { green } from "@mui/material/colors";
-// --- Mock Data (moved outside component for clarity) ---
-// const rawTableData = [
-//   {  employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//   {  employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
-//   {  employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//   {  employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//   {  employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
-//   {  employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//   {  employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//   {  employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
-// ];
-// const rawPieData = [
-//   { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
-//   { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
-//   { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
-//   { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
-//   { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
-// ]
-// const Data = [
-//   { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-// ];
-// Remove this (do not use Promise directly for data):
-// const barChartData = axios.get(...).then(...);
-// Add state for bar chart data
-// Fetch bar chart data on mount
-// const cardData=[
-//  {value:"8.5/10",description:"Total Hours Today",trend:"up",trendPercentage:"5",trendPeriod:"This week"},
-//  {value:"40.5/50",description:"Total Hours Week",trend:"up",trendPercentage:"7",trendPeriod:"Last week"},
-//  {value:"162/200",description:"Total Hours Month",trend:"down",trendPercentage:"8",trendPeriod:"Last Month"},
-//  {value:"16/28",description:"Overtime this Month",trend:"down",trendPercentage:"6",trendPeriod:"Last Month"}
-// ]
-// const Data = [
-//   { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Timer: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-// ];
-// const dates = ["All", "11", "12", "13", "14", "15"];
+import AttendanceReports from "./AttendanceReports";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 const Months=["Aug"];
 const Year=["2025"];
 const PIE_COLORS = ["#B027F5", "#F5A623"];
@@ -166,6 +125,12 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
 const AttendancesDashboard = ({onBack,currentUser}) => {
   const {empID}=useParams();
   const {userData}=useContext(Context)
+  
+  const role = (userData?.roles?.[0] || "").toUpperCase();
+   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showAttendanceReports, setShowAttendanceReports] = useState(false);
+  // Sidebar visible only for these roles
+  const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
   const [selectedMonth, setSelectedMonth] = useState("All");
   const [selectedDate, setSelectedDate] = useState("All");
   const [hoveredHour, setHoveredHour] = useState(null);
@@ -190,6 +155,9 @@ const AttendancesDashboard = ({onBack,currentUser}) => {
   const rowsPerPageOptions = [10, 25, 50, 100];
   const [cardData, setCardData] = useState([]);
   console.log(empID)
+
+  console.log("Logged In User Role is : ",userData?.roles[0])
+  
  
   const MONTHS = ["All", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 useEffect(() => {
@@ -434,7 +402,7 @@ const handleCancel = useCallback(() => {
             }}
             onMouseEnter={() => setHoveredHour(hour)}
             onMouseLeave={() => setHoveredHour(null)}
-          >
+>
             {hoveredHour === hour && (
               <div
                 className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-800 text-white text-xs whitespace-nowrap"
@@ -457,13 +425,10 @@ const handleCancel = useCallback(() => {
     </div>
   );
 }, [selectedDate, hoveredHour, getHourValue, scaleHour]);
-
   const grossHoursFormatted = useMemo(() => formatTime(timer), [timer]);
   const effectiveHoursFormatted = useMemo(() => formatTime(Math.max(0, timer - 3600)), [timer]); // Assuming 1 hour break
-const finalAttendanceData = useMemo(() => {
+  const finalAttendanceData = useMemo(() => {
     let data = [...rawTableData];
-
-    // Month filtering (existing logic)
     if (selectedMonth !== "All" && selectedMonth) {
       const selectedMonthIndex = MONTHS.indexOf(selectedMonth) - 1;
       data = data.filter((entry) => {
@@ -496,26 +461,20 @@ const finalAttendanceData = useMemo(() => {
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         break;
     }
-
     // Format the data with login hours and bar width
     const formattedData = data.map(entry => {
       const login_hours = calculateHours(entry.login_time, entry.logout_time);
       const barWidth = `${(login_hours / STANDARD_WORKDAY_HOURS) * 100}%`;
       return { ...entry, login_hours, barWidth };
     });
-
     // Pagination logic
     const totalPages = Math.ceil(formattedData.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedData = formattedData.slice(startIndex, endIndex);
-
     return { paginatedData, totalPages, totalCount: formattedData.length };
-
   }, [rawTableData, selectedMonth, sortOption, rowsPerPage, currentPage]);
-
   const { paginatedData, totalPages, totalCount } = finalAttendanceData;
-
   const filteredPieData = useMemo(() => {
   const dataToProcess = selectedDate === "All"
     ? rawPieData
@@ -523,8 +482,7 @@ const finalAttendanceData = useMemo(() => {
     const totalWorking = dataToProcess.reduce((sum, row) => sum + row.Working_hour, 0);
     const totalBreak = dataToProcess.reduce((sum, row) => sum + row.Break_hour, 0);
     return [
-      { name: "Working Hours", value: totalWorking },
-      { name: "Break Hours", value: totalBreak },
+      { name: "Working Hours", value: totalWorking },{ name: "Break Hours", value: totalBreak },
     ];
   }, [selectedDate, rawPieData]);
 const filteredBarChartData = useMemo(() => {
@@ -534,6 +492,42 @@ const filteredBarChartData = useMemo(() => {
 }, [selectedDate, barChartData]);
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 font-sans text-gray-800">
+      {/* Sidebar Trigger Button */}
+      {showSidebar && !isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50"
+          aria-label="Open Sidebar"
+        >
+          <ChevronLeft />
+        </button>
+      )}
+
+      {/* Sidebar */}
+      {showSidebar && isSidebarOpen && (
+        <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-40 p-4 flex flex-col">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
+            aria-label="Close Sidebar"
+          >
+            <ChevronRight />
+          </button>
+
+          <h3
+            className="text-lg font-bold text-gray-800 cursor-pointer mb-4"
+            onClick={() => setShowAttendanceReports(prev => !prev)}
+          >
+            Attendance Reports
+          </h3>
+
+          {showAttendanceReports && (
+            <div className="overflow-auto flex-grow">
+              <AttendanceReports role={role.toLowerCase()} />
+            </div>
+          )}
+        </div>
+      )}
      <header className="flex items-center justify-between">
         <div className="text-center sm:text-left mb-4 sm:mb-0">
           <h1 className="text-xl sm:text-4xl ml-5 font-extrabold text-gray-900 mb-2">
@@ -550,130 +544,125 @@ const filteredBarChartData = useMemo(() => {
           Back to Dashboard
         </button>
       </header>
-      <div className="bg-white shadow-xl rounded-lg p-3 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-y-[-1px] transition-transform duration-300 ease-in-out">
+      <div className="bg-white shadow-xl rounded-lg p-3 flex flex-col md:flex-row items-center justify-between gap-6 hover:translate-y-[-1px] transition-transform duration-300 ease-in-out relative">
   {/* Profile Section on the left */}
   <div className="flex flex-col">
-  <div className="flex justify-between items-center p-3 flex-1">
-    <div className="flex-none mr-2">
-      <button
-        onClick={toggleMode}
-        className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
-      >
-        {mode === "office" ? (
-          <FaBuilding className="text-blue-500 text-2xl" />
-        ) : (
-          <FaHome className="text-green-500 text-2xl" />
-        )}
-        <span className="hidden sm:inline">
-          {mode === "office" ? "Office Mode" : "Home Mode"}
-        </span>
-        <span className="sm:hidden">
-          {mode === "office" ? "Office" : "Home"}
-        </span>
-      </button>
+    <div className="flex justify-between items-center p-3 flex-1">
+      <div className="flex-none mr-2">
+        <button
+          onClick={toggleMode}
+          className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center gap-2 text-sm font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow-md"
+        >
+          {mode === "office" ? (
+            <FaBuilding className="text-blue-500 text-2xl" />
+          ) : (
+            <FaHome className="text-green-500 text-2xl" />
+          )}
+          <span className="hidden sm:inline">
+            {mode === "office" ? "Office Mode" : "Home Mode"}
+          </span>
+          <span className="sm:hidden">
+            {mode === "office" ? "Office" : "Home"}
+          </span>
+        </button>
+      </div>
+      <h2 className="flex-1 text-center text-xl font-semibold text-gray-800">
+        <ClockIcon className="w-4 h-4 inline-block text-indigo-600 mr-1" />Work Timer
+      </h2>
     </div>
-    <h2 className="flex-1 text-center text-xl font-semibold text-gray-800">
-      <ClockIcon className="w-4 h-4 inline-block text-indigo-600 mr-1" />Work Timer
-    </h2>
-    <div className="flex-none text-right">
+    <div className="flex items-center space-x-4 p-6">
+      <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
+        <img
+          src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+          alt="Profile"
+          className="w-20 h-20 object-cover"
+        />
+      </div>
+      <div>
+        <h2 className="text-2xl font-semibold flex items-center">
+          Welcome, {userData?.employeeId} {userData?.fullName}
+        </h2>
+        <p className="text-gray-500 mt-1">
+          You have <span className="font-bold text-red-500">100%</span> of Attendance &{" "}
+          <span className="font-bold text-red-500">10hr9min</span> of Avg Working Hours
+        </p>
+      </div>
+    </div>
+  </div>
+  {/* Web Clock Section on the right */}
+  <div className="w-full md:w-auto">
+    {/* This is the new div for the clock at the top right */}
+    <div className="flex-none text-right absolute top-2 right-2">
       <p className="text-xl font-semibold text-gray-900 tracking-wide">
         {formatClockTime(currentTime)}
       </p>
       <p className="text-sm text-gray-500">
         {currentTime.toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric",
+          weekday: "long",month: "long",day: "numeric",year: "numeric",
         })}
       </p>
     </div>
-  </div>
-  <div className="flex items-center space-x-4 p-6">
-    <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
-      <img
-        src={currentUser?.avatar || "https://i.pravatar.cc/100"}
-        alt="Profile"
-        className="w-20 h-20 object-cover"
-      />
-    </div>
-    <div>
-      <h2 className="text-2xl font-semibold flex items-center">
-        Welcome, {userData?.employeeId} {userData?.fullName}
-      </h2>
-      <p className="text-gray-500 mt-1">
-        You have <span className="font-bold text-red-500">100%</span> of Attendance &{" "}
-        <span className="font-bold text-red-500">10hr9min</span> of Avg Working Hours
-      </p>
-    </div>
-  </div>
-</div>
-  {/* Web Clock Section on the right */}
-    <div>
-      <div className="grid grid-cols-3 gap-2 items-center text-center my-1 mt-10">
-        {/* Left side: Gross Time */}
-        <div className="text-left">
-          <p className="text-lg text-gray-600 mb-0">Gross Time</p>
-          <p className="text-xl font-bold text-purple-800 tracking-wide mb-5">
-            {grossHoursFormatted}
+    <div className="grid grid-cols-3 gap-2 items-center text-center my-1 mt-10">
+      {/* Left side: Gross Time */}
+      <div className="text-left">
+        <p className="text-lg text-gray-600 mb-0">Gross Time</p>
+        <p className="text-xl font-bold text-purple-800 tracking-wide mb-5">
+          {grossHoursFormatted}
+        </p>
+        {/* Login Time: placed here to be centered under Gross Time */}
+        {startTime && (
+          <p className="text-gray-500 text-sm">
+            Login Time: <span className="font-semibold text-gray-700">{startTime.toLocaleTimeString()}</span>
           </p>
-          {/* Login Time: placed here to be centered under Gross Time */}
-          {startTime && (
-            <p className="text-gray-500 text-sm">
-              Login Time: <span className="font-semibold text-gray-700">{startTime.toLocaleTimeString()}</span>
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col items-center justify-center h-full">
-          {!isLoggedIn ? (
-            <button
-              onClick={handleLogin}
-              className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 text-xl font-bold transform hover:scale-105 w-full"
-            >
-              <ClockIcon className="w-4 h-4 mr-2" /> Clockin
-            </button>
-          ) : (
-            <div className="flex flex-col items-center w-full">
-              {isLogoutConfirmed ? (
-                <>
-                  <button
-                    onClick={handleConfirmLogout}
-                    className="flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
-                  >
-                    <ClockIcon className="w-4 h-4 mr-2" />  clockout
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="mt-2 flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 text-sm font-medium w-full transform hover:scale-105"
-                    title="Cancel Logout"
-                  >
-                    <ArrowPathIcon className="w-4 h-4 mr-2"/>Cancel
-                  </button>
-                </>
-              ) : (
+        )}
+      </div>
+      <div className="flex flex-col items-center justify-center h-full">
+        {!isLoggedIn ? (
+          <button
+            onClick={handleLogin}
+            className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 text-xl font-bold transform hover:scale-105 w-full"
+          >
+            <ClockIcon className="w-4 h-4 mr-2" /> Clockin
+          </button>
+        ) : (
+          <div className="flex flex-col items-center w-full">
+            {isLogoutConfirmed ? (
+              <>
                 <button
-                  onClick={handleLogout}
-                  className="flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full"
-                >
-                  <ClockIcon className="w-4 h- mr-2" /> WebClockout
+                  onClick={handleConfirmLogout}
+                  className="flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full">
+                  <ClockIcon className="w-4 h-4 mr-2" />  clockout
                 </button>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="text-right">
-          <p className="text-lg text-gray-600 mb-0">Effective Time</p>
-          <p className="text-xl font-bold text-orange-800 tracking-wide mb-5">
-            {effectiveHoursFormatted}
+                <button
+                  onClick={handleCancel}
+                  className="mt-2 flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 text-sm font-medium w-full transform hover:scale-105"
+                  title="Cancel Logout">
+                  <ArrowPathIcon className="w-4 h-4 mr-2" />Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-200 text-sm font-bold transform hover:scale-105 w-full">
+                <ClockIcon className="w-4 h- mr-2" /> WebClockout
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="text-right">
+        <p className="text-lg text-gray-600 mb-0">Effective Time</p>
+        <p className="text-xl font-bold text-orange-800 tracking-wide mb-5">
+          {effectiveHoursFormatted}
+        </p>
+        {endTime && (
+          <p className="text-gray-500 text-sm">
+            Logout Time: <span className="font-semibold text-sm text-gray-700">{endTime.toLocaleTimeString()}</span>
           </p>
-          {endTime && (
-            <p className="text-gray-500 text-sm">
-              Logout Time: <span className="font-semibold text-sm text-gray-700">{endTime.toLocaleTimeString()}</span>
-            </p>
-          )}
-        </div>
+        )}
       </div>
     </div>
+  </div>
 </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         
@@ -683,29 +672,19 @@ const filteredBarChartData = useMemo(() => {
 
       switch (card.description) {
         case "Total Hours Today":
-          icon = <BriefcaseIcon className="w-6 h-6" />;
-          iconBgColor = "bg-orange-100";
-          iconTextColor = "text-orange-500";
+          icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-orange-100";iconTextColor = "text-orange-500";
           break;
         case "Total Hours Week":
-          icon = <ClockIcon className="w-6 h-6" />;
-          iconBgColor = "bg-gray-100";
-          iconTextColor = "text-gray-900";
+          icon = <ClockIcon className="w-6 h-6" />;iconBgColor = "bg-gray-100";iconTextColor = "text-gray-900";
           break;
         case "Total Hours Month":
-          icon = <CalendarDaysIcon className="w-6 h-6" />;
-          iconBgColor = "bg-blue-100";
-          iconTextColor = "text-blue-500";
+          icon = <CalendarDaysIcon className="w-6 h-6" />;iconBgColor = "bg-blue-100";iconTextColor = "text-blue-500";
           break;
         case "Overtime this Month":
-          icon = <BriefcaseIcon className="w-6 h-6" />;
-          iconBgColor = "bg-pink-100";
-          iconTextColor = "text-pink-500";
+          icon = <BriefcaseIcon className="w-6 h-6" />;iconBgColor = "bg-pink-100";iconTextColor = "text-pink-500";
           break;
         default:
-          icon = <BriefcaseIcon className="w-6 h-6" />;
-          iconBgColor = "bg-gray-100";
-          iconTextColor = "text-gray-900";
+          icon = <BriefcaseIcon className="w-6 h-6" />;iconBgColor = "bg-gray-100";iconTextColor = "text-gray-900";
       }
 
       return (
@@ -938,6 +917,11 @@ const filteredBarChartData = useMemo(() => {
         </div>
       </section>
     </div>
+    {showAttendanceReports && !isSidebarOpen && (
+        <div className="mt-6 p-4 bg-white rounded-lg shadow-md border border-gray-200">
+          <AttendanceReports role={role.toLowerCase()} />
+        </div>
+      )}
     </div>
   );
 };

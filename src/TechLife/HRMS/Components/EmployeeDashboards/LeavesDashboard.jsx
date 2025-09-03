@@ -18,6 +18,8 @@ import Calendar from "./Calender";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { Context } from "../HrmsContext";
+import LeavesReports from "../AdminDashBoards/LeavesReports";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const AddLeaveForm = ({ onClose }) => {
   // ... state for form inputs (fromDate, toDate, etc.) ...
@@ -820,6 +822,12 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
 
   const [leaveSummaryData, setLeaveSummaryData] = useState([]);
   const {empID}=useParams();
+  const {userData}=useContext(Context)
+   const role = (userData?.roles?.[0] || "").toUpperCase();
+   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAttendanceReports, setShowAttendanceReports] = useState(false);
+  // Sidebar visible only for these roles
+  const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
 useEffect(() => {
   axios
     .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`)
@@ -858,6 +866,42 @@ const unpaidLeaveQuota = leaveSummaryData.find(item => item.type === "Unpaid Lea
   };
   return (
     <div className="min-h-screen bg-gray-100 p-6 sm:p-6 lg:p-8 font-sans">
+       {/* Sidebar Trigger Button */}
+            {showSidebar && !sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50"
+                aria-label="Open Sidebar"
+              >
+                <ChevronLeft />
+              </button>
+            )}
+      
+            {/* Sidebar */}
+            {showSidebar && sidebarOpen && (
+              <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-40 p-4 flex flex-col">
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
+                  aria-label="Close Sidebar"
+                >
+                  <ChevronRight />
+                </button>
+      
+                <h3
+                  className="text-lg font-bold text-gray-800 cursor-pointer mb-4"
+                  onClick={() => setShowAttendanceReports(prev => !prev)}
+                >
+                  Leaves Reports
+                </h3>
+      
+                {showAttendanceReports && (
+                  <div className="overflow-auto flex-grow">
+                    <LeavesReports role={role.toLowerCase()} />
+                  </div>
+                )}
+              </div>
+            )}
       <header className="p-3 mb-6 text-left">
                 <h1 className="text-4xl font-bold text-gray-900 mb-8">
                     Leaves Dashboard
