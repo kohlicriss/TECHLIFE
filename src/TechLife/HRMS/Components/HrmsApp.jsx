@@ -21,7 +21,6 @@ const Profiles = lazy(() => import("./Profile/Profiles"));
 const AllTeams = lazy(() => import("./Teams/AllTeams"));
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
 const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
-const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
 const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
 const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
 const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
@@ -135,7 +134,7 @@ const HrmsApp = () => {
                                     />
                                 }
                             >
-                                <Route path="/AdminDashBoard/:empID/*" element={<AdminDashBoard />} />
+                               
                                 <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
                                 <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
