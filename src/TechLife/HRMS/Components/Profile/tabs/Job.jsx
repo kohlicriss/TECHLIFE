@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams } from 'react-router-dom';
+import { Context } from '../../HrmsContext';
 import { publicinfoApi } from '../../../../../axiosInstance';
 import { 
   IoBriefcaseOutline, 
@@ -11,6 +12,7 @@ import {
   IoCalendarOutline,
   IoPersonOutline
 } from 'react-icons/io5';
+
 
 // Static data for other sections
 const employeeTime = [
@@ -27,12 +29,14 @@ const employeeTime = [
   { label: "OVERTIME", value: "-Not Set-" },
 ];
 
+
 const otherPolicies = [
   { label: "EXPENSE POLICY", value: "-" },
   { label: "TIMESHEET POLICY", value: "-" },
   { label: "LOAN POLICY", value: "-" },
   { label: "AIR TICKET POLICY", value: "-" },
 ];
+
 
 const organizationDetails = [
   { label: "BUSINESS UNIT", value: "-" },
@@ -45,14 +49,18 @@ const organizationDetails = [
   { label: "DIRECT REPORTS", value: "0 Employees" },
 ];
 
+
 // Section configurations with icons and colors
 const sectionConfig = {
   jobDetails: {
     icon: IoBriefcaseOutline,
     color: 'from-blue-500 to-blue-700',
     bgColor: 'bg-blue-50',
+    darkBgColor: 'bg-blue-900/20',
     borderColor: 'border-blue-200',
+    darkBorderColor: 'border-blue-700',
     textColor: 'text-blue-700',
+    darkTextColor: 'text-blue-400',
     title: 'Job Details',
     description: 'Employment information and job specifications'
   },
@@ -60,8 +68,11 @@ const sectionConfig = {
     icon: IoTimeOutline,
     color: 'from-green-500 to-green-700',
     bgColor: 'bg-green-50',
+    darkBgColor: 'bg-green-900/20',
     borderColor: 'border-green-200',
+    darkBorderColor: 'border-green-700',
     textColor: 'text-green-700',
+    darkTextColor: 'text-green-400',
     title: 'Employee Time',
     description: 'Work schedule and attendance policies'
   },
@@ -69,8 +80,11 @@ const sectionConfig = {
     icon: IoDocumentTextOutline,
     color: 'from-orange-500 to-orange-700',
     bgColor: 'bg-orange-50',
+    darkBgColor: 'bg-orange-900/20',
     borderColor: 'border-orange-200',
+    darkBorderColor: 'border-orange-700',
     textColor: 'text-orange-700',
+    darkTextColor: 'text-orange-400',
     title: 'Other Policies',
     description: 'Additional company policies and guidelines'
   },
@@ -78,42 +92,59 @@ const sectionConfig = {
     icon: IoBusinessOutline,
     color: 'from-purple-500 to-purple-700',
     bgColor: 'bg-purple-50',
+    darkBgColor: 'bg-purple-900/20',
     borderColor: 'border-purple-200',
+    darkBorderColor: 'border-purple-700',
     textColor: 'text-purple-700',
+    darkTextColor: 'text-purple-400',
     title: 'Organization Details',
     description: 'Departmental and reporting structure'
   },
 };
 
-const DetailItem = ({ label, value, note, status }) => (
-  <div className="group p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-100 
-                  hover:shadow-md transition-all duration-300 hover:scale-105">
+
+const DetailItem = ({ label, value, note, status, theme }) => (
+  <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
+    theme === 'dark'
+      ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
+      : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+  }`}>
     <div className="flex items-start justify-between">
       <div className="flex-1">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+        <span className={`text-xs font-bold uppercase tracking-wider block mb-2 ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+        }`}>
           {label}
         </span>
         {status === "active" ? (
           <div className="flex items-center gap-2">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-900 font-semibold">{value}</span>
+              <span className={`text-sm font-semibold ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>{value}</span>
             </div>
             {note && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                theme === 'dark' ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'
+              }`}>
                 {note}
               </span>
             )}
           </div>
         ) : (
           <div>
-            <p className="text-sm text-gray-900 font-semibold leading-relaxed">
+            <p className={`text-sm font-semibold leading-relaxed ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>
               {value || (
-                <span className="text-gray-400 italic">Not provided</span>
+                <span className={`italic ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>Not provided</span>
               )}
             </p>
             {note && (
-              <p className="text-xs text-gray-500 mt-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md inline-block">
+              <p className={`text-xs mt-1 px-2 py-1 rounded-md inline-block ${
+                theme === 'dark' ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-700'
+              }`}>
                 {note}
               </p>
             )}
@@ -124,25 +155,40 @@ const DetailItem = ({ label, value, note, status }) => (
   </div>
 );
 
+
 // Enhanced Section component
-const Section = ({ sectionKey, title, data, children }) => {
+const Section = ({ sectionKey, title, data, children, theme }) => {
   const config = sectionConfig[sectionKey];
   const IconComponent = config.icon;
   const hasData = data && data.length > 0;
   
   return (
-    <div className={`bg-white border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                   overflow-hidden group hover:scale-[1.02] ${config.borderColor} mb-8`}>
+    <div className={`border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
+                   overflow-hidden group hover:scale-[1.02] mb-8 ${
+      theme === 'dark'
+        ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
+        : `bg-white ${config.borderColor}`
+    }`}>
       {/* Card Header */}
-      <div className={`px-8 py-6 ${config.bgColor} border-b-2 ${config.borderColor} relative overflow-hidden`}>
+      <div className={`px-8 py-6 border-b-2 relative overflow-hidden ${
+        theme === 'dark'
+          ? `${config.darkBgColor} ${config.darkBorderColor}`
+          : `${config.bgColor} ${config.borderColor}`
+      }`}>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
         <div className="relative flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-white rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300">
-              <IconComponent className={`w-8 h-8 ${config.textColor}`} />
+            <div className={`p-3 rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+            }`}>
+              <IconComponent className={`w-8 h-8 ${
+                theme === 'dark' ? config.darkTextColor : config.textColor
+              }`} />
             </div>
             <div>
-              <h4 className={`text-xl font-bold ${config.textColor} flex items-center space-x-2`}>
+              <h4 className={`text-xl font-bold flex items-center space-x-2 ${
+                theme === 'dark' ? config.darkTextColor : config.textColor
+              }`}>
                 <span>{title}</span>
                 {hasData && (
                   <div className="flex items-center space-x-1">
@@ -153,7 +199,9 @@ const Section = ({ sectionKey, title, data, children }) => {
                   </div>
                 )}
               </h4>
-              <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+              <p className={`text-sm mt-1 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              }`}>{config.description}</p>
             </div>
           </div>
         </div>
@@ -170,17 +218,26 @@ const Section = ({ sectionKey, title, data, children }) => {
                 value={item.value} 
                 note={item.note} 
                 status={item.status} 
+                theme={theme}
               />
             ))}
             {children}
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className={`w-20 h-20 ${config.bgColor} rounded-full flex items-center justify-center mx-auto mb-6`}>
-              <IconComponent className={`w-10 h-10 ${config.textColor} opacity-50`} />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              theme === 'dark' ? config.darkBgColor : config.bgColor
+            }`}>
+              <IconComponent className={`w-10 h-10 opacity-50 ${
+                theme === 'dark' ? config.darkTextColor : config.textColor
+              }`} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No {title} Available</h3>
-            <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
+            <h3 className={`text-lg font-semibold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-800'
+            }`}>No {title} Available</h3>
+            <p className={`text-sm mb-6 max-w-sm mx-auto ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               {title} information is not currently available or configured.
             </p>
           </div>
@@ -190,26 +247,37 @@ const Section = ({ sectionKey, title, data, children }) => {
   );
 };
 
+
 // Progress Indicator Component
-const ProgressIndicator = ({ completedSections, totalSections }) => {
+const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
   const percentage = (completedSections / totalSections) * 100;
   
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+    <div className={`rounded-2xl p-6 shadow-lg border ${
+      theme === 'dark' 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-800">Job Information</h3>
-        <span className="text-sm font-medium text-gray-600">
+        <h3 className={`text-lg font-bold ${
+          theme === 'dark' ? 'text-white' : 'text-gray-800'
+        }`}>Job Information</h3>
+        <span className={`text-sm font-medium ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+        }`}>
           {completedSections}/{totalSections} Sections
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+      <div className={`w-full rounded-full h-3 mb-4 overflow-hidden ${
+        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+      }`}>
         <div 
           className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-700 ease-out"
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
       <div className="flex justify-between text-sm">
-        <span className="text-gray-600">{percentage.toFixed(0)}% Complete</span>
+        <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{percentage.toFixed(0)}% Complete</span>
         {percentage === 100 && (
           <span className="text-green-600 font-semibold flex items-center">
             <IoCheckmarkCircle className="w-4 h-4 mr-1" />
@@ -221,24 +289,45 @@ const ProgressIndicator = ({ completedSections, totalSections }) => {
   );
 };
 
+
 // Skeleton Loading Component
-const SkeletonCard = () => (
-  <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden animate-pulse">
-    <div className="p-6 bg-gray-100 border-b border-gray-200">
+const SkeletonCard = ({ theme }) => (
+  <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
+    theme === 'dark' 
+      ? 'bg-gray-800 border-gray-700' 
+      : 'bg-white border-gray-200'
+  }`}>
+    <div className={`p-6 border-b ${
+      theme === 'dark' 
+        ? 'bg-gray-700 border-gray-600' 
+        : 'bg-gray-100 border-gray-200'
+    }`}>
       <div className="flex items-center space-x-4">
-        <div className="w-12 h-12 bg-gray-300 rounded-xl"></div>
+        <div className={`w-12 h-12 rounded-xl ${
+          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+        }`}></div>
         <div>
-          <div className="h-5 bg-gray-300 rounded w-32 mb-2"></div>
-          <div className="h-3 bg-gray-300 rounded w-48"></div>
+          <div className={`h-5 rounded w-32 mb-2 ${
+            theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+          }`}></div>
+          <div className={`h-3 rounded w-48 ${
+            theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+          }`}></div>
         </div>
       </div>
     </div>
     <div className="p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="p-4 bg-gray-50 rounded-xl">
-            <div className="h-3 bg-gray-300 rounded w-20 mb-2"></div>
-            <div className="h-4 bg-gray-300 rounded w-32"></div>
+          <div key={i} className={`p-4 rounded-xl ${
+            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+          }`}>
+            <div className={`h-3 rounded w-20 mb-2 ${
+              theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+            }`}></div>
+            <div className={`h-4 rounded w-32 ${
+              theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+            }`}></div>
           </div>
         ))}
       </div>
@@ -246,16 +335,25 @@ const SkeletonCard = () => (
   </div>
 );
 
+
 // Enhanced Toggle Switch Component
-const AttendanceToggle = () => {
+const AttendanceToggle = ({ theme }) => {
   const [isDisabled, setIsDisabled] = useState(false);
   
   return (
-    <div className="col-span-2 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200">
+    <div className={`col-span-2 p-6 rounded-xl border ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border-indigo-700'
+        : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200'
+    }`}>
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-gray-800 mb-1">Attendance Tracking</h4>
-          <p className="text-xs text-gray-600">Control automated attendance monitoring</p>
+          <h4 className={`text-sm font-semibold mb-1 ${
+            theme === 'dark' ? 'text-white' : 'text-gray-800'
+          }`}>Attendance Tracking</h4>
+          <p className={`text-xs ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>Control automated attendance monitoring</p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer group">
           <input 
@@ -264,24 +362,36 @@ const AttendanceToggle = () => {
             checked={isDisabled}
             onChange={(e) => setIsDisabled(e.target.checked)}
           />
-          <div className="w-14 h-8 bg-gray-200 rounded-full peer transition-all duration-300 
+          <div className={`w-14 h-8 rounded-full peer transition-all duration-300 
                          peer-checked:after:translate-x-6 peer-checked:after:border-white 
                          after:content-[''] after:absolute after:top-1 after:left-1 
-                         after:bg-white after:border-gray-300 after:border after:rounded-full 
+                         after:bg-white after:border after:rounded-full 
                          after:h-6 after:w-6 after:transition-all after:shadow-md
                          peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-indigo-600
-                         group-hover:shadow-lg">
+                         group-hover:shadow-lg ${
+            theme === 'dark' 
+              ? 'bg-gray-600 after:border-gray-500' 
+              : 'bg-gray-200 after:border-gray-300'
+          }`}>
           </div>
-          <span className="ml-3 text-sm font-medium text-gray-700">
+          <span className={`ml-3 text-sm font-medium ${
+            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+          }`}>
             {isDisabled ? 'Disabled' : 'Enabled'}
           </span>
         </label>
       </div>
       {isDisabled && (
-        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className={`mt-3 p-3 border rounded-lg ${
+          theme === 'dark'
+            ? 'bg-yellow-900/30 border-yellow-700'
+            : 'bg-yellow-50 border-yellow-200'
+        }`}>
           <div className="flex items-center space-x-2">
             <IoWarning className="w-4 h-4 text-yellow-600" />
-            <p className="text-xs text-yellow-700">
+            <p className={`text-xs ${
+              theme === 'dark' ? 'text-yellow-300' : 'text-yellow-700'
+            }`}>
               Attendance tracking is currently disabled for this employee
             </p>
           </div>
@@ -291,12 +401,15 @@ const AttendanceToggle = () => {
   );
 };
 
+
 const Job = () => {
   const { empID } = useParams();
+  const { theme } = useContext(Context);
   const [jobdetails, setJobDetails] = useState(null);
   const [displayJobDetails, setDisplayJobDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 4 });
+
 
   // Fetch job details from the API
   useEffect(() => {
@@ -313,6 +426,7 @@ const Job = () => {
     };
     jobDetailsFetch();
   }, [empID]);
+
 
   // Format the fetched data for display
   useEffect(() => {
@@ -339,6 +453,7 @@ const Job = () => {
       ];
       setDisplayJobDetails(formattedData);
 
+
       // Calculate completion stats
       const sections = [jobdetails, employeeTime, otherPolicies, organizationDetails];
       const completed = sections.filter(section => section && section.length > 0).length;
@@ -346,9 +461,14 @@ const Job = () => {
     }
   }, [jobdetails]);
 
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className={`min-h-screen ${
+        theme === 'dark' 
+          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+          : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+      }`}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="relative">
@@ -357,8 +477,12 @@ const Job = () => {
                 <IoBriefcaseOutline className="w-8 h-8 text-blue-500" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Job Information</h2>
-            <p className="text-gray-600">Fetching employment details and policies...</p>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-800'
+            }`}>Loading Job Information</h2>
+            <p className={`${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>Fetching employment details and policies...</p>
             <div className="flex justify-center space-x-2 mt-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} 
@@ -371,65 +495,72 @@ const Job = () => {
     );
   }
 
+
   if (!displayJobDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className={`min-h-screen ${
+        theme === 'dark' 
+          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+          : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+      }`}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              theme === 'dark' ? 'bg-red-900/30' : 'bg-red-100'
+            }`}>
               <IoWarning className="w-10 h-10 text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Unable to Load Job Details</h2>
-            <p className="text-gray-600">Job information is not available or there was an error loading the data.</p>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-800'
+            }`}>Unable to Load Job Details</h2>
+            <p className={`${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>Job information is not available or there was an error loading the data.</p>
           </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
-        {/* Enhanced Header Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 
-                        rounded-2xl text-white text-2xl mb-6 shadow-xl">
-            <IoBriefcaseOutline />
-          </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
-            Job Information Hub
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Comprehensive employment details, policies, and organizational structure information.
-          </p>
-        </div>
 
+  return (
+    <div className={`min-h-screen ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+    }`}>
+      <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
         {/* Progress Section */}
         <div className="mb-12">
           <ProgressIndicator 
             completedSections={completionStats.completed} 
             totalSections={completionStats.total} 
+            theme={theme}
           />
         </div>
+
 
         {/* Job Sections */}
         <div className="space-y-8">
           {isLoading ? (
-            [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
+            [...Array(4)].map((_, i) => <SkeletonCard key={i} theme={theme} />)
           ) : (
             <>
-              <Section sectionKey="jobDetails" title="Job Details" data={displayJobDetails} />
+              <Section sectionKey="jobDetails" title="Job Details" data={displayJobDetails} theme={theme} />
 
-              <Section sectionKey="employeeTime" title="Employee Time" data={employeeTime}>
-                <AttendanceToggle />
+
+              <Section sectionKey="employeeTime" title="Employee Time" data={employeeTime} theme={theme}>
+                <AttendanceToggle theme={theme} />
               </Section>
 
-              <Section sectionKey="otherPolicies" title="Other Policies" data={otherPolicies} />
-              <Section sectionKey="organizationDetails" title="Organization Details" data={organizationDetails} />
+
+              <Section sectionKey="otherPolicies" title="Other Policies" data={otherPolicies} theme={theme} />
+              <Section sectionKey="organizationDetails" title="Organization Details" data={organizationDetails} theme={theme} />
             </>
           )}
         </div>
       </div>
+
 
       {/* Custom Styles */}
       <style jsx>{`
@@ -452,5 +583,6 @@ const Job = () => {
     </div>
   );
 };
+
 
 export default Job;

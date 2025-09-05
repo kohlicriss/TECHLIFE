@@ -2,19 +2,26 @@ import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
 
+
 export const Context = createContext();
+
 
 const HrmsContext = ({ children }) => {
   const [gdata, setGdata] = useState([]);
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme ? savedTheme : "light";
+  });
   const [lastSseMsgId, setLastSseMsgId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const username = "ACS00000005";
-  const [userprofiledata,setUserProfileData]=useState(null)
-  // const [employeeId, setEmployeeId] = useState("");
+  const [userprofiledata, setUserProfileData] = useState(null);
   const [userData, setUserData] = useState(null);
+
 
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
+
 
   useEffect(() => {
     const storedUser = localStorage.getItem("emppayload");
@@ -22,8 +29,10 @@ const HrmsContext = ({ children }) => {
       setUserData(JSON.parse(storedUser));
     }
 
+
     const storedAccessToken = localStorage.getItem("accessToken");
     const storedRefreshToken = localStorage.getItem("refreshToken");
+
 
     if (storedAccessToken) {
       setAccessToken(storedAccessToken);
@@ -32,6 +41,7 @@ const HrmsContext = ({ children }) => {
       setRefreshToken(storedRefreshToken);
     }
   }, []);
+
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -45,10 +55,11 @@ const HrmsContext = ({ children }) => {
     }
   }, []);
 
+
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8085/api/notifications/unread-count/${username}`
+        `http://hrms.anasolconsultancyservices.com/api/notification/unread-count/${username}`
       );
       setUnreadCount(res.data);
       console.log("Notification count", res.data);
@@ -57,13 +68,16 @@ const HrmsContext = ({ children }) => {
     }
   }, [username]);
 
+
   const markAsRead = useCallback(
     async (id) => {
       try {
         setGdata((prev) =>
           prev.map((msg) => (msg.id === id ? { ...msg, read: true } : msg))
         );
-        await axios.post(`http://localhost:8085/api/notifications/read/${id}`);
+        await axios.post(
+          `http://hrms.anasolconsultancyservices.com/api/notification/read/${id}`
+        );
         fetchUnreadCount();
       } catch (err) {
         console.error("Error marking notification as read:", err);
@@ -72,20 +86,24 @@ const HrmsContext = ({ children }) => {
     [fetchUnreadCount]
   );
 
+
   const decrementUnreadCount = useCallback(() => {
     setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
   }, []);
 
+
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://localhost:8085/api/notifications/all/${username}`
+        `http://hrms.anasolconsultancyservices.com/api/notification/all/${username}`
       );
       const data = res.data;
       setGdata(data);
 
+
       const latestUnread = data.find((msg) => !msg.read);
       setLastSseMsgId(latestUnread ? latestUnread.id : null);
+
 
       console.log("Initial notification fetch:", data);
     } catch (err) {
@@ -93,20 +111,24 @@ const HrmsContext = ({ children }) => {
     }
   }, [username]);
 
+
   useEffect(() => {
     console.log("Setting up SSE connection...");
     const eventSource = new EventSource(
-      `http://localhost:8085/api/notifications/subscribe/${username}`
+      `http://hrms.anasolconsultancyservices.com/api/notification/subscribe/${username}`
     );
+
 
     eventSource.onopen = () => {
       console.log("SSE connection established.");
     };
 
+
     eventSource.addEventListener("notification", (event) => {
       try {
         const incoming = JSON.parse(event.data);
         console.log("📨 New Notification (SSE):", incoming);
+
 
         setGdata((prev) => {
           const isDuplicate = prev.some((n) => n.id === incoming.id);
@@ -114,8 +136,10 @@ const HrmsContext = ({ children }) => {
           return [incoming, ...prev];
         });
 
+
         setLastSseMsgId(incoming.id);
         fetchUnreadCount();
+
 
         if (Notification.permission === "granted") {
           const notification = new Notification(incoming.subject, {
@@ -123,6 +147,7 @@ const HrmsContext = ({ children }) => {
             icon: logo,
             data: { id: incoming.id, link: incoming.link },
           });
+
 
           notification.onclick = (e) => {
             e.preventDefault();
@@ -139,10 +164,12 @@ const HrmsContext = ({ children }) => {
       }
     });
 
+
     eventSource.onerror = (err) => {
       console.error("SSE connection error:", err);
       eventSource.close();
     };
+
 
     return () => {
       console.log("Closing SSE connection");
@@ -150,10 +177,19 @@ const HrmsContext = ({ children }) => {
     };
   }, [username, markAsRead, fetchUnreadCount]);
 
+
   useEffect(() => {
     fetchNotifications();
     fetchUnreadCount();
   }, [fetchNotifications, fetchUnreadCount]);
+
+
+  // Save theme to localStorage whenever theme changes
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+    console.log(`Theme saved to localStorage: ${theme}`);
+  }, [theme]);
+
 
   return (
     <Context.Provider
@@ -170,12 +206,16 @@ const HrmsContext = ({ children }) => {
         setAccessToken,
         refreshToken,
         setRefreshToken,
-        userprofiledata,setUserProfileData
+        userprofiledata,
+        setUserProfileData,
+        theme,
+        setTheme,
       }}
     >
       {children}
     </Context.Provider>
   );
 };
+
 
 export default HrmsContext;

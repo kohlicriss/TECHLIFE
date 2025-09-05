@@ -1,9 +1,23 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FiSearch, FiMail, FiMapPin, FiBriefcase } from "react-icons/fi";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Context } from "../HrmsContext";
 import { publicinfoApi } from "../../../../axiosInstance";
+import {
+  IoSearchOutline,
+  IoMailOutline,
+  IoLocationOutline,
+  IoBriefcaseOutline,
+  IoPersonOutline,
+  IoBusinessOutline,
+  IoFilterOutline,
+  IoChatbubbleOutline,
+  IoChevronDownOutline,
+  IoGridOutline,
+  IoListOutline,
+  IoRefreshOutline
+} from "react-icons/io5";
+
 
 // Helper function to generate initials from a name
 const generateInitials = (name) => {
@@ -15,24 +29,30 @@ const generateInitials = (name) => {
   return nameParts[0][0].toUpperCase();
 };
 
+
 function EmployeeApp() {
   const navigate = useNavigate();
   const [employeeData, setEmployeeData] = useState(null);
   const [dynamicFilters, setDynamicFilters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('grid');
   
-  const { userprofiledata } = useContext(Context);
+  const { userprofiledata, theme } = useContext(Context);
   const { empID } = useParams();
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilters, setSelectedFilters] = useState({});
 
-  // New state for the context menu
+
+  // Enhanced context menu state
   const [contextMenu, setContextMenu] = useState({
     visible: false,
     x: 0,
     y: 0,
     employee: null,
   });
+
 
   // Effect to close the context menu when clicking outside
   useEffect(() => {
@@ -47,6 +67,7 @@ function EmployeeApp() {
     };
   }, [contextMenu]);
 
+
   // Handle right-click event on an employee card
   const handleContextMenu = (e, employee) => {
     e.preventDefault();
@@ -58,35 +79,37 @@ function EmployeeApp() {
     });
   };
 
+
   const handleChatClick = () => {
     if (contextMenu.employee) {
       alert(`Starting a chat with ${contextMenu.employee.displayName || contextMenu.employee.name}...`);
-      navigate(`/chat/:empID`)
+      navigate(`/chat/${contextMenu.employee.employeeId}`);
     }
     setContextMenu({ ...contextMenu, visible: false });
   };
 
+
   useEffect(() => {
     const fetchAllEmployees = async () => {
       try {
+        setLoading(true);
+        // API URL CORRECTED to include '/public/'
         const response = await publicinfoApi.get(
-          `employee/0/10/employeeId/asc/employees`
+          `employee/0/15/employeeId/asc/employees`
         );
         console.log("Employees Data from API:", response.data);
-        setEmployeeData(response.data);  
+        setEmployeeData(response.data);
       } catch (err) {
-        if (err.response) {
-          console.error("Backend Error:", err.response.data);
-        } else if (err.request) {
-          console.error("No Response received:", err.request);
-        } else {
-          console.error("Error Message:", err.message);
-        }
+        console.error("Error fetching employees:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
+
     fetchAllEmployees();
   }, []);
+
 
   useEffect(() => {
     if (employeeData) {
@@ -94,11 +117,13 @@ function EmployeeApp() {
       const departments = [...new Set(employeeData.map(e => e.departmentId).filter(Boolean))];
       const locations = [...new Set(employeeData.map(e => e.location).filter(Boolean))];
 
+
       const newFilters = [
-        { name: "Role", options: ["Select Role", ...roles] },
-        { name: "Department", options: ["Select Department", ...departments] },
-        { name: "Location", options: ["Select Location", ...locations] },
+        { name: "Role", options: ["All Roles", ...roles], icon: IoBriefcaseOutline },
+        { name: "Department", options: ["All Departments", ...departments], icon: IoBusinessOutline },
+        { name: "Location", options: ["All Locations", ...locations], icon: IoLocationOutline },
       ];
+
 
       setDynamicFilters(newFilters);
       
@@ -110,15 +135,18 @@ function EmployeeApp() {
     }
   }, [employeeData]);
 
+
   const filteredEmployees = employeeData
     ? employeeData.filter((employee) => {
         const matchesSearch =
           (employee.displayName && employee.displayName.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (employee.workEmail && employee.workEmail.toLowerCase().includes(searchTerm.toLowerCase()));
 
+
         const matchesFilters = Object.entries(selectedFilters).every(
           ([filterName, value]) => {
-            if (!value || value.startsWith("Select")) return true;
+            if (!value || value.startsWith("All")) return true;
+
 
             switch (filterName) {
               case "Role":
@@ -133,181 +161,422 @@ function EmployeeApp() {
           }
         );
 
+
         return matchesSearch && matchesFilters;
       })
     : [];
 
-  if (!employeeData) {
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    const clearedFilters = dynamicFilters.reduce(
+      (acc, filter) => ({ ...acc, [filter.name]: filter.options[0] }),
+      {}
+    );
+    setSelectedFilters(clearedFilters);
+  };
+
+
+  // Enhanced Loading State
+  if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-[#f0f2f5]">
-        <p className="text-xl text-gray-600 animate-pulse">Loading Employee Directory...</p>
+      <div className={`min-h-screen ${
+        theme === 'dark' 
+          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+          : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+      }`}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <IoPersonOutline className="w-8 h-8 text-blue-500" />
+              </div>
+            </div>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-800'
+            }`}>Loading Employee Directory</h2>
+            <p className={`${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>Discovering your colleagues...</p>
+            <div className="flex justify-center space-x-2 mt-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} 
+                     style={{ animationDelay: `${i * 0.2}s` }}></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
+
   return (
-    <div className="min-h-screen bg-[#f0f2f5] text-gray-800 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl font-bold text-center mb-2"
-        >
-          Employee Directory
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-lg text-gray-500 text-center mb-10 max-w-2xl mx-auto"
-        >
-          Discover your colleagues with a fresh, new look.
-        </motion.p>
-        
-        {/* Neumorphic Search and Filter Container */}
+    <div className={`min-h-screen ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+    }`}>
+      <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+        {/* Enhanced Search and Filter Section */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col md:flex-row items-center justify-center gap-4 mb-12 p-6 rounded-3xl shadow-[5px_5px_10px_#cacaca,-5px_-5px_10px_#ffffff] transition-all duration-300"
+          className={`rounded-2xl p-8 shadow-lg border mb-12 ${
+            theme === 'dark' 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200'
+          }`}
         >
-          {/* Neumorphic Search Input */}
-          <div className="flex-grow w-full md:w-auto relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-              <FiSearch className="h-5 w-5" />
+          <div className="flex flex-col lg:flex-row gap-6 items-center">
+            {/* Enhanced Search Input */}
+            <div className="flex-1 relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <IoSearchOutline className={`h-6 w-6 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                }`} />
+              </div>
+              <input
+                type="text"
+                className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all duration-300 placeholder-gray-500 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
+                    : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
+                }`}
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <motion.input
-              type="text"
-              className="block w-full pl-12 pr-4 py-3 bg-[#f0f2f5] text-gray-800 rounded-2xl outline-none transition-all duration-300 placeholder-gray-400 focus:shadow-[inset_2px_2px_5px_#cacaca,inset_-2px_-2px_5px_#ffffff]"
-              placeholder="Search by name or email"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              whileFocus={{ scale: 1.01 }}
-            />
-          </div>
-          
-          {/* Neumorphic Filter Dropdowns */}
-          {dynamicFilters.map((filter, index) => (
-            <div key={filter.name} className="relative w-full md:w-48">
-              <motion.select
-                className="block w-full pl-4 pr-10 py-3 bg-[#f0f2f5] text-gray-600 rounded-2xl outline-none transition-all duration-300 appearance-none cursor-pointer focus:shadow-[inset_2px_2px_5px_#cacaca,inset_-2px_-2px_5px_#ffffff]"
-                value={selectedFilters[filter.name] || ""}
-                onChange={(e) =>
-                  setSelectedFilters({
-                    ...selectedFilters,
-                    [filter.name]: e.target.value,
-                  })
-                }
-                whileFocus={{ scale: 1.01 }}
+
+
+            {/* Enhanced Filter Dropdowns */}
+            <div className="flex flex-wrap gap-4">
+              {dynamicFilters.map((filter) => {
+                const IconComponent = filter.icon;
+                return (
+                  <div key={filter.name} className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <IconComponent className={`h-5 w-5 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                      }`} />
+                    </div>
+                    <select
+                      className={`pl-12 pr-10 py-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all duration-300 appearance-none cursor-pointer min-w-[180px] ${
+                        theme === 'dark'
+                          ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
+                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
+                      }`}
+                      value={selectedFilters[filter.name] || ""}
+                      onChange={(e) =>
+                        setSelectedFilters({
+                          ...selectedFilters,
+                          [filter.name]: e.target.value,
+                        })
+                      }
+                    >
+                      {filter.options.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                      <IoChevronDownOutline className={`h-5 w-5 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                      }`} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={clearFilters}
+                className={`flex items-center space-x-2 px-6 py-3 border-2 rounded-xl font-semibold transition-all duration-200 ${
+                  theme === 'dark'
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                }`}
               >
-                {filter.options.map((option) => (
-                  <option key={option} value={option} className="bg-[#f0f2f5] text-gray-800">
-                    {option}
-                  </option>
-                ))}
-              </motion.select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                <IoRefreshOutline className="w-5 h-5" />
+                <span>Clear</span>
+              </button>
+
+
+              <div className={`flex rounded-xl p-1 ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-3 rounded-lg transition-all duration-200 ${
+                    viewMode === 'grid' 
+                      ? theme === 'dark'
+                        ? 'bg-gray-600 text-blue-400 shadow-sm'
+                        : 'bg-white text-blue-600 shadow-sm'
+                      : theme === 'dark'
+                      ? 'text-gray-400 hover:text-gray-200'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <IoGridOutline className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-3 rounded-lg transition-all duration-200 ${
+                    viewMode === 'list' 
+                      ? theme === 'dark'
+                        ? 'bg-gray-600 text-blue-400 shadow-sm'
+                        : 'bg-white text-blue-600 shadow-sm'
+                      : theme === 'dark'
+                      ? 'text-gray-400 hover:text-gray-200'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <IoListOutline className="w-5 h-5" />
+                </button>
               </div>
             </div>
-          ))}
+          </div>
         </motion.div>
 
+
+        {/* Results Summary */}
+        <div className="flex items-center justify-between mb-8">
+          <h3 className={`text-lg font-semibold ${
+            theme === 'dark' ? 'text-white' : 'text-gray-800'
+          }`}>
+            {filteredEmployees.length} Employee{filteredEmployees.length !== 1 ? 's' : ''} Found
+          </h3>
+        </div>
+
+
+        {/* Enhanced Employee Grid/List */}
         {filteredEmployees.length > 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className={
+              viewMode === 'grid'
+                ? "grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "space-y-4"
+            }
           >
-            {filteredEmployees.map((employee, index) => (
-              <motion.div
-                key={employee.employeeId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: "10px 10px 20px #cacaca, -10px -10px 20px #ffffff",
-                }}
-                whileTap={{
-                  scale: 0.98,
-                  boxShadow: "inset 5px 5px 10px #cacaca, inset -5px -5px 10px #ffffff"
-                }}
-                className="bg-[#f0f2f5] rounded-3xl p-8 cursor-pointer shadow-[5px_5px_10px_#cacaca,-5px_-5px_10px_#ffffff] transition-all duration-300"
-                onClick={() => navigate(`employee/public/${employee.employeeId}`)}
-                onContextMenu={(e) => handleContextMenu(e, employee)}
-              >
-                <div className="flex flex-col items-center text-center">
-                  {employee.employeeImage ? (
-                    <img
-                      src={employee.employeeImage}
-                      alt={`${employee.displayName}'s profile picture`}
-                      className="h-24 w-24 rounded-full object-cover border-4 border-[#e0e2e5] mb-6 shadow-[5px_5px_10px_#cacaca,-5px_-5px_10px_#ffffff]"
-                    />
-                  ) : (
-                    <div className="flex-shrink-0 h-24 w-24 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-3xl font-bold border-4 border-[#e0e2e5] shadow-[5px_5px_10px_#cacaca,-5px_-5px_10px_#ffffff] mb-6">
-                      {generateInitials(employee.displayName)}
-                    </div>
-                  )}
-                  
-                  <div className="min-w-0">
-                    <h3 className="text-xl font-bold text-gray-900 truncate">
-                      {employee.displayName}
-                    </h3>
-                    <p className="text-base font-medium text-gray-600 mt-1">
-                      {employee.jobTitlePrimary}
-                    </p>
-                  </div>
+            <AnimatePresence>
+              {filteredEmployees.map((employee, index) => (
+                <motion.div
+                  key={employee.employeeId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border cursor-pointer overflow-hidden group ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                      : 'bg-white border-gray-200 hover:border-gray-300'
+                  } ${viewMode === 'list' ? 'flex items-center p-6' : 'p-6'}`}
+                  onClick={() => navigate(`/employees/${empID}/public/${employee.employeeId}`)}
+                  onContextMenu={(e) => handleContextMenu(e, employee)}
+                >
+                  {viewMode === 'grid' ? (
+                    /* Grid View Layout */
+                    <div className="flex flex-col items-center text-center">
+                      <div className="relative mb-6">
+                        {employee.employeeImage ? (
+                          <img
+                            src={employee.employeeImage}
+                            alt={`${employee.displayName}'s profile picture`}
+                            className="h-24 w-24 rounded-2xl object-cover border-4 border-blue-100 shadow-lg group-hover:border-blue-300 transition-all duration-300"
+                          />
+                        ) : (
+                          <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover:from-blue-600 group-hover:to-indigo-700 transition-all duration-300">
+                            {generateInitials(employee.displayName)}
+                          </div>
+                        )}
+                      </div>
 
-                  <div className="mt-6 w-full space-y-3">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FiBriefcase className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="truncate">{employee.departmentId || 'N/A'}</span>
+
+                      <div className="w-full">
+                        <h3 className={`text-xl font-bold mb-2 truncate ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {employee.displayName}
+                        </h3>
+                        <p className="text-blue-600 font-semibold mb-4">
+                          {employee.jobTitlePrimary}
+                        </p>
+
+
+                        <div className="space-y-3 text-sm">
+                          <div className={`flex items-center justify-center space-x-2 ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                          }`}>
+                            <IoBriefcaseOutline className={`w-4 h-4 ${
+                              theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                            }`} />
+                            <span className="truncate">{employee.departmentId || 'N/A'}</span>
+                          </div>
+                          <div className={`flex items-center justify-center space-x-2 ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                          }`}>
+                            <IoLocationOutline className={`w-4 h-4 ${
+                              theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                            }`} />
+                            <span className="truncate">{employee.location || 'N/A'}</span>
+                          </div>
+                          <div className={`flex items-center justify-center space-x-2 ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                          }`}>
+                            <IoMailOutline className={`w-4 h-4 ${
+                              theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                            }`} />
+                            <span className="truncate">{employee.workEmail || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FiMapPin className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="truncate">{employee.location || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FiMail className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="truncate">{employee.workEmail || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  ) : (
+                    /* List View Layout */
+                    <>
+                      <div className="flex-shrink-0 mr-6">
+                        {employee.employeeImage ? (
+                          <img
+                            src={employee.employeeImage}
+                            alt={`${employee.displayName}'s profile picture`}
+                            className="h-16 w-16 rounded-xl object-cover border-2 border-blue-100"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold">
+                            {generateInitials(employee.displayName)}
+                          </div>
+                        )}
+                      </div>
+
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className={`text-lg font-bold ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {employee.displayName}
+                            </h3>
+                            <p className="text-blue-600 font-semibold">
+                              {employee.jobTitlePrimary}
+                            </p>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className={`flex items-center space-x-2 text-sm ${
+                              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                            }`}>
+                              <IoBriefcaseOutline className="w-4 h-4" />
+                              <span>{employee.departmentId || 'N/A'}</span>
+                            </div>
+                            <div className={`flex items-center space-x-2 text-sm ${
+                              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                            }`}>
+                              <IoLocationOutline className="w-4 h-4" />
+                              <span>{employee.location || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`mt-2 flex items-center space-x-2 text-sm ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>
+                          <IoMailOutline className="w-4 h-4" />
+                          <span>{employee.workEmail || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </motion.div>
         ) : (
+          /* Enhanced No Results State */
           <div className="text-center py-20">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">No Employees Found</h2>
-            <p className="text-gray-500 text-lg">
-              Try adjusting your search or filters.
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+            }`}>
+              <IoPersonOutline className={`w-12 h-12 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+              }`} />
+            </div>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-800'
+            }`}>No Employees Found</h2>
+            <p className={`text-lg mb-6 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+              Try adjusting your search terms or filters.
             </p>
+            <button
+              onClick={clearFilters}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+            >
+              Clear All Filters
+            </button>
           </div>
         )}
       </div>
 
-      {contextMenu.visible && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.1 }}
-          className="fixed z-50 bg-white border border-gray-300 rounded-md shadow-lg py-1"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-        >
-          <button
-            onClick={handleChatClick}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+
+      {/* Enhanced Context Menu */}
+      <AnimatePresence>
+        {contextMenu.visible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+            className={`fixed z-50 border-2 rounded-xl shadow-2xl py-2 min-w-[120px] ${
+              theme === 'dark'
+                ? 'bg-gray-800 border-gray-600'
+                : 'bg-white border-gray-200'
+            }`}
+            style={{ top: contextMenu.y, left: contextMenu.x }}
           >
-            Chat
-          </button>
-        </motion.div>
-      )}
+            <button
+              onClick={handleChatClick}
+              className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center space-x-2 ${
+                theme === 'dark'
+                  ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
+                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              <IoChatbubbleOutline className="w-4 h-4" />
+              <span>Start Chat</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      {/* Custom Styles */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+        .animate-slideUp { animation: slideUp 0.4s ease-out; }
+      `}</style>
     </div>
   );
 }
+
 
 export default EmployeeApp;
