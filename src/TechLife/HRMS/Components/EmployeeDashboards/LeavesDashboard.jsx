@@ -29,7 +29,7 @@ const AddLeaveForm = ({ onClose }) => {
   const [toDate, setToDate] = useState(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center 	bg-opacity-25 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm">
       <div className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100">
         <button
           onClick={onClose}
@@ -675,8 +675,8 @@ const LeaveHistory = () => {
 };
 
 // UserGreeting component
-const UserGreeting = ({ currentUser }) => {
-  const { userData } = useContext(Context)
+const UserGreeting = ({ currentUser, handleRequestLeave }) => {
+  const { userData } = useContext(Context);
   return (
     <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
       <div className="flex items-center space-x-4">
@@ -697,6 +697,12 @@ const UserGreeting = ({ currentUser }) => {
           </p>
         </div>
       </div>
+      <button
+        onClick={handleRequestLeave}
+        className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+      >
+        Request Leave
+      </button>
     </div>
   );
 };
@@ -796,7 +802,7 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
             <h1 className="text-4xl font-bold text-gray-900 mb-8">
               Leaves Dashboard
             </h1>
-            <UserGreeting />
+            <UserGreeting handleRequestLeave={handleRequestLeave} />
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

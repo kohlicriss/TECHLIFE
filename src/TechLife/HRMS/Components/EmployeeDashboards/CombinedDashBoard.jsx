@@ -1,6 +1,6 @@
 import { Calendar as CalendarDays, BriefcaseMedical,PackageSearch,MessageSquareCode,CircleUserRound,UserRoundCog } from 'lucide-react';
 import React, { Fragment,useState } from 'react';
-import Calendar from './Calendar'; // Assuming Calendar component exists
+import Calendar from './Calender'; // Assuming Calendar component exists
 import { PieChart, Pie, Cell,Tooltip , ResponsiveContainer } from 'recharts';
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
