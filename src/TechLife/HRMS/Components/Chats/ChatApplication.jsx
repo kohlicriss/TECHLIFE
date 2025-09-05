@@ -21,7 +21,7 @@ import {
     unpinMessage,
     clearChatHistory,
     uploadVoiceMessage,
-    getGroupMembers 
+    getGroupMembers
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage, generateChatListPreview } from '../../../../services/dataTransformer';
 
@@ -47,24 +47,29 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
 
 const FileMessage = ({ msg, isMyMessage }) => {
     const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
-    const containerClasses = `flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`;
+
     const content = (
-        <div className={containerClasses}>
+        <div className={`flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`}>
             <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                 <FileIcon fileName={msg.fileName} className="text-4xl" />
+                <FileIcon fileName={msg.fileName} className="text-4xl" />
             </div>
             <div className="flex-grow overflow-hidden mr-2">
                 <p className={`font-semibold truncate ${isMyMessage ? 'text-white' : 'text-gray-800'}`}>{msg.fileName}</p>
                 <p className={`text-sm ${isMyMessage ? 'text-blue-200' : 'text-gray-600'}`}>{formatFileSize(msg.fileSize)}</p>
             </div>
-            {!isMyMessage && (
-                <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors">
-                        <FaDownload size={18} />
-                </a>
-            )}
+            <div
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open(downloadUrl, '_blank');
+                }}
+                className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors cursor-pointer"
+            >
+                <FaDownload size={18} />
+            </div>
         </div>
     );
-    return !isMyMessage ? <a href={downloadUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer">{content}</a> : content;
+    return !isMyMessage ? <div onClick={() => window.open(downloadUrl, '_blank')} className="cursor-pointer">{content}</div> : content;
 };
 
 const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0 }) => {
@@ -78,7 +83,7 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
-        
+
         const setAudioData = () => {
             if (audio.duration !== Infinity && audio.duration > 0) {
                 setDuration(audio.duration);
@@ -132,7 +137,7 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
 
     const progressPercentage = duration ? (progress / duration) * 100 : 0;
 
-    if (!localSrc) { 
+    if (!localSrc) {
         return (
             <div className="flex items-center gap-3 p-2 w-64">
                 {isDownloading ? (
@@ -193,14 +198,14 @@ const MessageSkeleton = () => (
             <div className="h-10 rounded-lg bg-blue-200 animate-pulse w-40"></div>
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
         </div>
-         <div className="flex items-end gap-2 justify-start">
+        <div className="flex items-end gap-2 justify-start">
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
             <div className="h-10 rounded-lg bg-gray-200 animate-pulse w-32"></div>
         </div>
     </div>
 );
 
-const getAudioDuration = (audioBlob) => 
+const getAudioDuration = (audioBlob) =>
     new Promise((resolve) => {
         const reader = new FileReader();
 
@@ -227,7 +232,7 @@ const getAudioDuration = (audioBlob) =>
 
         reader.readAsArrayBuffer(audioBlob);
     });
-function ChatApplication({ currentUser, initialChats }) {
+function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore }) {
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedChat, setSelectedChat] = useState(null);
@@ -258,8 +263,11 @@ function ChatApplication({ currentUser, initialChats }) {
     const [isConnected, setIsConnected] = useState(false);
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [typingUsers, setTypingUsers] = useState({});
+    const [messagePages, setMessagePages] = useState({});
+    const [hasMoreMessages, setHasMoreMessages] = useState({});
+    const [isFetchingMoreMessages, setIsFetchingMoreMessages] = useState(false);
 
-
+    const sidebarScrollRef = useRef(null);
     const chatContainerRef = useRef(null);
     const stompClient = useRef(null);
     const typingTimeoutRef = useRef({});
@@ -275,6 +283,7 @@ function ChatApplication({ currentUser, initialChats }) {
     const pinnedMenuRef = useRef(null);
     const pinnedMenuButtonRef = useRef(null);
     const onMessageReceivedRef = useRef(null);
+    const isFetchingOldMessages = useRef(false);
     const subscriptions = useRef({});
 
     const chatIdFromUrl = useMemo(() => {
@@ -284,6 +293,33 @@ function ChatApplication({ currentUser, initialChats }) {
         }
         return null;
     }, []);
+
+    const handleSidebarScroll = () => {
+        const container = sidebarScrollRef.current;
+        if (container) {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            if (scrollHeight - scrollTop - clientHeight < 100) {
+                console.log(`Scroll condition met. isFetchingMore: ${isFetchingMore}, hasMore: ${hasMore}`);
+                if (hasMore && !isFetchingMore) {
+                    loadMoreChats();
+                }
+            }
+        }
+    };
+
+    const handleChatScroll = () => {
+        if (chatContainerRef.current) {
+            const { scrollTop } = chatContainerRef.current;
+            if (scrollTop === 0 && !isMessagesLoading && !isFetchingMoreMessages) {
+                const chatId = selectedChat.chatId;
+                if (hasMoreMessages[chatId] !== false) {
+                    const nextPage = (messagePages[chatId] || 0) + 1;
+                    setMessagePages(prev => ({ ...prev, [chatId]: nextPage }));
+                    loadMoreMessages(chatId, nextPage);
+                }
+            }
+        }
+    };
 
     useEffect(() => {
         if (initialChats) {
@@ -304,39 +340,84 @@ function ChatApplication({ currentUser, initialChats }) {
         }
     }, [initialChats, chatIdFromUrl]);
 
+    const loadMoreMessages = useCallback(async (chatId, pageNum) => {
+        if ((pageNum > 0 && isFetchingMoreMessages) || (pageNum === 0 && isMessagesLoading)) {
+            return;
+        }
+
+        if (pageNum > 0) {
+            setIsFetchingMoreMessages(true);
+            isFetchingOldMessages.current = true;
+        } else {
+            setIsMessagesLoading(true);
+        }
+
+        try {
+            const rawMessages = await getMessages(currentUser.id, chatId, pageNum, 15);
+
+            if (rawMessages.length === 0) {
+                setHasMoreMessages(prev => ({ ...prev, [chatId]: false }));
+                return;
+            }
+
+            const transformedMessages = rawMessages.map(transformMessageDTOToUIMessage);
+
+            const chatContainer = chatContainerRef.current;
+            const previousScrollHeight = chatContainer ? chatContainer.scrollHeight : 0;
+            const previousScrollTop = chatContainer ? chatContainer.scrollTop : 0;
+
+            setMessages(prev => ({
+                ...prev,
+                [chatId]: pageNum === 0
+                    ? transformedMessages
+                    : [...transformedMessages, ...(prev[chatId] || [])]
+            }));
+
+            if (pageNum > 0) {
+                requestAnimationFrame(() => {
+                    if (chatContainer) {
+                        chatContainer.scrollTop = (chatContainer.scrollHeight - previousScrollHeight) + previousScrollTop;
+                    }
+                });
+            }
+
+            if (rawMessages.length === 0) {
+                setHasMoreMessages(prev => ({ ...prev, [chatId]: false }));
+            }
+
+        } catch (error) {
+            console.error(`Failed to load messages for chat ${chatId}:`, error);
+        } finally {
+            if (pageNum > 0) {
+                setIsFetchingMoreMessages(false);
+                setTimeout(() => { isFetchingOldMessages.current = false; }, 100);
+            } else {
+                setIsMessagesLoading(false);
+            }
+        }
+    }, [currentUser.id, isFetchingMoreMessages, isMessagesLoading, getMessages]);
     useEffect(() => {
         if (!selectedChat) return;
 
-        const fetchMessages = async () => {
-            setIsMessagesLoading(true);
+        const chatId = selectedChat.chatId;
+
+        setMessagePages(prev => ({ ...prev, [chatId]: 0 }));
+        setHasMoreMessages(prev => ({ ...prev, [chatId]: true }));
+        setMessages(prev => ({ ...prev, [chatId]: [] }));
+
+        loadMoreMessages(chatId, 0);
+
+        const fetchPinnedMessage = async () => {
             try {
-                const rawMessages = await getMessages(currentUser.id, selectedChat.chatId);
-                const transformedMessages = rawMessages.map(transformMessageDTOToUIMessage);
-                setMessages(prev => ({ ...prev, [selectedChat.chatId]: transformedMessages }));
+                const pinnedMsgData = await getPinnedMessage(chatId, selectedChat.type, currentUser.id);
+                setPinnedMessage(pinnedMsgData);
             } catch (error) {
-                console.error(`Failed to process messages for chat ${selectedChat.chatId}:`, error);
-                setMessages(prev => ({ ...prev, [selectedChat.chatId]: [] }));
-            } finally {
-                setIsMessagesLoading(false);
+                console.error("Failed to fetch pinned message:", error);
+                setPinnedMessage(null);
             }
         };
-         const fetchPinnedMessage = async () => {
-             try {
-                 const pinnedMsgData = await getPinnedMessage(
-                     selectedChat.chatId,
-                     selectedChat.type,
-                     currentUser.id
-                 );
-                 setPinnedMessage(pinnedMsgData); 
-             } catch (error) {
-                 console.error("Failed to fetch pinned message:", error);
-                 setPinnedMessage(null); 
-             }
-         };
-        
-
-        fetchMessages();
         fetchPinnedMessage();
+
     }, [selectedChat, currentUser.id]);
 
     const updateLastMessage = useCallback((chatId, message) => {
@@ -371,7 +452,7 @@ function ChatApplication({ currentUser, initialChats }) {
     const onMessageReceived = useCallback((payload) => {
         const parsedData = JSON.parse(payload.body);
 
-         console.log("Received WebSocket Message:", parsedData); 
+        console.log("Received WebSocket Message:", parsedData);
 
         if (parsedData.type === 'STATUS_UPDATE') {
             const { status, chatId, messageIds } = parsedData;
@@ -379,7 +460,7 @@ function ChatApplication({ currentUser, initialChats }) {
             setMessages(prevMessages => {
                 const chatKey = selectedChat?.type === 'group' ? parsedData.groupId : chatId;
                 const chatMessages = prevMessages[chatKey] || [];
-                const newStatus = status.toLowerCase(); 
+                const newStatus = status.toLowerCase();
 
                 const updatedMessages = chatMessages.map(msg => {
                     if (messageIds.includes(msg.messageId)) {
@@ -392,7 +473,7 @@ function ChatApplication({ currentUser, initialChats }) {
                     }
                     return msg;
                 });
-                 return { ...prevMessages, [chatKey]: updatedMessages };
+                return { ...prevMessages, [chatKey]: updatedMessages };
             });
             return;
         }
@@ -401,7 +482,7 @@ function ChatApplication({ currentUser, initialChats }) {
         if (parsedData.type === 'PIN_UPDATE') {
             const pinnedDto = parsedData.payload;
             const eventChatId = pinnedDto.groupId || (pinnedDto.sender === currentUser.id ? pinnedDto.receiver : pinnedDto.sender);
-            
+
             if (selectedChat?.chatId === eventChatId) {
                 setPinnedMessage(pinnedDto);
             }
@@ -414,16 +495,16 @@ function ChatApplication({ currentUser, initialChats }) {
             if (selectedChat.type === 'group') {
                 eventChatId = unpinPayload.groupId;
             } else {
-                eventChatId = unpinPayload.senderId === currentUser.id 
-            ? unpinPayload.receiverId 
-            : unpinPayload.senderId;
+                eventChatId = unpinPayload.senderId === currentUser.id
+                    ? unpinPayload.receiverId
+                    : unpinPayload.senderId;
             }
             if (selectedChat?.chatId === eventChatId) {
                 setPinnedMessage(null);
             }
             return;
         }
-        
+
         const receivedMessage = parsedData;
         const messageChatId = receivedMessage.groupId || (receivedMessage.sender === currentUser.id ? receivedMessage.receiver : receivedMessage.sender);
 
@@ -462,19 +543,19 @@ function ChatApplication({ currentUser, initialChats }) {
         if (receivedMessage.isEdited) {
             setMessages(prevMessages => {
                 const chatMessages = prevMessages[messageChatId] || [];
-            
+
                 const updatedMessages = chatMessages.map(msg => {
                     if (msg.messageId === receivedMessage.id || msg.messageId === receivedMessage.messageId) {
-                        const updatedMsg = { 
-                            ...msg, 
-                            content: receivedMessage.content, 
-                            isEdited: true 
+                        const updatedMsg = {
+                            ...msg,
+                            content: receivedMessage.content,
+                            isEdited: true
                         };
 
                         if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].messageId === msg.messageId) {
                             updateLastMessage(messageChatId, updatedMsg);
                         }
-                    
+
                         return updatedMsg;
                     }
 
@@ -483,7 +564,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
                 return { ...prevMessages, [messageChatId]: updatedMessages };
             });
-            return; 
+            return;
         }
 
         const transformedForEditCheck = transformMessageDTOToUIMessage(receivedMessage);
@@ -527,7 +608,7 @@ function ChatApplication({ currentUser, initialChats }) {
                     messageProcessed = true;
                 }
             } else if (isIncoming) {
-                 if (!chatMessages.some(m => m.messageId === finalServerId)) {
+                if (!chatMessages.some(m => m.messageId === finalServerId)) {
                     const finalMessage = transformMessageDTOToUIMessage(receivedMessage);
                     newChatMessages.push(finalMessage);
                     finalMessageForUpdate = finalMessage;
@@ -561,7 +642,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
         setTypingUsers(prev => {
             const newTypingUsers = { ...prev };
-        
+
             if (typingTimeoutRef.current[chatIdKey]) {
                 clearTimeout(typingTimeoutRef.current[chatIdKey]);
             }
@@ -594,7 +675,7 @@ function ChatApplication({ currentUser, initialChats }) {
             return;
         }
 
-        const brokerURL = `ws://192.168.0.244:8082/ws?employeeId=${currentUser.id}`;
+        const brokerURL = `ws://192.168.0.245:8082/ws?employeeId=${currentUser.id}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -677,12 +758,12 @@ function ChatApplication({ currentUser, initialChats }) {
                 const subId = `group-${groupId}`;
                 subscriptions.current[subId] = stompClient.current.subscribe(`/topic/team-${groupId}`, messageHandler);
                 const typingSubId = `group-typing-${groupId}`;
-                subscriptions.current[typingSubId] = stompClient.current.subscribe(`/topic/typing-status/${groupId}`, handleTypingEvent); 
+                subscriptions.current[typingSubId] = stompClient.current.subscribe(`/topic/typing-status/${groupId}`, handleTypingEvent);
             }
         });
 
     }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
-    
+
     const openChat = useCallback((targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
@@ -693,7 +774,7 @@ function ChatApplication({ currentUser, initialChats }) {
             type: targetChat.type === 'group' ? 'TEAM' : 'PRIVATE'
         };
         stompClient.current.publish({ destination, body: JSON.stringify(payload) });
-        
+
         setSelectedChat(targetChat);
         setIsChatOpen(true);
 
@@ -706,7 +787,7 @@ function ChatApplication({ currentUser, initialChats }) {
         if (!selectedChat || !stompClient.current?.active || !currentUser?.id) return;
         const destination = `/app/chat/presence/close/${selectedChat.chatId}`;
         stompClient.current.publish({ destination, body: "{}" });
-        
+
         setSelectedChat(null);
         setIsChatOpen(false);
 
@@ -714,7 +795,7 @@ function ChatApplication({ currentUser, initialChats }) {
         window.history.pushState({ path: newUrl }, '', newUrl);
 
     }, [selectedChat, currentUser.id]);
-    
+
     const handleChatSelect = useCallback((chat) => {
         if ((chat.unreadMessageCount || 0) > 0) {
             setChatData(prev => ({
@@ -728,7 +809,7 @@ function ChatApplication({ currentUser, initialChats }) {
         }
         openChat(chat);
     }, [selectedChat, openChat]);
-    
+
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (selectedChat && stompClient.current && stompClient.current.active) {
@@ -741,7 +822,7 @@ function ChatApplication({ currentUser, initialChats }) {
     }, [selectedChat]);
 
     useEffect(() => {
-        if (chatContainerRef.current) {
+        if (chatContainerRef.current && !isFetchingOldMessages.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages, selectedChat]);
@@ -752,13 +833,25 @@ function ChatApplication({ currentUser, initialChats }) {
                 return;
             }
 
+            console.log("Group Info useEffect running. Tab:", activeGroupInfoTab, "Current members count:", groupMembers.length);
+
             if (activeGroupInfoTab === 'Members' && groupMembers.length === 0) {
                 try {
                     setIsGroupDataLoading(true);
-                    const teamDetails = await getGroupMembers(selectedChat.chatId);
+                    console.log("Fetching members for team ID:", selectedChat.chatId);
+
+                    const teamDetailsResponse = await getGroupMembers(selectedChat.chatId);
+                    console.log("API response from getGroupMembers:", teamDetailsResponse);
+
+                    const teamDetails = Array.isArray(teamDetailsResponse) && teamDetailsResponse.length > 0
+                        ? teamDetailsResponse[0]
+                        : null;
+
                     if (teamDetails && teamDetails.employees) {
+                        console.log("Setting group members state with:", teamDetails.employees);
                         setGroupMembers(teamDetails.employees);
                     } else {
+                        console.log("No 'employees' array found in the final object. Setting empty array.");
                         setGroupMembers([]);
                     }
                 } catch (error) {
@@ -808,7 +901,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
         const isReply = replyingTo !== null;
-        
+
         const optimisticMessage = {
             id: clientId,
             messageId: clientId,
@@ -829,7 +922,7 @@ function ChatApplication({ currentUser, initialChats }) {
             ...prev,
             [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
         }));
-        
+
         let destination;
         let payload;
 
@@ -857,17 +950,17 @@ function ChatApplication({ currentUser, initialChats }) {
         }
 
         stompClient.current.publish({ destination, body: JSON.stringify(payload) });
-        
+
         setMessage('');
         setShowEmojiPicker(false);
         setReplyingTo(null);
     };
-    
+
     const handleKeyDown = (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (editingInfo.index !== null) handleSaveEdit(); else handleSendMessage(); } };
     const onEmojiClick = (emojiObject) => setMessage(prev => prev + emojiObject.emoji);
     const handleFileButtonClick = () => fileInputRef.current.click();
 
-   const handleFileChange = async (event) => {
+    const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedChat) return;
 
@@ -879,9 +972,9 @@ function ChatApplication({ currentUser, initialChats }) {
         }
 
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-        
+
         const localPreviewContent = URL.createObjectURL(file);
-        
+
         const optimisticMessage = {
             id: clientId,
             messageId: clientId,
@@ -941,7 +1034,7 @@ function ChatApplication({ currentUser, initialChats }) {
 
             recorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
-                  audioChunksRef.current.push(event.data);
+                    audioChunksRef.current.push(event.data);
                 }
             };
             recorder.onstop = async () => {
@@ -967,7 +1060,7 @@ function ChatApplication({ currentUser, initialChats }) {
                         content: localPreviewUrl, timestamp: new Date().toISOString(),
                         status: 'sending', type: 'audio', fileName: audioFile.name,
                         fileSize: audioFile.size, fileUrl: localPreviewUrl, isEdited: false,
-                        duration: audioDuration, 
+                        duration: audioDuration,
                     };
 
                     updateLastMessage(selectedChat.chatId, optimisticMessage);
@@ -978,16 +1071,16 @@ function ChatApplication({ currentUser, initialChats }) {
                         clientId: clientId,
                         fileType: audioFile.type,
                         fileName: audioFile.name,
-                        fileData: base64String, 
+                        fileData: base64String,
                         type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
                         groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
                         receiver: selectedChat.type === 'private' ? selectedChat.chatId : null,
-                        duration: audioDuration, 
+                        duration: audioDuration,
                     };
 
                     try {
                         await uploadVoiceMessage(voiceData);
-                     } catch (error) {
+                    } catch (error) {
                         console.error("Voice message upload failed:", error);
                         setMessages(prev => {
                             const chatMessages = prev[selectedChat.chatId] || [];
@@ -1049,13 +1142,13 @@ function ChatApplication({ currentUser, initialChats }) {
             cancelEdit();
             return;
         }
-        
+
         const optimisticUpdatedMessage = {
             ...messageToEdit,
             content: updatedContent,
             isEdited: true,
         };
-        
+
         const updatedMessagesList = currentMessages.map((msg, index) =>
             index === editingInfo.index ? optimisticUpdatedMessage : msg
         );
@@ -1064,7 +1157,7 @@ function ChatApplication({ currentUser, initialChats }) {
             ...prev,
             [chatId]: updatedMessagesList,
         }));
-        
+
         if (editingInfo.index === currentMessages.length - 1) {
             updateLastMessage(chatId, optimisticUpdatedMessage);
         }
@@ -1081,7 +1174,7 @@ function ChatApplication({ currentUser, initialChats }) {
             destination,
             body: JSON.stringify(payload)
         });
-        
+
         cancelEdit();
     };
 
@@ -1094,7 +1187,7 @@ function ChatApplication({ currentUser, initialChats }) {
         const currentMessages = [...(messages[chatId] || [])];
         const messageToDelete = currentMessages[contextMenu.index];
         const messageId = messageToDelete?.messageId;
-        
+
         if (!messageId || typeof messageId !== 'number' || messageToDelete.status === 'sending' || messageToDelete.status === 'failed') {
             console.error("Invalid messageId or message status for deletion:", messageId, messageToDelete.status);
             setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
@@ -1125,7 +1218,7 @@ function ChatApplication({ currentUser, initialChats }) {
         try {
             const messageIdToPin = contextMenu.message.messageId;
             const response = await pinMessage(messageIdToPin, currentUser.id);
-            setPinnedMessage(response); 
+            setPinnedMessage(response);
         } catch (error) {
             console.error("Failed to pin message:", error);
         } finally {
@@ -1138,14 +1231,14 @@ function ChatApplication({ currentUser, initialChats }) {
 
         try {
             await unpinMessage(pinnedMessage.messageId, currentUser.id);
-            setPinnedMessage(null); 
+            setPinnedMessage(null);
         } catch (error) {
             console.error("Failed to unpin message:", error);
         } finally {
             setShowPinnedMenu(false);
         }
     };
-    
+
     const handleGoToMessage = () => {
         setShowPinnedMenu(false);
         if (pinnedMessage) {
@@ -1161,10 +1254,10 @@ function ChatApplication({ currentUser, initialChats }) {
             }
         }
     };
-    
-    const handleForward = () => { 
-        setForwardingInfo({ visible: true, message: contextMenu.message }); 
-        setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); 
+
+    const handleForward = () => {
+        setForwardingInfo({ visible: true, message: contextMenu.message });
+        setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
     };
 
     const handleConfirmForward = async () => {
@@ -1172,7 +1265,7 @@ function ChatApplication({ currentUser, initialChats }) {
         if (!originalMsg || forwardRecipients.length === 0) {
             return;
         }
-    
+
         const forwardData = {
             sender: currentUser.id,
             forwardMessageId: originalMsg.messageId,
@@ -1185,13 +1278,13 @@ function ChatApplication({ currentUser, initialChats }) {
                 }
             })
         };
-    
+
         try {
             await forwardMessage(forwardData);
             const newLastMessageObject = {
-                ...forwardingInfo.message, 
-                sender: currentUser.id, 
-                timestamp: new Date().toISOString(), 
+                ...forwardingInfo.message,
+                sender: currentUser.id,
+                timestamp: new Date().toISOString(),
             };
             forwardRecipients.forEach(chatId => {
                 updateLastMessage(chatId, newLastMessageObject);
@@ -1207,7 +1300,7 @@ function ChatApplication({ currentUser, initialChats }) {
     };
 
     const filteredChats = allChats.filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     useEffect(() => {
         if (isChatDataReady && !selectedChat && allChats.length > 0) {
             if (chatIdFromUrl) {
@@ -1273,7 +1366,7 @@ function ChatApplication({ currentUser, initialChats }) {
             ? { name: member.name || member.employeeName, profile: member.profile || null }
             : { name: 'Unknown User', profile: null };
     };
-    
+
     const getFileUrl = (msg) => {
         const baseUrl = chatApi.defaults.baseURL;
 
@@ -1282,17 +1375,17 @@ function ChatApplication({ currentUser, initialChats }) {
         }
 
         if (msg.fileUrl && msg.fileUrl.startsWith('/api')) {
-             const origin = new URL(baseUrl).origin;
-             return `${origin}${msg.fileUrl}`;
+            const origin = new URL(baseUrl).origin;
+            return `${origin}${msg.fileUrl}`;
         } else if (msg.fileUrl) {
-            return msg.fileUrl; 
+            return msg.fileUrl;
         }
 
         const messageIdForUrl = msg.id || msg.messageId;
         if (messageIdForUrl) {
             return `${baseUrl}/chat/file/${messageIdForUrl}`;
         }
-        return msg.content; 
+        return msg.content;
     };
 
     return (
@@ -1300,7 +1393,7 @@ function ChatApplication({ currentUser, initialChats }) {
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
                 <div className={`relative w-full md:w-[30%] h-full p-4 bg-white flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'}`}>
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats or users..." className="w-full p-3 rounded-lg border border-gray-300 bg-gray-50" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-                    <div className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
+                    <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
                         {filteredChats.map(chat => (
                             <div key={chat.chatId} onClick={() => handleChatSelect(chat)} className={`p-3 flex items-center rounded-lg cursor-pointer group ${selectedChat?.chatId === chat.chatId ? 'bg-blue-100' : 'hover:bg-blue-50'}`}>
                                 <div className="relative flex-shrink-0">
@@ -1321,6 +1414,11 @@ function ChatApplication({ currentUser, initialChats }) {
                                 {(chat.unreadMessageCount || 0) > 0 && (<div className="flex-shrink-0"><span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">{chat.unreadMessageCount}</span></div>)}
                             </div>
                         ))}
+                        {isFetchingMore && (
+                            <div className="flex justify-center items-center p-4">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -1397,7 +1495,12 @@ function ChatApplication({ currentUser, initialChats }) {
                                 </div>
                             )}
 
-                            <div ref={chatContainerRef} className="flex-grow p-4 overflow-y-auto bg-gray-50">
+                            <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-grow p-4 overflow-y-auto bg-gray-50">
+                                {isFetchingMoreMessages && (
+                                    <div className="flex justify-center items-center py-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    </div>
+                                )}
                                 {isMessagesLoading ? (
                                     <MessageSkeleton />
                                 ) : (
@@ -1410,7 +1513,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                                 lastMessageDate = msgDate;
                                             }
                                             const senderInfo = !isMyMessage ? getSenderInfo(msg.sender) : null;
-                                            
+
                                             const fileUrl = getFileUrl(msg);
 
                                             return (
@@ -1449,7 +1552,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                 ) : (
                                                                     <>
                                                                         {msg.isForwarded && <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 font-semibold"><FaShare /> Forwarded</div>}
-                                                                        
+
                                                                         {msg.replyTo && (
                                                                             <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : 'bg-gray-300'}`}>
                                                                                 <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
@@ -1458,11 +1561,11 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                                 </p>
                                                                             </div>
                                                                         )}
-                                                                        
+
                                                                         {msg.type === 'image' ? (
                                                                             <div className="relative">
                                                                                 <button onClick={() => setImageInView(fileUrl)}>
-                                                                                    <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{maxHeight: '300px'}}/>
+                                                                                    <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{ maxHeight: '300px' }} />
                                                                                 </button>
                                                                                 {!isMyMessage && (
                                                                                     <a href={fileUrl} download={msg.fileName} onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1472,7 +1575,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                                                             </div>
                                                                         ) : msg.type === 'audio' ? (
                                                                             <div className={`${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'} rounded-lg`}>
-                                                                                <AudioPlayer src={fileUrl}  fileUrl={fileUrl} isSender={isMyMessage} initialDuration={msg.duration} fileSize={msg.fileSize} />
+                                                                                <AudioPlayer src={fileUrl} fileUrl={fileUrl} isSender={isMyMessage} initialDuration={msg.duration} fileSize={msg.fileSize} />
                                                                             </div>
                                                                         ) : msg.type === 'file' ? (
                                                                             <FileMessage msg={msg} isMyMessage={isMyMessage} />
@@ -1496,24 +1599,24 @@ function ChatApplication({ currentUser, initialChats }) {
 
                                         {typingUsers[selectedChat.chatId] && (
                                             <div className="flex items-end gap-2 justify-start">
-                                               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center self-start flex-shrink-0">
-                                                   <FaUser className="text-gray-500" size={18} />
-                                               </div>
-                                               <div className="flex flex-col items-start">
-                                                   <div className="p-3 rounded-lg bg-gray-200 text-gray-800">
-                                                      <div className="flex items-center justify-center gap-1.5">
-                                                          <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                                          <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                                          <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></span>
-                                                      </div>
-                                                   </div>
-                                               </div>
+                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center self-start flex-shrink-0">
+                                                    <FaUser className="text-gray-500" size={18} />
+                                                </div>
+                                                <div className="flex flex-col items-start">
+                                                    <div className="p-3 rounded-lg bg-gray-200 text-gray-800">
+                                                        <div className="flex items-center justify-center gap-1.5">
+                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className="flex-shrink-0 flex flex-col p-4 border-t border-gray-200">
                                 {replyingTo && (
                                     <div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center">
@@ -1536,7 +1639,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                             </div>
                                         )}
                                         <div className="relative flex-grow">
-                                            <input ref={messageInputRef} type="text" placeholder={isRecording ? "Recording..." : "Type a message..."} className="w-full p-3 pr-24 rounded-full border bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" value={message} onChange={(e) => { setMessage(e.target.value); sendTypingStatus(true);}} onKeyDown={handleKeyDown} disabled={isRecording} />
+                                            <input ref={messageInputRef} type="text" placeholder={isRecording ? "Recording..." : "Type a message..."} className="w-full p-3 pr-24 rounded-full border bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" value={message} onChange={(e) => { setMessage(e.target.value); sendTypingStatus(true); }} onKeyDown={handleKeyDown} disabled={isRecording} />
                                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                                                 <button ref={emojiButtonRef} onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"><FaSmile size={20} /></button>
                                                 <button onClick={handleFileButtonClick} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"><FaPaperclip size={20} /></button>
@@ -1570,7 +1673,7 @@ function ChatApplication({ currentUser, initialChats }) {
                                 <li onClick={handleReply} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaReply /> Reply</li>
                                 <li onClick={handlePin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaThumbtack /> Pin</li>
                                 <li onClick={handleForward} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaShare /> Forward</li>
-                                
+
                                 {contextMenu.message.status !== 'sending' && contextMenu.message.status !== 'failed' && (
                                     <>
                                         {contextMenu.message.sender === currentUser?.id && contextMenu.message.type === 'text' && !contextMenu.message.isForwarded && (new Date() - new Date(contextMenu.message.timestamp) < 15 * 60 * 1000) && (
@@ -1632,27 +1735,27 @@ function ChatApplication({ currentUser, initialChats }) {
                             )}
                             {activeGroupInfoTab === 'Members' && (
                                 <div className="space-y-3">
-                                   {isGroupDataLoading ? (
-                                       <p className="text-center text-gray-500">Loading members...</p>
-                                   ) : (
-                                       groupMembers.map((member, i) => (
-                                           <div key={member.employeeId || i} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50">
-                                              {member.employeeImage ? (
-                                                  <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
-                                              ) : (
-                                                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                      <FaUser className="text-gray-500" size={20} />
-                                                  </div>
-                                              )}
-                                              <div>
-                                                   <span className="font-semibold">{member.displayName}</span>
-                                                   {member.jobTitlePrimary && <p className="text-sm text-gray-500">{member.jobTitlePrimary}</p>}
-                                              </div>
-                                           </div>
-                                       ))
-                                   )}
+                                    {isGroupDataLoading ? (
+                                        <p className="text-center text-gray-500">Loading members...</p>
+                                    ) : (
+                                        groupMembers.map((member, i) => (
+                                            <div key={member.employeeId || i} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50">
+                                                {member.employeeImage ? (
+                                                    <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                        <FaUser className="text-gray-500" size={20} />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <span className="font-semibold">{member.displayName}</span>
+                                                    {member.jobTitlePrimary && <p className="text-sm text-gray-500">{member.jobTitlePrimary}</p>}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                            )} 
+                            )}
                             {activeGroupInfoTab === 'Media' && (
                                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                                     {chatMessages.filter(msg => ['image', 'video'].includes(msg.type)).map((msg, i) => (
