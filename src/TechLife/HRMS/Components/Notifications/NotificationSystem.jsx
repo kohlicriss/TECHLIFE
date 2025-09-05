@@ -35,7 +35,7 @@ const NotificationSystem = () => {
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
   const navigate = useNavigate();
-  const { gdata, setGdata, markAsRead, decrementUnreadCount } = useContext(Context);
+  const { gdata, setGdata, markAsRead, decrementUnreadCount, theme } = useContext(Context);
  
   const fromDateRef = useRef(null);
   const toDateRef = useRef(null);
@@ -312,19 +312,25 @@ const NotificationSystem = () => {
   ];
  
   return (
-    <div className="w-full h-screen flex flex-col bg-gray-50">
+    <div className={`w-full h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Top Bar */}
       <motion.div
-        className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20 w-full"
+        className={`shadow-sm border-b sticky top-0 z-20 w-full ${
+          theme === 'dark' 
+            ? 'bg-black border-gray-700' 
+            : 'bg-white border-gray-200'
+        }`}
         initial="hidden"
         animate="visible"
         variants={topBarVariants}
       >
         {/* Mobile Header */}
-        <div className="sm:hidden bg-white py-2 flex items-center justify-between px-3 h-[50px]">
+        <div className={`sm:hidden py-2 flex items-center justify-between px-3 h-[50px] ${
+          theme === 'dark' ? 'bg-black' : 'bg-white'
+        }`}>
           <motion.button
             onClick={toggleMobileMenu}
-            className="text-gray-600 hover:text-gray-800"
+            className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'}`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -333,34 +339,42 @@ const NotificationSystem = () => {
  
           <div className="relative flex-1 mx-3">
             <FaSearch
-              className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+              }`}
               size={14}
             />
             <input
               type="text"
               placeholder="Search..."
-              className="w-full pl-10 pr-4 py-2 text-sm rounded-full border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 h-[40px]"
+              className={`w-full pl-10 pr-4 py-2 text-sm rounded-full border focus:ring-2 focus:ring-indigo-200 h-[40px] ${
+                theme === 'dark'
+                  ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:bg-gray-700 focus:border-indigo-500'
+                  : 'border-gray-200 bg-gray-50 text-black placeholder-gray-500 focus:bg-white focus:border-indigo-500'
+              }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          {/* Mobile Bell Icon Removed */}
         </div>
  
         {/* === DESKTOP HEADER === */}
         <div className="hidden sm:flex items-center space-x-4 py-2 px-4 h-[60px]">
           {/* Tabs */}
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <div className={`flex space-x-1 p-1 rounded-lg ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+          }`}>
             {["All", "Unread", "Starred"].map((tab) => (
               <motion.button
                 key={tab}
                 style={{ borderRadius: "20px" }}
                 onClick={() => handleTabClick(tab)}
-                className={`py-1 px-3 text-sm font-medium flex items-center transition-colors
-                ${
+                className={`py-1 px-3 text-sm font-medium flex items-center transition-colors ${
                   activeTab === tab
                     ? "bg-blue-600 text-white rounded-md"
-                    : "text-gray-600  "
+                    : theme === 'dark'
+                    ? "text-gray-300 hover:text-white"
+                    : "text-gray-600 hover:text-gray-800"
                 }`}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -378,13 +392,19 @@ const NotificationSystem = () => {
           {/* Search Bar */}
           <div className="relative flex-1">
             <FaSearch
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+              }`}
               size={15}
             />
             <input
               type="text"
               placeholder="Search notifications..."
-              className="w-full h-[36px] pl-10 pr-4 text-sm rounded-lg border border-gray-200 bg-white focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200"
+              className={`w-full h-[36px] pl-10 pr-4 text-sm rounded-lg border focus:ring-1 focus:ring-indigo-200 ${
+                theme === 'dark'
+                  ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:bg-gray-700 focus:border-indigo-500'
+                  : 'border-gray-200 bg-white text-black placeholder-gray-500 focus:bg-white focus:border-indigo-500'
+              }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -394,10 +414,14 @@ const NotificationSystem = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => fromDateRef.current?.showPicker()}
-              className="flex items-center space-x-2 h-[36px] px-3 text-sm rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+              className={`flex items-center space-x-2 h-[36px] px-3 text-sm rounded-lg border transition-colors ${
+                theme === 'dark'
+                  ? 'border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+              }`}
             >
-              <span className="text-gray-600">From</span>
-              <FaCalendar className="text-gray-400" size={14} />
+              <span>From</span>
+              <FaCalendar className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} size={14} />
             </button>
             <input
               ref={fromDateRef}
@@ -408,10 +432,14 @@ const NotificationSystem = () => {
             />
             <button
               onClick={() => toDateRef.current?.showPicker()}
-              className="flex items-center space-x-2 h-[36px] px-3 text-sm rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+              className={`flex items-center space-x-2 h-[36px] px-3 text-sm rounded-lg border transition-colors ${
+                theme === 'dark'
+                  ? 'border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+              }`}
             >
-              <span className="text-gray-600">To</span>
-              <FaCalendar className="text-gray-400" size={14} />
+              <span>To</span>
+              <FaCalendar className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} size={14} />
             </button>
             <input
               ref={toDateRef}
@@ -422,7 +450,11 @@ const NotificationSystem = () => {
             />
             <button
               onClick={clearFilters}
-              className="flex items-center justify-center h-[36px] w-[36px] text-sm rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-red-500 transition-colors"
+              className={`flex items-center justify-center h-[36px] w-[36px] text-sm rounded-lg border transition-colors ${
+                theme === 'dark'
+                  ? 'border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-red-400'
+                  : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-red-500'
+              }`}
               title="Clear Filters"
             >
               <FaTimes size={14} />
@@ -450,7 +482,11 @@ const NotificationSystem = () => {
                   <motion.button
                     onClick={handleCancelEdit}
                     style={{ borderRadius: "10px" }}
-                    className="py-1.5 px-3 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center"
+                    className={`py-1.5 px-3 text-sm font-medium rounded-lg flex items-center ${
+                      theme === 'dark'
+                        ? 'text-gray-300 bg-gray-700 hover:bg-gray-600'
+                        : 'text-gray-700 bg-gray-200 hover:bg-gray-300'
+                    }`}
                     variants={buttonVariants}
                     whileHover="hover"
                     whileTap="tap"
@@ -471,7 +507,6 @@ const NotificationSystem = () => {
                 </>
               )}
             </div>
-            {/* Desktop Bell Icon Removed */}
           </div>
         </div>
       </motion.div>
@@ -488,15 +523,19 @@ const NotificationSystem = () => {
             filteredNotifications.map((message) => (
               <motion.div
                 key={message.id}
-                className={`rounded-lg shadow-sm border mb-1.5 cursor-pointer overflow-hidden relative
-                ${
+                className={`rounded-lg shadow-sm border mb-1.5 cursor-pointer overflow-hidden relative ${
                   selectedNotifications.includes(message.id)
                     ? "border-indigo-400 ring-2 ring-indigo-200"
+                    : theme === 'dark' 
+                    ? "border-gray-700"
                     : "border-gray-200"
-                }
-                ${
+                } ${
                   !message.read
-                    ? "bg-gradient-to-r from-indigo-50 to-purple-50"
+                    ? theme === 'dark'
+                      ? "bg-gradient-to-r from-gray-800 to-gray-700"
+                      : "bg-gradient-to-r from-indigo-50 to-purple-50"
+                    : theme === 'dark'
+                    ? "bg-gray-800"
                     : "bg-white"
                 }`}
                 onClick={() => handleNotificationClick(message)}
@@ -521,28 +560,40 @@ const NotificationSystem = () => {
                       )}
                     </div>
                     <div className="flex-1 overflow-hidden pr-8">
-                      <div className="font-semibold text-sm text-gray-800">
+                      <div className={`font-semibold text-sm ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-800'
+                      }`}>
                         {message.subject}
                       </div>
-                      <div className="text-xs text-gray-600 mt-1 truncate">
+                      <div className={`text-xs mt-1 truncate ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
                         {message.message}
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200/80">
+                  <div className={`flex justify-between items-center mt-2 pt-2 border-t ${
+                    theme === 'dark' ? 'border-gray-600' : 'border-gray-200/80'
+                  }`}>
                     <div className="flex flex-col items-start">
                       <div className="text-xs font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
                         {message.category}
                       </div>
-                      <div className="font-bold text-xs text-gray-700 mt-1">
+                      <div className={`font-bold text-xs mt-1 ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                      }`}>
                         {message.sender}
                       </div>
                     </div>
                     <div className="flex flex-col items-end text-xs">
-                      <span className="text-gray-600 font-semibold">
+                      <span className={`font-semibold ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
                         {getTimeAgo(message.createdAt)}
                       </span>
-                      <span className="text-gray-400 mt-0.5">
+                      <span className={`mt-0.5 ${
+                        theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
                         {getTimestamp(message.createdAt)}
                       </span>
                     </div>
@@ -588,15 +639,21 @@ const NotificationSystem = () => {
                     )}
                   </div>
                   <div className="flex-1 flex flex-col justify-center overflow-hidden h-full pl-3">
-                    <div className="font-semibold text-sm text-gray-800 truncate">
+                    <div className={`font-semibold text-sm truncate ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}>
                       {message.subject}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1 truncate">
+                    <div className={`text-xs mt-1 truncate ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
                       {message.message}
                     </div>
                   </div>
                   <div className="flex flex-col items-start justify-center px-4 w-48 h-full shrink-0">
-                    <div className="font-bold text-sm text-gray-800 truncate w-full">
+                    <div className={`font-bold text-sm truncate w-full ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}>
                       {message.sender}
                     </div>
                     <div className="text-xs font-medium text-indigo-600 mt-1">
@@ -604,10 +661,14 @@ const NotificationSystem = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end justify-center px-4 w-40 text-right h-full shrink-0">
-                    <div className="text-xs text-gray-600 font-semibold">
+                    <div className={`text-xs font-semibold ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
                       {getTimeAgo(message.createdAt)}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className={`text-xs mt-1 ${
+                      theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                    }`}>
                       {getTimestamp(message.createdAt)}
                     </div>
                   </div>
@@ -647,12 +708,16 @@ const NotificationSystem = () => {
               </motion.div>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-4">
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
               <FaCheckCircle size={48} className="mb-4 text-green-500" />
-              <h3 className="text-xl font-semibold text-gray-700">
+              <h3 className={`text-xl font-semibold ${
+                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+              }`}>
                 You're All Caught Up!
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className={`mt-1 text-sm ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 No notifications match your current filters.
               </p>
             </div>
@@ -663,15 +728,22 @@ const NotificationSystem = () => {
         <aside
           // Changed sm:sticky to sm:fixed, adjusted top and right
           // height is h-full, accounting for the navbar
-          className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200
-          ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}
+          className={`sm:flex flex-col border-l transition-all duration-200 ${
+            theme === 'dark' 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200'
+          } ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}
           hidden sm:flex sm:fixed top-[60px] right-0 h-[calc(100vh-60px)] z-10`}
         >
           {/* Removed mt-[60px] from here as the parent <aside> already handles vertical positioning */}
           <div className="flex justify-start mt-[60px] p-1.5 items-center">
             <motion.button
               onClick={toggleSidebar}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
+              className={`focus:outline-none p-1.5 rounded-full transition-colors ${
+                theme === 'dark' 
+                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
               transition={{ duration: 0.3 }}
             >
               {isSidebarCollapsed ? (
@@ -685,13 +757,13 @@ const NotificationSystem = () => {
             {sidebarItems.map(({ tab, icon: Icon }) => (
               <motion.button
                 key={tab}
-                className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
-                ${
+                className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors ${
                   activeTab === tab
                     ? "bg-blue-600 text-white"
+                    : theme === 'dark'
+                    ? "text-gray-300 hover:bg-gray-700 hover:text-white"
                     : "text-gray-700 hover:bg-gray-200"
-                }
-                ${isSidebarCollapsed ? "justify-center" : ""}`}
+                } ${isSidebarCollapsed ? "justify-center" : ""}`}
                 onClick={() => handleTabClick(tab)}
                 whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
               >
@@ -717,25 +789,35 @@ const NotificationSystem = () => {
             />
             <motion.div
               key="sidebar"
-              className="fixed top-0 left-0 h-full w-3/4 max-w-sm bg-white z-40 sm:hidden flex flex-col"
+              className={`fixed top-0 left-0 h-full w-3/4 max-w-sm z-40 sm:hidden flex flex-col ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h5 className="font-bold text-lg text-gray-800">Menu</h5>
+              <div className={`flex items-center justify-between p-4 border-b ${
+                theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+              }`}>
+                <h5 className={`font-bold text-lg ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-800'
+                }`}>Menu</h5>
                 <motion.button
                   onClick={() => setIsMobileMenuOpen(false)}
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <FaTimes size={20} className="text-gray-600" />
+                  <FaTimes size={20} className={`${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  }`} />
                 </motion.button>
               </div>
  
               <div className="flex-1 overflow-y-auto">
-                <div className="flex border-b border-gray-200 h-12">
+                <div className={`flex border-b h-12 ${
+                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                }`}>
                   {["All", "Unread", "Starred"].map((tab) => (
                     <button
                       key={tab}
@@ -743,6 +825,8 @@ const NotificationSystem = () => {
                       className={`flex-1 h-full py-3 text-sm font-medium transition-colors ${
                         activeTab === tab
                           ? "bg-indigo-50 text-indigo-600"
+                          : theme === 'dark'
+                          ? "text-gray-300 hover:bg-gray-700"
                           : "text-gray-500 hover:bg-gray-50"
                       }`}
                     >
@@ -753,13 +837,19 @@ const NotificationSystem = () => {
  
                 <div className="p-4 space-y-4">
                   <div className="flex justify-between items-center">
-                    <h6 className="text-sm font-semibold text-gray-500 flex items-center">
+                    <h6 className={`text-sm font-semibold flex items-center ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
                       <FaFilter className="inline-block mr-2" size={12} />
                       Filters
                     </h6>
                     <button
                       onClick={clearFilters}
-                      className="py-1 px-3 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                      className={`py-1 px-3 text-xs font-medium rounded-md ${
+                        theme === 'dark'
+                          ? 'text-gray-300 bg-gray-700 hover:bg-gray-600'
+                          : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                      }`}
                     >
                       Clear All
                     </button>
@@ -772,6 +862,8 @@ const NotificationSystem = () => {
                         className={`w-full text-left py-2 px-3 text-sm rounded-md ${
                           activeTab === tab
                             ? "bg-indigo-100 text-indigo-700 font-semibold"
+                            : theme === 'dark'
+                            ? "text-gray-300 hover:bg-gray-700"
                             : "text-gray-700 hover:bg-gray-100"
                         }`}
                         onClick={() => handleTabClick(tab)}
@@ -785,11 +877,19 @@ const NotificationSystem = () => {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => fromDateRef.current?.showPicker()}
-                        className="p-2 text-sm rounded-md border border-gray-300 bg-white"
+                        className={`p-2 text-sm rounded-md border ${
+                          theme === 'dark'
+                            ? 'border-gray-600 bg-gray-700'
+                            : 'border-gray-300 bg-white'
+                        }`}
                       >
-                        <FaCalendar className="text-gray-500" size={14} />
+                        <FaCalendar className={`${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`} size={14} />
                       </button>
-                      <span className="text-xs text-gray-700 w-20">
+                      <span className={`text-xs w-20 ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                         {fromDate
                           ? format(parseISO(fromDate), "MMM d, yyyy")
                           : "From Date"}
@@ -805,11 +905,19 @@ const NotificationSystem = () => {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => toDateRef.current?.showPicker()}
-                        className="p-2 text-sm rounded-md border border-gray-300 bg-white"
+                        className={`p-2 text-sm rounded-md border ${
+                          theme === 'dark'
+                            ? 'border-gray-600 bg-gray-700'
+                            : 'border-gray-300 bg-white'
+                        }`}
                       >
-                        <FaCalendar className="text-gray-500" size={14} />
+                        <FaCalendar className={`${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`} size={14} />
                       </button>
-                      <span className="text-xs text-gray-700 w-20">
+                      <span className={`text-xs w-20 ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                         {toDate
                           ? format(parseISO(toDate), "MMM d, yyyy")
                           : "To Date"}
@@ -828,7 +936,11 @@ const NotificationSystem = () => {
                     {!isEditMode ? (
                       <button
                         onClick={handleEditClick}
-                        className="flex-1 py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg"
+                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                        }`}
                       >
                         Edit
                       </button>
@@ -836,7 +948,11 @@ const NotificationSystem = () => {
                       <>
                         <button
                           onClick={handleCancelEdit}
-                          className="flex-1 py-2 px-3 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded-lg"
+                          className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg ${
+                            theme === 'dark'
+                              ? 'bg-gray-600 hover:bg-gray-500 text-gray-300'
+                              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                          }`}
                         >
                           Cancel
                         </button>
