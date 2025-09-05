@@ -132,6 +132,8 @@ const Document = () => {
     const [errors, setErrors] = useState({});
     const [searchFilter, setSearchFilter] = useState('');
     const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
+    // ✅ ADD SPINNER STATE
+    const [isUpdating, setIsUpdating] = useState(false);
 
     // Validation Functions (keeping the same logic)
     const validatePanData = (data) => {
@@ -360,7 +362,9 @@ const Document = () => {
         setEditingData((prev) => ({ ...prev, [field]: file }));
     };
 
+    // ✅ UPDATED handleUpdate WITH SPINNER
     const handleUpdate = async (subSection) => {
+        setIsUpdating(true); // Start spinner
         try {
             const validationErrors = validateFormData(subSection, editingData);
             if (Object.keys(validationErrors).length > 0) {
@@ -453,6 +457,8 @@ const Document = () => {
             } else {
                 setErrors({ general: "Network error. Please check your internet connection." });
             }
+        } finally {
+            setIsUpdating(false); // Stop spinner
         }
     };
 
@@ -660,6 +666,7 @@ const Document = () => {
         );
     };
 
+    // ✅ UPDATED renderEditModal WITH SPINNER
     const renderEditModal = () => {
         if (!editingSection) return null;
         const { subSection } = editingSection;
@@ -708,21 +715,44 @@ const Document = () => {
                             )}
                         </form>
                     </div>
+                    
+                    {/* ✅ UPDATED FOOTER WITH SPINNER */}
                     <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
                         theme === 'dark' 
                             ? 'bg-gray-700 border-gray-600' 
                             : 'bg-gray-50 border-gray-200'
                     }`}>
-                        <button type="button" onClick={() => setEditingSection(null)} className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
-                            theme === 'dark'
-                                ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                                : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                        }`}>
+                        <button 
+                            type="button" 
+                            onClick={() => setEditingSection(null)} 
+                            className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+                                theme === 'dark'
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                            }`}
+                        >
                             Cancel
                         </button>
-                        <button type="button" onClick={() => handleUpdate(subSection)} className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2`}>
-                            <IoCheckmarkCircle className="w-5 h-5" />
-                            <span>{isUpdate ? 'Update Document' : 'Save Document'}</span>
+                        <button 
+                            type="button" 
+                            onClick={() => handleUpdate(subSection)}
+                            disabled={isUpdating}
+                            className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
+                                       hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                                       focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                                       ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
+                        >
+                            {isUpdating ? (
+                                <>
+                                    <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                                    <span>Updating...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <IoCheckmarkCircle className="w-5 h-5" />
+                                    <span>{isUpdate ? 'Update Document' : 'Save Document'}</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -1012,6 +1042,8 @@ const Document = () => {
                     {renderEditModal()}
                 </div>
             )}
+            
+            {/* ✅ ADDED SPINNER CSS ANIMATION */}
             <style jsx>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -1019,6 +1051,13 @@ const Document = () => {
                 .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
                 .animate-slideUp { animation: slideUp 0.4s ease-out; }
                 .animate-slideIn { animation: slideIn 0.3s ease-out; }
+                .animate-spin-slow {
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
             `}</style>
         </div>
     );

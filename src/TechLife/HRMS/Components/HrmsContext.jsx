@@ -14,7 +14,6 @@ const HrmsContext = ({ children }) => {
   });
   const [lastSseMsgId, setLastSseMsgId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  const username = "ACS00000005";
   const [userprofiledata, setUserProfileData] = useState(null);
   const [userData, setUserData] = useState(null);
 
@@ -59,14 +58,14 @@ const HrmsContext = ({ children }) => {
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://hrms.anasolconsultancyservices.com/api/notification/unread-count/${username}`
+        `http://hrms.anasolconsultancyservices.com/api/notification/unread-count/${userData?.employeeId}`
       );
       setUnreadCount(res.data);
       console.log("Notification count", res.data);
     } catch (err) {
       console.error("Error fetching unread count:", err);
     }
-  }, [username]);
+  }, [userData?.employeeId]);
 
 
   const markAsRead = useCallback(
@@ -95,7 +94,7 @@ const HrmsContext = ({ children }) => {
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://hrms.anasolconsultancyservices.com/api/notification/all/${username}`
+        `http://hrms.anasolconsultancyservices.com/api/notification/all/${userData?.employeeId}`
       );
       const data = res.data;
       setGdata(data);
@@ -109,13 +108,13 @@ const HrmsContext = ({ children }) => {
     } catch (err) {
       console.error("Error fetching notifications:", err);
     }
-  }, [username]);
+  }, [userData?.employeeId]);
 
 
   useEffect(() => {
     console.log("Setting up SSE connection...");
     const eventSource = new EventSource(
-      `http://hrms.anasolconsultancyservices.com/api/notification/subscribe/${username}`
+      `http://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData?.employeeId}`
     );
 
 
@@ -175,7 +174,7 @@ const HrmsContext = ({ children }) => {
       console.log("Closing SSE connection");
       eventSource.close();
     };
-  }, [username, markAsRead, fetchUnreadCount]);
+  }, [userData?.employeeId, markAsRead, fetchUnreadCount]);
 
 
   useEffect(() => {

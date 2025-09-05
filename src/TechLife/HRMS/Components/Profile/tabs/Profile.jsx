@@ -193,6 +193,7 @@ function Profile() {
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // New state for loading spinner
   const [errors, setErrors] = useState({});
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 4 });
 
@@ -330,23 +331,28 @@ function Profile() {
 
   // --- NEW: Master handleSubmit function to call the correct update function ---
   const handleSubmit = async (section) => {
+    setIsUpdating(true); // Start the loading spinner
     let success = false;
-    switch (section) {
-      case "primaryDetails":
-        success = await handleUpdatePrimaryDetails();
-        break;
-      case "contactDetails":
-        success = await handleUpdateContactDetails();
-        break;
-      case "address":
-        success = await handleUpdateAddress();
-        break;
-      case "relations":
-        handleUpdateRelations(); // This will show an alert
-        break;
-      default:
-        console.error("Unknown section:", section);
-        setErrors({ general: "Unknown section selected for update." });
+    try {
+        switch (section) {
+            case "primaryDetails":
+                success = await handleUpdatePrimaryDetails();
+                break;
+            case "contactDetails":
+                success = await handleUpdateContactDetails();
+                break;
+            case "address":
+                success = await handleUpdateAddress();
+                break;
+            case "relations":
+                handleUpdateRelations(); // This will show an alert
+                break;
+            default:
+                console.error("Unknown section:", section);
+                setErrors({ general: "Unknown section selected for update." });
+        }
+    } finally {
+        setIsUpdating(false); // Stop the loading spinner
     }
 
 
@@ -406,49 +412,26 @@ function Profile() {
     </div>
   );
 
-
-  const renderField = (label, name, type = "text", required = false, options = []) => {
-    const isError = errors[name];
-    const fieldValue = editingData[name] || "";
-    
-    return (
-      <div className="group relative" key={name}>
-        <label className={`block text-sm font-semibold mb-3 flex items-center ${
-          theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-        }`}>
-          {label}
-          {required && <span className="text-red-500 ml-1 text-base">*</span>}
-        </label>
-        
-        {type === "select" ? (
-          <div className="relative">
-            <select 
-              value={fieldValue} 
-              onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-              className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none 
-                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-                ${isError 
-                  ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-                  : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
-                }`}
-            >
-              <option value="">Choose {label}</option>
-              {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-            </select>
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-              <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-        ) : type === "date" ? (
-          <input 
-            type="date" 
+// Moved renderField inside the component to access handleEditFieldChange
+const renderField = (label, name, type = "text", required = false, options = []) => {
+  const isError = errors[name];
+  const fieldValue = editingData[name] || "";
+  
+  return (
+    <div className="group relative" key={name}>
+      <label className={`block text-sm font-semibold mb-3 flex items-center ${
+        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+      }`}>
+        {label}
+        {required && <span className="text-red-500 ml-1 text-base">*</span>}
+      </label>
+      
+      {type === "select" ? (
+        <div className="relative">
+          <select 
             value={fieldValue} 
             onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none 
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError 
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
@@ -456,34 +439,57 @@ function Profile() {
                 ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                 : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
               }`}
-          />
-        ) : (
-          <input 
-            type={type} 
-            value={fieldValue} 
-            onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-              focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-              ${isError 
-                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-                : theme === 'dark'
-                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
-              }`}
-            placeholder={`Enter ${label.toLowerCase()}...`} 
-            required={required} 
-          />
-        )}
-        
-        {isError && (
-          <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
-            <IoWarning className="w-4 h-4 flex-shrink-0" />
-            <p className="text-sm font-medium">{isError}</p>
+          >
+            <option value="">Choose {label}</option>
+            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+          </select>
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
-        )}
-      </div>
-    );
-  };
+        </div>
+      ) : type === "date" ? (
+        <input 
+          type="date" 
+          value={fieldValue} 
+          onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+          className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+            ${isError 
+              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+              : theme === 'dark'
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+              : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            }`}
+        />
+      ) : (
+        <input 
+          type={type} 
+          value={fieldValue} 
+          onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+          className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+            ${isError 
+              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+              : theme === 'dark'
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+              : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            }`}
+          placeholder={`Enter ${label.toLowerCase()}...`} 
+          required={required} 
+        />
+      )}
+      
+      {isError && (
+        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+          <IoWarning className="w-4 h-4 flex-shrink-0" />
+          <p className="text-sm font-medium">{isError}</p>
+        </div>
+      )}
+    </div>
+  );
+};
  
   const renderEditModal = () => {
     if (!editingSection) return null;
@@ -559,12 +565,23 @@ function Profile() {
             <button 
               type="button" 
               onClick={() => handleSubmit(section)}
+              disabled={isUpdating}
               className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
                          hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                         focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2`}
+                         focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                         ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
             >
-              <IoCheckmarkCircle className="w-5 h-5" />
-              <span>Update Information</span>
+              {isUpdating ? (
+                <>
+                  <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <>
+                  <IoCheckmarkCircle className="w-5 h-5" />
+                  <span>Update Information</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -800,16 +817,12 @@ function Profile() {
                   <DetailItem label="Physically Handicapped" value={primarydata?.physicallyHandicapped} />
                   <DetailItem label="Nationality" value={primarydata?.nationality} />
                 </Section>
-
-
                 <Section sectionKey="contactDetails" title="Contact Details" data={contactdetails}>
                   <DetailItem label="Work Email" value={contactdetails?.workEmail} />
                   <DetailItem label="Personal Email" value={contactdetails?.personalEmail} />
                   <DetailItem label="Mobile Number" value={contactdetails?.mobileNumber} />
                   <DetailItem label="Work Number" value={contactdetails?.workNumber} />
                 </Section>
-
-
                 <Section sectionKey="address" title="Address Information" data={addressData}>
                   <DetailItem label="Street" value={addressData?.street} />
                   <DetailItem label="City" value={addressData?.city} />
@@ -818,8 +831,6 @@ function Profile() {
                   <DetailItem label="Country" value={addressData?.country} />
                   <DetailItem label="District" value={addressData?.district} />
                 </Section>
-
-
                 <Section sectionKey="relations" title="Family Relations" data={defaultProfile.relations}>
                   <DetailItem label="Father Name" value={defaultProfile.relations?.fatherName} />
                   <DetailItem label="Mother Name" value={defaultProfile.relations?.motherName} />
@@ -850,6 +861,13 @@ function Profile() {
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
         .animate-slideUp { animation: slideUp 0.4s ease-out; }
         .animate-slideIn { animation: slideIn 0.3s ease-out; }
+        .animate-spin-slow {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
       `}</style>
     </div>
   );

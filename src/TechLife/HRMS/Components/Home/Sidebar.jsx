@@ -19,14 +19,13 @@ import {
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
-
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData, setUserData, theme, setTheme } = useContext(Context);
   const empId = userData?.employeeId;
 
-
+  // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
       await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
@@ -36,14 +35,28 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     } catch (error) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
-      localStorage.clear();
+      // ✅ Remove only login-related keys, NOT theme
+      const keysToRemove = [
+        "accessToken", 
+        "emppayload", 
+        "logedempid", 
+        "logedemprole"
+      ];
+      
+      // Remove specific keys only
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // ✅ DO NOT use localStorage.clear() - it removes theme too!
+      // localStorage.clear(); // ❌ This was the problem
+
       setUserData(null);
       if (onLogout) {
         onLogout();
       }
     }
   };
-
 
   const navItems = [
     { name: "Profile", icon: <UserCircle size={18} />, path: empId ? `/profile/${empId}` : "/profile" },
@@ -66,7 +79,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
   ];
 
-
   return (
     <>
       <div
@@ -75,7 +87,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
-
 
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
@@ -112,7 +123,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           </div>
         </div>
 
-
         <nav className="mt-4">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -137,7 +147,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
             );
           })}
 
-
           <div className="mt-10">
             <button
               onClick={handleLogoutClick}
@@ -158,6 +167,5 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     </>
   );
 }
-
 
 export default Sidebar;
