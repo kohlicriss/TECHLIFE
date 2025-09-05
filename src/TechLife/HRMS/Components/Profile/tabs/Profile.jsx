@@ -4,6 +4,7 @@ import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
 import { useParams } from "react-router-dom";
 
+
 // Default Profile (Only static relations/identity)
 const defaultProfile = {
   relations: {
@@ -14,6 +15,7 @@ const defaultProfile = {
     siblings: "1",
   },
 };
+
 
 const sectionFields = {
   primaryDetails: [
@@ -114,14 +116,18 @@ const sectionFields = {
   ],
 };
 
+
 // Section configurations with icons and colors
 const sectionConfig = {
   primaryDetails: {
     icon: IoPersonOutline,
     color: 'from-blue-500 to-blue-700',
     bgColor: 'bg-blue-50',
+    darkBgColor: 'bg-blue-900/20',
     borderColor: 'border-blue-200',
+    darkBorderColor: 'border-blue-700',
     textColor: 'text-blue-700',
+    darkTextColor: 'text-blue-400',
     title: 'Primary Details',
     description: 'Personal information and basic details'
   },
@@ -129,8 +135,11 @@ const sectionConfig = {
     icon: IoMailOutline,
     color: 'from-green-500 to-green-700',
     bgColor: 'bg-green-50',
+    darkBgColor: 'bg-green-900/20',
     borderColor: 'border-green-200',
+    darkBorderColor: 'border-green-700',
     textColor: 'text-green-700',
+    darkTextColor: 'text-green-400',
     title: 'Contact Details',
     description: 'Email addresses and phone numbers'
   },
@@ -138,8 +147,11 @@ const sectionConfig = {
     icon: IoLocationOutline,
     color: 'from-orange-500 to-orange-700',
     bgColor: 'bg-orange-50',
+    darkBgColor: 'bg-orange-900/20',
     borderColor: 'border-orange-200',
+    darkBorderColor: 'border-orange-700',
     textColor: 'text-orange-700',
+    darkTextColor: 'text-orange-400',
     title: 'Address Information',
     description: 'Current residential address'
   },
@@ -147,8 +159,11 @@ const sectionConfig = {
     icon: IoPeopleOutline,
     color: 'from-purple-500 to-purple-700',
     bgColor: 'bg-purple-50',
+    darkBgColor: 'bg-purple-900/20',
     borderColor: 'border-purple-200',
+    darkBorderColor: 'border-purple-700',
     textColor: 'text-purple-700',
+    darkTextColor: 'text-purple-400',
     title: 'Family Relations',
     description: 'Family members and relationships'
   },
@@ -156,12 +171,16 @@ const sectionConfig = {
     icon: IoSchoolOutline,
     color: 'from-red-500 to-red-700',
     bgColor: 'bg-red-50',
+    darkBgColor: 'bg-red-900/20',
     borderColor: 'border-red-200',
+    darkBorderColor: 'border-red-700',
     textColor: 'text-red-700',
+    darkTextColor: 'text-red-400',
     title: 'Education Details',
     description: 'Academic qualifications and achievements'
   },
 };
+
 
 function Profile() {
   const [editingSection, setEditingSection] = useState(null);
@@ -170,13 +189,14 @@ function Profile() {
   const [addressData, setAddressData] = useState(null);
   const [eduData, setEduData] = useState([]);
   const [experience, setExperience] = useState([]);
-  const { userprofiledata, setUserProfileData } = useContext(Context);
+  const { userprofiledata, setUserProfileData, theme } = useContext(Context);
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
-  const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // New state for loading spinner
   const [errors, setErrors] = useState({});
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 4 });
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -200,6 +220,7 @@ function Profile() {
         setExperience(expRes.data);
         console.log("Fetched experience details response:", expRes.data);
 
+
         // Calculate completion stats
         const sections = [primaryRes.data, contactRes.data, addressRes.data, eduRes.data];
         const completed = sections.filter(Boolean).length;
@@ -212,10 +233,12 @@ function Profile() {
       }
     };
 
+
     if (empID) {
       fetchData();
     }
   }, [empID]);
+
 
   const openEditSection = (section) => {
     setErrors({});
@@ -230,9 +253,11 @@ function Profile() {
       dataToEdit = defaultProfile.relations;
     }
 
-    setEditingData(dataToEdit);
+
+    setEditingData(dataToEdit || {});
     setEditingSection({ section });
   };
+
 
   const handleEditFieldChange = (field, value) => {
     setEditingData((prev) => ({
@@ -248,70 +273,138 @@ function Profile() {
     }
   };
 
-  const handleUpdate = async (section) => {
+
+  // --- NEW: SEPARATE UPDATE FUNCTIONS ---
+  const handleUpdatePrimaryDetails = async () => {
     try {
-      const url = `/employee/${empID}/${section}`;
-      const method = 'put';
-      const response = await publicinfoApi[method](url, editingData);
-      console.log(`Update for ${section} successful:`, response.data);
-      
-      setEditingSection(null);
-      setErrors({});
-
-      // Refresh data after successful update
-      const updatedData = await publicinfoApi.get(`employee/${empID}/${section}`);
-      console.log(`Refreshed ${section} data:`, updatedData.data);
-      
-      if (section === 'primaryDetails') {
-        setPrimaryData(updatedData.data);
-      } else if (section === 'contactDetails') {
-        setContactDetails(updatedData.data);
-      } else if (section === 'address') {
-        setAddressData(updatedData.data);
-      }
-
-      // Update completion stats
-      const sections = [
-        section === 'primaryDetails' ? updatedData.data : primarydata,
-        section === 'contactDetails' ? updatedData.data : contactdetails,
-        section === 'address' ? updatedData.data : addressData,
-        eduData
-      ];
-      const completed = sections.filter(Boolean).length;
-      setCompletionStats({ completed, total: 4 });
-
+      const url = `/employee/${empID}/primary/details`;
+      await publicinfoApi.put(url, editingData);
+      const updatedData = await publicinfoApi.get(url);
+      setPrimaryData(updatedData.data);
+      setCompletionStats(prev => ({ ...prev, completed: [updatedData.data, contactdetails, addressData, eduData].filter(Boolean).length }));
+      return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) {
-        console.error(`Validation errors for ${section}:`, error.response.data);
-        setErrors(error.response.data);
-      } else {
-        console.error(`Update for ${section} failed:`, error);
-        setErrors({ general: "An unexpected error occurred." });
-      }
+      if (error.response && error.response.status === 400) setErrors(error.response.data);
+      else setErrors({ general: "An unexpected error occurred while updating Primary Details." });
+      return false;
     }
   };
 
+
+  const handleUpdateContactDetails = async () => {
+    try {
+      const url = `/employee/${empID}/contact`;
+      await publicinfoApi.put(url, editingData);
+      const updatedData = await publicinfoApi.get(url);
+      setContactDetails(updatedData.data);
+      setCompletionStats(prev => ({ ...prev, completed: [primarydata, updatedData.data, addressData, eduData].filter(Boolean).length }));
+      return true;
+    } catch (error) {
+      if (error.response && error.response.status === 400) setErrors(error.response.data);
+      else setErrors({ general: "An unexpected error occurred while updating Contact Details." });
+      return false;
+    }
+  };
+
+
+  const handleUpdateAddress = async () => {
+    try {
+      const url = `/employee/${empID}/address`;
+      await publicinfoApi.put(url, editingData);
+      const updatedData = await publicinfoApi.get(url);
+      setAddressData(updatedData.data);
+      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, updatedData.data, eduData].filter(Boolean).length }));
+      return true;
+    } catch (error) {
+      if (error.response && error.response.status === 400) setErrors(error.response.data);
+      else setErrors({ general: "An unexpected error occurred while updating Address." });
+      return false;
+    }
+  };
+  
+  const handleUpdateRelations = () => {
+      console.error("Backend endpoint for updating relations does not exist in your controller.");
+      alert("This section cannot be updated yet. A backend API endpoint is missing.");
+      setEditingSection(null);
+  };
+
+
+  // --- NEW: Master handleSubmit function to call the correct update function ---
+  const handleSubmit = async (section) => {
+    setIsUpdating(true); // Start the loading spinner
+    let success = false;
+    try {
+        switch (section) {
+            case "primaryDetails":
+                success = await handleUpdatePrimaryDetails();
+                break;
+            case "contactDetails":
+                success = await handleUpdateContactDetails();
+                break;
+            case "address":
+                success = await handleUpdateAddress();
+                break;
+            case "relations":
+                handleUpdateRelations(); // This will show an alert
+                break;
+            default:
+                console.error("Unknown section:", section);
+                setErrors({ general: "Unknown section selected for update." });
+        }
+    } finally {
+        setIsUpdating(false); // Stop the loading spinner
+    }
+
+
+    if (success) {
+      setEditingSection(null);
+      setErrors({});
+    }
+  };
+  
   // Skeleton Loading Component
   const SkeletonCard = () => (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden animate-pulse">
-      <div className="p-6 bg-gray-100 border-b border-gray-200">
+    <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
+      theme === 'dark' 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
+      <div className={`p-6 border-b ${
+        theme === 'dark' 
+          ? 'bg-gray-700 border-gray-600' 
+          : 'bg-gray-100 border-gray-200'
+      }`}>
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gray-300 rounded-xl"></div>
+            <div className={`w-12 h-12 rounded-xl ${
+              theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+            }`}></div>
             <div>
-              <div className="h-5 bg-gray-300 rounded w-32 mb-2"></div>
-              <div className="h-3 bg-gray-300 rounded w-48"></div>
+              <div className={`h-5 rounded w-32 mb-2 ${
+                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
+              <div className={`h-3 rounded w-48 ${
+                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
             </div>
           </div>
-          <div className="h-9 bg-gray-300 rounded-lg w-20"></div>
+          <div className={`h-9 rounded-lg w-20 ${
+            theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+          }`}></div>
         </div>
       </div>
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="p-4 bg-gray-50 rounded-xl">
-              <div className="h-3 bg-gray-300 rounded w-20 mb-2"></div>
-              <div className="h-4 bg-gray-300 rounded w-32"></div>
+            <div key={i} className={`p-4 rounded-xl ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+            }`}>
+              <div className={`h-3 rounded w-20 mb-2 ${
+                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
+              <div className={`h-4 rounded w-32 ${
+                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
             </div>
           ))}
         </div>
@@ -319,76 +412,85 @@ function Profile() {
     </div>
   );
 
-  const renderField = (label, name, type = "text", required = false, options = []) => {
-    const isError = errors[name];
-    const fieldValue = editingData[name] || "";
-    
-    return (
-      <div className="group relative" key={name}>
-        <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-          {label}
-          {required && <span className="text-red-500 ml-1 text-base">*</span>}
-        </label>
-        
-        {type === "select" ? (
-          <div className="relative">
-            <select 
-              value={fieldValue} 
-              onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-              className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none bg-white
-                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-                ${isError 
-                  ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-                  : 'border-gray-200 hover:border-gray-300 group-hover:border-blue-300'
-                }`}
-            >
-              <option value="">Choose {label}</option>
-              {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-            </select>
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-        ) : type === "date" ? (
-          <input 
-            type="date" 
-            value={fieldValue} 
-            onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-              focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-              ${isError 
-                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-                : 'border-gray-200 hover:border-gray-300 group-hover:border-blue-300'
-              } bg-white`}
-          />
-        ) : (
-          <input 
-            type={type} 
-            value={fieldValue} 
-            onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-              focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-              ${isError 
-                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-                : 'border-gray-200 hover:border-gray-300 group-hover:border-blue-300'
-              } bg-white`}
-            placeholder={`Enter ${label.toLowerCase()}...`} 
-            required={required} 
-          />
-        )}
-        
-        {isError && (
-          <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
-            <IoWarning className="w-4 h-4 flex-shrink-0" />
-            <p className="text-sm font-medium">{isError}</p>
-          </div>
-        )}
-      </div>
-    );
-  };
+// Moved renderField inside the component to access handleEditFieldChange
+const renderField = (label, name, type = "text", required = false, options = []) => {
+  const isError = errors[name];
+  const fieldValue = editingData[name] || "";
   
+  return (
+    <div className="group relative" key={name}>
+      <label className={`block text-sm font-semibold mb-3 flex items-center ${
+        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+      }`}>
+        {label}
+        {required && <span className="text-red-500 ml-1 text-base">*</span>}
+      </label>
+      
+      {type === "select" ? (
+        <div className="relative">
+          <select 
+            value={fieldValue} 
+            onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none 
+              focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+              ${isError 
+                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                : theme === 'dark'
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+              }`}
+          >
+            <option value="">Choose {label}</option>
+            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+          </select>
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      ) : type === "date" ? (
+        <input 
+          type="date" 
+          value={fieldValue} 
+          onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+          className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+            ${isError 
+              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+              : theme === 'dark'
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+              : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            }`}
+        />
+      ) : (
+        <input 
+          type={type} 
+          value={fieldValue} 
+          onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+          className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+            ${isError 
+              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+              : theme === 'dark'
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+              : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            }`}
+          placeholder={`Enter ${label.toLowerCase()}...`} 
+          required={required} 
+        />
+      )}
+      
+      {isError && (
+        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+          <IoWarning className="w-4 h-4 flex-shrink-0" />
+          <p className="text-sm font-medium">{isError}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+ 
   const renderEditModal = () => {
     if (!editingSection) return null;
     const { section } = editingSection;
@@ -398,8 +500,9 @@ function Profile() {
     
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
-        <div className="bg-white rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp">
-          {/* Enhanced Header */}
+        <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
+          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+        }`}>
           <div className={`px-8 py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex items-center justify-between">
@@ -424,62 +527,86 @@ function Profile() {
             </div>
           </div>
           
-          {/* Form Content */}
-          <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-            <form className="p-8" onSubmit={(e) => { e.preventDefault(); handleUpdate(section); }}>
+          <div className="overflow-y-auto flex-grow">
+            <form className="p-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(section); }}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options))}
               </div>
               
               {errors.general && (
-                <div className="mt-6 p-5 bg-red-50 border-l-4 border-red-400 rounded-r-xl animate-slideIn">
+                <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
+                  theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                }`}>
                   <div className="flex items-center">
                     <IoWarning className="w-6 h-6 text-red-400 mr-3" />
-                    <p className="text-red-800 font-medium">{errors.general}</p>
+                    <p className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
                   </div>
                 </div>
               )}
             </form>
           </div>
           
-          {/* Enhanced Footer */}
-          <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-end space-x-4">
+          <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
+            theme === 'dark' 
+              ? 'bg-gray-700 border-gray-600' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
             <button 
               type="button" 
               onClick={() => setEditingSection(null)} 
-              className="px-8 py-3 border-2 border-gray-300 rounded-xl text-gray-700 font-semibold 
-                       hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 
-                       focus:ring-4 focus:ring-gray-500/20"
+              className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+                theme === 'dark'
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+              }`}
             >
               Cancel
             </button>
             <button 
-              type="submit" 
-              onClick={() => handleUpdate(section)}
+              type="button" 
+              onClick={() => handleSubmit(section)}
+              disabled={isUpdating}
               className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
-                        hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                        focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2`}
+                         hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                         focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                         ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
             >
-              <IoCheckmarkCircle className="w-5 h-5" />
-              <span>Update Information</span>
+              {isUpdating ? (
+                <>
+                  <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <>
+                  <IoCheckmarkCircle className="w-5 h-5" />
+                  <span>Update Information</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
     );
   };
-  
+ 
   const DetailItem = ({ label, value }) => (
-    <div className="group p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-100 
-                    hover:shadow-md transition-all duration-300 hover:scale-105">
+    <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
+        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+    }`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+          <span className={`text-xs font-bold uppercase tracking-wider block mb-2 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             {label}
           </span>
-          <p className="text-sm text-gray-900 font-semibold leading-relaxed">
+          <p className={`text-sm font-semibold leading-relaxed ${
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>
             {value || (
-              <span className="text-gray-400 italic">Not provided</span>
+              <span className={`italic ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>Not provided</span>
             )}
           </p>
         </div>
@@ -487,24 +614,38 @@ function Profile() {
     </div>
   );
 
+
   const Section = ({ sectionKey, title, children, data }) => {
     const config = sectionConfig[sectionKey];
     const IconComponent = config.icon;
     const hasData = !!data;
     
     return (
-      <div className={`bg-white border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                     overflow-hidden group hover:scale-[1.02] ${config.borderColor} mb-8`}>
-        {/* Card Header */}
-        <div className={`px-8 py-6 ${config.bgColor} border-b-2 ${config.borderColor} relative overflow-hidden`}>
+      <div className={`border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
+                       overflow-hidden group hover:scale-[1.02] mb-8 ${
+        theme === 'dark'
+          ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
+          : `bg-white ${config.borderColor}`
+      }`}>
+        <div className={`px-8 py-6 border-b-2 relative overflow-hidden ${
+          theme === 'dark'
+            ? `${config.darkBgColor} ${config.darkBorderColor}`
+            : `${config.bgColor} ${config.borderColor}`
+        }`}>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300">
-                <IconComponent className={`w-8 h-8 ${config.textColor}`} />
+              <div className={`p-3 rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+              }`}>
+                <IconComponent className={`w-8 h-8 ${
+                  theme === 'dark' ? config.darkTextColor : config.textColor
+                }`} />
               </div>
               <div>
-                <h4 className={`text-xl font-bold ${config.textColor} flex items-center space-x-2`}>
+                <h4 className={`text-xl font-bold flex items-center space-x-2 ${
+                  theme === 'dark' ? config.darkTextColor : config.textColor
+                }`}>
                   <span>{title}</span>
                   {hasData && (
                     <div className="flex items-center space-x-1">
@@ -515,17 +656,21 @@ function Profile() {
                     </div>
                   )}
                 </h4>
-                <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+                <p className={`text-sm mt-1 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                }`}>{config.description}</p>
               </div>
             </div>
             <button 
               onClick={() => openEditSection(sectionKey)} 
               className={`flex items-center space-x-2 px-6 py-3 cursor-pointer rounded-xl font-semibold transition-all duration-300 
-                        transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg
-                        ${hasData 
-                          ? `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50` 
-                          : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
-                        }`}
+                         transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg
+                         ${hasData 
+                           ? theme === 'dark'
+                             ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
+                             : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
+                           : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                         }`}
             >
               {hasData ? (
                 <>
@@ -542,7 +687,6 @@ function Profile() {
           </div>
         </div>
         
-        {/* Card Content */}
         <div className="p-8">
           {hasData ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -550,18 +694,26 @@ function Profile() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className={`w-20 h-20 ${config.bgColor} rounded-full flex items-center justify-center mx-auto mb-6`}>
-                <IconComponent className={`w-10 h-10 ${config.textColor} opacity-50`} />
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                theme === 'dark' ? config.darkBgColor : config.bgColor
+              }`}>
+                <IconComponent className={`w-10 h-10 opacity-50 ${
+                  theme === 'dark' ? config.darkTextColor : config.textColor
+                }`} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">No {title} Added</h3>
-              <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
+              <h3 className={`text-lg font-semibold mb-2 ${
+                theme === 'dark' ? 'text-white' : 'text-gray-800'
+              }`}>No {title} Added</h3>
+              <p className={`text-sm mb-6 max-w-sm mx-auto ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 Add your {title.toLowerCase()} to complete your profile information.
               </p>
               <button 
                 onClick={() => openEditSection(sectionKey)}
                 className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
-                         text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 
-                         transform hover:scale-105 transition-all duration-300 shadow-lg"
+                           text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 
+                           transform hover:scale-105 transition-all duration-300 shadow-lg"
               >
                 <IoAdd className="w-4 h-4" />
                 <span>Add {title}</span>
@@ -573,26 +725,36 @@ function Profile() {
     );
   };
 
-  // Progress Indicator Component
+
   const ProgressIndicator = () => {
-    const percentage = (completionStats.completed / completionStats.total) * 100;
+    const percentage = completionStats.total > 0 ? (completionStats.completed / completionStats.total) * 100 : 0;
     
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+      <div className={`rounded-2xl p-6 shadow-lg border ${
+        theme === 'dark' 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800">Profile Completion</h3>
-          <span className="text-sm font-medium text-gray-600">
+          <h3 className={`text-lg font-bold ${
+            theme === 'dark' ? 'text-white' : 'text-gray-800'
+          }`}>Profile Completion</h3>
+          <span className={`text-sm font-medium ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             {completionStats.completed}/{completionStats.total} Sections
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+        <div className={`w-full rounded-full h-3 mb-4 overflow-hidden ${
+          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+        }`}>
           <div 
             className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-700 ease-out"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">{percentage.toFixed(0)}% Complete</span>
+          <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{percentage.toFixed(0)}% Complete</span>
           {percentage === 100 && (
             <span className="text-green-600 font-semibold flex items-center">
               <IoCheckmarkCircle className="w-4 h-4 mr-1" />
@@ -604,8 +766,13 @@ function Profile() {
     );
   };
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className={`min-h-screen ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+    }`}>
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
@@ -615,8 +782,12 @@ function Profile() {
                 <IoPersonOutline className="w-8 h-8 text-blue-500" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Your Profile</h2>
-            <p className="text-gray-600">Fetching your personal information...</p>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-800'
+            }`}>Loading Your Profile</h2>
+            <p className={`${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>Fetching your personal information...</p>
             <div className="flex justify-center space-x-2 mt-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} 
@@ -627,30 +798,12 @@ function Profile() {
         </div>
       ) : (
         <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
-          {/* Enhanced Header Section */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 
-                          rounded-2xl text-white text-2xl mb-6 shadow-xl">
-              <IoPersonOutline />
-            </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
-              Employee Profile Hub
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Manage your complete professional profile with comprehensive personal and contact information.
-            </p>
-          </div>
-
-          {/* Progress Section */}
           <div className="mb-12">
             <ProgressIndicator />
           </div>
 
-          {/* Profile Sections */}
+
           <div className="space-y-8">
-            {loading ? (
-              [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
-            ) : (
               <>
                 <Section sectionKey="primaryDetails" title="Primary Details" data={primarydata}>
                   <DetailItem label="First Name" value={primarydata?.firstName} />
@@ -664,14 +817,12 @@ function Profile() {
                   <DetailItem label="Physically Handicapped" value={primarydata?.physicallyHandicapped} />
                   <DetailItem label="Nationality" value={primarydata?.nationality} />
                 </Section>
-
                 <Section sectionKey="contactDetails" title="Contact Details" data={contactdetails}>
                   <DetailItem label="Work Email" value={contactdetails?.workEmail} />
                   <DetailItem label="Personal Email" value={contactdetails?.personalEmail} />
                   <DetailItem label="Mobile Number" value={contactdetails?.mobileNumber} />
                   <DetailItem label="Work Number" value={contactdetails?.workNumber} />
                 </Section>
-
                 <Section sectionKey="address" title="Address Information" data={addressData}>
                   <DetailItem label="Street" value={addressData?.street} />
                   <DetailItem label="City" value={addressData?.city} />
@@ -680,7 +831,6 @@ function Profile() {
                   <DetailItem label="Country" value={addressData?.country} />
                   <DetailItem label="District" value={addressData?.district} />
                 </Section>
-
                 <Section sectionKey="relations" title="Family Relations" data={defaultProfile.relations}>
                   <DetailItem label="Father Name" value={defaultProfile.relations?.fatherName} />
                   <DetailItem label="Mother Name" value={defaultProfile.relations?.motherName} />
@@ -689,14 +839,12 @@ function Profile() {
                   <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
                 </Section>
               </>
-            )}
           </div>
           
           {renderEditModal()}
         </div>
       )}
       
-      {/* Custom Styles */}
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -713,9 +861,17 @@ function Profile() {
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
         .animate-slideUp { animation: slideUp 0.4s ease-out; }
         .animate-slideIn { animation: slideIn 0.3s ease-out; }
+        .animate-spin-slow {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
       `}</style>
     </div>
   );
 }
+
 
 export default Profile;

@@ -22,9 +22,10 @@ import { Context } from "../HrmsContext";
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
- const { userData, setUserData } = useContext(Context);
+  const { userData, setUserData, theme, setTheme } = useContext(Context);
   const empId = userData?.employeeId;
 
+  // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
       await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
@@ -34,7 +35,22 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     } catch (error) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
-      localStorage.clear();
+      // ✅ Remove only login-related keys, NOT theme
+      const keysToRemove = [
+        "accessToken", 
+        "emppayload", 
+        "logedempid", 
+        "logedemprole"
+      ];
+      
+      // Remove specific keys only
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // ✅ DO NOT use localStorage.clear() - it removes theme too!
+      // localStorage.clear(); // ❌ This was the problem
+
       setUserData(null);
       if (onLogout) {
         onLogout();
@@ -66,7 +82,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   return (
     <>
       <div
-        className={`fixed inset-0  bg-opacity-100 z-[150] lg:hidden transition-opacity ${
+        className={`fixed inset-0 bg-opacity-100 z-[150] lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -76,14 +92,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } bg-white shadow-lg z-[160] transform transition-all duration-200 ease-in-out ${
+        } ${theme === 'dark' ? 'bg-black' : 'bg-white'} shadow-lg z-[160] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
           <div className="lg:hidden">
             <button
-              className="text-gray-600 hover:text-black"
+              className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-gray-600 hover:text-black'}`}
               onClick={() => setSidebarOpen(false)}
             >
               <X size={20} />
@@ -92,7 +108,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="bg-gray-100 border rounded-full p-1 hover:bg-gray-200 transition"
+              className={`border rounded-full p-1 transition ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 border-gray-600 hover:bg-gray-700 text-white' 
+                  : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
+              }`}
             >
               {collapsed ? (
                 <ChevronRight size={18} />
@@ -116,6 +136,8 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                 } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
                   isActive
                     ? "bg-blue-500 text-white font-semibold"
+                    : theme === 'dark'
+                    ? "text-white hover:bg-gray-800"
                     : "text-gray-700 hover:bg-blue-100"
                 }`}
               >
@@ -130,7 +152,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               onClick={handleLogoutClick}
               className={`flex items-center cursor-pointer ${
                 collapsed ? "justify-center" : "justify-start"
-              } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
+              } gap-3 px-4 py-2 rounded-md w-full text-left ${
+                theme === 'dark'
+                  ? 'text-red-400 hover:bg-gray-800'
+                  : 'text-red-600 hover:bg-red-50'
+              }`}
             >
               <LogOut size={18} />
               {!collapsed && <span>Log Out</span>}
