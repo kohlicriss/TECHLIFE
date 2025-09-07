@@ -29,8 +29,8 @@ const AddLeaveForm = ({ onClose }) => {
   const [toDate, setToDate] = useState(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm">
-      <div className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
@@ -38,21 +38,28 @@ const AddLeaveForm = ({ onClose }) => {
           &times;
         </button>
 
-        <h2 className="text-xl font-semibold mb-4 text-center border-b pb-4">Add Leave</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">
+          Request a Leave
+        </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Employee Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Employee Name
+            </label>
             <input
               type="text"
-              value=""
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              value="John Doe"
+              readOnly
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Leave Type</label>
-            <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            <label className="block text-sm font-medium text-gray-700">
+              Leave Type
+            </label>
+            <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
               <option>Select</option>
               <option>Sick Leave</option>
               <option>Casual Leave</option>
@@ -61,16 +68,22 @@ const AddLeaveForm = ({ onClose }) => {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">From</label>
+              <label className="block text-sm font-medium text-gray-700">
+                From
+              </label>
               <div className="relative mt-1">
                 <input
                   type="text"
                   readOnly
-                  value={fromDate ? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"}
+                  value={
+                    fromDate
+                      ? fromDate.toLocaleDateString("en-GB")
+                      : "dd-mm-yyyy"
+                  }
                   onClick={() => setShowFromCalendar(!showFromCalendar)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
                 />
                 {showFromCalendar && (
                   <Calendar
@@ -85,14 +98,18 @@ const AddLeaveForm = ({ onClose }) => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">To</label>
+              <label className="block text-sm font-medium text-gray-700">
+                To
+              </label>
               <div className="relative mt-1">
                 <input
                   type="text"
                   readOnly
-                  value={toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"}
+                  value={
+                    toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"
+                  }
                   onClick={() => setShowToCalendar(!showToCalendar)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
                 />
                 {showToCalendar && (
                   <Calendar
@@ -108,21 +125,30 @@ const AddLeaveForm = ({ onClose }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">No. of Days</label>
+              <label className="block text-sm font-medium text-gray-700">
+                No. of Days
+              </label>
               <input
                 readOnly
                 type="text"
                 value={
-                  fromDate && toDate ? `${Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1} Days` : "0 Days"
+                  fromDate && toDate
+                    ? `${
+                        Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +
+                        1
+                      } Days`
+                    : "0 Days"
                 }
                 className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Leave Duration</label>
-              <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+              <label className="block text-sm font-medium text-gray-700">
+                Leave Duration
+              </label>
+              <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                 <option>Select</option>
                 <option>Full Day</option>
                 <option>First Half Day</option>
@@ -132,7 +158,9 @@ const AddLeaveForm = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Remaining Days</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Remaining Days
+            </label>
             <input
               type="text"
               readOnly
@@ -142,10 +170,12 @@ const AddLeaveForm = ({ onClose }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Reason</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Reason
+            </label>
             <textarea
               rows="3"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             ></textarea>
           </div>
         </div>
@@ -153,11 +183,11 @@ const AddLeaveForm = ({ onClose }) => {
         <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
           <button
             onClick={onClose}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
           >
             Cancel
           </button>
-          <button className="rounded-md border border-transparent bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+          <button className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
             Add Leave
           </button>
         </div>
@@ -167,7 +197,11 @@ const AddLeaveForm = ({ onClose }) => {
 };
 
 // LeaveTypeCard component
-const LeaveTypeCard = ({ title, leaveData = { type: title, consumed: 0, remaining: 0, total: 0 }, color }) => {
+const LeaveTypeCard = ({
+  title,
+  leaveData = { type: title, consumed: 0, remaining: 0, total: 0 },
+  color,
+}) => {
   const isMobile = useMediaQuery("(max-width:500px)");
   const { type, consumed, remaining, total } = leaveData;
   const chartData = [
@@ -176,7 +210,7 @@ const LeaveTypeCard = ({ title, leaveData = { type: title, consumed: 0, remainin
   ];
   const COLORS = [color, "#E0E0E0"];
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
+    <div className="bg-white rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h1 className="text-xl font-bold mb-4 text-center text-gray-800">
         {title}
       </h1>
@@ -209,7 +243,7 @@ const LeaveTypeCard = ({ title, leaveData = { type: title, consumed: 0, remainin
               y="50%"
               textAnchor="middle"
               dominantBaseline="middle"
-              className="text-large font-semibold text-gray-700"
+              className="text-lg font-semibold text-gray-700"
             >
               {type.split(" ")[0]}
             </text>
@@ -250,16 +284,18 @@ const LeaveType = () => {
 
   useEffect(() => {
     axios
-      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`)
-      .then(response => {
-        const formatted = response.data.map(item => ({
-          name: item.leaveType, // Use a consistent key for Recharts
-          value: item.days, // Use a consistent key for Recharts
+      .get(
+        `http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`
+      )
+      .then((response) => {
+        const formatted = response.data.map((item) => ({
+          name: item.leaveType,
+          value: item.days,
         }));
         setInitialLeaveTypeData(formatted);
       })
-      .catch(error => {
-        console.error('Error fetching personal leave data:', error);
+      .catch((error) => {
+        console.error("Error fetching personal leave data:", error);
       })
       .finally(() => {
         setIsLoading(false);
@@ -280,11 +316,11 @@ const LeaveType = () => {
       </text>
     );
   };
-  const filteredData = initialLeaveTypeData.filter(item => item.value > 0); // Filter out zero values
+  const filteredData = initialLeaveTypeData.filter((item) => item.value > 0);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
-      <h2 className="text-xl font-bold mb-2 text-center text-gray-800">
+    <div className="bg-white rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
+      <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
         Leave Type Breakdown
       </h2>
       <Box
@@ -311,12 +347,13 @@ const LeaveType = () => {
                 dataKey="value"
                 paddingAngle={2}
                 labelLine={false}
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
                 {filteredData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Label content={renderCenterLabel} position="center" />
@@ -324,7 +361,9 @@ const LeaveType = () => {
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-gray-500 text-center w-full">No leave data available.</div>
+          <div className="text-gray-500 text-center w-full">
+            No leave data available.
+          </div>
         )}
       </Box>
     </div>
@@ -340,16 +379,18 @@ const WeeklyPattern = () => {
 
   useEffect(() => {
     axios
-      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`)
-      .then(response => {
-        const formatted = response.data.map(item => ({
+      .get(
+        `http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`
+      )
+      .then((response) => {
+        const formatted = response.data.map((item) => ({
           Day: item.day,
           Rate: item.rate,
         }));
         setRawData(formatted);
       })
-      .catch(error => {
-        console.error('Error fetching leaves bar chart data:', error);
+      .catch((error) => {
+        console.error("Error fetching leaves bar chart data:", error);
       })
       .finally(() => {
         setIsLoading(false);
@@ -364,8 +405,8 @@ const WeeklyPattern = () => {
   const dayOptions = ["All", ...new Set(rawData.map((d) => d.Day))];
 
   return (
-    <div className="bg-white shadow-lg rounded-xl p-4 h-full flex flex-col border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
-      <h1 className="text-xl font-bold mb-2 text-center text-gray-800">
+    <div className="bg-white shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
+      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">
         Weekly Leave Pattern
       </h1>
       <div className="mb-4 text-center">
@@ -373,7 +414,7 @@ const WeeklyPattern = () => {
         <select
           value={selectedDay}
           onChange={(e) => setSelectedDay(e.target.value)}
-          className="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+          className="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
         >
           {dayOptions.map((day) => (
             <option key={day} value={day}>
@@ -407,11 +448,13 @@ const WeeklyPattern = () => {
               />
               <YAxis hide />
               <Tooltip />
-              <Bar dataKey="Rate" fill="#4CAF50" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="Rate" fill="#4338CA" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-gray-500 text-center w-full">No weekly leave pattern data available.</div>
+          <div className="text-gray-500 text-center w-full">
+            No weekly leave pattern data available.
+          </div>
         )}
       </Box>
     </div>
@@ -435,7 +478,9 @@ const LeaveHistory = () => {
       setIsLoading(true);
       try {
         const response = await axios.get(
-          `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${currentPage - 1}&size=${apiPageSize}`
+          `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${
+            currentPage - 1
+          }&size=${apiPageSize}`
         );
         const newData = Array.isArray(response.data) ? response.data : [];
 
@@ -445,7 +490,7 @@ const LeaveHistory = () => {
           setHasMoreData(true);
         }
 
-        const formatted = newData.map(item => ({
+        const formatted = newData.map((item) => ({
           Leave_type: item.leave_type,
           Leave_On: item.leave_on,
           status: item.status,
@@ -456,7 +501,7 @@ const LeaveHistory = () => {
           Action: item.action,
         }));
 
-        setCurrentLeaveHistoryData(prevData => [...prevData, ...formatted]);
+        setCurrentLeaveHistoryData((prevData) => [...prevData, ...formatted]);
       } catch (error) {
         console.error("Failed to fetch leave data:", error);
       } finally {
@@ -493,12 +538,12 @@ const LeaveHistory = () => {
       case "Last Month":
         const lastMonth = new Date();
         lastMonth.setMonth(lastMonth.getMonth() - 1);
-        data = data.filter(item => new Date(item.Leave_On) >= lastMonth);
+        data = data.filter((item) => new Date(item.Leave_On) >= lastMonth);
         break;
       case "Last 7 Days":
         const last7Days = new Date();
         last7Days.setDate(last7Days.getDate() - 7);
-        data = data.filter(item => new Date(item.Leave_On) >= last7Days);
+        data = data.filter((item) => new Date(item.Leave_On) >= last7Days);
         break;
       case "Recently added":
       default:
@@ -511,7 +556,7 @@ const LeaveHistory = () => {
   const filteredAndSortedData = filterAndSortData();
 
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out">
+    <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Leave Requests History
       </h2>
@@ -523,7 +568,7 @@ const LeaveHistory = () => {
           <select
             value={leaveTypeFilter}
             onChange={(e) => setLeaveTypeFilter(e.target.value)}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
           >
             {leaveTypes.map((type) => (
               <option key={type} value={type}>
@@ -539,7 +584,7 @@ const LeaveHistory = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
           >
             {statuses.map((status) => (
               <option key={status} value={status}>
@@ -555,7 +600,7 @@ const LeaveHistory = () => {
           <select
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
           >
             {sortOptions.map((option) => (
               <option key={option} value={option}>
@@ -611,8 +656,8 @@ const LeaveHistory = () => {
                         row.status === "Approve"
                           ? "bg-green-500"
                           : row.status === "Reject"
-                            ? "bg-red-500"
-                            : "bg-blue-500"
+                          ? "bg-red-500"
+                          : "bg-blue-500"
                       }`}
                     >
                       {row.status}
@@ -626,7 +671,7 @@ const LeaveHistory = () => {
                       href={row.Details}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-lg"
+                      className="text-indigo-600 hover:text-indigo-800 text-lg"
                     >
                       📄
                     </a>
@@ -662,7 +707,7 @@ const LeaveHistory = () => {
       <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
         <nav className="flex items-center gap-2">
           <button
-            onClick={() => setCurrentPage(prev => prev + 1)}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
             disabled={!hasMoreData || isLoading}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -675,31 +720,31 @@ const LeaveHistory = () => {
 };
 
 // UserGreeting component
-const UserGreeting = ({ currentUser, handleRequestLeave }) => {
+const UserGreeting = ({ handleRequestLeave }) => {
   const { userData } = useContext(Context);
   return (
-    <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
+    <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mb-6">
       <div className="flex items-center space-x-4">
         <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
           <img
-            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+            src={userData?.avatar || "https://i.pravatar.cc/100"}
             alt="Profile"
-            className="w-20 h-20 object-cover"
+            className="w-full h-full object-cover"
           />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold flex items-center">
-            Welcome, {userData?.employeeId}, {userData?.fullName}
+          <h2 className="text-2xl font-bold flex items-center text-gray-900">
+            Welcome, {userData?.fullName}
           </h2>
           <p className="text-gray-500 mt-1">
-            You have <span className="font-bold text-red-500">10</span> Approved &{' '}
-            <span className="font-bold text-red-500">2</span> Rejected
+            You have <span className="font-bold text-green-600">10</span> Approved &{" "}
+            <span className="font-bold text-red-600">2</span> Rejected leaves.
           </p>
         </div>
       </div>
       <button
         onClick={handleRequestLeave}
-        className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+        className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
       >
         Request Leave
       </button>
@@ -708,7 +753,7 @@ const UserGreeting = ({ currentUser, handleRequestLeave }) => {
 };
 
 // LeavesDashboard component
-const LeavesDashboard = ({ isSidebarOpen }) => {
+const LeavesDashboard = () => {
   const [leaveSummaryData, setLeaveSummaryData] = useState([]);
   const { empID } = useParams();
   const { userData } = useContext(Context);
@@ -719,16 +764,18 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
 
   useEffect(() => {
     axios
-      .get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`)
-      .then(response => {
+      .get(
+        `http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`
+      )
+      .then((response) => {
         const typeMap = {
           Casual: "Casual Leave",
           Paid: "Paid Leave",
           Unpaid: "Unpaid Leave",
           sick: "Sick Leave",
-          Sick: "Sick Leave"
+          Sick: "Sick Leave",
         };
-        const formattedData = response.data.map(item => ({
+        const formattedData = response.data.map((item) => ({
           type: typeMap[item.type] || item.type,
           consumed: item.consumed,
           remaining: item.remaining,
@@ -736,16 +783,24 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
         }));
         setLeaveSummaryData(formattedData);
       })
-      .catch(error => {
-        console.error('Error fetching line chart data:', error);
+      .catch((error) => {
+        console.error("Error fetching line chart data:", error);
       });
   }, [empID]);
 
   const [showAddLeaveForm, setShowAddLeaveForm] = useState(false);
-  const casualLeaveQuota = leaveSummaryData.find(item => item.type === "Casual Leave");
-  const paidLeaveQuota = leaveSummaryData.find(item => item.type === "Paid Leave");
-  const sickLeaveQuota = leaveSummaryData.find(item => item.type === "Sick Leave");
-  const unpaidLeaveQuota = leaveSummaryData.find(item => item.type === "Unpaid Leave");
+  const casualLeaveQuota = leaveSummaryData.find(
+    (item) => item.type === "Casual Leave"
+  );
+  const paidLeaveQuota = leaveSummaryData.find(
+    (item) => item.type === "Paid Leave"
+  );
+  const sickLeaveQuota = leaveSummaryData.find(
+    (item) => item.type === "Sick Leave"
+  );
+  const unpaidLeaveQuota = leaveSummaryData.find(
+    (item) => item.type === "Unpaid Leave"
+  );
 
   const handleRequestLeave = () => {
     setShowAddLeaveForm(true);
@@ -762,12 +817,12 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 font-sans">
       {/* Sidebar Trigger Button */}
       {showSidebar && !sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-3 rounded-l-lg shadow-lg z-50 hover:bg-blue-700 transition-colors"
+          className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
           aria-label="Open Sidebar"
         >
           <ChevronLeft />
@@ -776,17 +831,17 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
 
       {/* Sidebar */}
       {showSidebar && sidebarOpen && (
-        <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-40 p-4 flex flex-col">
+        <div className="fixed inset-y-0 right-0 w-60 bg-white shadow-xl z-40 p-4 flex flex-col">
           <button
             onClick={() => setSidebarOpen(false)}
-            className="self-start mb-4 bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+            className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
             aria-label="Close Sidebar"
           >
             <ChevronRight />
           </button>
 
           <h3
-            className="text-lg font-bold text-gray-800 cursor-pointer mb-4"
+            className="text-lg font-bold text-gray-800 cursor-pointer mb-4 hover:bg-gray-100 p-2 rounded-md"
             onClick={handleShowReports}
           >
             Leaves Reports
@@ -794,35 +849,55 @@ const LeavesDashboard = ({ isSidebarOpen }) => {
         </div>
       )}
 
-      {showReport ? (
-        <LeavesReports onBack={handleGoBackToDashboard} />
-      ) : (
-        <>
-          <header className="p-3 mb-6 text-left">
-            <h1 className="text-4xl font-bold text-gray-900 mb-8">
-              Leaves Dashboard
-            </h1>
-            <UserGreeting handleRequestLeave={handleRequestLeave} />
-          </header>
+      <main
+        className={`transition-all duration-300 ease-in-out ${
+          sidebarOpen && showSidebar ? "mr-60" : "mr-0"
+        }`}
+      >
+        {showReport ? (
+          <LeavesReports onBack={handleGoBackToDashboard} />
+        ) : (
+          <>
+            <header className="p-3 mb-6 text-left">
+              <h1 className="text-4xl font-bold text-gray-900 mb-8">
+                Leaves Dashboard
+              </h1>
+              <UserGreeting handleRequestLeave={handleRequestLeave} />
+            </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
-            <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />
-            <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota} color="#FFC107" />
-            <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
-          </div>
-          <div className="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="">
-              <LeaveType />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <LeaveTypeCard
+                title="Casual Leave"
+                leaveData={casualLeaveQuota}
+                color="#4CAF50"
+              />
+              <LeaveTypeCard
+                title="Paid Leave"
+                leaveData={paidLeaveQuota}
+                color="#2196F3"
+              />
+              <LeaveTypeCard
+                title="Sick Leave"
+                leaveData={sickLeaveQuota}
+                color="#FFC107"
+              />
+              <LeaveTypeCard
+                title="Unpaid Leave"
+                leaveData={unpaidLeaveQuota}
+                color="#EF5350"
+              />
             </div>
-            <div className="">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <LeaveType />
               <WeeklyPattern />
             </div>
-          </div>
-          <LeaveHistory />
-          {showAddLeaveForm && <AddLeaveForm onClose={handleCloseForm} />}
-        </>
-      )}
+
+            <LeaveHistory />
+            {showAddLeaveForm && <AddLeaveForm onClose={handleCloseForm} />}
+          </>
+        )}
+      </main>
     </div>
   );
 };

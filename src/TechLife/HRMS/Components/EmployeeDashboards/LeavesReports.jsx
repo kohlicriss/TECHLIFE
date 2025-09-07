@@ -112,18 +112,17 @@ const Data = [
   }
 ];
 
-const ChartCard = ({ title, value, icon, color }) => {
+const ChartCard = ({ title,titlecolor, value, icon, color }) => {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-md flex items-center space-x-4 border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full">
-      <div
-        className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl relative z-10`}
+    <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center">
+      <div className={`w-20 h-20 flex items-center justify-center rounded-full mb-2 ${titlecolor.replace('text-')}-100`}
         style={{ backgroundColor: color }}
       >
-        {icon}
+       {React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}
       </div>
-      <div className="flex-1">
-        <h3 className="text-gray-500 text-sm font-medium">{title}</h3>
-        <p className="text-2xl font-bold text-gray-800">{value}</p>
+      <div>
+        <h3 className={`text-xl font-semibold ${titlecolor}`}>{title}</h3> 
+        <p className="text-3xl font-bold mt-2 text-gray-900">{value}</p> 
       </div>
     </div>
   );
@@ -131,27 +130,31 @@ const ChartCard = ({ title, value, icon, color }) => {
 
 const LeaveCharts = () => {
   return (
-    <div className="p-2 h-full">
+    <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 h-full flex flex-col justify-between">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
         {Data.map((data, index) => {
-          let icon, colorHandler;
+          let icon,titlecolor, colorHandler;
 
           switch (data.title) {
             case "Total Present":
               icon = <CircleUserRound className="w-8 h-8 text-white" />;
               colorHandler = "#34D399";
+              titlecolor="text-green-600";
               break;
             case "Paid Leaves":
               icon = <CircleUserRound className="w-8 h-8 text-white" />;
               colorHandler = "#EC4899";
+              titlecolor="text-pink-600";
               break;
             case "Unpaid Leaves":
               icon = <CircleUserRound className="w-8 h-8 text-white" />;
               colorHandler = "#FACC15";
+              titlecolor="text-yellow-600";
               break;
             case "Pending Request":
               icon = <CircleUserRound className="w-8 h-8 text-white" />;
               colorHandler = "#3B82F6";
+              titlecolor="text-blue-600";
               break;
             default:
               icon = <CircleUserRound className="w-8 h-8 text-white" />;
@@ -163,6 +166,7 @@ const LeaveCharts = () => {
               key={index}
               icon={icon}
               color={colorHandler}
+              titlecolor={titlecolor}
               value={data.value}
               title={data.title}
             />

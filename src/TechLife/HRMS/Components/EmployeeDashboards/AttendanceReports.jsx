@@ -21,11 +21,11 @@ const ChartData = [
   }
 ];
 
-const ChartCard = ({ title, titlecolor, icon, value,iconbgcolor }) => {
+const ChartCard = ({ title, titlecolor, icon, value,color }) => {
   return (
     <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 h-full flex flex-col items-center justify-center text-center">
-      <div className={`w-24 h-24 flex items-center justify-center rounded-full mb-2 ${titlecolor.replace('text-', 'bg-')}-100`}>
-        {React.cloneElement(icon, { className: `w-16 h-16 rounded-full ${iconbgcolor}` })}
+      <div className={`w-24 h-24 flex items-center justify-center rounded-full mb-2 ${titlecolor.replace('text-',)}-100`} style={{ backgroundColor: color }}>
+        {React.cloneElement(icon, { className: `w-16 h-16 rounded-full` })}
       </div>
       <div>
         <h3 className={`text-xl font-semibold ${titlecolor}`}>{title}</h3> 
@@ -40,26 +40,26 @@ const DashboardGrid = () => {
     <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 h-full flex flex-col justify-between">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
         {ChartData.map((chart, index) => {
-          let icon, titlecolor,iconbgcolor;
+          let icon, titlecolor,colorHandler;
 
           switch (chart.title) {
-            case "Total Working Days in Month":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;iconbgcolor="bg-orange-300";titlecolor = "text-orange-600";
+            case "Total Working Days in Month":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;colorHandler = "#F57D27";;titlecolor = "text-orange-600";
               break;
-            case "Total Leave Taken Today":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />; iconbgcolor="bg-blue-300";titlecolor = "text-blue-600";
+            case "Total Leave Taken Today":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;  colorHandler = "#27BEF5";titlecolor = "text-blue-600";
               break;
-            case "Total Holidays per Year":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />; iconbgcolor="bg-pink-300"; titlecolor = "text-pink-600";
+            case "Total Holidays per Year":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;  colorHandler = "#F527CC"; titlecolor = "text-pink-600";
               break;
-            case "Total Halfdays per Day":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />; iconbgcolor="bg-yellow-300"; titlecolor = "text-yellow-600";
+            case "Total Halfdays per Day":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;  colorHandler = "#F5F227"; titlecolor = "text-yellow-600";
               break;
             default:
-              icon = <ArrowPathIcon className="w-10 h-10 text-white" />; iconbgcolor="bg-gray-300"; titlecolor = "text-gray-500";
+              icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler="#D3D3D3"; titlecolor = "text-gray-500";
           }
 
           return (
             <ChartCard
               key={index}
               icon={icon}
-              iconbgcolor={iconbgcolor}
+              color={colorHandler}
               value={chart.value}
               title={chart.title}
               titlecolor={titlecolor}
