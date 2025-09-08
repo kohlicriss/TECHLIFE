@@ -113,7 +113,7 @@ window.addEventListener('storage', (event) => {
 
 export const tasksApi = createAxiosInstance('http://localhost:8090/api/a/employee');
 export const publicinfoApi = createAxiosInstance('http://localhost:8090/api');
-export const chatApi = createAxiosInstance('http://192.168.0.245:8082/api');
+export const chatApi = createAxiosInstance('http://192.168.0.245:8083/api');
 
 export const getChatOverview = async (employeeId, page = 0, size = 10) => {
   try {

@@ -266,6 +266,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [messagePages, setMessagePages] = useState({});
     const [hasMoreMessages, setHasMoreMessages] = useState({});
     const [isFetchingMoreMessages, setIsFetchingMoreMessages] = useState(false);
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+    const [newMessagesCount, setNewMessagesCount] = useState(0);
 
     const sidebarScrollRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -308,17 +310,37 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     const handleChatScroll = () => {
-        if (chatContainerRef.current) {
-            const { scrollTop } = chatContainerRef.current;
-            if (scrollTop === 0 && !isMessagesLoading && !isFetchingMoreMessages) {
-                const chatId = selectedChat.chatId;
-                if (hasMoreMessages[chatId] !== false) {
-                    const nextPage = (messagePages[chatId] || 0) + 1;
-                    setMessagePages(prev => ({ ...prev, [chatId]: nextPage }));
-                    loadMoreMessages(chatId, nextPage);
-                }
+        const container = chatContainerRef.current;
+        if (!container) return;
+
+        const { scrollTop, scrollHeight, clientHeight } = container;
+
+        if (scrollTop === 0 && !isMessagesLoading && !isFetchingMoreMessages) {
+            const chatId = selectedChat.chatId;
+            if (hasMoreMessages[chatId] !== false) {
+                const nextPage = (messagePages[chatId] || 0) + 1;
+                setMessagePages(prev => ({ ...prev, [chatId]: nextPage }));
+                loadMoreMessages(chatId, nextPage);
             }
         }
+
+        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 400;
+        if (isScrolledUp !== showScrollToBottom) {
+            setShowScrollToBottom(isScrolledUp);
+            if (!isScrolledUp) {
+                setNewMessagesCount(0);
+            }
+        }
+    };
+
+    const scrollToBottom = (behavior = 'smooth') => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: behavior
+            });
+        }
+        setNewMessagesCount(0);
     };
 
     useEffect(() => {
@@ -450,8 +472,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     }, [currentUser.id, selectedChat]);
 
     const onMessageReceived = useCallback((payload) => {
-        const parsedData = JSON.parse(payload.body);
+        const container = chatContainerRef.current;
+        const shouldScrollOnReceive = container
+            ? (container.scrollHeight - container.scrollTop - container.clientHeight) < 300
+            : true;
 
+        const parsedData = JSON.parse(payload.body);
         console.log("Received WebSocket Message:", parsedData);
 
         if (parsedData.type === 'STATUS_UPDATE') {
@@ -613,6 +639,10 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     newChatMessages.push(finalMessage);
                     finalMessageForUpdate = finalMessage;
                     messageProcessed = true;
+
+                    if (showScrollToBottom) {
+                        setNewMessagesCount(prevCount => prevCount + 1);
+                    }
                 }
             }
 
@@ -623,7 +653,11 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
             return prevMessages;
         });
-    }, [currentUser.id, updateLastMessage, selectedChat]);
+        const isIncoming = parsedData.sender !== currentUser.id && !parsedData.isEdited && !parsedData.isDeleted && parsedData.type !== 'deleted';
+        if (isIncoming && shouldScrollOnReceive) {
+            setTimeout(() => scrollToBottom('smooth'), 100);
+        }
+    }, [currentUser.id, updateLastMessage, selectedChat, showScrollToBottom]);
 
     const allChats = useMemo(() => [
         ...chatData.privateChatsWith.filter(user => user.chatId !== currentUser?.id),
@@ -669,13 +703,19 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     });
 
     useEffect(() => {
+        if (!isMessagesLoading && chatContainerRef.current) {
+            scrollToBottom('auto');
+        }
+    }, [isMessagesLoading, selectedChat]);
+
+    useEffect(() => {
         if (!currentUser?.id || !isChatDataReady) return;
 
         if (stompClient.current) {
             return;
         }
 
-        const brokerURL = `ws://192.168.0.245:8082/ws?employeeId=${currentUser.id}`;
+        const brokerURL = `ws://192.168.0.245:8083/ws?employeeId=${currentUser.id}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -822,12 +862,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     }, [selectedChat]);
 
     useEffect(() => {
-        if (chatContainerRef.current && !isFetchingOldMessages.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-    }, [messages, selectedChat]);
-
-    useEffect(() => {
         const fetchGroupData = async () => {
             if (!isGroupInfoModalOpen || !selectedChat || selectedChat.type !== 'group') {
                 return;
@@ -954,6 +988,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setMessage('');
         setShowEmojiPicker(false);
         setReplyingTo(null);
+        setTimeout(() => scrollToBottom('smooth'), 100);
     };
 
     const handleKeyDown = (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (editingInfo.index !== null) handleSaveEdit(); else handleSendMessage(); } };
@@ -1422,7 +1457,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full md:w-[70%] h-full flex flex-col bg-white md:rounded-lg shadow-xl ${isChatOpen ? 'flex' : 'hidden md:flex'}`}>
+                <div className={`w-full md:w-[70%] h-full flex flex-col bg-white md:rounded-lg shadow-xl relative ${isChatOpen ? 'flex' : 'hidden md:flex'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
@@ -1661,6 +1696,20 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         </>
                     )}
                 </div>
+                {showScrollToBottom && (
+                    <button
+                        onClick={() => scrollToBottom()}
+                        className="absolute bottom-24 right-8 z-10 bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
+                        aria-label="Scroll to bottom"
+                    >
+                        {newMessagesCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                {newMessagesCount > 9 ? '9+' : newMessagesCount}
+                            </span>
+                        )}
+                        <FaChevronDown size={20} />
+                    </button>
+                )}
             </div>
 
             {contextMenu.visible && (
