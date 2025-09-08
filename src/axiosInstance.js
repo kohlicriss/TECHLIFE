@@ -113,7 +113,6 @@ window.addEventListener('storage', (event) => {
  
 export const tasksApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
 export const publicinfoApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
-export const chatApi = createAxiosInstance('http://192.168.0.245:8082/api');
+export const chatApi = createAxiosInstance('http://192.168.0.245:8083/api');
 export const notificationsApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api/notification');
- 
  
