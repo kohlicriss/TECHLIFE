@@ -23,13 +23,13 @@ const ChartData = [
 
 const ChartCard = ({ title, titlecolor, icon, value,color }) => {
   return (
-    <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 h-full flex flex-col items-center justify-center text-center">
-      <div className={`w-24 h-24 flex items-center justify-center rounded-full mb-2 ${titlecolor.replace('text-',)}-100`} style={{ backgroundColor: color }}>
+    <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center">
+      <div className={`w-20 h-20 flex items-center justify-center rounded-full mb-2 ${titlecolor.replace('text-')}-100`} style={{ backgroundColor: color }}>
         {React.cloneElement(icon, { className: `w-16 h-16 rounded-full` })}
       </div>
       <div>
         <h3 className={`text-xl font-semibold ${titlecolor}`}>{title}</h3> 
-        <p className="text-5xl font-bold mt-2 text-gray-900">{value}</p> 
+        <p className="text-4xl font-bold mt-2 text-gray-900">{value}</p> 
       </div>
     </div>
   );

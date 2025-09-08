@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useContext, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
 import { Context } from "../HrmsContext";
 import {
     CalendarDaysIcon,
@@ -88,9 +88,9 @@ const TrendingDownIcon = ({ className }) => (
 const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod }) => {
     const isUp = trend === 'up';
     return (
-           <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 h-full flex flex-col items-center justify-center text-center">
+           <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300  h-full flex flex-col items-center justify-center text-center">
             <div className="flex justify-between items-start">
-                <div className={`rounded-full p-3 ${iconBgColor} ${iconTextColor}`}>{icon}</div>
+                <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2  p-3 ${iconBgColor} ${iconTextColor}`}>{React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}</div>
             </div>
             <div className="mt-4">
                 <p className="text-3xl font-bold text-gray-800">{value}</p>
@@ -206,7 +206,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                 <div className="flex flex-col items-center p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
                     <div className="flex items-center text-gray-500 mb-2">
                         <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Total Hours</span>
+                        <span className="text-sm font-medium">Total</span>
                     </div>
                     <span className="text-2xl sm:text-3xl font-bold text-gray-800">
                         {calculateMetrics?.totalWorkingHours || 'N/A'}
@@ -215,7 +215,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                 <div className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 shadow-sm">
                     <div className="flex items-center text-green-700 mb-2">
                         <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Productive Hours</span>
+                        <span className="text-sm font-medium">Productive</span>
                     </div>
                     <span className="text-2xl sm:text-3xl font-bold text-green-800">
                         {calculateMetrics?.productiveHours || 'N/A'}
@@ -224,7 +224,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                 <div className="flex flex-col items-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm">
                     <div className="flex items-center text-yellow-700 mb-2">
                         <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Break Hours</span>
+                        <span className="text-sm font-medium">Break</span>
                     </div>
                     <span className="text-2xl sm:text-3xl font-bold text-yellow-800">
                         {calculateMetrics?.breakHours || 'N/A'}
@@ -277,7 +277,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
     const rowsPerPageOptions = [10, 25, 50, 100];
-    const MONTHS = ["All", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
 
     // Data Fetching Effects
     useEffect(() => {
@@ -496,9 +496,9 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
           className="w-full h-full object-cover"
         />
       </div>
-      <div className="text-center">
+      <div className="text-center Times New Roman">
         <h2 className="text-2xl font-bold text-gray-900 leading-tight">
-          Welcome, {userData?.fullName}
+          Welcome, {userData?.fullName} ({userData?.roles?.[0] || ""})
         </h2>
         <p className="text-gray-500 mt-2 text-md">
           Attendance: <span className="font-bold text-green-600">100%</span>
@@ -566,7 +566,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
           <ClockIcon className="w-6 h-6 mr-3" /> Clock In
         </button>
       ) : (
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full justify-center">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-48 justify-center">
           {isLogoutConfirmed ? (
             <>
               <button
@@ -598,7 +598,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
 
                         {/* Stat Cards Grid */}
                         <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 h-full flex flex-col justify-between">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
                             {cardData.map((card, index) => {
                                 let icon, iconBgColor, iconTextColor;
                                 switch (card.description) {
