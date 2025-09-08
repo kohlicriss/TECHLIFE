@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
-import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload } from "react-icons/io5";
+import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload, IoTrashOutline } from "react-icons/io5";
 import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 const identityFields = {
     aadhaar: [
@@ -58,7 +58,6 @@ const identityFields = {
     ],
 };
 
-// Document type configurations with icons and colors (enhanced for dark mode)
 const documentConfig = {
     aadhaar: {
         icon: <IoDocumentText />,
@@ -127,15 +126,24 @@ const Document = () => {
     const [identityData, setIdentityData] = useState({});
     const [editingData, setEditingData] = useState({});
     const { empID } = useParams();
-    const { theme } = useContext(Context);
+    const location = useLocation();
+    const { theme, userData } = useContext(Context);
     const [loading, setLoading] = useState(true);
     const [errors, setErrors] = useState({});
     const [searchFilter, setSearchFilter] = useState('');
     const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
-    // ✅ ADD SPINNER STATE
     const [isUpdating, setIsUpdating] = useState(false);
 
-    // Validation Functions (keeping the same logic)
+    const searchParams = new URLSearchParams(location.search);
+    const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+    const targetEmployeeId = searchParams.get('targetEmployeeId');
+
+    const documentEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
+    
+    const isReadOnly = false;
+    
+    const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
+
     const validatePanData = (data) => {
         const errors = {};
         if (!data.panNumber) {
@@ -287,34 +295,30 @@ const Document = () => {
 
     const validateFormData = (subSection, data) => {
         switch (subSection) {
-            case 'pan':
-                return validatePanData(data);
-            case 'aadhaar':
-                return validateAadhaarData(data);
-            case 'drivingLicense':
-                return validateDrivingLicenseData(data);
-            case 'passport':
-                return validatePassportData(data);
-            case 'voter':
-                return validateVoterData(data);
-            default:
-                return {};
+            case 'pan': return validatePanData(data);
+            case 'aadhaar': return validateAadhaarData(data);
+            case 'drivingLicense': return validateDrivingLicenseData(data);
+            case 'passport': return validatePassportData(data);
+            case 'voter': return validateVoterData(data);
+            default: return {};
         }
     };
 
     useEffect(() => {
+        if (fromContextMenu && targetEmployeeId) {
+            console.log("clicked user from context", targetEmployeeId);
+        }
         const fetchIdentityData = async () => {
+            setLoading(true);
             try {
                 const identityPromises = [
-                    publicinfoApi.get(`employee/${empID}/aadhaar`).catch(err => { console.error("Failed to fetch Aadhaar details:", err); return { data: null }; }),
-                    publicinfoApi.get(`employee/${empID}/pan`).catch(err => { console.error("Failed to fetch PAN details:", err); return { data: null }; }),
-                    publicinfoApi.get(`employee/${empID}/driving`).catch(err => { console.error("Failed to fetch Driving License details:", err); return { data: null }; }),
-                    publicinfoApi.get(`employee/${empID}/passport`).catch(err => { console.error("Failed to fetch Passport details:", err); return { data: null }; }),
-                    publicinfoApi.get(`employee/${empID}/voter`).catch(err => { console.error("Failed to fetch Voter ID details:", err); return { data: null }; }),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/aadhaar`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/pan`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/driving`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/passport`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/voter`).catch(() => ({ data: null })),
                 ];
-
                 const [aadhaarRes, panRes, drivingRes, passportRes, voterRes] = await Promise.all(identityPromises);
-
                 const data = {
                     aadhaar: aadhaarRes.data,
                     pan: panRes.data,
@@ -322,25 +326,25 @@ const Document = () => {
                     passport: passportRes.data,
                     voter: voterRes.data,
                 };
-
                 setIdentityData(data);
-
                 const completed = Object.values(data).filter(Boolean).length;
                 setCompletionStats({ completed, total: 5 });
-
             } catch (err) {
                 console.error("Failed to fetch identity data:", err);
             } finally {
                 setLoading(false);
             }
         };
-
-        if (empID) {
+        if (documentEmployeeId) {
             fetchIdentityData();
         }
-    }, [empID]);
+    }, [documentEmployeeId, fromContextMenu, targetEmployeeId]);
 
     const openEditSection = (subSection) => {
+        if (isReadOnly) {
+            alert("You can only view this employee's documents. Editing is not allowed.");
+            return;
+        }
         setErrors({});
         const dataToEdit = identityData[subSection] || {};
         setEditingData(dataToEdit);
@@ -362,13 +366,13 @@ const Document = () => {
         setEditingData((prev) => ({ ...prev, [field]: file }));
     };
 
-    // ✅ UPDATED handleUpdate WITH SPINNER
     const handleUpdate = async (subSection) => {
-        setIsUpdating(true); // Start spinner
+        setIsUpdating(true);
         try {
             const validationErrors = validateFormData(subSection, editingData);
             if (Object.keys(validationErrors).length > 0) {
                 setErrors(validationErrors);
+                setIsUpdating(false);
                 return;
             }
 
@@ -377,75 +381,79 @@ const Document = () => {
             const formData = new FormData();
 
             const filePartNames = {
-                aadhaar: 'aadhaarImage', 
-                pan: 'panImage', 
-                drivingLicense: 'licenseImage',
-                passport: 'passportImage', 
-                voter: 'voterImage'
-            };
-
-            const dtoPartNames = {
-                aadhaar: 'aadhaar', 
-                pan: 'panDTO',
-                drivingLicense: 'drivingLicense',
-                passport: 'passportDetails', 
-                voter: 'voterDTO'
+                aadhaar: 'aadhaarImage', pan: 'panImage', drivingLicense: 'licenseImage',
+                passport: 'passportImage', voter: 'voterImage'
             };
 
             const fileInputNames = {
-                aadhaar: 'aadhaarImage',
-                pan: 'panImage',
-                drivingLicense: 'licenseImage',
-                passport: 'passportImage',
-                voter: 'uploadVoter'
+                aadhaar: 'aadhaarImage', pan: 'panImage', drivingLicense: 'licenseImage',
+                passport: 'passportImage', voter: 'uploadVoter'
             };
             
+            let backendDtoPartName;
+            switch (subSection) {
+                case 'pan':
+                    backendDtoPartName = (method === 'post') ? 'panDetails' : 'panDTO';
+                    break;
+                case 'voter':
+                    backendDtoPartName = (method === 'post') ? 'voterDetails' : 'voterDTO';
+                    break;
+                case 'aadhaar':
+                    backendDtoPartName = 'aadhaar';
+                    break;
+                case 'drivingLicense':
+                    backendDtoPartName = 'drivingLicense';
+                    break;
+                case 'passport':
+                    backendDtoPartName = 'passportDetails';
+                    break;
+                default:
+                    throw new Error("Invalid subsection for DTO part name");
+            }
+
             const fileInputField = fileInputNames[subSection];
             const file = editingData[fileInputField];
-            
             if (file && file instanceof File) {
-                const backendFilePartName = filePartNames[subSection];
-                formData.append(backendFilePartName, file);
+                formData.append(filePartNames[subSection], file);
             }
             
             const dto = { ...editingData };
             delete dto[fileInputField];
-
-            const backendDtoPartName = dtoPartNames[subSection];
             formData.append(backendDtoPartName, new Blob([JSON.stringify(dto)], { type: "application/json" }));
 
+            const updateEmployeeId = documentEmployeeId;
             let url;
-            switch(subSection) {
-                case 'aadhaar': url = `/employee/${method === 'put' ? `${empID}/aadhaar` : `aadhaar/${empID}`}`; break;
-                case 'pan': url = `/employee/${empID}/pan`; break;
-                case 'drivingLicense': url = `/employee/${method === 'put' ? `${empID}/driving` : `driving/license/${empID}`}`; break;
-                case 'passport': url = `/employee/${method === 'put' ? `${empID}/passport` : `passport/details/${empID}`}`; break;
-                case 'voter': url = `/employee/${empID}/voter`; break;
+            switch (subSection) {
+                case 'aadhaar': url = `/employee/${method === 'put' ? `${updateEmployeeId}/aadhaar` : `aadhaar/${updateEmployeeId}`}`; break;
+                case 'pan': url = `/employee/${updateEmployeeId}/pan`; break;
+                case 'drivingLicense': url = `/employee/${method === 'put' ? `${updateEmployeeId}/driving` : `driving/license/${updateEmployeeId}`}`; break;
+                case 'passport': url = `/employee/${method === 'put' ? `${updateEmployeeId}/passport` : `passport/details/${updateEmployeeId}`}`; break;
+                case 'voter': url = `/employee/${updateEmployeeId}/voter`; break;
                 default: throw new Error("Invalid subsection for URL");
             }
 
-            const response = await publicinfoApi[method](url, formData, {
+            await publicinfoApi[method](url, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            console.log(`Update for ${subSection} successful:`, response.data);
             setEditingSection(null);
             setErrors({});
 
             const getUrlKey = subSection === 'drivingLicense' ? 'driving' : subSection;
-            const updatedIdentityData = await publicinfoApi.get(`employee/${empID}/${getUrlKey}`);
-            setIdentityData(prev => ({...prev, [subSection]: updatedIdentityData.data}));
-            
-            const newData = {...identityData, [subSection]: updatedIdentityData.data};
-            const completed = Object.values(newData).filter(Boolean).length;
-            setCompletionStats({ completed, total: 5 });
+            const updatedIdentityData = await publicinfoApi.get(`employee/${documentEmployeeId}/${getUrlKey}`);
+            setIdentityData(prev => {
+                const newData = { ...prev, [subSection]: updatedIdentityData.data };
+                const completed = Object.values(newData).filter(Boolean).length;
+                setCompletionStats({ completed, total: 5 });
+                return newData;
+            });
 
         } catch (error) {
             console.error(`Update for ${subSection} failed:`, error);
             if (error.response) {
                 const { status, data } = error.response;
                 if (status === 400) {
-                     if (data && typeof data === 'object' && !data.timestamp) {
+                    if (data && typeof data === 'object' && !data.timestamp) {
                         setErrors(data);
                     } else {
                         const message = (data && data.message) ? data.message : "Validation failed. Please check your input.";
@@ -458,11 +466,37 @@ const Document = () => {
                 setErrors({ general: "Network error. Please check your internet connection." });
             }
         } finally {
-            setIsUpdating(false); // Stop spinner
+            setIsUpdating(false);
         }
     };
 
-    // Skeleton Loading Component
+    const handleDelete = async (subSectionKey) => {
+        const docTitle = documentConfig[subSectionKey].title;
+        if (!window.confirm(`Are you sure you want to delete the ${docTitle} for employee ${documentEmployeeId}? This action cannot be undone.`)) {
+            return;
+        }
+        try {
+            let urlKey = subSectionKey;
+            if (subSectionKey === 'drivingLicense') {
+                urlKey = 'driving';
+            }
+            const url = `employee/${documentEmployeeId}/${urlKey}`;
+            
+            await publicinfoApi.delete(url);
+
+            alert(`${docTitle} deleted successfully.`);
+            setIdentityData(prev => {
+                const updatedData = { ...prev, [subSectionKey]: null };
+                const completed = Object.values(updatedData).filter(Boolean).length;
+                setCompletionStats({ completed, total: 5 });
+                return updatedData;
+            });
+        } catch (err) {
+            console.error(`Failed to delete ${docTitle}:`, err);
+            alert(`Error deleting ${docTitle}. You may not have the required permissions.`);
+        }
+    };
+
     const SkeletonCard = () => (
         <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
             theme === 'dark' 
@@ -666,7 +700,6 @@ const Document = () => {
         );
     };
 
-    // ✅ UPDATED renderEditModal WITH SPINNER
     const renderEditModal = () => {
         if (!editingSection) return null;
         const { subSection } = editingSection;
@@ -716,7 +749,6 @@ const Document = () => {
                         </form>
                     </div>
                     
-                    {/* ✅ UPDATED FOOTER WITH SPINNER */}
                     <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
                         theme === 'dark' 
                             ? 'bg-gray-700 border-gray-600' 
@@ -738,9 +770,9 @@ const Document = () => {
                             onClick={() => handleUpdate(subSection)}
                             disabled={isUpdating}
                             className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
-                                       hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                                       focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
-                                       ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
+                                            hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                                            focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                                            ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
                         >
                             {isUpdating ? (
                                 <>
@@ -814,7 +846,7 @@ const Document = () => {
         </div>
     );
 
-    const IdentitySubSection = ({ title, data, onEdit, subSectionKey }) => {
+    const IdentitySubSection = ({ title, data, onEdit, subSectionKey, onDelete, isAdmin }) => {
         const config = documentConfig[subSectionKey];
         const hasData = !!data;
         return (
@@ -851,25 +883,44 @@ const Document = () => {
                                 }`}>{config.description}</p>
                             </div>
                         </div>
-                        <button onClick={() => onEdit(subSectionKey)} className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg ${
-                            hasData 
-                                ? theme === 'dark'
-                                    ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
-                                    : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
-                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
-                        }`}>
-                            {hasData ? (
-                                <>
-                                    <IoDocumentText className="w-4 h-4" />
-                                    <span>Edit Details</span>
-                                </>
-                            ) : (
-                                <>
-                                    <IoAdd className="w-4 h-4" />
-                                    <span>Add Document</span>
-                                </>
+
+                        <div className="flex items-center space-x-2">
+                           {fromContextMenu && isAdmin && hasData && (
+                                <button
+                                    onClick={() => onDelete(subSectionKey)}
+                                    className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg ${
+                                        theme === 'dark'
+                                            ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
+                                            : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
+                                    }`}
+                                >
+                                    <IoTrashOutline className="w-4 h-4" />
+                                    <span>Delete</span>
+                                </button>
                             )}
-                        </button>
+
+                            {!isReadOnly && (
+                                <button onClick={() => onEdit(subSectionKey)} className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg ${
+                                    hasData
+                                        ? theme === 'dark'
+                                            ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
+                                            : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
+                                        : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                                    }`}>
+                                    {hasData ? (
+                                        <>
+                                            <IoDocumentText className="w-4 h-4" />
+                                            <span>Edit Details</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <IoAdd className="w-4 h-4" />
+                                            <span>Add Document</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="p-8">
@@ -897,11 +948,18 @@ const Document = () => {
                             }`}>No {title} Added</h3>
                             <p className={`text-sm mb-6 max-w-sm mx-auto ${
                                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                            }`}>Add your {title.toLowerCase()} information to complete your profile and enhance security.</p>
-                            <button onClick={() => onEdit(subSectionKey)} className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
-                                <IoAdd className="w-4 h-4" />
-                                <span>Add {title}</span>
-                            </button>
+                            }`}>
+                                {isReadOnly
+                                    ? `This employee hasn't added their ${title.toLowerCase()} information yet.`
+                                    : `Add your ${title.toLowerCase()} information to complete your profile and enhance security.`
+                                }
+                            </p>
+                            {!isReadOnly && (
+                                <button onClick={() => onEdit(subSectionKey)} className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
+                                    <IoAdd className="w-4 h-4" />
+                                    <span>Add {title}</span>
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -920,7 +978,9 @@ const Document = () => {
                 <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-lg font-bold ${
                         theme === 'dark' ? 'text-white' : 'text-gray-800'
-                    }`}>Profile Completion</h3>
+                    }`}>
+                        {isReadOnly ? 'Document Status' : 'Profile Completion'}
+                    </h3>
                     <span className={`text-sm font-medium ${
                         theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                     }`}>{completionStats.completed}/{completionStats.total} Documents</span>
@@ -965,10 +1025,10 @@ const Document = () => {
                         </div>
                         <h2 className={`text-2xl font-bold mb-2 ${
                             theme === 'dark' ? 'text-white' : 'text-gray-800'
-                        }`}>Loading Your Documents</h2>
+                        }`}>Loading Documents</h2>
                         <p className={`${
                             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                        }`}>Fetching your identity information securely...</p>
+                        }`}>Fetching identity information securely...</p>
                         <div className="flex justify-center space-x-2 mt-4">
                             {[...Array(5)].map((_, i) => (
                                 <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} style={{ animationDelay: `${i * 0.2}s` }}></div>
@@ -978,6 +1038,25 @@ const Document = () => {
                 </div>
             ) : (
                 <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+                    {fromContextMenu && (
+                        <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+                            theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
+                        }`}>
+                            <div className="flex items-center space-x-3">
+                                <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                                <div>
+                                    <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+                                        Viewing Employee Documents
+                                    </p>
+                                    <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                                        Employee ID: {targetEmployeeId} 
+                                        {isReadOnly && " • Read-only access"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
                         <div className="lg:col-span-2">
                             <ProgressIndicator />
@@ -1015,7 +1094,9 @@ const Document = () => {
                                 title={documentConfig[key].title} 
                                 data={identityData[key]} 
                                 onEdit={openEditSection} 
-                                subSectionKey={key} 
+                                subSectionKey={key}
+                                onDelete={handleDelete}
+                                isAdmin={isAdmin}
                             />
                         ))}
                         {filteredSections.length === 0 && searchFilter && (
@@ -1043,7 +1124,6 @@ const Document = () => {
                 </div>
             )}
             
-            {/* ✅ ADDED SPINNER CSS ANIMATION */}
             <style jsx>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

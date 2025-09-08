@@ -1,5 +1,7 @@
+// src/TechLife/HRMS/Components/Profile/tabs/Job.jsx
+
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { Context } from '../../HrmsContext';
 import { publicinfoApi } from '../../../../../axiosInstance';
 import { 
@@ -9,8 +11,7 @@ import {
   IoBusinessOutline, 
   IoCheckmarkCircle, 
   IoWarning,
-  IoCalendarOutline,
-  IoPersonOutline
+  IoEye
 } from 'react-icons/io5';
 
 
@@ -156,7 +157,6 @@ const DetailItem = ({ label, value, note, status, theme }) => (
 );
 
 
-// Enhanced Section component
 const Section = ({ sectionKey, title, data, children, theme }) => {
   const config = sectionConfig[sectionKey];
   const IconComponent = config.icon;
@@ -169,7 +169,6 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
         ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
         : `bg-white ${config.borderColor}`
     }`}>
-      {/* Card Header */}
       <div className={`px-8 py-6 border-b-2 relative overflow-hidden ${
         theme === 'dark'
           ? `${config.darkBgColor} ${config.darkBorderColor}`
@@ -207,7 +206,6 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
         </div>
       </div>
       
-      {/* Card Content */}
       <div className="p-8">
         {hasData ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
@@ -248,7 +246,6 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
 };
 
 
-// Progress Indicator Component
 const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
   const percentage = (completedSections / totalSections) * 100;
   
@@ -290,7 +287,6 @@ const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
 };
 
 
-// Skeleton Loading Component
 const SkeletonCard = ({ theme }) => (
   <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
     theme === 'dark' 
@@ -336,7 +332,6 @@ const SkeletonCard = ({ theme }) => (
 );
 
 
-// Enhanced Toggle Switch Component
 const AttendanceToggle = ({ theme }) => {
   const [isDisabled, setIsDisabled] = useState(false);
   
@@ -404,18 +399,24 @@ const AttendanceToggle = ({ theme }) => {
 
 const Job = () => {
   const { empID } = useParams();
+  const location = useLocation();
   const { theme } = useContext(Context);
   const [jobdetails, setJobDetails] = useState(null);
   const [displayJobDetails, setDisplayJobDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 4 });
 
+  const searchParams = new URLSearchParams(location.search);
+  const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+  const targetEmployeeId = searchParams.get('targetEmployeeId');
 
-  // Fetch job details from the API
+  const jobEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
+  const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID;
+
   useEffect(() => {
     let jobDetailsFetch = async () => {
       try {
-        let response = await publicinfoApi.get(`employee/${empID}/job/details`);
+        let response = await publicinfoApi.get(`employee/${jobEmployeeId}/job/details`);
         console.log("job data : ", response.data);
         setJobDetails(response.data);
       } catch (error) {
@@ -425,10 +426,9 @@ const Job = () => {
       }
     };
     jobDetailsFetch();
-  }, [empID]);
+  }, [jobEmployeeId]);
 
 
-  // Format the fetched data for display
   useEffect(() => {
     if (jobdetails) {
       const formattedData = [
@@ -453,8 +453,6 @@ const Job = () => {
       ];
       setDisplayJobDetails(formattedData);
 
-
-      // Calculate completion stats
       const sections = [jobdetails, employeeTime, otherPolicies, organizationDetails];
       const completed = sections.filter(section => section && section.length > 0).length;
       setCompletionStats({ completed: completed || 1, total: 4 });
@@ -483,12 +481,6 @@ const Job = () => {
             <p className={`${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
             }`}>Fetching employment details and policies...</p>
-            <div className="flex justify-center space-x-2 mt-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} 
-                     style={{ animationDelay: `${i * 0.2}s` }}></div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
@@ -515,7 +507,7 @@ const Job = () => {
             }`}>Unable to Load Job Details</h2>
             <p className={`${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-            }`}>Job information is not available or there was an error loading the data.</p>
+            }`}>Job information is not available for this employee.</p>
           </div>
         </div>
       </div>
@@ -530,7 +522,25 @@ const Job = () => {
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
       <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
-        {/* Progress Section */}
+        {fromContextMenu && (
+          <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+            theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
+          }`}>
+            <div className="flex items-center space-x-3">
+              <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+              <div>
+                <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+                  Viewing Employee Job Details
+                </p>
+                <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                  Employee ID: {targetEmployeeId} 
+                  {isReadOnly && " • Read-only access"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-12">
           <ProgressIndicator 
             completedSections={completionStats.completed} 
@@ -539,47 +549,17 @@ const Job = () => {
           />
         </div>
 
-
-        {/* Job Sections */}
         <div className="space-y-8">
-          {isLoading ? (
-            [...Array(4)].map((_, i) => <SkeletonCard key={i} theme={theme} />)
-          ) : (
             <>
               <Section sectionKey="jobDetails" title="Job Details" data={displayJobDetails} theme={theme} />
-
-
               <Section sectionKey="employeeTime" title="Employee Time" data={employeeTime} theme={theme}>
                 <AttendanceToggle theme={theme} />
               </Section>
-
-
               <Section sectionKey="otherPolicies" title="Other Policies" data={otherPolicies} theme={theme} />
               <Section sectionKey="organizationDetails" title="Organization Details" data={organizationDetails} theme={theme} />
             </>
-          )}
         </div>
       </div>
-
-
-      {/* Custom Styles */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideIn {
-          from { transform: translateX(-10px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-        .animate-slideUp { animation: slideUp 0.4s ease-out; }
-        .animate-slideIn { animation: slideIn 0.3s ease-out; }
-      `}</style>
     </div>
   );
 };

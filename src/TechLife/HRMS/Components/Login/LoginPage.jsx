@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
 import logo from "../assets/anasol-logo.png"
+import { Context } from "../HrmsContext";
 const MAX_ATTEMPTS_PHASE1 = 5;
 const MAX_ATTEMPTS_PHASE2 = 7;
 const LOCKOUT_DURATION_PHASE1 = 60;
@@ -28,7 +29,7 @@ const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
 
   // Mocking the context to make the component runnable
-  const [theme, setTheme] = useState("light");
+  const {theme, setTheme} = useContext(Context);
   const setUserData = (data) => console.log('Mock setUserData:', data);
   const setAccessToken = (token) => console.log('Mock setAccessToken:', token);
 
@@ -394,14 +395,14 @@ const LoginPage = ({ onLogin }) => {
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black' 
         : 'bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100'
     }`}>
-{/*     
-      <div className="fixed top-6 right-6 z-50">
+    
+      {/* <div className="fixed top-6 right-6 z-50">
         <DarkModeToggle 
           isDark={theme === 'dark'} 
           onToggle={handleThemeToggle}
         />
-      </div>
-      */}
+      </div> */}
+     
 
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob ${
