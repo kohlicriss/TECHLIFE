@@ -1,33 +1,43 @@
-import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, LayoutDashboard } from "lucide-react";
+import { useEffect, useRef, useState, useContext } from "react";
+import { CheckCircle2, LayoutDashboard, Ticket } from "lucide-react";
 import Filters from "./Filters";
 import TicketCard from "./TicketCard";
 import TicketModal from "./TicketModal";
 import TicketStats from "./TicketStats";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
-import { Ticket } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
-const PER_PAGE = 1000;
+import { useNavigate, useParams } from "react-router-dom";
+import { Context } from "../HrmsContext";
+import { ticketsApi } from "../../../../axiosInstance";
 
 export default function TicketDashboard() {
+  const { userData } = useContext(Context);
+  const { empID } = useParams();
   const [tickets, setTickets] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [dateFilter, setDateFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [replyText, setReplyText] = useState("");
   const [newStatus, setNewStatus] = useState("Pending");
   const [error, setError] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const wsRef = useRef(null);
   const repliedBy = "admin";
   const navigate = useNavigate();
-  const loader = useRef(null);
 
-  const [messages, setMessages] = useState([]);
+  // ✅ Normalize role
+  const rawRole = Array.isArray(userData?.roles)
+    ? userData.roles[0]
+    : userData?.roles || "";
+  const normalizedRole =
+    typeof rawRole === "string"
+      ? rawRole.toUpperCase().startsWith("ROLE_")
+        ? rawRole.toUpperCase()
+        : "ROLE_" + rawRole.toUpperCase()
+      : "";
 
   const statusIcons = {
     all: <LayoutDashboard size={20} />,
@@ -41,27 +51,28 @@ export default function TicketDashboard() {
 
   const statuses = Object.keys(statusIcons);
 
-const fetchTickets = async (page, size, reset = false) => {
-  try {
-    const res = await fetch(
-      `http://192.168.0.246:8080/api/admin/tickets?page=${page}&size=${size}`
-    );
-    if (!res.ok) throw new Error("Failed to fetch");
-    const data = await res.json();
+  // ✅ Fetch tickets
+  const fetchTickets = async () => {
+    try {
+      if (!normalizedRole || !empID) {
+        throw new Error("Missing role or employee ID");
+      }
 
-    const newTickets = data.content ? data.content : data;
+      const res = await ticketsApi.get(
+        `admin/tickets/role/${normalizedRole}/${empID}`
+      );
 
-    setTickets((prev) => (reset ? newTickets : [...prev, ...newTickets]));
-    setHasMore(!(data.last ?? true));
-  } catch (err) {
-    console.error(err);
-    setError("Failed to load tickets");
-  }
-};
+      setTickets(res.data || []);
+      console.log("Fetched tickets:", res.data);
+    } catch (err) {
+      console.error("Error fetching tickets:", err);
+      setError("Failed to load tickets");
+    }
+  };
 
-
+  // ✅ WebSocket
   const connectWebSocket = () => {
-    const socket = new WebSocket(`ws://192.168.0.246:8080/ws-ticket`);
+    const socket = new WebSocket(`ws://192.168.0.247:8088/ws-ticket`);
     socket.onopen = () => console.log("✅ WebSocket connected");
 
     socket.onmessage = (event) => {
@@ -79,10 +90,11 @@ const fetchTickets = async (page, size, reset = false) => {
     wsRef.current = socket;
   };
 
+  // ✅ Update replies in UI
   const updateTicketReplies = (replyDTO) => {
     setTickets((prev) =>
       prev.map((ticket) =>
-        ticket.id === replyDTO.ticketId
+        ticket.ticketId === replyDTO.ticketId
           ? {
               ...ticket,
               replies: [...(ticket.replies || []), replyDTO],
@@ -92,7 +104,7 @@ const fetchTickets = async (page, size, reset = false) => {
       )
     );
 
-    if (selectedTicket?.id === replyDTO.ticketId) {
+    if (selectedTicket?.ticketId === replyDTO.ticketId) {
       setSelectedTicket((prev) => ({
         ...prev,
         replies: [...(prev.replies || []), replyDTO],
@@ -101,7 +113,6 @@ const fetchTickets = async (page, size, reset = false) => {
     }
   };
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed((prev) => !prev);
 
   const handleReply = async () => {
@@ -119,7 +130,7 @@ const fetchTickets = async (page, size, reset = false) => {
 
     try {
       await fetch(
-        `http://192.168.0.246:8080/api/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `http://192.168.0.247:8088/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -154,7 +165,7 @@ const fetchTickets = async (page, size, reset = false) => {
 
     try {
       await fetch(
-        `http://192.168.0.246:8080/api/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `http://192.168.0.247:8088/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -166,87 +177,63 @@ const fetchTickets = async (page, size, reset = false) => {
     }
   };
 
-const applyDateFilter = (ticket) => {
-  if (dateFilter === "All") return true;
+  const applyDateFilter = (ticket) => {
+    if (dateFilter === "All") return true;
 
-  const now = new Date();
-  const created = ticket.sentAt ? new Date(ticket.sentAt) : null;
-  if (!created || isNaN(created)) return false;
+    const now = new Date();
+    const created = ticket.sentAt ? new Date(ticket.sentAt) : null;
+    if (!created || isNaN(created)) return false;
 
+    const daysDiff = (now - created) / (1000 * 60 * 60 * 24);
 
-  const daysDiff = (now - created) / (1000 * 60 * 60 * 24);
+    if (dateFilter === "Today") {
+      return (
+        created.getDate() === now.getDate() &&
+        created.getMonth() === now.getMonth() &&
+        created.getFullYear() === now.getFullYear()
+      );
+    }
+    if (dateFilter === "Last 7 days") return daysDiff <= 7;
+    if (dateFilter === "Last 30 days") return daysDiff <= 30;
 
-  if (dateFilter === "Today") {
-    return (
-      created.getDate() === now.getDate() &&
-      created.getMonth() === now.getMonth() &&
-      created.getFullYear() === now.getFullYear()
-    );
-  }
-  if (dateFilter === "Last 7 days") return daysDiff <= 7;
-  if (dateFilter === "Last 30 days") return daysDiff <= 30;
-
-  return true;
-};
+    return true;
+  };
 
   const filtered = tickets
-  .filter(
-    (t) => filterStatus === "all" || t.status?.toLowerCase() === filterStatus
-  )
-  .filter(applyDateFilter)
-  .filter((t) => {
-    const term = searchTerm.toLowerCase();
-    if (!term) return true;
-    return (
-      t.employeeName?.toLowerCase().includes(term) ||
-      String(t.employeeId || "").toLowerCase().includes(term) ||
-      t.priority?.toLowerCase().includes(term) ||
-      t.title?.toLowerCase().includes(term) ||
-      t.status?.toLowerCase().includes(term)
-    );
-  })
-  
-  .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
-
+    .filter(
+      (t) => filterStatus === "all" || t.status?.toLowerCase() === filterStatus
+    )
+    .filter(applyDateFilter)
+    .filter((t) => {
+      const term = searchTerm.toLowerCase();
+      if (!term) return true;
+      return (
+        t.employeeName?.toLowerCase().includes(term) ||
+        String(t.employeeId || "").toLowerCase().includes(term) ||
+        t.priority?.toLowerCase().includes(term) ||
+        t.title?.toLowerCase().includes(term) ||
+        t.status?.toLowerCase().includes(term)
+      );
+    })
+    .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
 
   const sidebarItems = [{ tab: "My Tickets", icon: Ticket }];
 
   const handleTabClick = (tab) => {
     if (tab === "My Tickets") {
-      navigate("/tickets/employee/:empID");
+      navigate(`/tickets/employee/${empID}`);
     }
   };
 
- 
- useEffect(() => {
-  fetchTickets(page, PER_PAGE, page === 0); // reset tickets if page=0
-}, [page]);
-
+  // ✅ Load tickets and connect WebSocket
+  useEffect(() => {
+    fetchTickets();
+  }, [normalizedRole, empID]);
 
   useEffect(() => {
     connectWebSocket();
     return () => wsRef.current?.close();
   }, []);
-
-  // Infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prev) => prev + 1);
-        }
-      },
-      { threshold: 1 }
-    );
-
-    if (loader.current) {
-      observer.observe(loader.current);
-    }
-
-    return () => {
-      if (loader.current) observer.unobserve(loader.current);
-    };
-  }, [hasMore]);
 
   return (
     <div className="flex flex-row min-h-screen bg-gray-50">
@@ -275,7 +262,7 @@ const applyDateFilter = (ticket) => {
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((t) => (
               <TicketCard
-                key={t.id}
+                key={t.ticketId}
                 {...t}
                 onClick={() => {
                   setSelectedTicket(t);
@@ -284,13 +271,6 @@ const applyDateFilter = (ticket) => {
               />
             ))}
           </div>
-
-          {/* Infinite Scroll Loader */}
-          {hasMore && (
-            <div ref={loader} className="text-center py-4">
-              Loading more...
-            </div>
-          )}
         </div>
 
         {selectedTicket && (
@@ -302,7 +282,19 @@ const applyDateFilter = (ticket) => {
             setReplyText={setReplyText}
             newStatus={newStatus}
             setNewStatus={setNewStatus}
-            onStatusChange={handleStatusChange}
+            onStatusUpdate={(updatedTicket) => {
+              setTickets((prev) =>
+                prev.map((t) =>
+                  t.ticketId === updatedTicket.ticketId
+                    ? { ...t, status: updatedTicket.status }
+                    : t
+                )
+              );
+
+              setSelectedTicket((prev) =>
+                prev ? { ...prev, status: updatedTicket.status } : prev
+              );
+            }}
           />
         )}
       </main>
@@ -341,12 +333,8 @@ const applyDateFilter = (ticket) => {
                 }
                 ${isSidebarCollapsed ? "justify-center" : ""}`}
               onClick={() => {
-  setFilterStatus(status);
-  setPage(0);
-  setTickets([]); // 🔥 clear tickets
-  fetchTickets(0, PER_PAGE, true); // 🔥 fetch fresh tickets
-}}
-
+                setFilterStatus(status);
+              }}
               whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
             >
               {statusIcons[status]}

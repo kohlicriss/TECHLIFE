@@ -12,6 +12,7 @@ import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
+// import Emloyees from "./Teams/Employees/Employees";
  
 // Lazy loading components
 const NotificationSystem = lazy(() => import("./Notifications/NotificationSystem"));
@@ -138,8 +139,9 @@ const HrmsApp = () => {
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
                                 <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                                 <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
-                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
-                                <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
+                                <Route path="/tickets/role/:role/:empID" element={<ProtectedRoute><Tickets /></ProtectedRoute>} /> 
+                               <Route path="/tickets/employee/:empID" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
+                                 {/* <Route path="/tickets/:empID/:role" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} /> */}
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
                                 <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                             </Route>

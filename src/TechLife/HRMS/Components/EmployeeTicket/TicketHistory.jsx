@@ -20,7 +20,8 @@ export default function TicketHistory({ tickets, onTicketClick }) {
           <p><strong>Title:</strong> {ticket.title}</p>
           <p><strong>Submitted:</strong> {ticket.sentAt}</p>
           <p><strong>status:</strong> {ticket.status}</p>
-          <p><strong>description</strong> {ticket.description}</p>
+          <p><strong>description :</strong> {ticket.description}</p>
+            <p><strong>assigned to :</strong> {ticket.roles}</p>
         </div>
       ))}
     </div>

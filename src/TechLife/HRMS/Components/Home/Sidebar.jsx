@@ -23,10 +23,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const location = useLocation();
  const { userData, setUserData } = useContext(Context);
   const empId = userData?.employeeId;
+// Sidebar.jsx
+const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
+const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUpperCase() : "";
+
  
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://192.168.0.109:8080/api/auth/logout", {
+      await fetch("http://hrms.anasolconsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -63,7 +67,16 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     },
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
-    { name: "Tickets", icon: <TicketCheck size={18} />, path: "/tickets" },
+   { name: "Tickets", icon: <TicketCheck size={18} />, path: empId? `/tickets/employee/${empId}` : "/tickets" },
+//       {
+//   name: "Tickets",
+//   icon: <TicketCheck size={18} />,
+//   path:
+//     normalizedRole === "EMPLOYEE"
+//       ? (empId ? `/tickets/employee/${empId}` : "/tickets")
+//       : "/tickets", // Admin/HR/Manager see global tickets
+// }
+
   ];
  
   return (

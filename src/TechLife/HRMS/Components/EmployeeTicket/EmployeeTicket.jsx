@@ -7,6 +7,7 @@ import IssueForm from '../EmployeeTicket/IssueForm';
 import ChatBox from '../EmployeeTicket/ChatBox';
 import TicketHistory from '../EmployeeTicket/TicketHistory';
 import { Context } from '../HrmsContext';
+import axios from "axios";
 
 export default function EmployeeTicket() {
   const [view, setView] = useState('history');
@@ -19,75 +20,126 @@ export default function EmployeeTicket() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('My Tickets');
-  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const { empID } = useParams();
-  const { userData } = useContext(Context); // logged-in user info
+  const { userData } = useContext(Context);
 
-  // Sidebar items with role-based visibility
-  const sidebarItems = [
-    { tab: "My Tickets", icon: Ticket },
-    { tab: "Assigned Tickets", icon: Ticket}
-  ];
+  
+  const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
+  let normalizedRole = "";
+  if (typeof role === "string") {
+    normalizedRole = role.toUpperCase().startsWith("ROLE_")
+      ? role.toUpperCase()
+      : "ROLE_" + role.toUpperCase();
+  }
+
+  const token = localStorage.getItem("accessToken");
+
+const sidebarItems = [
+  { tab: "My Tickets", icon: Ticket },
+  ...(normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
+];
+
 
   const statusLabels = { all: "All", resolved: "Resolved" };
   const statusIcons = { all: <LayoutDashboard size={20} />, resolved: <CheckCircle2 size={20} /> };
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  // Fetch tickets
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        let url;
-        if (activeTab === "Assigned Tickets") {
-         
-          url = `http://192.168.0.246:8080/api/admin/tickets/role/${userData.role.toUpperCase()}`;
-        } else {
-          
-          url = `http://192.168.0.246:8080/api/admin/tickets/employee/${empID}`;
-        }
+useEffect(() => {
+  if (!token || !empID || !userData) return;
 
-        const res = await fetch(url);
-        const data = await res.json();
-        setTickets(Array.isArray(data) ? data : [data]);
-      } catch (err) {
-        console.error("Error fetching tickets:", err);
-        setTickets([]);
+  const fetchTickets = async () => {
+    try {
+      let url;
+
+      if (activeTab === "Assigned Tickets") {
+        // ✅ Both role and empID required
+        // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
+      } else {
+        // ✅ Only empID for "My Tickets"
+        url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}`;
       }
-    };
 
-    fetchTickets();
-  }, [activeTab, empID, userData.role]);
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-  const role = JSON.parse(localStorage.getItem("userData"))?.role;
+      let ticketsData = res.data;
+      if (!Array.isArray(ticketsData)) {
+        ticketsData = ticketsData?.tickets || [ticketsData];
+      }
+      setTickets(ticketsData);
+      console.log("Fetched tickets:", ticketsData);
+    } catch (err) {
+      console.error("Error fetching tickets:", err);
+      setTickets([]);
+    }
+  };
 
-const handleTabClick = (tab) => {
+  fetchTickets();
+}, [activeTab, empID, normalizedRole, token, userData]);
+
+
+
+
+ const handleTabClick = (tab) => {
   setActiveTab(tab);
-  if (tab === "Assigned Tickets") {
-    navigate(`/tickets/${empID}/${role}`);
+
+  if (tab === "Assigned Tickets" && normalizedRole) {
+    navigate(`/tickets/role/${normalizedRole}/${empID}`);
   } else {
     navigate(`/tickets/employee/${empID}`);
   }
 };
 
+  const handleFormSubmit = async (data) => {
+    try {
+      let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
+      if (!roleToSend) {
+        console.error("Role not provided!");
+        return;
+      }
 
-  const handleFormSubmit = (data) => {
-    let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
-    if (!roleToSend) return console.error("Role not provided!");
+      // ✅ Normalize role before sending to backend
+      roleToSend = roleToSend.toUpperCase().startsWith("ROLE_")
+        ? roleToSend.toUpperCase()
+        : "ROLE_" + roleToSend.toUpperCase();
 
-    fetch('http://192.168.0.246:8080/api/employee/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, roles: roleToSend }),
-    })
-      .then(res => res.json())
-      .then(savedTicket => {
-        setTickets(prev => [...prev, savedTicket]);
-        setSelectedTicket(savedTicket);
-        setView('chat');
-      })
-      .catch(console.error);
+      const payload = {
+        title: data.title,
+        description: data.description,
+        status: "OPEN",
+        priority: data.priority,
+        employeeId: empID,
+        roles: roleToSend,
+      };
+
+      console.log("Payload being sent:", payload);
+
+      const res = await fetch("http://192.168.0.247:8088/api/ticket/employee/create", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to create ticket: ${res.status} - ${errorText}`);
+      }
+
+      const savedTicket = await res.json();
+      setTickets((prev) => [...prev, savedTicket]);
+      setSelectedTicket(savedTicket);
+      setView("chat");
+
+    } catch (err) {
+      console.error("Error creating ticket:", err);
+      alert("Ticket creation failed. Check console for details.");
+    }
   };
 
   const handleTicketClick = (ticket) => {
@@ -133,9 +185,15 @@ const handleTabClick = (tab) => {
           </div>
 
           <nav className="flex-1 space-y-1.5 px-1.5">
-           {sidebarItems.map(({ tab, icon: Icon, rolesAllowed }) => {
-  if (rolesAllowed && !rolesAllowed.includes(userData?.role?.toUpperCase())) return null;
-  return (
+           {sidebarItems
+  .filter(({ tab }) => {
+    // Hide "Assigned Tickets" if user is employee
+    if (normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets") {
+      return false;
+    }
+    return true;
+  })
+  .map(({ tab, icon: Icon }) => (
     <motion.button
       key={tab}
       className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
@@ -147,12 +205,18 @@ const handleTabClick = (tab) => {
       <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
       {!isSidebarCollapsed && tab}
     </motion.button>
-  );
-})}
+))}
 
 
             {Object.keys(statusIcons).map((status) => (
-              <motion.button key={status} className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors ${statusFilter === status ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"} ${isSidebarCollapsed ? "justify-center" : ""}`} onClick={() => setStatusFilter(status)} whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}>
+              <motion.button
+                key={status}
+                className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors 
+                  ${statusFilter === status ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"} 
+                  ${isSidebarCollapsed ? "justify-center" : ""}`}
+                onClick={() => setStatusFilter(status)}
+                whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+              >
                 {statusIcons[status]}
                 {!isSidebarCollapsed && <span className="ml-2 capitalize">{statusLabels[status]}</span>}
               </motion.button>
@@ -178,7 +242,7 @@ const handleTabClick = (tab) => {
                 <option>Last 7 days</option>
                 <option>Today</option>
               </select>
-               <label className="text-sm font-medium text-gray-700" htmlFor="search">Search</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="search">Search</label>
               <input
                 id="search"
                 type="text"
@@ -205,8 +269,6 @@ const handleTabClick = (tab) => {
                 onChange={(e) => setToDate(e.target.value)}
                 className="border border-gray-300 text-sm rounded-lg p-2.5 w-44 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-
-             
             </div>
           </div>
 
@@ -276,7 +338,9 @@ const handleTabClick = (tab) => {
           {view === 'chat' && selectedTicket && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-blue-700">Chat with Admin (Ticket #{selectedTicket.employeeId})</h2>
+                <h2 className="text-2xl font-bold text-blue-700">
+                  Chat with Admin (Ticket #{selectedTicket.employeeId})
+                </h2>
                 <button
                   onClick={() => setView('history')}
                   className="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-4 py-1 rounded-full text-sm shadow"
@@ -287,11 +351,11 @@ const handleTabClick = (tab) => {
               <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
                 <ChatBox
                   userRole="employee"
-                  ticketId={selectedTicket.id || selectedTicket.ticketId || selectedTicket.employeeId}
+                  ticketId={selectedTicket.ticketId}
+                  ticketStatus={selectedTicket.status} 
                 />
               </div>
             </div>
-            
           )}
 
         </main>

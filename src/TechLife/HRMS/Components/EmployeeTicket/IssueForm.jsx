@@ -48,14 +48,14 @@ export default function IssueForm({ onSubmit }) {
             required
             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-           <input
+           {/* <input
             name="ticketId"
             placeholder="Ticket ID"
             value={formData.ticketId}
             onChange={handleChange}
             required
             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
+          /> */}
           <input
             name="title"
             placeholder="Issue Title"

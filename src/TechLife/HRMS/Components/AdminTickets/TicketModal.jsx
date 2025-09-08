@@ -7,6 +7,7 @@ export default function TicketModal({
   replyText,
   setReplyText,
   roles,
+  onStatusUpdate,
 }) {
   const [showChat, setShowChat] = useState(false);
   const [replies, setReplies] = useState([]);
@@ -25,10 +26,13 @@ export default function TicketModal({
 
     if (d.toDateString() === today.toDateString()) return "Today";
     if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-    return d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+    return d.toLocaleDateString([], {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
- 
   const groupedReplies = useMemo(() => {
     const groups = {};
     replies.forEach((msg) => {
@@ -39,27 +43,38 @@ export default function TicketModal({
     return groups;
   }, [replies]);
 
-  
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [replies]);
 
-
   useEffect(() => {
     if (!ticket?.ticketId) return;
 
-    if (socketRef.current) socketRef.current.close();
+    if (socketRef.current) {
+      socketRef.current.close();
+    }
 
-    const ws = new WebSocket(`ws://192.168.0.246:8080/ws-ticket?ticketId=${ticket.ticketId}`);
+    const ws = new WebSocket(
+      `ws://192.168.0.247:8088/ws-ticket?ticketId=${ticket.ticketId}`
+    );
     socketRef.current = ws;
 
     ws.onopen = () => console.log("✅ WebSocket connected for", ticket.ticketId);
+
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        setReplies((prev) => [...prev, msg]);
+        setReplies((prev) => {
+          const exists = prev.some(
+            (r) =>
+              r.replyText === msg.replyText &&
+              r.repliedAt === msg.repliedAt &&
+              r.repliedBy === msg.repliedBy
+          );
+          return exists ? prev : [...prev, msg];
+        });
       } catch (e) {
-        console.error("Error parsing message", e);
+        console.error("Error parsing WebSocket message", e);
       }
     };
 
@@ -67,17 +82,22 @@ export default function TicketModal({
     ws.onclose = () => console.log("🔌 WebSocket disconnected");
 
     return () => {
-      if (socketRef.current) socketRef.current.close();
+      ws.close();
     };
   }, [ticket?.ticketId]);
 
-  
   useEffect(() => {
     const fetchReplies = async () => {
       if (!ticket?.ticketId) return;
       try {
+        const token = localStorage.getItem("accessToken");
         const response = await axios.get(
-          `http://192.168.0.246:8080/api/admin/tickets/${ticket.ticketId}/reply`
+          `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         setReplies(response.data);
       } catch (error) {
@@ -88,64 +108,82 @@ export default function TicketModal({
   }, [ticket?.ticketId, showChat]);
 
   const handleReply = async () => {
-  if (!replyText.trim() || !ticket?.ticketId) return;
+    if (!replyText.trim() || !ticket?.ticketId) return;
 
-  const payload = {
-    replyText: replyText.trim(),
-    repliedBy: "admin",
-    status: ticket.status,
-    employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
-    roles: roles && typeof roles === "string" ? roles.toUpperCase() : "HR",
-    repliedAt: new Date().toISOString(),
-  };
+    const token = localStorage.getItem("accessToken");
 
-  try {
-    const res = await axios.put(
-      `http://192.168.0.246:8080/api/admin/tickets/${ticket.ticketId}/reply`,
-      payload
-    );
+    const payload = {
+      replyText: replyText.trim(),
+      repliedBy: "admin",
+      status: newStatus.toUpperCase(),
+      employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
+      roles:
+        roles && typeof roles === "string"
+          ? `ROLE_${roles.toUpperCase()}`
+          : "ROLE_HR",
+      repliedAt: new Date().toISOString(),
+    };
 
-   
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(res.data));
+    try {
+      await axios.put(
+        `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setReplyText("");
+      setMessageSent(true);
+      setTimeout(() => setMessageSent(false), 2000);
+    } catch (error) {
+      console.error("❌ Reply failed", error.response?.data || error.message);
     }
-
-    setReplyText("");
-    setMessageSent(true);
-    setTimeout(() => setMessageSent(false), 2000);
-  } catch (error) {
-    console.error("❌ Reply failed", error.response?.data || error.message);
-  }
-};
-
-
-  const handleStatusChange = () => {
-   const payload = {
-  replyText: replyText.trim(),
-  repliedBy: "admin",
-  status: ticket.status,
-  employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
-  roles: roles && typeof roles === "string" ? roles.toUpperCase() : "HR",
-  repliedAt: new Date().toISOString(),
-};
-
-
-    axios
-      .put(
-        `http://192.168.0.246:8080/api/admin/tickets/${ticket.ticketId}/reply`,
-        payload
-      )
-      .then((res) => {
-        console.log("Reply sent and status updated:", res.data);
-        onClose();
-        window.location.reload();
-      })
-      .catch((err) => {
-        console.error("Error sending reply:", err);
-      });
   };
 
-  
+  const handleStatusChange = async () => {
+    if (!ticket?.ticketId) return;
+
+    const token = localStorage.getItem("accessToken");
+
+    const payload = {
+      replyText: replyText.trim() || "Status updated",
+      repliedBy: "admin",
+      status: newStatus,
+      employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
+      roles:
+        roles && typeof roles === "string"
+          ? `ROLE_${roles.toUpperCase()}`
+          : "ROLE_HR",
+      repliedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await axios.put(
+        `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setReplies((prev) => [...prev, res.data]);
+      setNewStatus(res.data.status);
+
+      if (onStatusUpdate) {
+        onStatusUpdate(res.data);
+      }
+
+      onClose();
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
+  };
+
   const displayRole = (role) => role?.replace(/^ROLE_/, "");
 
   return (
@@ -154,34 +192,45 @@ export default function TicketModal({
         <div className="p-6 overflow-y-auto h-[90vh] scroll-smooth">
           {!showChat ? (
             <>
-              <h2 className="text-3xl font-extrabold text-blue-700 mb-6">🎫 Ticket Details</h2>
+              <h2 className="text-3xl font-extrabold text-blue-700 mb-6">
+                🎫 Ticket Details
+              </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-[15px] text-gray-800 mb-8">
                 <p>
-                  <span className="font-semibold">👤 Employee ID:</span> {ticket.employeeId}
+                  <span className="font-semibold">👤 Employee ID:</span>{" "}
+                  {ticket.employeeId}
                 </p>
                 <p>
-                  <span className="font-semibold">📛 Ticket ID:</span> {ticket.ticketId}
+                  <span className="font-semibold">📛 Ticket ID:</span>{" "}
+                  {ticket.ticketId}
                 </p>
                 <p>
                   <span className="font-semibold">📝 Issue:</span> {ticket.title}
                 </p>
                 <p>
-                  <span className="font-semibold">🧑‍💼 Role:</span> {displayRole(ticket.roles)}
+                  <span className="font-semibold">🧑‍💼 Role:</span>{" "}
+                  {displayRole(ticket.roles)}
                 </p>
                 <p>
-                  <span className="font-semibold">⚠️ Description:</span> {ticket.description}
+                  <span className="font-semibold">⚠️ Description:</span>{" "}
+                  {ticket.description}
                 </p>
                 <p>
-                  <span className="font-semibold">⚠️ Priority:</span> {ticket.priority}
+                  <span className="font-semibold">⚠️ Priority:</span>{" "}
+                  {ticket.priority}
                 </p>
                 <p className="md:col-span-2">
                   <span className="font-semibold">📅 Created:</span>{" "}
-                  {ticket.sentAt ? new Date(ticket.sentAt).toLocaleString() : ""}
+                  {ticket.sentAt
+                    ? new Date(ticket.sentAt).toLocaleString()
+                    : ""}
                 </p>
 
                 <div className="md:col-span-2">
-                  <label className="block font-medium text-gray-900 mb-2">📌 Update Status</label>
+                  <label className="block font-medium text-gray-900 mb-2">
+                    📌 Update Status
+                  </label>
                   <select
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
@@ -221,10 +270,11 @@ export default function TicketModal({
               </div>
             </>
           ) : (
-         
             <>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-blue-700">💬 Chat with {ticket.employeeName}</h2>
+                <h2 className="text-2xl font-bold text-blue-700">
+                  💬 Chat with {ticket.employeeName}
+                </h2>
                 <button
                   onClick={() => setShowChat(false)}
                   className="text-sm text-blue-600 hover:underline"
@@ -233,9 +283,7 @@ export default function TicketModal({
                 </button>
               </div>
 
-              {/* ✅ Chat Messages with Date Separators */}
               <div className="max-h-72 overflow-y-auto space-y-3 p-4 bg-gray-50 rounded-xl border mb-4 shadow-inner">
-                {/* First Ticket Message */}
                 <div className="bg-white text-gray-900 border rounded-bl-none px-4 py-2 max-w-[75%] text-sm rounded-2xl shadow">
                   <p>{ticket.title}</p>
                   <div className="text-[10px] mt-1 text-left text-gray-500">
@@ -247,15 +295,18 @@ export default function TicketModal({
                   </div>
                 </div>
 
-              
                 {Object.keys(groupedReplies).map((date) => (
                   <div key={date}>
-                    <div className="text-center text-xs text-gray-500 my-2">{date}</div>
+                    <div className="text-center text-xs text-gray-500 my-2">
+                      {date}
+                    </div>
                     {groupedReplies[date].map((msg, idx) => (
                       <div
                         key={idx}
                         className={`flex ${
-                          msg.repliedBy === "admin" ? "justify-end" : "justify-start"
+                          msg.repliedBy === "admin"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
                         <div
@@ -266,7 +317,9 @@ export default function TicketModal({
                                 : "bg-white text-gray-900 border rounded-bl-none"
                             }`}
                         >
-                          <p className="whitespace-pre-line break-words">{msg.replyText}</p>
+                          <p className="whitespace-pre-line break-words">
+                            {msg.replyText}
+                          </p>
                           <div
                             className={`text-[10px] mt-1 ${
                               msg.repliedBy === "admin"
@@ -294,7 +347,9 @@ export default function TicketModal({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <label className="block font-medium text-gray-800">Reply as Admin</label>
+                  <label className="block font-medium text-gray-800">
+                    Reply as Admin
+                  </label>
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
