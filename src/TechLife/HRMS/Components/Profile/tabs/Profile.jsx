@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
-import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoPeopleOutline } from "react-icons/io5";
+import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoPeopleOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoTrashOutline } from "react-icons/io5";
 import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
-import { useParams } from "react-router-dom";
-
+import { useParams, useLocation } from "react-router-dom";
 
 // Default Profile (Only static relations/identity)
 const defaultProfile = {
@@ -15,7 +14,6 @@ const defaultProfile = {
     siblings: "1",
   },
 };
-
 
 const sectionFields = {
   primaryDetails: [
@@ -91,31 +89,25 @@ const sectionFields = {
     { label: "Siblings", name: "siblings", type: "number" },
   ],
   education: [
-    {
-      label: "Highest Degree",
-      name: "highestDegree",
-      type: "text",
-      required: true,
-    },
-    { label: "Institution", name: "institution", type: "text", required: true },
-    {
-      label: "Year Of Passing",
-      name: "yearOfPassing",
-      type: "number",
-      required: true,
-    },
-    {
-      label: "Grading System",
-      name: "gradingSystem",
-      type: "select",
-      options: ["Percentage", "CGPA", "GPA"],
-      required: true,
-    },
-    { label: "Grade", name: "grade", type: "text" },
-    { label: "Specialization", name: "specialization", type: "text" },
+    { label: "Degree Type", name: "degreeType", type: "text", required: true },
+    { label: "Institution", name: "universityOrCollege", type: "text", required: true },
+    { label: "Specialization", name: "branchOrSpecialization", type: "text", required: true },
+    { label: "Start Year", name: "startYear", type: "text", required: true },
+    { label: "End Year", name: "endYear", type: "text", required: true },
+    { label: "CGPA/Percentage", name: "cgpaOrPercentage", type: "text" },
+    { label: "Degree Certificate", name: "addFiles", type: "file", required: true },
+  ],
+  experience: [
+    { label: "Company Name", name: "companyName", type: "text", required: true },
+    { label: "Job Title", name: "jobTitle", type: "text", required: true },
+    { label: "Location", name: "location", type: "text" },
+    { label: "Description", name: "description", type: "text" },
+    { label: "Start Date", name: "startMonth", type: "text", required: true },
+    { label: "Start Year", name: "startYear", type: "text", required: true },
+    { label: "End Date", name: "endMonth", type: "text" },
+    { label: "End Year", name: "endYear", type: "text" },
   ],
 };
-
 
 // Section configurations with icons and colors
 const sectionConfig = {
@@ -169,18 +161,29 @@ const sectionConfig = {
   },
   education: {
     icon: IoSchoolOutline,
-    color: 'from-red-500 to-red-700',
-    bgColor: 'bg-red-50',
-    darkBgColor: 'bg-red-900/20',
-    borderColor: 'border-red-200',
-    darkBorderColor: 'border-red-700',
-    textColor: 'text-red-700',
-    darkTextColor: 'text-red-400',
+    color: 'from-yellow-500 to-amber-700',
+    bgColor: 'bg-yellow-50',
+    darkBgColor: 'bg-yellow-900/20',
+    borderColor: 'border-yellow-200',
+    darkBorderColor: 'border-yellow-700',
+    textColor: 'text-yellow-700',
+    darkTextColor: 'text-yellow-400',
     title: 'Education Details',
     description: 'Academic qualifications and achievements'
   },
+  experience: {
+    icon: IoBriefcaseOutline,
+    color: 'from-indigo-500 to-indigo-700',
+    bgColor: 'bg-indigo-50',
+    darkBgColor: 'bg-indigo-900/20',
+    borderColor: 'border-indigo-200',
+    darkBorderColor: 'border-indigo-700',
+    textColor: 'text-indigo-700',
+    darkTextColor: 'text-indigo-400',
+    title: 'Previous Experience',
+    description: 'Professional work history'
+  },
 };
-
 
 function Profile() {
   const [editingSection, setEditingSection] = useState(null);
@@ -189,43 +192,51 @@ function Profile() {
   const [addressData, setAddressData] = useState(null);
   const [eduData, setEduData] = useState([]);
   const [experience, setExperience] = useState([]);
-  const { userprofiledata, setUserProfileData, theme } = useContext(Context);
+  const { theme, userData } = useContext(Context);
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false); // New state for loading spinner
+  const [isUpdating, setIsUpdating] = useState(false);
   const [errors, setErrors] = useState({});
-  const [completionStats, setCompletionStats] = useState({ completed: 0, total: 4 });
+  const [completionStats, setCompletionStats] = useState({ completed: 0, total: 6 });
+  const [selectedFile, setSelectedFile] = useState(null);
 
+  const searchParams = new URLSearchParams(location.search);
+  const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+  const targetEmployeeId = searchParams.get('targetEmployeeId');
+
+  const profileEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
+
+  const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
+
+  const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
 
   useEffect(() => {
+    if (fromContextMenu && targetEmployeeId) {
+      console.log("Viewing profile from context menu for employee:", targetEmployeeId);
+    }
+
     const fetchData = async () => {
       try {
         const [primaryRes, contactRes, addressRes, eduRes, expRes] = await Promise.all([
-          publicinfoApi.get(`employee/${empID}/primary/details`).catch(err => ({ data: null })),
-          publicinfoApi.get(`employee/${empID}/contact`).catch(err => ({ data: null })),
-          publicinfoApi.get(`employee/${empID}/address`).catch(err => ({ data: null })),
-          publicinfoApi.get(`employee/${empID}/degreeDetails`).catch(err => ({ data: null })),
-          publicinfoApi.get(`employee/${empID}/previousExperience`).catch(err => ({ data: null })),
+          publicinfoApi.get(`employee/${profileEmployeeId}/primary/details`).catch(err => ({ data: null })),
+          publicinfoApi.get(`employee/${profileEmployeeId}/contact`).catch(err => ({ data: null })),
+          publicinfoApi.get(`employee/${profileEmployeeId}/address`).catch(err => ({ data: null })),
+          publicinfoApi.get(`employee/${profileEmployeeId}/degreeDetails`).catch(err => ({ data: [] })),
+          publicinfoApi.get(`employee/${profileEmployeeId}/previousExperience`).catch(err => ({ data: [] })),
         ]);
-        
+
         setPrimaryData(primaryRes.data);
-        console.log("Fetched primary details response:", primaryRes.data);
         setContactDetails(contactRes.data);
-        console.log("Fetched contact details response:", contactRes.data);
         setAddressData(addressRes.data);
-        console.log("Fetched address details response:", addressRes.data);
         setEduData(eduRes.data);
-        console.log("Fetched education details response:", eduRes.data);
         setExperience(expRes.data);
-        console.log("Fetched experience details response:", expRes.data);
 
-
-        // Calculate completion stats
-        const sections = [primaryRes.data, contactRes.data, addressRes.data, eduRes.data];
+        const sections = [primaryRes.data, contactRes.data, addressRes.data, eduRes.data.length > 0, expRes.data.length > 0, defaultProfile.relations];
         const completed = sections.filter(Boolean).length;
-        setCompletionStats({ completed, total: 4 });
-        
+        setCompletionStats({ completed, total: 6 });
+
       } catch (err) {
         console.error("Failed to fetch data:", err);
       } finally {
@@ -233,14 +244,16 @@ function Profile() {
       }
     };
 
-
-    if (empID) {
+    if (profileEmployeeId) {
       fetchData();
     }
-  }, [empID]);
-
+  }, [profileEmployeeId, fromContextMenu, targetEmployeeId]);
 
   const openEditSection = (section) => {
+    if (isReadOnly) {
+      alert("You can only view this employee's profile. Editing is not allowed.");
+      return;
+    }
     setErrors({});
     let dataToEdit = {};
     if (section === "primaryDetails") {
@@ -251,13 +264,82 @@ function Profile() {
       dataToEdit = addressData;
     } else if (section === "relations") {
       dataToEdit = defaultProfile.relations;
+    } else if (section === "education") {
+      dataToEdit = eduData && eduData.length > 0 ? eduData[0] : {};
+    } else if (section === "experience") {
+      dataToEdit = experience && experience.length > 0 ? experience[0] : {};
     }
 
-
     setEditingData(dataToEdit || {});
+    setSelectedFile(null);
     setEditingSection({ section });
   };
 
+  const handleDelete = async (sectionKey) => {
+    const sectionTitle = sectionConfig[sectionKey].title;
+    if (!window.confirm(`Are you sure you want to delete the ${sectionTitle} for employee ${profileEmployeeId}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      let url = '';
+
+      switch (sectionKey) {
+        case 'primaryDetails':
+          url = `employee/${profileEmployeeId}/primary/details`;
+          break;
+        case 'contactDetails':
+          url = `employee/${profileEmployeeId}/contact`;
+          break;
+        case 'address':
+          url = `employee/${profileEmployeeId}/address`;
+          break;
+        case 'education':
+          alert("Education deletion should be done per entry. This feature needs backend support for bulk deletion.");
+          return;
+        case 'experience':
+          alert("Experience deletion should be done per entry. This feature needs backend support for bulk deletion.");
+          return;
+        case 'relations':
+          alert("Relations cannot be deleted as they are static data.");
+          return;
+        default:
+          throw new Error("Invalid section for deletion");
+      }
+
+      await publicinfoApi.delete(url);
+      alert(`${sectionTitle} deleted successfully.`);
+
+      switch (sectionKey) {
+        case 'primaryDetails':
+          setPrimaryData(null);
+          break;
+        case 'contactDetails':
+          setContactDetails(null);
+          break;
+        case 'address':
+          setAddressData(null);
+          break;
+        default:
+          break;
+      }
+
+      const sections = [
+        sectionKey === 'primaryDetails' ? null : primarydata,
+        sectionKey === 'contactDetails' ? null : contactdetails,
+        sectionKey === 'address' ? null : addressData,
+        eduData.length > 0,
+        experience.length > 0,
+        defaultProfile.relations
+      ];
+      const completed = sections.filter(Boolean).length;
+      setCompletionStats({ completed, total: 6 });
+
+    } catch (err) {
+      console.error(`Failed to delete ${sectionTitle}:`, err);
+      alert(`Error deleting ${sectionTitle}. You may not have the required permissions.`);
+    }
+  };
 
   const handleEditFieldChange = (field, value) => {
     setEditingData((prev) => ({
@@ -273,15 +355,17 @@ function Profile() {
     }
   };
 
+  const handleFileChange = (file) => {
+    setSelectedFile(file);
+  };
 
-  // --- NEW: SEPARATE UPDATE FUNCTIONS ---
   const handleUpdatePrimaryDetails = async () => {
     try {
-      const url = `/employee/${empID}/primary/details`;
+      const url = `/employee/${profileEmployeeId}/primary/details`;
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setPrimaryData(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [updatedData.data, contactdetails, addressData, eduData].filter(Boolean).length }));
+      setCompletionStats(prev => ({ ...prev, completed: [updatedData.data, contactdetails, addressData, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
       return true;
     } catch (error) {
       if (error.response && error.response.status === 400) setErrors(error.response.data);
@@ -290,14 +374,13 @@ function Profile() {
     }
   };
 
-
   const handleUpdateContactDetails = async () => {
     try {
-      const url = `/employee/${empID}/contact`;
+      const url = `/employee/${profileEmployeeId}/contact`;
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setContactDetails(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, updatedData.data, addressData, eduData].filter(Boolean).length }));
+      setCompletionStats(prev => ({ ...prev, completed: [primarydata, updatedData.data, addressData, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
       return true;
     } catch (error) {
       if (error.response && error.response.status === 400) setErrors(error.response.data);
@@ -306,14 +389,13 @@ function Profile() {
     }
   };
 
-
   const handleUpdateAddress = async () => {
     try {
-      const url = `/employee/${empID}/address`;
+      const url = `/employee/${profileEmployeeId}/address`;
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setAddressData(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, updatedData.data, eduData].filter(Boolean).length }));
+      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, updatedData.data, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
       return true;
     } catch (error) {
       if (error.response && error.response.status === 400) setErrors(error.response.data);
@@ -321,40 +403,99 @@ function Profile() {
       return false;
     }
   };
-  
-  const handleUpdateRelations = () => {
-      console.error("Backend endpoint for updating relations does not exist in your controller.");
-      alert("This section cannot be updated yet. A backend API endpoint is missing.");
-      setEditingSection(null);
+
+  const handleUpdateEducation = async () => {
+    try {
+      const isUpdate = !!(editingData && editingData.id);
+      const method = isUpdate ? 'put' : 'post';
+      const url = isUpdate
+        ? `/employee/${profileEmployeeId}/degreeDetails/${editingData.id}`
+        : `/employee/${profileEmployeeId}/degreeDetails`;
+
+      const formData = new FormData();
+      if (selectedFile) {
+        formData.append("addFiles", selectedFile);
+      }
+      formData.append("degree", new Blob([JSON.stringify(editingData)], { type: "application/json" }));
+
+      await publicinfoApi[method](url, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      const updatedEduRes = await publicinfoApi.get(`employee/${profileEmployeeId}/degreeDetails`);
+      setEduData(updatedEduRes.data);
+
+      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, addressData, updatedEduRes.data.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      return true;
+    } catch (error) {
+      console.error("Failed to update education details:", error);
+      if (error.response && error.response.status === 400) setErrors(error.response.data);
+      else setErrors({ general: "An unexpected error occurred while updating Education." });
+      return false;
+    }
   };
 
+  const handleUpdateExperience = async () => {
+    try {
+      const isUpdate = !!(editingData && editingData.id);
+      const url = `/employee/${profileEmployeeId}/previousExperience/${editingData.id}`;
+      const method = isUpdate ? 'put' : 'post';
 
-  // --- NEW: Master handleSubmit function to call the correct update function ---
+      if (isUpdate) {
+        await publicinfoApi.put(url, editingData);
+      } else {
+        await publicinfoApi.post(`/employee/${profileEmployeeId}/previousExperience`, editingData);
+      }
+
+      const updatedExperienceRes = await publicinfoApi.get(`employee/${profileEmployeeId}/previousExperience`);
+      setExperience(updatedExperienceRes.data);
+
+      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, addressData, eduData.length > 0, updatedExperienceRes.data.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      return true;
+    } catch (error) {
+      console.error("Failed to update experience details:", error);
+      if (error.response && error.response.status === 400) setErrors(error.response.data);
+      else setErrors({ general: "An unexpected error occurred while updating Experience." });
+      return false;
+    }
+  };
+
+  const handleUpdateRelations = () => {
+    console.error("Backend endpoint for updating relations does not exist in your controller.");
+    alert("This section cannot be updated yet. A backend API endpoint is missing.");
+    setEditingSection(null);
+  };
+
   const handleSubmit = async (section) => {
-    setIsUpdating(true); // Start the loading spinner
+    setIsUpdating(true);
     let success = false;
     try {
-        switch (section) {
-            case "primaryDetails":
-                success = await handleUpdatePrimaryDetails();
-                break;
-            case "contactDetails":
-                success = await handleUpdateContactDetails();
-                break;
-            case "address":
-                success = await handleUpdateAddress();
-                break;
-            case "relations":
-                handleUpdateRelations(); // This will show an alert
-                break;
-            default:
-                console.error("Unknown section:", section);
-                setErrors({ general: "Unknown section selected for update." });
-        }
+      switch (section) {
+        case "primaryDetails":
+          success = await handleUpdatePrimaryDetails();
+          break;
+        case "contactDetails":
+          success = await handleUpdateContactDetails();
+          break;
+        case "address":
+          success = await handleUpdateAddress();
+          break;
+        case "relations":
+          handleUpdateRelations();
+          break;
+        case "education":
+          success = await handleUpdateEducation();
+          break;
+        case "experience":
+          success = await handleUpdateExperience();
+          break;
+        default:
+          console.error("Unknown section:", section);
+          setErrors({ general: "Unknown section selected for update." });
+      }
     } finally {
-        setIsUpdating(false); // Stop the loading spinner
+      setIsUpdating(false);
     }
-
 
     if (success) {
       setEditingSection(null);
@@ -362,76 +503,94 @@ function Profile() {
     }
   };
   
-  // Skeleton Loading Component
-  const SkeletonCard = () => (
-    <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
-      theme === 'dark' 
-        ? 'bg-gray-800 border-gray-700' 
-        : 'bg-white border-gray-200'
-    }`}>
-      <div className={`p-6 border-b ${
-        theme === 'dark' 
-          ? 'bg-gray-700 border-gray-600' 
-          : 'bg-gray-100 border-gray-200'
-      }`}>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className={`w-12 h-12 rounded-xl ${
-              theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-            }`}></div>
-            <div>
-              <div className={`h-5 rounded w-32 mb-2 ${
-                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-              }`}></div>
-              <div className={`h-3 rounded w-48 ${
-                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-              }`}></div>
+  const renderField = (label, name, type = "text", required = false, options = []) => {
+    const isError = errors[name];
+    const fieldValue = editingData[name] || "";
+    
+    if (type === "file") {
+      return (
+        <div className="group relative" key={name}>
+          <label className={`block text-sm font-semibold mb-3 flex items-center ${
+            theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+          }`}>
+            {label}
+            {required && <span className="text-red-500 ml-1 text-base">*</span>}
+          </label>
+          <div className={`relative border-2 border-dashed rounded-xl transition-all duration-300 
+              ${isError 
+                  ? 'border-red-300 bg-red-50' 
+                  : theme === 'dark'
+                  ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
+                  : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+              }`}>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e.target.files?.[0])}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept=".jpg,.jpeg,.png,.pdf"
+              required={required}
+            />
+            <div className="px-6 py-8 text-center">
+              <IoCloudUpload className={`mx-auto h-12 w-12 mb-4 ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+              }`} />
+              <p className={`text-sm font-medium mb-1 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Drop your file here, or <span className="text-blue-600">browse</span>
+              </p>
+              <p className={`text-xs ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+              }`}>PNG, JPG, PDF up to 10MB</p>
+              {selectedFile && (
+                  <p className={`mt-2 text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+                      Selected: {selectedFile.name}
+                  </p>
+              )}
             </div>
           </div>
-          <div className={`h-9 rounded-lg w-20 ${
-            theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-          }`}></div>
         </div>
-      </div>
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className={`p-4 rounded-xl ${
-              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-            }`}>
-              <div className={`h-3 rounded w-20 mb-2 ${
-                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-              }`}></div>
-              <div className={`h-4 rounded w-32 ${
-                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-              }`}></div>
+      );
+    }
+    
+    return (
+      <div className="group relative" key={name}>
+        <label className={`block text-sm font-semibold mb-3 flex items-center ${
+          theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+        }`}>
+          {label}
+          {required && <span className="text-red-500 ml-1 text-base">*</span>}
+        </label>
+        
+        {type === "select" ? (
+          <div className="relative">
+            <select 
+              value={fieldValue} 
+              onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+              className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none 
+                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                ${isError 
+                  ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                  : theme === 'dark'
+                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                }`}
+            >
+              <option value="">Choose {label}</option>
+              {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+            </select>
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-// Moved renderField inside the component to access handleEditFieldChange
-const renderField = (label, name, type = "text", required = false, options = []) => {
-  const isError = errors[name];
-  const fieldValue = editingData[name] || "";
-  
-  return (
-    <div className="group relative" key={name}>
-      <label className={`block text-sm font-semibold mb-3 flex items-center ${
-        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-      }`}>
-        {label}
-        {required && <span className="text-red-500 ml-1 text-base">*</span>}
-      </label>
-      
-      {type === "select" ? (
-        <div className="relative">
-          <select 
+          </div>
+        ) : type === "date" ? (
+          <input 
+            type="date" 
             value={fieldValue} 
             onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none 
+            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError 
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
@@ -439,58 +598,35 @@ const renderField = (label, name, type = "text", required = false, options = [])
                 ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                 : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
               }`}
-          >
-            <option value="">Choose {label}</option>
-            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-          </select>
-          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+          />
+        ) : (
+          <input 
+            type={type} 
+            value={fieldValue} 
+            onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+              focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+              ${isError 
+                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                : theme === 'dark'
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+              }`}
+            placeholder={`Enter ${label.toLowerCase()}...`} 
+            required={required} 
+          />
+        )}
+        
+        {isError && (
+          <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+            <IoWarning className="w-4 h-4 flex-shrink-0" />
+            <p className="text-sm font-medium">{isError}</p>
           </div>
-        </div>
-      ) : type === "date" ? (
-        <input 
-          type="date" 
-          value={fieldValue} 
-          onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-          className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-            ${isError 
-              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-              : theme === 'dark'
-              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-              : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
-            }`}
-        />
-      ) : (
-        <input 
-          type={type} 
-          value={fieldValue} 
-          onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-          className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-            ${isError 
-              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-              : theme === 'dark'
-              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-              : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
-            }`}
-          placeholder={`Enter ${label.toLowerCase()}...`} 
-          required={required} 
-        />
-      )}
-      
-      {isError && (
-        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
-          <IoWarning className="w-4 h-4 flex-shrink-0" />
-          <p className="text-sm font-medium">{isError}</p>
-        </div>
-      )}
-    </div>
-  );
-};
- 
+        )}
+      </div>
+    );
+  };
+    
   const renderEditModal = () => {
     if (!editingSection) return null;
     const { section } = editingSection;
@@ -567,9 +703,9 @@ const renderField = (label, name, type = "text", required = false, options = [])
               onClick={() => handleSubmit(section)}
               disabled={isUpdating}
               className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
-                         hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                         focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
-                         ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
+                          hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                          focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                          ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
             >
               {isUpdating ? (
                 <>
@@ -588,7 +724,7 @@ const renderField = (label, name, type = "text", required = false, options = [])
       </div>
     );
   };
- 
+  
   const DetailItem = ({ label, value }) => (
     <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
       theme === 'dark'
@@ -614,11 +750,10 @@ const renderField = (label, name, type = "text", required = false, options = [])
     </div>
   );
 
-
   const Section = ({ sectionKey, title, children, data }) => {
     const config = sectionConfig[sectionKey];
     const IconComponent = config.icon;
-    const hasData = !!data;
+    const hasData = Array.isArray(data) ? data.length > 0 : !!data;
     
     return (
       <div className={`border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
@@ -661,29 +796,59 @@ const renderField = (label, name, type = "text", required = false, options = [])
                 }`}>{config.description}</p>
               </div>
             </div>
-            <button 
-              onClick={() => openEditSection(sectionKey)} 
-              className={`flex items-center space-x-2 px-6 py-3 cursor-pointer rounded-xl font-semibold transition-all duration-300 
-                         transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg
-                         ${hasData 
-                           ? theme === 'dark'
-                             ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
-                             : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
-                           : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
-                         }`}
-            >
-              {hasData ? (
-                <>
-                  <IconComponent className="w-4 h-4" />
-                  <span>Edit Details</span>
-                </>
-              ) : (
-                <>
-                  <IoAdd className="w-4 h-4" />
-                  <span>Add Information</span>
-                </>
+            
+            <div className="flex items-center space-x-2">
+              {fromContextMenu && isAdmin && hasData && !['education', 'experience', 'relations'].includes(sectionKey) && (
+                <button
+                  onClick={() => handleDelete(sectionKey)}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg ${
+                    theme === 'dark'
+                      ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
+                      : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
+                  }`}
+                >
+                  <IoTrashOutline className="w-4 h-4" />
+                  <span>Delete</span>
+                </button>
               )}
-            </button>
+
+              {(!isReadOnly || isAdmin) && (
+                <button 
+                  onClick={() => openEditSection(sectionKey)} 
+                  className={`flex items-center space-x-2 px-6 py-3 cursor-pointer rounded-xl font-semibold transition-all duration-300 
+                              transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg
+                              ${hasData 
+                                ? theme === 'dark'
+                                  ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
+                                  : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
+                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                              }`}
+                >
+                  {hasData ? (
+                    <>
+                      <IconComponent className="w-4 h-4" />
+                      <span>Edit Details</span>
+                    </>
+                  ) : (
+                    <>
+                      <IoAdd className="w-4 h-4" />
+                      <span>Add Information</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            
+            {isReadOnly && !isAdmin && (
+              <div className={`px-6 py-3 rounded-xl font-semibold ${
+                theme === 'dark' 
+                  ? 'bg-gray-700 text-gray-400 border-2 border-gray-600' 
+                  : 'bg-gray-100 text-gray-500 border-2 border-gray-300'
+              }`}>
+                <IoEye className="w-4 h-4 inline mr-2" />
+                <span>View Only</span>
+              </div>
+            )}
           </div>
         </div>
         
@@ -707,17 +872,22 @@ const renderField = (label, name, type = "text", required = false, options = [])
               <p className={`text-sm mb-6 max-w-sm mx-auto ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
               }`}>
-                Add your {title.toLowerCase()} to complete your profile information.
+                {isReadOnly 
+                  ? `This employee hasn't added their ${title.toLowerCase()} information yet.`
+                  : `Add your ${title.toLowerCase()} to complete your profile information.`
+                }
               </p>
-              <button 
-                onClick={() => openEditSection(sectionKey)}
-                className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
-                           text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 
-                           transform hover:scale-105 transition-all duration-300 shadow-lg"
-              >
-                <IoAdd className="w-4 h-4" />
-                <span>Add {title}</span>
-              </button>
+              {!isReadOnly && (
+                <button 
+                  onClick={() => openEditSection(sectionKey)}
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
+                               text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 
+                               transform hover:scale-105 transition-all duration-300 shadow-lg"
+                >
+                  <IoAdd className="w-4 h-4" />
+                  <span>Add {title}</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -725,9 +895,17 @@ const renderField = (label, name, type = "text", required = false, options = [])
     );
   };
 
-
   const ProgressIndicator = () => {
-    const percentage = completionStats.total > 0 ? (completionStats.completed / completionStats.total) * 100 : 0;
+    const profileSections = [
+      primarydata,
+      contactdetails,
+      addressData,
+      eduData.length > 0,
+      experience.length > 0
+    ];
+    const completedCount = profileSections.filter(Boolean).length;
+    const totalCount = profileSections.length;
+    const percentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
     
     return (
       <div className={`rounded-2xl p-6 shadow-lg border ${
@@ -738,11 +916,13 @@ const renderField = (label, name, type = "text", required = false, options = [])
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-lg font-bold ${
             theme === 'dark' ? 'text-white' : 'text-gray-800'
-          }`}>Profile Completion</h3>
+          }`}>
+            {isReadOnly ? 'Profile Status' : 'Profile Completion'}
+          </h3>
           <span className={`text-sm font-medium ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>
-            {completionStats.completed}/{completionStats.total} Sections
+            {completedCount}/{totalCount} Sections
           </span>
         </div>
         <div className={`w-full rounded-full h-3 mb-4 overflow-hidden ${
@@ -766,7 +946,6 @@ const renderField = (label, name, type = "text", required = false, options = [])
     );
   };
 
-
   return (
     <div className={`min-h-screen ${
       theme === 'dark' 
@@ -784,10 +963,10 @@ const renderField = (label, name, type = "text", required = false, options = [])
             </div>
             <h2 className={`text-2xl font-bold mb-2 ${
               theme === 'dark' ? 'text-white' : 'text-gray-800'
-            }`}>Loading Your Profile</h2>
+            }`}>Loading Profile</h2>
             <p className={`${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-            }`}>Fetching your personal information...</p>
+            }`}>Fetching profile information...</p>
             <div className="flex justify-center space-x-2 mt-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} 
@@ -798,47 +977,101 @@ const renderField = (label, name, type = "text", required = false, options = [])
         </div>
       ) : (
         <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+          {fromContextMenu && (
+            <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+              theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                <div>
+                  <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+                    Viewing Employee Profile
+                  </p>
+                  <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                    Employee ID: {targetEmployeeId} 
+                    {isReadOnly && " • Read-only access"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mb-12">
             <ProgressIndicator />
           </div>
 
-
           <div className="space-y-8">
-              <>
-                <Section sectionKey="primaryDetails" title="Primary Details" data={primarydata}>
-                  <DetailItem label="First Name" value={primarydata?.firstName} />
-                  <DetailItem label="Middle Name" value={primarydata?.middleName} />
-                  <DetailItem label="Last Name" value={primarydata?.lastName} />
-                  <DetailItem label="Display Name" value={primarydata?.displayName} />
-                  <DetailItem label="Gender" value={primarydata?.gender} />
-                  <DetailItem label="Date of Birth" value={primarydata?.dateOfBirth} />
-                  <DetailItem label="Marital Status" value={primarydata?.maritalStatus} />
-                  <DetailItem label="Blood Group" value={primarydata?.bloodGroup} />
-                  <DetailItem label="Physically Handicapped" value={primarydata?.physicallyHandicapped} />
-                  <DetailItem label="Nationality" value={primarydata?.nationality} />
-                </Section>
-                <Section sectionKey="contactDetails" title="Contact Details" data={contactdetails}>
-                  <DetailItem label="Work Email" value={contactdetails?.workEmail} />
-                  <DetailItem label="Personal Email" value={contactdetails?.personalEmail} />
-                  <DetailItem label="Mobile Number" value={contactdetails?.mobileNumber} />
-                  <DetailItem label="Work Number" value={contactdetails?.workNumber} />
-                </Section>
-                <Section sectionKey="address" title="Address Information" data={addressData}>
-                  <DetailItem label="Street" value={addressData?.street} />
-                  <DetailItem label="City" value={addressData?.city} />
-                  <DetailItem label="State" value={addressData?.state} />
-                  <DetailItem label="Zip" value={addressData?.zip} />
-                  <DetailItem label="Country" value={addressData?.country} />
-                  <DetailItem label="District" value={addressData?.district} />
-                </Section>
-                <Section sectionKey="relations" title="Family Relations" data={defaultProfile.relations}>
-                  <DetailItem label="Father Name" value={defaultProfile.relations?.fatherName} />
-                  <DetailItem label="Mother Name" value={defaultProfile.relations?.motherName} />
-                  <DetailItem label="Spouse Name" value={defaultProfile.relations?.spouseName} />
-                  <DetailItem label="Children" value={defaultProfile.relations?.children} />
-                  <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
-                </Section>
-              </>
+            <>
+              <Section sectionKey="primaryDetails" title="Primary Details" data={primarydata}>
+                <DetailItem label="First Name" value={primarydata?.firstName} />
+                <DetailItem label="Middle Name" value={primarydata?.middleName} />
+                <DetailItem label="Last Name" value={primarydata?.lastName} />
+                <DetailItem label="Display Name" value={primarydata?.displayName} />
+                <DetailItem label="Gender" value={primarydata?.gender} />
+                <DetailItem label="Date of Birth" value={primarydata?.dateOfBirth} />
+                <DetailItem label="Marital Status" value={primarydata?.maritalStatus} />
+                <DetailItem label="Blood Group" value={primarydata?.bloodGroup} />
+                <DetailItem label="Physically Handicapped" value={primarydata?.physicallyHandicapped} />
+                <DetailItem label="Nationality" value={primarydata?.nationality} />
+              </Section>
+              <Section sectionKey="contactDetails" title="Contact Details" data={contactdetails}>
+                <DetailItem label="Work Email" value={contactdetails?.workEmail} />
+                <DetailItem label="Personal Email" value={contactdetails?.personalEmail} />
+                <DetailItem label="Mobile Number" value={contactdetails?.mobileNumber} />
+                <DetailItem label="Work Number" value={contactdetails?.workNumber} />
+              </Section>
+              <Section sectionKey="address" title="Address Information" data={addressData}>
+                <DetailItem label="Street" value={addressData?.street} />
+                <DetailItem label="City" value={addressData?.city} />
+                <DetailItem label="State" value={addressData?.state} />
+                <DetailItem label="Zip" value={addressData?.zip} />
+                <DetailItem label="Country" value={addressData?.country} />
+                <DetailItem label="District" value={addressData?.district} />
+              </Section>
+              <Section sectionKey="relations" title="Family Relations" data={defaultProfile.relations}>
+                <DetailItem label="Father Name" value={defaultProfile.relations?.fatherName} />
+                <DetailItem label="Mother Name" value={defaultProfile.relations?.motherName} />
+                <DetailItem label="Spouse Name" value={defaultProfile.relations?.spouseName} />
+                <DetailItem label="Children" value={defaultProfile.relations?.children} />
+                <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
+              </Section>
+
+              <Section sectionKey="education" title="Education Details" data={eduData}>
+                {eduData?.map((edu, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <DetailItem label="Degree" value={edu.degreeType} />
+                    <DetailItem label="Institution" value={edu.universityOrCollege} />
+                    <DetailItem label="Specialization" value={edu.branchOrSpecialization} />
+                    <DetailItem label="Years" value={`${edu.startYear} - ${edu.endYear}`} />
+                    <DetailItem label="CGPA/Percentage" value={edu.cgpaOrPercentage} />
+                    {edu.addFiles && (
+                       <div className="md:col-span-2 lg:col-span-1">
+                         <a href={edu.addFiles} target="_blank" rel="noopener noreferrer" className={`p-4 rounded-xl border flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 ${
+                           theme === 'dark' 
+                             ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20' 
+                             : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+                         }`}>
+                           <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                           <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>View Certificate</span>
+                         </a>
+                       </div>
+                     )}
+                  </div>
+                ))}
+              </Section>
+              
+              <Section sectionKey="experience" title="Previous Experience" data={experience}>
+                {experience?.map((exp, index) => (
+                  <div key={exp.id || index} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <DetailItem label="Company Name" value={exp.companyName} />
+                    <DetailItem label="Job Title" value={exp.jobTitle} />
+                    <DetailItem label="Location" value={exp.location} />
+                    <DetailItem label="Duration" value={`${exp.startMonth} ${exp.startYear} - ${exp.endMonth ? exp.endMonth + ' ' + exp.endYear : 'Present'}`} />
+                    <DetailItem label="Description" value={exp.description} />
+                  </div>
+                ))}
+              </Section>
+            </>
           </div>
           
           {renderEditModal()}
@@ -872,6 +1105,5 @@ const renderField = (label, name, type = "text", required = false, options = [])
     </div>
   );
 }
-
 
 export default Profile;

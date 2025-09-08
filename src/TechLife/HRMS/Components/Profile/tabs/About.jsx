@@ -1,8 +1,20 @@
+// src/TechLife/HRMS/Components/Profile/tabs/About.jsx
+
 import React, { useState, useEffect, useContext } from "react";
 import { Context } from "../../HrmsContext";
+import { useLocation, useParams } from "react-router-dom";
+import { IoEye } from "react-icons/io5";
 
 const About = () => {
   const { theme } = useContext(Context);
+  const { empID } = useParams();
+  const location = useLocation();
+
+  const searchParams = new URLSearchParams(location.search);
+  const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+  const targetEmployeeId = searchParams.get('targetEmployeeId');
+  const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID;
+
   const [responses, setResponses] = useState(() => {
     const savedResponses = localStorage.getItem("aboutResponses");
     return savedResponses
@@ -130,6 +142,26 @@ const About = () => {
     <div className={`p-6 transition-colors duration-200 ${
       theme === 'dark' ? 'bg-gray-900' : 'bg-white'
     }`}>
+
+      {fromContextMenu && (
+        <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+          theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
+        }`}>
+          <div className="flex items-center space-x-3">
+            <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+            <div>
+              <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+                Viewing Employee About Details
+              </p>
+              <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                Employee ID: {targetEmployeeId}
+                {isReadOnly && " • Read-only access"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
         <h2 className={`text-xl font-semibold ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
@@ -158,12 +190,6 @@ const About = () => {
             </div>
           </div>
         </div>
-
-        {Object.values(responses).every((response) => !response.text) && (
-          <div className="mt-8 text-center">
-            <div className="inline-block"></div>
-          </div>
-        )}
       </div>
     </div>
   );

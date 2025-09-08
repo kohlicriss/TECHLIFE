@@ -22,16 +22,26 @@ import {
   MdChevronRight,
 } from "react-icons/md";
 import { FaPhone, FaBuilding } from "react-icons/fa";
+import { IoEye } from "react-icons/io5";
 import axios from "axios";
 import { publicinfoApi } from "../../../../axiosInstance";
-
 
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { empID } = useParams();
-  let { userprofiledata, setUserProfileData, theme } = useContext(Context);
+  let { userprofiledata, setUserProfileData, theme, userData } = useContext(Context);
 
+  // ✅ NEW: Context menu detection
+  const searchParams = new URLSearchParams(location.search);
+  const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+  const targetEmployeeId = searchParams.get('targetEmployeeId');
+
+  // ✅ NEW: Determine which employee ID to use for fetching profile data
+  const profileEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
+  
+  // ✅ NEW: Check if this is read-only mode (viewing another employee's profile)
+  const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID;
 
   const [activeTab, setActiveTab] = useState(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -43,47 +53,57 @@ const Profiles = () => {
   // This local state is for the edit modal form ONLY.
   const [employeeData, setEmployeeData] = useState({});
 
+  // ✅ NEW: Store the viewed employee data separately
+  const [viewedEmployeeData, setViewedEmployeeData] = useState(null);
 
+  // ✅ UPDATED: Use profileEmployeeId instead of empID
   useEffect(() => {
-    if (!empID) {
+    if (!profileEmployeeId) {
       return;
     }
 
+    if (fromContextMenu && targetEmployeeId) {
+      console.log("Viewing profile from context menu for employee:", targetEmployeeId);
+    }
 
     const fetchEmployeeDetails = async () => {
       try {
-        const relativePath = `/employee/${empID}`;
+        const relativePath = `/employee/${profileEmployeeId}`;
         console.log(`Requesting data from: ${relativePath}`);
         const response = await publicinfoApi.get(relativePath);
 
-
         console.log("✅ API Response Received:", response);
         console.log("✅ Employee Data:", response.data);
-        setUserProfileData(response.data); // Update the global context
-        setEmployeeData(response.data); // Pre-fill local state for the edit modal
 
+        if (fromContextMenu && targetEmployeeId && targetEmployeeId !== empID) {
+          // ✅ If viewing another employee, store in separate state
+          setViewedEmployeeData(response.data);
+        } else {
+          // ✅ If viewing own profile, update global context
+          setUserProfileData(response.data);
+          setEmployeeData(response.data); // Pre-fill local state for the edit modal
+        }
 
       } catch (err) {
         console.error("❌ Error fetching employee details:", err);
       }
     };
 
-
     fetchEmployeeDetails();
-  }, [empID, setUserProfileData]);
-
+  }, [profileEmployeeId, setUserProfileData, fromContextMenu, targetEmployeeId, empID]);
 
   useEffect(() => {
     setActiveTab(location.pathname);
   }, [location.pathname]);
 
+  // ✅ UPDATED: Use the correct data source for display
+  const displayData = isReadOnly ? viewedEmployeeData : userprofiledata;
 
-  const initials = (userprofiledata?.displayName || "  ")
+  const initials = (displayData?.displayName || "  ")
     .split(" ")
     .map((word) => word[0])
     .join("")
     .substring(0,2);
-
 
   const tabs = [
     { name: "About", path: `about`, icon: MdPerson },
@@ -92,8 +112,12 @@ const Profiles = () => {
     { name: "Documents", path: `documents`, icon: MdBusiness },
   ];
 
-
   const handleImageUpload = (event) => {
+    if (isReadOnly) {
+      alert("You cannot upload images for another employee's profile.");
+      return;
+    }
+    
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -106,13 +130,16 @@ const Profiles = () => {
     }
   };
 
-
   const handleEditClick = () => {
+    if (isReadOnly) {
+      alert("You can only view this employee's profile. Editing is not allowed.");
+      return;
+    }
+    
     // When opening edit modal, ensure local state is synced with context
-    setEmployeeData(userprofiledata);
+    setEmployeeData(displayData);
     setIsEditing(true);
   };
-
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -120,7 +147,6 @@ const Profiles = () => {
     // e.g., updateEmployee(empID, employeeData);
     setIsEditing(false);
   };
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -130,43 +156,49 @@ const Profiles = () => {
     }));
   };
 
-
+  // ✅ UPDATED: Handle tab navigation with context menu parameters
   const handleTabClick = (path) => {
-    navigate(path);
+    const basePath = `/profile/${empID}/${path}`;
+    if (fromContextMenu && targetEmployeeId) {
+      navigate(`${basePath}?fromContextMenu=true&targetEmployeeId=${targetEmployeeId}`);
+    } else {
+      navigate(basePath);
+    }
   };
-
 
   return (
     <div className={`min-h-screen flex flex-col ${
       theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
     }`}>
+      
       {/* Header */}
       <div className={`h-48 relative ${
         theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'
       }`}>
-        <div className="absolute top-4 right-8">
-          <button
-            onClick={handleEditClick}
-            className={`p-2 cursor-pointer rounded transition-colors ${
-              theme === 'dark'
-                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                : 'bg-white hover:bg-gray-100 text-gray-600'
-            }`}
-            title="Edit Profile"
-          >
-            <HiPencil className="w-4 h-4" />
-          </button>
-        </div>
-
+        
+        {!isReadOnly && (
+          <div className="absolute top-4 right-8">
+            <button
+              onClick={handleEditClick}
+              className={`p-2 cursor-pointer rounded transition-colors ${
+                theme === 'dark'
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                  : 'bg-white hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Edit Profile"
+            >
+              <HiPencil className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <div className="flex items-start pt-4 px-8">
           <div className="relative group cursor-pointer">
-            <label htmlFor="profile-upload" className="cursor-pointer block">
+            <label htmlFor={!isReadOnly ? "profile-upload" : ""} className={isReadOnly ? "cursor-not-allowed" : "cursor-pointer block"}>
               
-              {/* ======================= START: FINAL IMAGE FIX ======================= */}
-              {(profileImagePreview || userprofiledata?.employeeImage) ? (
+              {(profileImagePreview || displayData?.employeeImage) ? (
                 <img
-                  src={profileImagePreview || userprofiledata.employeeImage}
+                  src={profileImagePreview || displayData.employeeImage}
                   alt="Profile"
                   className="w-32 h-32 rounded-full bg-white border-2 border-white shadow-lg object-cover"
                 />
@@ -179,61 +211,61 @@ const Profiles = () => {
                   {initials}
                 </div>
               )}
-              {/* ======================= END: FINAL IMAGE FIX ======================= */}
 
-
-              <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <span className="text-white text-sm">Upload Photo</span>
-              </div>
+              {!isReadOnly && (
+                <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <span className="text-white text-sm">Upload Photo</span>
+                </div>
+              )}
             </label>
-            <input
-              type="file"
-              id="profile-upload"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+            {!isReadOnly && (
+              <input
+                type="file"
+                id="profile-upload"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            )}
           </div>
-
 
           <div className={`ml-8 ${
             theme === 'dark' ? 'text-white' : 'text-gray-800'
           }`}>
             <h1 className="text-3xl font-bold tracking-wide mb-4">
-              {userprofiledata?.displayName}
+              {displayData?.displayName}
             </h1>
             <div className={`grid grid-cols-2 gap-x-12 gap-y-2 text-sm ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
             }`}>
               <div className="flex items-center space-x-2">
                 <HiIdentification className="w-5 h-5" />
-                <p>{userprofiledata?.employeeId}</p>
+                <p>{displayData?.employeeId}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaBuilding className="w-5 h-5" />
-                <p>{userprofiledata?.location}</p>
+                <p>{displayData?.location}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdWork className="w-5 h-5" />
-                <p>{userprofiledata?.jobTitlePrimary}</p>
+                <p>{displayData?.jobTitlePrimary}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdEmail className="w-5 h-5" />
-                <p>{userprofiledata?.workEmail}</p>
+                <p>{displayData?.workEmail}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaPhone className="w-5 h-5" />
-                <p>{userprofiledata?.workNumber}</p>
+                <p>{displayData?.workNumber}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdPerson className="w-5 h-5" />
-                <p>{userprofiledata?.jobTitleSecondary}</p>
+                <p>{displayData?.jobTitleSecondary}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
 
       <div className="flex flex-1">
         <main className={`flex-1 p-6 ${
@@ -247,7 +279,6 @@ const Profiles = () => {
             <Route path="documents" element={<Document />} />
           </Routes>
         </main>
-
 
         <div
           className={`transition-all duration-300 ${
@@ -271,13 +302,13 @@ const Profiles = () => {
           <nav className="p-4 sticky top-0">
             <div className="space-y-1">
               {tabs.map((tab) => {
-                const tabPath = `/profile/${empID}/${tab.path}`;
+                const isActive = location.pathname.endsWith(tab.path);
                 return (
                   <div
                     key={tab.path}
-                    onClick={() => handleTabClick(tabPath)}
+                    onClick={() => handleTabClick(tab.path)}
                     className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === tabPath
+                      isActive
                         ? theme === 'dark'
                           ? "bg-blue-600 text-white"
                           : "bg-black text-white"
@@ -288,7 +319,7 @@ const Profiles = () => {
                   >
                     <tab.icon
                       className={`w-5 h-5 ${
-                        activeTab === tabPath 
+                        isActive 
                           ? "text-white" 
                           : theme === 'dark'
                           ? "text-gray-400"
@@ -306,8 +337,7 @@ const Profiles = () => {
         </div>
       </div>
 
-
-      {isEditing && (
+      {isEditing && !isReadOnly && (
         <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-[200]">
           <div className={`rounded-lg p-6 w-[500px] shadow-2xl ${
             theme === 'dark' ? 'bg-gray-800' : 'bg-white'
@@ -372,6 +402,5 @@ const Profiles = () => {
     </div>
   );
 };
-
 
 export default Profiles;

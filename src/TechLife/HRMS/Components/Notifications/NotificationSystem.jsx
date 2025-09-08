@@ -1,4 +1,5 @@
 import React, { useState, useContext, useMemo, useRef } from "react";
+import { notificationsApi } from "../../../../axiosInstance";
 import { useNavigate } from "react-router-dom";
 import {
   FaBars,
@@ -24,7 +25,7 @@ import { parseISO, formatDistanceToNow, format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { Context } from "../HrmsContext";
 import { motion, AnimatePresence } from "framer-motion";
- 
+
 const NotificationSystem = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("All");
@@ -36,14 +37,14 @@ const NotificationSystem = () => {
   const [toDate, setToDate] = useState(null);
   const navigate = useNavigate();
   const { gdata, setGdata, markAsRead, decrementUnreadCount, theme } = useContext(Context);
- 
+
   const fromDateRef = useRef(null);
   const toDateRef = useRef(null);
- 
+
   // Helper functions
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
- 
+
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
     setIsEditMode(false);
@@ -52,7 +53,7 @@ const NotificationSystem = () => {
       setIsMobileMenuOpen(false);
     }
   };
- 
+
   const getKindIcon = (kind) => {
     const icons = {
       alert: <FaTimesCircle size={18} className="text-red-500" />,
@@ -61,51 +62,37 @@ const NotificationSystem = () => {
     };
     return icons[kind] || <FaInfoCircle size={18} className="text-gray-400" />;
   };
- 
+
   const handleStar = async (id) => {
     if (isEditMode) {
       handleSelectNotification(id);
       return;
     }
- 
+
     const originalGdata = [...gdata];
     const notificationToUpdate = gdata.find((msg) => msg.id === id);
- 
+
     if (!notificationToUpdate) return;
- 
+
     // Optimistically update the UI to feel responsive
     const updatedGdata = gdata.map((msg) =>
       msg.id === id ? { ...msg, stared: !msg.stared } : msg
     );
     setGdata(updatedGdata);
- 
+
     try {
-      let response;
       const isCurrentlyStared = notificationToUpdate.stared;
- 
+      let response;
+
       if (isCurrentlyStared) {
-       
-        response = await fetch(
-          `http://localhost:8085/api/notifications/unstared/${id}`,
-          {
-            method: "PUT",
-          }
-        );
+        response = await notificationsApi.put(`/unstared/${id}`);
       } else {
-       
-        response = await fetch(
-          `http://localhost:8085/api/notifications/stared/${id}`,
-          {
-            method: "PUT",
-          }
-        );
+        response = await notificationsApi.put(`/stared/${id}`);
       }
- 
-      if (!response.ok) {
-        throw new Error(`API call failed with status: ${response.status}`);
-      }
- 
+
       console.log(`Notification ${id} star status updated successfully.`);
+      console.log("Star API response:", response);
+
     } catch (error) {
       console.error("Failed to update star status:", error);
       // If the API call fails, revert the UI to the original state
@@ -113,49 +100,40 @@ const NotificationSystem = () => {
       alert("Failed to update the notification. Please try again.");
     }
   };
- 
+
   const handleDeleteSingle = async (id) => {
     if (isEditMode) {
       handleSelectNotification(id);
       return;
     }
- 
+
     const originalGdata = [...gdata];
     const notificationToDelete = gdata.find((msg) => msg.id === id);
- 
+
     // Optimistically update UI
     setGdata(gdata.filter((msg) => msg.id !== id));
     // Decrement count if the deleted notification was unread
     if (notificationToDelete && !notificationToDelete.read) {
         decrementUnreadCount();
     }
- 
+
     try {
-      const response = await fetch(
-        `http://localhost:8085/api/notifications/delete/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
- 
-      if (!response.ok) {
-        throw new Error(`API call failed with status: ${response.status}`);
-      }
- 
+      const response = await notificationsApi.delete(`/delete/${id}`);
       console.log(`Notification ${id} deleted successfully.`);
+      console.log("Delete API response:", response);
     } catch (error) {
       console.error("Failed to delete notification:", error);
       setGdata(originalGdata); // Revert if API call fails
       alert("Failed to delete the notification. Please try again.");
     }
   };
- 
+
   const handleSelectNotification = (id) => {
     setSelectedNotifications((prev) =>
       prev.includes(id) ? prev.filter((selId) => selId !== id) : [...prev, id]
     );
   };
- 
+
   const handleNotificationClick = (message) => {
     if (isEditMode) {
       handleSelectNotification(message.id);
@@ -164,60 +142,58 @@ const NotificationSystem = () => {
       navigate(message.link);
     }
   };
- 
+
   const handleEditClick = () => {
     setIsEditMode(true);
     setSelectedNotifications([]);
   };
- 
+
   const handleCancelEdit = () => {
     setIsEditMode(false);
     setSelectedNotifications([]);
   };
- 
+
   const handleDeleteSelected = async () => {
     const originalGdata = [...gdata];
     const idsToDelete = selectedNotifications;
- 
+
     // Identify which selected notifications were unread to adjust count
     const unreadDeletedCount = gdata.filter(msg =>
         idsToDelete.includes(msg.id) && !msg.read
     ).length;
- 
+
     // Optimistically update UI (remove selected notifications)
     setGdata(gdata.filter((msg) => !idsToDelete.includes(msg.id)));
     setIsEditMode(false);
     setSelectedNotifications([]);
- 
+
     // Decrement count based on unread items deleted
     for (let i = 0; i < unreadDeletedCount; i++) {
         decrementUnreadCount();
     }
- 
+
     try {
       // Assuming your backend can handle a batch delete or multiple deletes
-      await Promise.all(idsToDelete.map(id =>
-        fetch(`http://localhost:8085/api/notifications/delete/${id}`, { method: "DELETE" })
-          .then(res => {
-            if (!res.ok) throw new Error(`Failed to delete ${id}`);
-          })
+      const responses = await Promise.all(idsToDelete.map(id =>
+        notificationsApi.delete(`/delete/${id}`)
       ));
-     
+      
       console.log(`Selected notifications deleted successfully.`);
+      console.log("Batch delete API responses:", responses);
     } catch (error) {
       console.error("Failed to delete selected notifications:", error);
       setGdata(originalGdata); // Revert UI if any deletion fails
       alert("Failed to delete selected notifications. Please try again.");
     }
   };
- 
+
   const clearFilters = () => {
     setFromDate(null);
     setToDate(null);
     setSearchQuery("");
     setActiveTab("All");
   };
- 
+
   const getTimeAgo = (date) => {
     try {
       const parsedDate = parseISO(date);
@@ -227,7 +203,7 @@ const NotificationSystem = () => {
       return "";
     }
   };
- 
+
   const getTimestamp = (dateString) => {
     try {
       const timeZone = "Asia/Kolkata";
@@ -237,18 +213,18 @@ const NotificationSystem = () => {
       return "";
     }
   };
- 
+
   // Memoized values
   const unreadCount = useMemo(
     () => gdata?.filter((msg) => !msg.read).length || 0,
     [gdata]
   );
- 
+
   const filteredNotifications = useMemo(() => {
     let filtered = gdata || [];
     const lowerCaseTab = activeTab.toLowerCase();
     const lowerCaseQuery = searchQuery.toLowerCase();
- 
+
     if (activeTab === "Unread") filtered = filtered.filter((msg) => !msg.read);
     else if (activeTab === "Starred")
       filtered = filtered.filter((msg) => msg.stared);
@@ -259,7 +235,7 @@ const NotificationSystem = () => {
         msg.category?.toLowerCase().includes(lowerCaseTab)
       );
     }
- 
+
     if (searchQuery) {
       filtered = filtered.filter(
         (msg) =>
@@ -268,14 +244,14 @@ const NotificationSystem = () => {
           msg.sender?.toLowerCase().includes(lowerCaseQuery)
       );
     }
- 
+
     if (fromDate) {
       const fromDateObj = parseISO(fromDate);
       filtered = filtered.filter(
         (msg) => parseISO(msg.createdAt) >= fromDateObj
       );
     }
- 
+
     if (toDate) {
       const toDateObj = parseISO(toDate);
       const adjustedToDateObj = new Date(toDateObj);
@@ -284,10 +260,10 @@ const NotificationSystem = () => {
         (msg) => parseISO(msg.createdAt) < adjustedToDateObj
       );
     }
- 
+
     return filtered;
   }, [gdata, activeTab, searchQuery, fromDate, toDate]);
- 
+
   // Animation variants
   const topBarVariants = {
     hidden: { y: -50, opacity: 0 },
@@ -297,12 +273,12 @@ const NotificationSystem = () => {
       transition: { type: "spring", stiffness: 100, damping: 10 },
     },
   };
- 
+
   const buttonVariants = {
     hover: { scale: 1.05 },
     tap: { scale: 0.95 },
   };
- 
+
   // Sidebar navigation items
   const sidebarItems = [
     { tab: "Leaves", icon: FaEnvelope },
@@ -310,7 +286,7 @@ const NotificationSystem = () => {
     { tab: "Finance", icon: FaMoneyBillAlt },
     { tab: "Attendance", icon: FaCalendar },
   ];
- 
+
   return (
     <div className={`w-full h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Top Bar */}
@@ -336,7 +312,7 @@ const NotificationSystem = () => {
           >
             <FaBars size={18} />
           </motion.button>
- 
+
           <div className="relative flex-1 mx-3">
             <FaSearch
               className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${
@@ -357,7 +333,7 @@ const NotificationSystem = () => {
             />
           </div>
         </div>
- 
+
         {/* === DESKTOP HEADER === */}
         <div className="hidden sm:flex items-center space-x-4 py-2 px-4 h-[60px]">
           {/* Tabs */}
@@ -388,7 +364,7 @@ const NotificationSystem = () => {
               </motion.button>
             ))}
           </div>
- 
+
           {/* Search Bar */}
           <div className="relative flex-1">
             <FaSearch
@@ -409,7 +385,7 @@ const NotificationSystem = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
- 
+
           {/* Filters */}
           <div className="flex items-center space-x-2">
             <button
@@ -460,7 +436,7 @@ const NotificationSystem = () => {
               <FaTimes size={14} />
             </button>
           </div>
- 
+
           {/* Action Buttons & Notifications */}
           <div className="flex items-center">
             {/* Button Group */}
@@ -510,7 +486,7 @@ const NotificationSystem = () => {
           </div>
         </div>
       </motion.div>
- 
+
       {/* Main Content (added dynamic padding-right for fixed sidebar) */}
       <div className="flex flex-1 overflow-hidden h-[calc(100vh-60px)]">
         {/* Notification List */}
@@ -560,7 +536,7 @@ const NotificationSystem = () => {
                       )}
                     </div>
                     <div className="flex-1 overflow-hidden pr-8">
-                      <div className={`font-semibold text-sm ${
+                      <div className={`font-semibold text-sm truncate ${
                         theme === 'dark' ? 'text-white' : 'text-gray-800'
                       }`}>
                         {message.subject}
@@ -621,7 +597,7 @@ const NotificationSystem = () => {
                     />
                   </div>
                 </div>
- 
+
                 {/* Desktop Layout */}
                 <div className="hidden sm:flex items-center w-full h-[90px] p-2">
                   <div className="px-2">
@@ -723,7 +699,7 @@ const NotificationSystem = () => {
             </div>
           )}
         </div>
- 
+
         {/* Desktop Sidebar (Moved to the Right) */}
         <aside
           // Changed sm:sticky to sm:fixed, adjusted top and right
@@ -774,7 +750,7 @@ const NotificationSystem = () => {
           </nav>
         </aside>
       </div>
- 
+
       {/* === MOBILE SIDEBAR MENU === */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -813,7 +789,7 @@ const NotificationSystem = () => {
                   }`} />
                 </motion.button>
               </div>
- 
+
               <div className="flex-1 overflow-y-auto">
                 <div className={`flex border-b h-12 ${
                   theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
@@ -834,7 +810,7 @@ const NotificationSystem = () => {
                     </button>
                   ))}
                 </div>
- 
+
                 <div className="p-4 space-y-4">
                   <div className="flex justify-between items-center">
                     <h6 className={`text-sm font-semibold flex items-center ${
@@ -854,7 +830,7 @@ const NotificationSystem = () => {
                       Clear All
                     </button>
                   </div>
- 
+
                   <div className="flex flex-col space-y-1">
                     {sidebarItems.map(({ tab }) => (
                       <button
@@ -872,7 +848,7 @@ const NotificationSystem = () => {
                       </button>
                     ))}
                   </div>
- 
+
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div className="flex items-center space-x-2">
                       <button
@@ -931,7 +907,7 @@ const NotificationSystem = () => {
                       />
                     </div>
                   </div>
- 
+
                   <div className="flex space-x-2 pt-4">
                     {!isEditMode ? (
                       <button
@@ -974,5 +950,5 @@ const NotificationSystem = () => {
     </div>
   );
 };
- 
+
 export default NotificationSystem;
