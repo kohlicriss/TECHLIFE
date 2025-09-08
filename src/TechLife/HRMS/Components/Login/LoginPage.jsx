@@ -28,10 +28,8 @@ const decodeJwt = (token) => {
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
 
-  // Mocking the context to make the component runnable
-  const {theme, setTheme} = useContext(Context);
-  const setUserData = (data) => console.log('Mock setUserData:', data);
-  const setAccessToken = (token) => console.log('Mock setAccessToken:', token);
+  // ✅ FIX: Get setUserData from the context to update it directly
+  const { theme, setTheme, setUserData, setAccessToken } = useContext(Context);
 
   const [selectedRole, setSelectedRole] = useState("Admin");
   const [name, setName] = useState("");
@@ -140,22 +138,19 @@ const LoginPage = ({ onLogin }) => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Login Successful! Access Token Received:", data);
         localStorage.setItem("accessToken", data.accessToken);
-        console.log("Access token has been saved to Local Storage.");
         setAccessToken(data.accessToken);
 
-        try {
-          const decodedPayload = decodeJwt(data.accessToken);
-           localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
-          setUserData(decodedPayload);
-          employeeIdFromToken = decodedPayload.employeeId;
-          console.log("Decoded Access Token Payload:", decodedPayload);
+        const decodedPayload = decodeJwt(data.accessToken);
+        if (decodedPayload) {
+          localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
           localStorage.setItem("logedempid", decodedPayload.employeeId);
           localStorage.setItem("logedemprole", decodedPayload.roles[0]);
-          localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
-        } catch (decodeError) {
-          console.error("Failed to decode access token:", decodeError);
+          
+          // ✅ FIX: Update the context state directly so the app re-renders
+          setUserData(decodedPayload);
+          
+          employeeIdFromToken = decodedPayload.employeeId;
         }
 
         setWrongAttempts(0);
@@ -189,7 +184,8 @@ const LoginPage = ({ onLogin }) => {
       setIsLoading(false);
     }
   };
-
+  
+  // ... (the rest of the file remains the same) ...
   const handleOtpMethodSelect = (method) => {
     setOtpMethod(method);
     resetTimer();
