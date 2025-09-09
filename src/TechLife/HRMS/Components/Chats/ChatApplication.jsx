@@ -376,6 +376,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
         try {
             const rawMessages = await getMessages(currentUser.id, chatId, pageNum, 15);
+            console.log("%c REFRESH (API) RAW DATA:", "color: red; font-weight: bold;", rawMessages);
 
             if (rawMessages.length === 0) {
                 setHasMoreMessages(prev => ({ ...prev, [chatId]: false }));
@@ -478,6 +479,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             : true;
 
         const parsedData = JSON.parse(payload.body);
+        console.log("%c LIVE MSG (WebSocket) RAW DATA:", "color: green; font-weight: bold;", parsedData);
         console.log("Received WebSocket Message:", parsedData);
 
         if (parsedData.type === 'STATUS_UPDATE') {
@@ -1080,6 +1082,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 }
 
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                console.log("Local Audio Blob created:", audioBlob);
+                const debugUrl = URL.createObjectURL(audioBlob);
+                console.log("You can manually open this local URL to test:", debugUrl);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = debugUrl;
+                a.download = 'test-recording.webm';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
                 const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
 
                 const audioDuration = await getAudioDuration(audioBlob);
@@ -1337,15 +1349,17 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const filteredChats = allChats.filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
     useEffect(() => {
-        if (isChatDataReady && !selectedChat && allChats.length > 0) {
-            if (chatIdFromUrl) {
-                const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
-                if (chatToSelect) {
-                    handleChatSelect(chatToSelect);
-                }
+        if (chatIdFromUrl && allChats.length > 0 && isConnected && !selectedChat) {
+            const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
+
+            if (chatToSelect) {
+                console.log("SUCCESS: All conditions met. Selecting chat from URL:", chatToSelect);
+                handleChatSelect(chatToSelect);
+            } else {
+                console.warn(`WARN: Chat with ID ${chatIdFromUrl} not found in the chat list.`);
             }
         }
-    }, [isChatDataReady, allChats, selectedChat, handleChatSelect, chatIdFromUrl]);
+    }, [allChats, chatIdFromUrl, selectedChat, handleChatSelect, isConnected]);
 
     const openGroupInfoModal = () => {
         if (selectedChat?.type === 'group') {
@@ -1357,14 +1371,18 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const formatTimestamp = (isoString) => {
         if (!isoString) return '';
-        const date = new Date(isoString);
+        const date = new Date(isoString.endsWith('Z') ? isoString : isoString + 'Z');
         if (isNaN(date)) return '';
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
     };
 
     const formatDateHeader = (isoString) => {
         if (!isoString) return '';
-        const date = new Date(isoString);
+        const date = new Date(String(isoString).endsWith('Z') ? isoString : isoString + 'Z');
         if (isNaN(date)) return 'Invalid Date';
         const today = new Date();
         const yesterday = new Date(today);
@@ -1374,7 +1392,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return date.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
-    const formatLastSeen = (isoString) => { if (!isoString) return 'Offline'; const date = new Date(isoString); if (isNaN(date)) return 'Offline'; const today = new Date(); if (date.toDateString() === today.toDateString()) return `last seen today at ${formatTimestamp(isoString)}`; return `last seen on ${date.toLocaleDateString()}`; };
+    const formatLastSeen = (isoString) => {
+        if (!isoString) return 'Offline';
+        const date = new Date(String(isoString).endsWith('Z') ? isoString : isoString + 'Z');
+        if (isNaN(date)) return 'Offline';
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+            return `last seen today at ${formatTimestamp(isoString)}`;
+        }
+        return `last seen on ${date.toLocaleDateString()}`;
+    };
 
     const getStatusRingColor = (status) => {
         switch (status) {

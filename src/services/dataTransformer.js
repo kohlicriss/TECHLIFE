@@ -63,75 +63,75 @@ export const transformOverviewToChatList = (overviewData, currentUserId) => {
 };
 
 export const transformMessageDTOToUIMessage = (msgDto) => {
-  let timestamp;
-  try {
-    if (msgDto.timestamp) {
-      timestamp = new Date(msgDto.timestamp).toISOString();
-    } else if (msgDto.date && msgDto.time) {
-      timestamp = new Date(`${msgDto.date} ${msgDto.time}`).toISOString();
-    } else {
-      timestamp = new Date().toISOString();
+    let timestamp;
+    try {
+        if (msgDto.timestamp) {
+            const tsString = String(msgDto.timestamp);
+            timestamp = new Date(tsString.endsWith('Z') ? tsString : tsString + 'Z').toISOString();
+        } else if (msgDto.date && msgDto.time) {
+            timestamp = new Date(`${msgDto.date} ${msgDto.time} UTC`).toISOString();
+        } else {
+            timestamp = new Date().toISOString();
+        }
+    } catch (e) {
+        timestamp = new Date().toISOString();
     }
-  } catch (e) {
-    timestamp = new Date().toISOString();
-  }
-  
-  let messageType = 'text';
-  let fileUrl = msgDto.fileUrl || null;
+    
+    let messageType = 'text';
+    let fileUrl = msgDto.fileUrl || null;
 
-  if (msgDto.fileName) {
-    if (msgDto.fileType) {
-      if (msgDto.fileType.startsWith('image/')) messageType = 'image';
-      else if (msgDto.fileType.startsWith('audio/')) messageType = 'audio';
-      else if (msgDto.fileType.startsWith('video/')) messageType = 'video';
-      else messageType = 'file';
-    } 
-    else {
-      if (msgDto.fileName.match(/\.(jpeg|jpg|gif|png|webp)$/i)) messageType = 'image';
-      else if (msgDto.fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) messageType = 'audio';
-      else if (msgDto.fileName.match(/\.(mp4|webm|mov)$/i)) messageType = 'video';
-      else messageType = 'file';
+    if (msgDto.fileName) {
+        if (msgDto.fileType) {
+            if (msgDto.fileType.startsWith('image/')) messageType = 'image';
+            else if (msgDto.fileType.startsWith('audio/')) messageType = 'audio';
+            else if (msgDto.fileType.startsWith('video/')) messageType = 'video';
+            else messageType = 'file';
+        } else {
+            if (msgDto.fileName.match(/\.(jpeg|jpg|gif|png|webp)$/i)) messageType = 'image';
+            else if (msgDto.fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) messageType = 'audio';
+            else if (msgDto.fileName.match(/\.(mp4|webm|mov)$/i)) messageType = 'video';
+            else messageType = 'file';
+        }
+    } else if (msgDto.kind && msgDto.kind !== 'text') {
+        messageType = msgDto.kind.toLowerCase();
     }
-  } else if (msgDto.kind && msgDto.kind !== 'text') {
-    messageType = msgDto.kind.toLowerCase();
-  }
-  
-  const messageIdForUrl = msgDto.id || msgDto.messageId;
+    
+    const messageIdForUrl = msgDto.id || msgDto.messageId;
 
-  if (!fileUrl && ['image', 'video', 'audio', 'file'].includes(messageType) && messageIdForUrl) {
-      const baseUrl = chatApi.defaults.baseURL;
-      fileUrl = `${baseUrl}/chat/file/${messageIdForUrl}`;
-  }
-  
-  if (msgDto.isDeleted) {
-    messageType = 'deleted';
-  }
+    if (!fileUrl && ['image', 'video', 'audio', 'file'].includes(messageType) && messageIdForUrl) {
+        const baseUrl = chatApi.defaults.baseURL;
+        fileUrl = `${baseUrl}/chat/file/${messageIdForUrl}`;
+    }
+    
+    if (msgDto.isDeleted) {
+        messageType = 'deleted';
+    }
 
-  const finalId = msgDto.id || msgDto.messageId;
-  
-  return {
-    id: finalId, 
-    messageId: finalId, 
-    content: msgDto.content,
-    sender: msgDto.sender,
-    timestamp: timestamp,
-    status: (msgDto.seen === true || String(msgDto.isSeen) === 'true') ? 'seen' : 'sent',
-    type: messageType,
-    isEdited: msgDto.isEdited || false,
-    isPinned: msgDto.pinned || false,
-    fileName: msgDto.fileName || null,
-    fileUrl: fileUrl,
-    fileSize: msgDto.fileSize || null,
-    duration: msgDto.duration || 0,
-    clientId: msgDto.clientId || null,
-    isForwarded: msgDto.forwarded || false,
-    forwardedFrom: msgDto.forwardedFrom || null,
-    isReply: !!msgDto.replyTo,
-    replyTo: msgDto.replyTo ? {
-      sender: msgDto.replyTo.senderId,
-      content: msgDto.replyTo.content,
-      originalMessageId: msgDto.replyTo.originalMessageId,
-      type: msgDto.replyTo.type
-    } : null,
-  };
+    const finalId = msgDto.id || msgDto.messageId;
+    
+    return {
+        id: finalId, 
+        messageId: finalId, 
+        content: msgDto.content,
+        sender: msgDto.sender,
+        timestamp: timestamp,
+        status: (msgDto.seen === true || String(msgDto.isSeen) === 'true') ? 'seen' : 'sent',
+        type: messageType,
+        isEdited: msgDto.isEdited || false,
+        isPinned: msgDto.pinned || false,
+        fileName: msgDto.fileName || null,
+        fileUrl: fileUrl,
+        fileSize: msgDto.fileSize || null,
+        duration: msgDto.duration || 0,
+        clientId: msgDto.clientId || null,
+        isForwarded: msgDto.forwarded || false,
+        forwardedFrom: msgDto.forwardedFrom || null,
+        isReply: !!msgDto.replyTo,
+        replyTo: msgDto.replyTo ? {
+            sender: msgDto.replyTo.senderId,
+            content: msgDto.replyTo.content,
+            originalMessageId: msgDto.replyTo.originalMessageId,
+            type: msgDto.replyTo.type
+        } : null,
+    };
 };
