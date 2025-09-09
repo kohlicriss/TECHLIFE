@@ -685,7 +685,6 @@ const getStatusColor = (status) => {
                                 value={newProject.rating}
                                 onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
                             />
-                        </div>
                         <div className="mt-2">
                             <label className="block text-sm font-medium text-gray-700 mb-0">Employee_team</label>
                             <textarea
@@ -773,6 +772,7 @@ const getStatusColor = (status) => {
                                     </ul>
                                 </div>
                             )}
+                        </div>
                         </div>
                         <div className="flex mt-2 gap-4 justify-center">
                             <button

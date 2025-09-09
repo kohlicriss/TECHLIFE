@@ -84,7 +84,40 @@ const TrendingDownIcon = ({ className }) => (
   {value:"162/200",description:"Total Hours Month",trend:"down",trendPercentage:"8",trendPeriod:"Last Month"},
   {value:"16/28",description:"Overtime this Month",trend:"down",trendPercentage:"6",trendPeriod:"Last Month"}
  ]
-
+ 
+;
+ const dates = ["All", "11", "12", "13", "14", "15"];
+ const rawTableData = [
+   {  employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+   {  employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
+   {  employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+   {  employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+   {  employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
+   {  employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+   {  employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+   {  employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+ ];
+ const rawPieData = [
+   { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
+   { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
+   { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
+   { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
+   { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
+ ]
+  const barChartData = [
+   { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
+   { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
+   { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
+   { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
+   { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
+ ]
+ const Data = [
+   { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+ ];
 const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod }) => {
     const isUp = trend === 'up';
     return (
@@ -108,141 +141,181 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
 
 // --- Sub-Component for Hours and Schedule Bar ---
 const MyComponent = ({ Data, selectedDate }) => {
-    const [hoveredHour, setHoveredHour] = useState(null);
+  const [hoveredHour, setHoveredHour] = useState(null);
 
-    const getHourValue = useCallback((timeString) => {
-        const [start, end] = timeString.split(' - ');
-        const [startHour, startMinute] = start.split(':').map(Number);
-        const [endHour, endMinute] = end.split(':').map(Number);
-        return { start: startHour + startMinute / 60, end: endHour + endMinute / 60 };
-    }, []);
-
-    const formatDuration = (totalSeconds) => {
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = Math.floor(totalSeconds % 60);
-        let result = "";
-        if (hours > 0) result += `${String(hours).padStart(2, '0')}h `;
-        if (minutes > 0) result += `${String(minutes).padStart(2, '0')}m `;
-        if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`;
-        return result.trim() || '0s';
+  // Helper to get start/end hour from time string
+  const getHourValue = useCallback((timeString) => {
+    const [start, end] = timeString.split(' - ');
+    const [startHour, startMinute] = start.split(':').map(Number);
+    const [endHour, endMinute] = end.split(':').map(Number);
+    return {
+      start: startHour + startMinute / 60,
+      end: endHour + endMinute / 60
     };
+  }, []);
 
-    const calculateMetrics = useMemo(() => {
-        if (!Data || selectedDate === "All") return null;
-        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
-        if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
+  // Format seconds to hh mm ss
+  const formatDuration = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    let result = "";
+    if (hours > 0) result += `${String(hours).padStart(2, '0')}h `;
+    if (minutes > 0) result += `${String(minutes).padStart(2, '0')}m `;
+    if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`;
+    return result.trim() || '0s';
+  };
 
-        const totalWorkingSeconds = (new Date(`2000/01/01 ${dayData.End_time}`) - new Date(`2000/01/01 ${dayData.Start_time}`)) / 1000;
-        let breakSeconds = 0;
-        if (dayData.Break_hour) {
-            dayData.Break_hour.forEach(b => {
-                const [start, end] = b.Time.split(' - ');
-                breakSeconds += (new Date(`2000/01/01 ${end}`) - new Date(`2000/01-01 ${start}`)) / 1000;
-            });
-        }
-        const productiveSeconds = totalWorkingSeconds - breakSeconds;
-        const standardDaySeconds = 8 * 3600;
-        const overtimeSeconds = Math.max(0, productiveSeconds - standardDaySeconds);
+  // Calculate metrics for selected date
+  const calculateMetrics = useMemo(() => {
+    if (!Data || selectedDate === "All") return null;
+    const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+    if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
 
-        return {
-            totalWorkingHours: formatDuration(totalWorkingSeconds),
-            productiveHours: formatDuration(productiveSeconds),
-            breakHours: formatDuration(breakSeconds),
-            overtime: formatDuration(overtimeSeconds)
-        };
-    }, [selectedDate, Data]);
+    const totalWorkingSeconds =
+      (new Date(`2000/01/01 ${dayData.End_time}`) - new Date(`2000/01/01 ${dayData.Start_time}`)) / 1000;
+    let breakSeconds = 0;
+    if (dayData.Break_hour) {
+      dayData.Break_hour.forEach(b => {
+        const [start, end] = b.Time.split(' - ');
+        breakSeconds += (new Date(`2000/01/01 ${end}`) - new Date(`2000/01/01 ${start}`)) / 1000;
+      });
+    }
+    const productiveSeconds = totalWorkingSeconds - breakSeconds;
+    const standardDaySeconds = 8 * 3600;
+    const overtimeSeconds = Math.max(0, productiveSeconds - standardDaySeconds);
 
-    const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
+    return {
+      totalWorkingHours: formatDuration(totalWorkingSeconds),
+      productiveHours: formatDuration(productiveSeconds),
+      breakHours: formatDuration(breakSeconds),
+      overtime: formatDuration(overtimeSeconds)
+    };
+  }, [selectedDate, Data]);
 
-    const renderScheduleBar = useCallback(() => {
-        if (!Data || selectedDate === "All") return <div className="text-gray-500 text-center py-4 italic">Select a specific day to view the timeline.</div>;
-        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
-        if (!dayData) return <div className="text-gray-500 text-center py-4 italic">No schedule available for {selectedDate}.</div>;
-        const timePoints = new Set([dayData.Start_time, dayData.End_time]);
-        if (dayData.Break_hour) dayData.Break_hour.forEach(b => { const [start, end] = (b.Time).split(' - '); timePoints.add(start); timePoints.add(end); });
-        const sortedTimes = Array.from(timePoints).sort((a, b) => new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`));
-        const formatTimelineTime = (timeStr) => {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-            return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
-        };
-        const calculateDuration = (startTime, endTime) => (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
-        const workingHoursSegment = { type: 'working', time: `${dayData.Start_time} - ${dayData.End_time}`, duration: calculateDuration(dayData.Start_time, dayData.End_time) };
-        const breakHours = (dayData.Break_hour || []).map(h => ({ type: 'break', time: h.Time, duration: h.hour }));
-        const allHours = [workingHoursSegment, ...breakHours].sort((a, b) => getHourValue(a.time).start - getHourValue(b.time).start);
-        return (
-            <div>
-                <div className="w-full h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300">
-                    {allHours.map((hour, index) => {
-                        const { start, end } = getHourValue(hour.time);
-                        const leftPosition = scaleHour(start);
-                        const widthPercentage = scaleHour(end) - scaleHour(start);
-                        const colorClass = hour.type === 'working' ? 'bg-indigo-600' : 'bg-orange-500';
-                        return (
-                            <div key={index} className={`absolute h-full cursor-pointer transition-all duration-300 ${colorClass}`} style={{ left: `${leftPosition}%`, width: `${widthPercentage}%` }} onMouseEnter={() => setHoveredHour(hour)} onMouseLeave={() => setHoveredHour(null)}>
-                                {hoveredHour === hour && (
-                                    <div className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-800 text-white text-xs whitespace-nowrap" style={{ left: '50%', transform: 'translateX(-50%)' }}>
-                                        <p>{hour.type === 'working' ? 'Working' : 'Break'}</p>
-                                        <p>Time: {hour.time}</p>
-                                        <p>Duration: {hour.duration.toFixed(2)} hours</p>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-                <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-2 px-1">
-                    {sortedTimes.map((time, index) => <span key={index}>{formatTimelineTime(time)}</span>)}
-                </div>
-            </div>
-        );
-    }, [selectedDate, Data, hoveredHour, getHourValue, scaleHour]);
+  // Scale hour for bar position (assuming 10:00 to 20:00 as full range)
+  const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
 
-    return (
-        <div className="p-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="flex flex-col items-center p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
-                    <div className="flex items-center text-gray-500 mb-2">
-                        <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Total</span>
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-bold text-gray-800">
-                        {calculateMetrics?.totalWorkingHours || 'N/A'}
-                    </span>
-                </div>
-                <div className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 shadow-sm">
-                    <div className="flex items-center text-green-700 mb-2">
-                        <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Productive</span>
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-bold text-green-800">
-                        {calculateMetrics?.productiveHours || 'N/A'}
-                    </span>
-                </div>
-                <div className="flex flex-col items-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm">
-                    <div className="flex items-center text-yellow-700 mb-2">
-                        <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Break</span>
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-bold text-yellow-800">
-                        {calculateMetrics?.breakHours || 'N/A'}
-                    </span>
-                </div>
-                <div className="flex flex-col items-center p-4 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
-                    <div className="flex items-center text-blue-700 mb-2">
-                        <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                        <span className="text-sm font-medium">Overtime</span>
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-bold text-blue-800">
-                        {calculateMetrics?.overtime || 'N/A'}
-                    </span>
-                </div>
-            </div>
-            {renderScheduleBar()}
-        </div>
+  // Render schedule bar for selected date
+  const renderScheduleBar = useCallback(() => {
+    if (!Data || selectedDate === "All")
+      return <div className="text-gray-500 text-center py-4 italic">Select a specific day to view the timeline.</div>;
+    const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+    if (!dayData)
+      return <div className="text-gray-500 text-center py-4 italic">No schedule available for {selectedDate}.</div>;
+    const timePoints = new Set([dayData.Start_time, dayData.End_time]);
+    if (dayData.Break_hour)
+      dayData.Break_hour.forEach(b => {
+        const [start, end] = b.Time.split(' - ');
+        timePoints.add(start);
+        timePoints.add(end);
+      });
+    const sortedTimes = Array.from(timePoints).sort(
+      (a, b) => new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`)
     );
+    const formatTimelineTime = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+      return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
+    };
+    const calculateDuration = (startTime, endTime) =>
+      (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
+    const workingHoursSegment = {
+      type: 'working',
+      time: `${dayData.Start_time} - ${dayData.End_time}`,
+      duration: calculateDuration(dayData.Start_time, dayData.End_time)
+    };
+    const breakHours = (dayData.Break_hour || []).map(h => ({
+      type: 'break',
+      time: h.Time,
+      duration: h.hour
+    }));
+    const allHours = [workingHoursSegment, ...breakHours].sort(
+      (a, b) => getHourValue(a.time).start - getHourValue(b.time).start
+    );
+    return (
+      <div>
+        <div className="w-full h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300">
+          {allHours.map((hour, index) => {
+            const { start, end } = getHourValue(hour.time);
+            const leftPosition = scaleHour(start);
+            const widthPercentage = scaleHour(end) - scaleHour(start);
+            const colorClass = hour.type === 'working' ? 'bg-indigo-600' : 'bg-orange-500';
+            return (
+              <div
+                key={index}
+                className={`absolute h-full cursor-pointer transition-all duration-300 ${colorClass}`}
+                style={{ left: `${leftPosition}%`, width: `${widthPercentage}%` }}
+                onMouseEnter={() => setHoveredHour(hour)}
+                onMouseLeave={() => setHoveredHour(null)}
+              >
+                {hoveredHour === hour && (
+                  <div
+                    className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-800 text-white text-xs whitespace-nowrap"
+                    style={{ left: '50%', transform: 'translateX(-50%)' }}
+                  >
+                    <p>{hour.type === 'working' ? 'Working' : 'Break'}</p>
+                    <p>Time: {hour.time}</p>
+                    <p>Duration: {hour.duration.toFixed(2)} hours</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-2 px-1">
+          {sortedTimes.map((time, index) => (
+            <span key={index}>{formatTimelineTime(time)}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }, [selectedDate, Data, hoveredHour, getHourValue, scaleHour]);
+
+  return (
+    <div className="p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="flex flex-col items-center p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
+          <div className="flex items-center text-gray-500 mb-2">
+            <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
+            <span className="text-sm font-medium">Total</span>
+          </div>
+          <span className="text-xl sm:text-xl font-bold text-gray-800">
+            {calculateMetrics?.totalWorkingHours || 'N/A'}
+          </span>
+        </div>
+        <div className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 shadow-sm">
+          <div className="flex items-center text-green-700 mb-2">
+            <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+            <span className="text-sm font-medium">Productive</span>
+          </div>
+          <span className="text-xl sm:text-xl font-bold text-green-800">
+            {calculateMetrics?.productiveHours || 'N/A'}
+          </span>
+        </div>
+        <div className="flex flex-col items-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm">
+          <div className="flex items-center text-yellow-700 mb-2">
+            <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+            <span className="text-sm font-medium">Break</span>
+          </div>
+          <span className="text-xl sm:text-xl font-bold text-yellow-800">
+            {calculateMetrics?.breakHours || 'N/A'}
+          </span>
+        </div>
+        <div className="flex flex-col items-center p-4 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
+          <div className="flex items-center text-blue-700 mb-2">
+            <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+            <span className="text-sm font-medium">Overtime</span>
+          </div>
+          <span className="text-xl sm:text-xl font-bold text-blue-800">
+            {calculateMetrics?.overtime || 'N/A'}
+          </span>
+        </div>
+      </div>
+      {renderScheduleBar()}
+    </div>
+  );
 };
 
 // --- Main Attendance Dashboard Component ---
@@ -256,11 +329,11 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [selectedDate, setSelectedDate] = useState("All");
     const isMobile = useMediaQuery('(max-width:768px)');
-    const [barChartData, setBarChartData] = useState([]);
-    const [rawPieData, setRawPieData] = useState([]);
-    const [rawTableData, setrawTableData] = useState([]);
-    const [dates, setDates] = useState([]);
-    const [Data, setData] = useState([]);
+    //const [barChartData, setBarChartData] = useState([]);
+    //const [rawPieData, setRawPieData] = useState([]);
+    //const [rawTableData, setrawTableData] = useState([]);
+    //const [dates, setDates] = useState([]);
+    //const [Data, setData] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
@@ -280,34 +353,34 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
 
     // Data Fetching Effects
-    useEffect(() => {
-        axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/bar-chart`).then(response => {
-            const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Work_Hours: item.working_hour, break_Hours: item.break_hour }));
-            setBarChartData(formatted);
-            const dates = ["All", ...formatted.map(item => item.Date)];
-            setDates(dates);
-        }).catch(error => console.error('Error fetching bar chart data:', error));
-    }, [empID]);
-
-    useEffect(() => {
-        axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/attendance?page=0&size=10`).then(response => {
-            setrawTableData(response.data);
-        }).catch(error => console.error('Error fetching attendance data:', error));
-    }, [empID]);
-
-    useEffect(() => {
-        axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/pie-chart`).then(response => {
-            const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Working_hour: item.working_hour, Break_hour: item.break_hour, EmployeeId: item.employeeId }));
-            setRawPieData(formatted);
-        }).catch(error => console.error('Error fetching pie chart data:', error));
-    }, [empID]);
-
-    useEffect(() => {
-        axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/line-graph`).then(response => {
-            const formatted = response.data.map(item => ({ EmployeeId: item.employeeId, Date: item.date, Month: item.month, Year: item.year, Start_time: item.start_time, End_time: item.end_time, Break_hour: item.breaks.map(b => ({ Time: b.time, hour: b.hour })) }));
-            setData(formatted);
-        }).catch(error => console.error('Error fetching line graph data:', error));
-    }, [empID]);
+    //useEffect(() => {
+    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/bar-chart`).then(response => {
+    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Work_Hours: item.working_hour, break_Hours: item.break_hour }));
+    //        setBarChartData(formatted);
+    //        const dates = ["All", ...formatted.map(item => item.Date)];
+    //        setDates(dates);
+    //    }).catch(error => console.error('Error fetching bar chart data:', error));
+    //}, [empID]);
+//
+    //useEffect(() => {
+    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/attendance?page=0&size=10`).then(response => {
+    //        setrawTableData(response.data);
+    //    }).catch(error => console.error('Error fetching attendance data:', error));
+    //}, [empID]);
+//
+    //useEffect(() => {
+    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/pie-chart`).then(response => {
+    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Working_hour: item.working_hour, Break_hour: item.break_hour, EmployeeId: item.employeeId }));
+    //        setRawPieData(formatted);
+    //    }).catch(error => console.error('Error fetching pie chart data:', error));
+    //}, [empID]);
+//
+    //useEffect(() => {
+    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/line-graph`).then(response => {
+    //        const formatted = response.data.map(item => ({ EmployeeId: item.employeeId, Date: item.date, Month: item.month, Year: item.year, Start_time: item.start_time, End_time: item.end_time, Break_hour: item.breaks.map(b => ({ Time: b.time, hour: b.hour })) }));
+    //        setData(formatted);
+    //    }).catch(error => console.error('Error fetching line graph data:', error));
+    //}, [empID]);
 
     //useEffect(() => {
     //    axios.get(`http://192.168.0.123:8081/api/attendance/attendance/leaves/dashboard/${empID}`).then(response => {
@@ -335,14 +408,12 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             clearInterval(clockTimer);
         };
     }, [isLoggedIn, startTime]);
-
     // Action Handlers
     const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
     const handleLogin = () => { setIsLoggedIn(true); setStartTime(new Date()); setEndTime(null); setGrossHours(0); setEffectiveHours(0); };
     const handleLogout = () => { setIsLogoutConfirmed(true); };
     const handleConfirmLogout = () => { setIsLoggedIn(false); setIsLogoutConfirmed(false); setEndTime(new Date()); };
     const handleCancel = () => { setIsLogoutConfirmed(false); };
-
     // Format hours for display
     const formatHours = (seconds) => {
         const h = Math.floor(seconds / 3600);
@@ -354,9 +425,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const effectiveHoursFormatted = formatHours(effectiveHours);
     const maxHoursInSeconds = 8 * 3600;
     const progress = (grossHours / maxHoursInSeconds) * 100;
-
-
-    // Memoized data for table and charts
     const finalAttendanceData = useMemo(() => {
         let data = [...rawTableData];
         if (selectedMonth !== "All" && selectedMonth) {
@@ -566,7 +634,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
           <ClockIcon className="w-6 h-6 mr-3" /> Clock In
         </button>
       ) : (
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-48 justify-center">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full justify-center">
           {isLogoutConfirmed ? (
             <>
               <button
@@ -622,13 +690,17 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                 </h2>
                                 <div className="mb-6 flex justify-center gap-2 flex-wrap">
                                     {dates.map((date) => {
-                                        const dateToSet = date === "All" ? "All" : date;
-                                        return (
-                                            <button key={date} onClick={() => setSelectedDate(dateToSet)} className={`w-12 h-12 rounded-full text-sm font-semibold flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} hover:bg-indigo-500 hover:text-white transition-colors duration-200`}>
-                                                {date === "All" ? "All" : date}
-                                            </button>
-                                        );
-                                    })}
+                                            const pieItem = rawPieData.find((item) => item.Date === date);
+                                            const barItem = barChartData.find((item) => item.Date === date);
+                                            // Prefer pieItem, fallback to barItem, else just use the date
+                                            const dataItem = pieItem || barItem;
+                                            const dateToSet = date === "All" ? "All" : (dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date);
+                                            return (
+                                                <button key={date} onClick={() => setSelectedDate(dateToSet)} className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}>
+                                                    {date === "All" ? "All" : date}
+                                                </button>
+                                            );
+                                        })}
                                 </div>
                                 <MyComponent Data={Data} selectedDate={selectedDate} />
                                 <div className="flex-grow flex items-center justify-center">
@@ -654,8 +726,8 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                             <YAxis allowDecimals={false} hide />
                                             <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
                                             <Legend wrapperStyle={{ paddingTop: "10px" }} />
-                                            <Bar dataKey="Work_Hours" stackId="a" fill={BAR_COLORS.work} name="Work Hours" />
-                                            <Bar dataKey="break_Hours" stackId="a" fill={BAR_COLORS.break} name="Break Hours" />
+                                            <Bar dataKey="Working_hour" stackId="a" fill={BAR_COLORS.work} name="Work Hours" />
+                                            <Bar dataKey="Break_hour" stackId="a" fill={BAR_COLORS.break} name="Break Hours" />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
