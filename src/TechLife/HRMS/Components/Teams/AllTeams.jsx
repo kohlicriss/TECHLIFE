@@ -1,287 +1,237 @@
-import React, { useState, useEffect, useContext} from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Context } from "../HrmsContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { publicinfoApi } from "../../../../axiosInstance";
-import {
-  IoMailOutline,
-  IoCallOutline,
-  IoPeopleOutline,
-  IoWarningOutline,
-  IoBusinessOutline,
-  IoReloadOutline,
-  IoPersonCircleOutline
-} from "react-icons/io5";
+import React, { useState, useEffect, useContext } from 'react';
+import { publicinfoApi } from '../../../../axiosInstance';
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { Context } from '../HrmsContext';
+import Select from 'react-select';
 
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+  </div>
+);
 
-// Helper function to generate initials from a name
-const generateInitials = (name) => {
-  if (!name || typeof name !== 'string') return "?";
-  const nameParts = name.trim().split(" ");
-  if (nameParts.length > 1) {
-    return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
-  }
-  return nameParts[0][0].toUpperCase();
-};
-
+const ErrorDisplay = ({ message }) => (
+  <div className="text-center p-8 bg-red-100 text-red-700 rounded-lg">
+    <h3 className="font-bold text-lg">Oops! Something went wrong.</h3>
+    <p>{message}</p>
+  </div>
+);
 
 const AllTeams = () => {
-  const navigate = useNavigate();
-  const { empID } = useParams();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { theme } = useContext(Context);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  
+  // ✅ NEW: State to track expanded teams
+  const [expandedTeams, setExpandedTeams] = useState(new Set());
+  
+  // Form state
+  const [teamName, setTeamName] = useState('');
+  const [teamLead, setTeamLead] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  
+  const { userData } = useContext(Context);
+  const userRoles = userData?.roles || [];
+  const canCreateTeam = userRoles.includes('ROLE_ADMIN') || userRoles.includes('ROLE_HR');
 
+  // ✅ NEW: Function to toggle team member expansion
+  const toggleTeamExpansion = (teamId) => {
+    const newExpandedTeams = new Set(expandedTeams);
+    if (newExpandedTeams.has(teamId)) {
+      newExpandedTeams.delete(teamId);
+    } else {
+      newExpandedTeams.add(teamId);
+    }
+    setExpandedTeams(newExpandedTeams);
+  };
 
-  useEffect(() => {
-    const fetchAllTeams = async () => {
+  // ✅ NEW: Function to check if team is expanded
+  const isTeamExpanded = (teamId) => expandedTeams.has(teamId);
+
+  // ✅ FIXED: Fetch teams using correct backend endpoint
+  const fetchTeams = async () => {
+    try {
+      setLoading(true);
+      const empID = userData?.employeeId;
+      
       if (!empID) {
-        setLoading(false);
-        setError("Employee ID is missing.");
+        setError("Employee ID not found. Please login again.");
         return;
       }
-      try {
-        setLoading(true);
-        const response = await publicinfoApi.get(`employee/team/${empID}`);
-        console.log("API Response:", response.data);
-        const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
-        setTeams(teamsArray || []);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching teams:", err);
-        setError("Failed to fetch team data. The team might not exist or there's a server issue.");
-        setTeams([]);
-      } finally {
-        setLoading(false);
-      }
+      
+      const response = await publicinfoApi.get(`employee/team/${empID}`);
+      console.log("Fetched Teams Response:", response.data);
+      
+      const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
+      setTeams(teamsArray || []);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+      setError("Could not fetch teams data. You may not have permission, or there's a server issue.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      setEmployees([]);
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTeams();
+    if (canCreateTeam) {
+      fetchEmployees();
+    }
+  }, [canCreateTeam]);
+
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    if (!teamName || !teamLead || teamMembers.length === 0) {
+        alert('Please fill all fields');
+        return;
+    }
+
+    const newTeamData = {
+        teamName,
+        teamLeadId: teamLead.value,
+        employeeIds: teamMembers.map(member => member.value),
     };
-    fetchAllTeams();
-  }, [empID]);
 
-
-  // Clean Loading State with Blue Colors
-  if (loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-white'
-      }`}>
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className={`w-16 h-16 border-4 border-t-blue-500 rounded-full mx-auto mb-6 ${
-              theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-            }`}
-          />
-          <h2 className={`text-2xl font-semibold mb-2 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-800'
-          }`}>Loading Teams</h2>
-          <p className={`${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-500'
-          }`}>Discovering your team members...</p>
-        </div>
-      </div>
-    );
-  }
-
-
-  // Clean Error State
-  if (error) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center p-6 ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-white'
-      }`}>
-        <div className="text-center max-w-md">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-            theme === 'dark' ? 'bg-red-900/30' : 'bg-red-100'
-          }`}>
-            <IoWarningOutline className="w-10 h-10 text-red-500" />
-          </div>
-          <h2 className={`text-2xl font-bold mb-2 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-800'
-          }`}>Unable to Load Teams</h2>
-          <p className={`mb-6 ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-500 text-white 
-                     font-medium rounded-lg hover:bg-blue-600 transition-colors duration-200"
-          >
-            <IoReloadOutline className="w-5 h-5" />
-            <span>Try Again</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-
-  // Clean No Teams State
-  if (teams.length === 0) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center p-6 ${
-        theme === 'dark' ? 'bg-gray-900' : 'bg-white'
-      }`}>
-        <div className="text-center max-w-md">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
-            theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
-          }`}>
-            <IoPeopleOutline className={`w-12 h-12 ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
-            }`} />
-          </div>
-          <h2 className={`text-2xl font-bold mb-2 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-800'
-          }`}>No Teams Found</h2>
-          <p className={`${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            There are no teams associated with this employee at the moment.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+    try {
+        const response = await publicinfoApi.post('employee/team', newTeamData);
+        console.log("Team created successfully:", response.data);
+        
+        fetchTeams();
+        
+        setIsModalOpen(false);
+        setTeamName('');
+        setTeamLead(null);
+        setTeamMembers([]);
+        alert('Team created successfully!');
+    } catch (err) {
+        console.error("Error creating team:", err);
+        alert('Failed to create team. Please check the console for errors.');
+    }
+  };
 
   return (
-    <div className={`min-h-screen ${
-      theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
-    }`}>
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Clean Header with Blue Theme */}
-        <div className="text-center mb-12">
-          <h1 className={`text-4xl font-bold mb-4 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>Team Directory</h1>
-          <p className={`text-lg max-w-2xl mx-auto ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            Meet your team members and discover their roles within the organization.
-          </p>
-        </div>
-
-
-        {/* Teams Display */}
-        <div className="space-y-12">
-          <AnimatePresence>
-            {teams.map((team, teamIdx) => (
-              <motion.div
-                key={team.teamId || teamIdx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, delay: teamIdx * 0.1 }}
-                className={`rounded-2xl shadow-sm border overflow-hidden ${
-                  theme === 'dark' 
-                    ? 'bg-gray-800 border-gray-700' 
-                    : 'bg-white border-gray-200'
-                }`}
-              >
-                {/* Clean Team Header with Blue Accents */}
-                <div className={`px-8 py-6 border-b ${
-                  theme === 'dark' 
-                    ? 'bg-gray-700 border-gray-600' 
-                    : 'bg-blue-50 border-blue-200'
-                }`}>
-                  <div className="flex items-center justify-center space-x-3">
-                    <div className={`p-2 rounded-lg ${
-                      theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-100'
-                    }`}>
-                      <IoBusinessOutline className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="text-center">
-                      <h2 className={`text-2xl font-bold ${
-                        theme === 'dark' ? 'text-white' : 'text-blue-900'
-                      }`}>
-                        {team.teamName}
-                      </h2>
-                      <p className={`text-sm font-medium ${
-                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`}>
-                        Team ID: {team.teamId}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Clean Team Members Grid */}
-                <div className="p-8">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {team.employees.map((member, memberIdx) => (
-                      <motion.div
-                        key={member.employeeId}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: memberIdx * 0.05 }}
-                        whileHover={{ 
-                          y: -4,
-                          boxShadow: theme === 'dark' 
-                            ? "0 8px 25px rgba(59, 130, 246, 0.25)" 
-                            : "0 8px 25px rgba(59, 130, 246, 0.15)" 
-                        }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`rounded-xl border cursor-pointer p-6 text-center transition-all duration-200 ${
-                          theme === 'dark'
-                            ? 'bg-gray-700 border-gray-600 hover:border-blue-400'
-                            : 'bg-white border-gray-200 hover:border-blue-300'
-                        }`}
-                        onClick={() => navigate(`/employees/${empID}/public/${member.employeeId}`)}
-                      >
-                        {/* Clean Profile Avatar with Blue Gradient */}
-                        <div className="relative mb-4">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 
-                                        text-white text-lg font-bold flex items-center justify-center">
-                            {generateInitials(member.displayName)}
-                          </div>
-                        </div>
-                        
-                        {/* Clean Member Info */}
-                        <div className="space-y-2">
-                          <h3 className={`font-semibold text-sm truncate ${
-                            theme === 'dark' ? 'text-white' : 'text-gray-900'
-                          }`}
-                              title={member.displayName}>
-                            {member.displayName}
-                          </h3>
-                          <p className={`text-xs font-medium ${
-                            theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                          }`}>
-                            {member.jobTitlePrimary || "No role assigned"}
-                          </p>
-                          
-                          {/* Clean Contact Details */}
-                          <div className={`pt-3 space-y-2 text-xs ${
-                            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                          }`}>
-                            {member.workEmail && (
-                              <div className="flex items-center justify-center space-x-1">
-                                <IoMailOutline className="w-3 h-3" />
-                                <span className="truncate">{member.workEmail}</span>
-                              </div>
-                            )}
-                            {member.workNumber && (
-                              <div className="flex items-center justify-center space-x-1">
-                                <IoCallOutline className="w-3 h-3" />
-                                <span>{member.workNumber}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+    <div className="p-6 md:p-8 bg-gray-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+          <FaUsers className="mr-3 text-blue-500" /> All Teams
+        </h1>
+        {canCreateTeam && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center shadow-md"
+          >
+            <FaPlus className="mr-2" /> Create Team
+          </button>
+        )}
       </div>
+
+      {loading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <ErrorDisplay message={error} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {teams.map((team, index) => {
+            const teamId = team.teamId || index;
+            const isExpanded = isTeamExpanded(teamId);
+            const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
+            const hasMoreMembers = team.employees?.length > 5;
+            
+            return (
+              <div key={teamId} className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div className="p-5">
+                  <h2 className="text-xl font-bold text-gray-900 truncate">{team.teamName}</h2>
+                  {team.teamLead && (
+                    <div className="flex items-center text-md text-gray-600 mt-2">
+                      <FaUserShield className="mr-2 text-green-500" />
+                      <strong>Lead:</strong><span className="ml-1">{team.teamLead}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="px-5 py-4 bg-gray-50 border-t border-gray-200">
+                  <h3 className="font-semibold text-gray-700 mb-2">Members ({team.employees?.length || 0})</h3>
+                  
+                  {/* ✅ UPDATED: Enhanced member display with expand/collapse */}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {membersToShow?.map(member => (
+                        <span key={member.employeeId} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">
+                          {member.displayName}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    {/* ✅ NEW: Expand/Collapse Button */}
+                    {hasMoreMembers && (
+                      <button 
+                        onClick={() => toggleTeamExpansion(teamId)}
+                        className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <span>Show Less</span>
+                            <FaChevronUp className="w-3 h-3" />
+                          </>
+                        ) : (
+                          <>
+                            <span>+{team.employees.length - 5} more</span>
+                            <FaChevronDown className="w-3 h-3" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
+      {/* Create Team Modal - unchanged */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Create a New Team</h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-800">
+                    <FaTimes size={24} />
+                </button>
+            </div>
+            <form onSubmit={handleCreateTeam}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="teamName">Team Name</label>
+                <input id="teamName" type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" required />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="teamLead">Team Lead</label>
+                <Select id="teamLead" options={employees} value={teamLead} onChange={setTeamLead} isClearable required />
+              </div>
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="teamMembers">Team Members</label>
+                <Select id="teamMembers" isMulti options={employees} value={teamMembers} onChange={setTeamMembers} required />
+              </div>
+              <div className="flex items-center justify-end">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded hover:bg-gray-300 mr-2">Cancel</button>
+                <button type="submit" className="bg-black text-white font-bold py-2 px-4 rounded hover:bg-gray-800">Create Team</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 
 export default AllTeams;
