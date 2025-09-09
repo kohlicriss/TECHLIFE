@@ -43,10 +43,12 @@ export default function TicketModal({
     return groups;
   }, [replies]);
 
+  // Scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [replies]);
 
+  // WebSocket setup
   useEffect(() => {
     if (!ticket?.ticketId) return;
 

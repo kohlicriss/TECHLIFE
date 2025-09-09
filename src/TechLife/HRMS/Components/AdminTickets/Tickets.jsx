@@ -23,6 +23,8 @@ export default function TicketDashboard() {
   const [error, setError] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ticketsPerPage = 9;
 
   const wsRef = useRef(null);
   const repliedBy = "admin";
@@ -217,6 +219,12 @@ export default function TicketDashboard() {
     })
     .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
 
+  // ✅ Pagination Logic
+  const totalPages = Math.ceil(filtered.length / ticketsPerPage);
+  const indexOfLastTicket = currentPage * ticketsPerPage;
+  const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+  const currentTickets = filtered.slice(indexOfFirstTicket, indexOfLastTicket);
+
   const sidebarItems = [{ tab: "My Tickets", icon: Ticket }];
 
   const handleTabClick = (tab) => {
@@ -260,7 +268,7 @@ export default function TicketDashboard() {
           <TicketStats tickets={tickets} />
 
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((t) => (
+            {currentTickets.map((t) => (
               <TicketCard
                 key={t.ticketId}
                 {...t}
@@ -270,6 +278,39 @@ export default function TicketDashboard() {
                 }}
               />
             ))}
+          </div>
+
+          {/* ✅ Pagination Controls */}
+          <div className="flex justify-center items-center space-x-2 my-6">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                onClick={() => setCurrentPage(num)}
+                className={`px-3 py-1 border rounded ${
+                  currentPage === num
+                    ? "bg-blue-600 text-white"
+                    : "bg-white"
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </div>
 
@@ -334,6 +375,7 @@ export default function TicketDashboard() {
                 ${isSidebarCollapsed ? "justify-center" : ""}`}
               onClick={() => {
                 setFilterStatus(status);
+                setCurrentPage(1);
               }}
               whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
             >

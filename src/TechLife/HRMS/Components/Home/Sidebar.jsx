@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -11,12 +11,14 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight,
+  ChevronRight, 
   UserCircle,
   BadgePlus,
   TicketCheck,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
+import { useContext } from 'react';
+
  
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -143,8 +145,8 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
  
           <div className="mt-10">
             <button
-              onClick={handleLogoutClick}
-              className={`flex items-center cursor-pointer ${
+              onClick={onLogout}
+              className={`flex items-center ${
                 collapsed ? "justify-center" : "justify-start"
               } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
             >
