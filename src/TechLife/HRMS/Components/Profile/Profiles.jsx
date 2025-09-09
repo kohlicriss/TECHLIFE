@@ -12,6 +12,7 @@ import About from "./tabs/About";
 import Profile from "./tabs/Profile";
 import Job from "./tabs/Job";
 import Document from "./tabs/Document";
+import Achievements from "./tabs/Achievements"; // Import Achievements component
 import { HiIdentification, HiPencil } from "react-icons/hi";
 import {
   MdWork,
@@ -20,6 +21,7 @@ import {
   MdPerson,
   MdChevronLeft,
   MdChevronRight,
+  MdStar, // Import MdStar icon
 } from "react-icons/md";
 import { FaPhone, FaBuilding } from "react-icons/fa";
 import { IoEye } from "react-icons/io5";
@@ -110,6 +112,7 @@ const Profiles = () => {
     { name: "Profile", path: `profile`, icon: HiIdentification },
     { name: "Job", path: `job`, icon: MdWork },
     { name: "Documents", path: `documents`, icon: MdBusiness },
+    { name: "Achievements", path: 'achievements', icon: MdStar }, // Add Achievements tab
   ];
 
   const handleImageUpload = (event) => {
@@ -277,6 +280,7 @@ const Profiles = () => {
             <Route path="profile" element={<Profile />} />
             <Route path="job" element={<Job />} />
             <Route path="documents" element={<Document />} />
+            <Route path="achievements" element={<Achievements />} /> // Add Achievements route
           </Routes>
         </main>
 
