@@ -24,7 +24,8 @@ import {
     IoArrowBack,
     IoArrowForward,
     IoWarning,
-    IoCheckmarkCircle
+    IoCheckmarkCircle,
+    IoIdCardOutline // Added for employee ID icon
 } from "react-icons/io5";
 
 const generateInitials = (name) => {
@@ -140,9 +141,10 @@ function EmployeeApp() {
     const handleChatClick = async (employee) => {
         if (employee) {
             const chatPayload = {
-                senderId: empID,
-                recipientId: employee.employeeId,
-                content: "Hello, how are you?"
+                sender: empID,
+                receiver: employee.employeeId,
+                content: "Hello, how are you?",
+                type:"private"
             };
     
             console.log("Starting chat with payload:", chatPayload);
@@ -806,6 +808,15 @@ function EmployeeApp() {
                                                         </p>
 
                                                         <div className="space-y-3 text-sm">
+                                                            {/* ✅ ADDED: Employee ID */}
+                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-lg ${
+                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                                }`}>
+                                                                <IoIdCardOutline className={`w-4 h-4 ${
+                                                                    theme === 'dark' ? 'text-orange-400' : 'text-orange-500'
+                                                                    }`} />
+                                                                <span className="truncate font-mono text-xs">{employee.employeeId}</span>
+                                                            </div>
                                                             <div className={`flex items-center justify-center space-x-2 p-2 rounded-lg ${
                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
                                                                 }`}>
@@ -968,7 +979,16 @@ function EmployeeApp() {
                                                                 {employee.jobTitlePrimary}
                                                             </p>
                                                             
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                                                                {/* ✅ ADDED: Employee ID */}
+                                                                <div className={`flex items-center space-x-2 p-2 rounded-lg ${
+                                                                    theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
+                                                                    }`}>
+                                                                    <IoIdCardOutline className={`w-4 h-4 ${
+                                                                        theme === 'dark' ? 'text-orange-400' : 'text-orange-500'
+                                                                        }`} />
+                                                                    <span className="truncate font-mono text-xs">{employee.employeeId}</span>
+                                                                </div>
                                                                 <div className={`flex items-center space-x-2 p-2 rounded-lg ${
                                                                     theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                                                                     }`}>
@@ -1080,6 +1100,7 @@ function EmployeeApp() {
                         </button>
                     </div>
                 )}
+
                 {/* Pagination Controls */}
                 <div className="flex justify-between items-center mt-8">
                     <button
@@ -1227,4 +1248,3 @@ function EmployeeApp() {
 }
 
 export default EmployeeApp;
-

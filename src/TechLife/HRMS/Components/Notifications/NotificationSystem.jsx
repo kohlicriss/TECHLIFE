@@ -85,7 +85,7 @@ const NotificationSystem = () => {
       let response;
 
       if (isCurrentlyStared) {
-        response = await notificationsApi.put(`/unstared/${id}`);
+        response = await notificationsApi.put(`/unStar/${id}`);
       } else {
         response = await notificationsApi.put(`/stared/${id}`);
       }
