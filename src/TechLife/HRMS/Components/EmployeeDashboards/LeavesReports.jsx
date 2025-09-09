@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { FaRegUser, FaUserEdit, FaUsers } from 'react-icons/fa';
 import { FiUser } from 'react-icons/fi';
+import { useParams } from 'react-router-dom';
 
 // The following components are from your original code, with updated styling and layout.
 // They are re-ordered here for clarity.
@@ -281,30 +282,84 @@ const LeaveCharts = () => {
 //  },
 //];
 
-const LeaveHistory = ({ currentLeaveHistoryData }) => {
+const LeaveHistory = ({leaveHistoryData}) => {
+  //const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOption, setSortOption] = useState("Recently added");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [apiPageSize, setApiPageSize] = useState(10);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const { empID } = useParams();
 
-  const leaveTypes = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.Leave_type))];
-  const statuses = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.status))];
-  const sortOptions = ["Recently added", "Ascending", "Descending"];
+//useEffect(() => {
+//  const fetchLeaveData = async () => {
+//    setIsLoading(true);
+//    try {
+//      const response = await axios.get(
+//        `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${
+//          currentPage - 1
+//        }&size=${apiPageSize}`
+//      );
+//      const newData = Array.isArray(response.data) ? response.data : [];//
+//      if (newData.length < apiPageSize) {
+//        setHasMoreData(false);
+//      } else {
+//        setHasMoreData(true);
+//      }//
+//      const formatted = newData.map((item) => ({
+//        Leave_type: item.leave_type,
+//        Leave_On: item.leave_on,
+//        status: item.status,
+//        Request_By: item.request_By,
+//        Details: item.details,
+//        Action_Date: item.action_Date,
+//        Rejection_Reason: item.rejection_Reason,
+//        Action: item.action,
+//      }));//
+//      setCurrentLeaveHistoryData((prevData) => [...prevData, ...formatted]);
+//    } catch (error) {
+//      console.error("Failed to fetch leave data:", error);
+//    } finally {
+//      setIsLoading(false);
+//    }
+//  };
+//  fetchLeaveData();
+//}, [currentPage, apiPageSize, empID]);//
+//useEffect(() => {
+//  setCurrentLeaveHistoryData([]);
+//  setCurrentPage(1);
+//}, [leaveTypeFilter, statusFilter, sortOption]);
+
+  const leaveTypes = ["All", ...new Set(leaveHistoryData.map((d) => d.Leave_type))];
+  const statuses = ["All", ...new Set(leaveHistoryData.map((d) => d.status))];
+  const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
 
   const filterAndSortData = () => {
-    let data = [...currentLeaveHistoryData];
+    let data = [...leaveHistoryData];
     data = data.filter((item) => {
       return (
         (leaveTypeFilter === "All" || item.Leave_type === leaveTypeFilter) &&
         (statusFilter === "All" || item.status === statusFilter)
       );
     });
-
     switch (sortOption) {
       case "Ascending":
         data.sort((a, b) => a.Leave_type.localeCompare(b.Leave_type));
         break;
       case "Descending":
         data.sort((a, b) => b.Leave_type.localeCompare(a.Leave_type));
+        break;
+      case "Last Month":
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        data = data.filter((item) => new Date(item.Leave_On) >= lastMonth);
+        break;
+      case "Last 7 Days":
+        const last7Days = new Date();
+        last7Days.setDate(last7Days.getDate() - 7);
+        data = data.filter((item) => new Date(item.Leave_On) >= last7Days);
         break;
       case "Recently added":
       default:
@@ -315,18 +370,7 @@ const LeaveHistory = ({ currentLeaveHistoryData }) => {
   };
 
   const filteredAndSortedData = filterAndSortData();
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Approve":
-        return "bg-green-500";
-      case "Reject":
-        return "bg-red-500";
-      case "Pending":
-        return "bg-yellow-500";
-      default:
-        return "bg-blue-500";
-    }
-  };
+
   return (
     <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
@@ -425,7 +469,11 @@ const LeaveHistory = ({ currentLeaveHistoryData }) => {
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <span
                       className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${
-                        getStatusColor(row.status)
+                        row.status === "Approve"
+                          ? "bg-green-500"
+                          : row.status === "Reject"
+                          ? "bg-red-500"
+                          : "bg-blue-500"
                       }`}
                     >
                       {row.status}
@@ -465,16 +513,28 @@ const LeaveHistory = ({ currentLeaveHistoryData }) => {
             ) : (
               <tr>
                 <td colSpan="12" className="text-center py-4 text-gray-500">
-                  No matching records found.
+                  {isLoading ? "Loading..." : "No matching records found."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
+        <nav className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            disabled={!hasMoreData || isLoading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Load More
+          </button>
+        </nav>
+      </div>
     </div>
   );
 };
+
 
 
 function LeavesReports({ onBack, currentLeaveHistoryData }) {
