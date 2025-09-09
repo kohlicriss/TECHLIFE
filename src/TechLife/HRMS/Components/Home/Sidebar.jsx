@@ -92,7 +92,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } ${theme === 'dark' ? 'bg-black' : 'bg-white'} shadow-lg z-[160] transform transition-all duration-200 ease-in-out ${
+        } ${theme === 'dark' ? 'bg-black' : 'bg-white'} shadow-lg z-[50] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
