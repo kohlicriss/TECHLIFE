@@ -715,7 +715,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             return;
         }
 
-        const brokerURL = `ws://192.168.0.245:8083/ws?employeeId=${currentUser.id}`;
+        const brokerURL = `ws://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -808,7 +808,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
         }
-        const destination = `/app/chat/presence/open/${targetChat.chatId}`;
+        const destination = `/app/presence/open/${targetChat.chatId}`;
         const payload = {
             userId: currentUser.id,
             type: targetChat.type === 'group' ? 'TEAM' : 'PRIVATE'
@@ -825,7 +825,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const closeChat = useCallback(() => {
         if (!selectedChat || !stompClient.current?.active || !currentUser?.id) return;
-        const destination = `/app/chat/presence/close/${selectedChat.chatId}`;
+        const destination = `/app/presence/close/${selectedChat.chatId}`;
         stompClient.current.publish({ destination, body: "{}" });
 
         setSelectedChat(null);
@@ -853,7 +853,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (selectedChat && stompClient.current && stompClient.current.active) {
-                const destination = `/app/chat/presence/close/${selectedChat.chatId}`;
+                const destination = `/app/presence/close/${selectedChat.chatId}`;
                 stompClient.current.publish({ destination, body: "{}" });
             }
         };
@@ -923,7 +923,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         };
 
         stompClient.current.publish({
-            destination: '/app/chat/typing',
+            destination: '/app/typing',
             body: JSON.stringify(payload),
         });
     };
@@ -961,7 +961,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         let payload;
 
         if (isReply) {
-            destination = '/app/chat/reply';
+            destination = '/app/reply';
             payload = {
                 replyToMessageId: replyingTo.messageId,
                 sender: currentUser.id,
@@ -972,7 +972,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
             };
         } else {
-            destination = '/app/chat/send';
+            destination = '/app/send';
             payload = {
                 sender: currentUser.id,
                 content: message,
@@ -1203,7 +1203,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             sender: currentUser.id,
         };
 
-        const destination = '/app/chat/edit';
+        const destination = '/app/edit';
 
         stompClient.current.publish({
             destination,
