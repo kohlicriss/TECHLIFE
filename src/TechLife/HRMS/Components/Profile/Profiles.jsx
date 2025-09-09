@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useContext} from "react";
+import React, { useState, useEffect, useContext} from "react";
 import { Context } from "../HrmsContext";
 import {
   Routes,
@@ -12,6 +12,7 @@ import About from "./tabs/About";
 import Profile from "./tabs/Profile";
 import Job from "./tabs/Job";
 import Document from "./tabs/Document";
+import Achievements from "./tabs/Achievements"; // Import Achievements component
 import { HiIdentification, HiPencil } from "react-icons/hi";
 import {
   MdWork,
@@ -20,114 +21,133 @@ import {
   MdPerson,
   MdChevronLeft,
   MdChevronRight,
+  MdStar, // Import MdStar icon
 } from "react-icons/md";
 import { FaPhone, FaBuilding } from "react-icons/fa";
+import { IoEye } from "react-icons/io5";
 import axios from "axios";
 import { publicinfoApi } from "../../../../axiosInstance";
+
 const Profiles = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { empID } = useParams();
-  let {userprofiledata,setUserProfileData}=useContext(Context)
+  let { userprofiledata, setUserProfileData, theme, userData } = useContext(Context);
+
+  // ✅ NEW: Context menu detection
+  const searchParams = new URLSearchParams(location.search);
+  const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+  const targetEmployeeId = searchParams.get('targetEmployeeId');
+
+  // ✅ NEW: Determine which employee ID to use for fetching profile data
+  const profileEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
+  
+  // ✅ NEW: Check if this is read-only mode (viewing another employee's profile)
+  const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID;
 
   const [activeTab, setActiveTab] = useState(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [profileImage, setProfileImage] = useState(() => {
-    const savedImage = localStorage.getItem("profileImage");
-    return savedImage || null;
-  });
+  
+  // This state is ONLY for the preview of a newly uploaded image
+  const [profileImagePreview, setProfileImagePreview] = useState(null); 
   const [isEditing, setIsEditing] = useState(false);
-  const [employeeData, setEmployeeData] = useState(() => {
-    const savedData = localStorage.getItem("employeeData");
-    return savedData
-      ? JSON.parse(savedData)
-      : {
-          name: "JOHN DOE",
-          empId: "e123",
-          company: "ABC Services",
-          department: "Software",
-          email: "john@gmail.com",
-          contact: "+91123456799",
-          role: "Associate Software",
-        };
-  });
+  
+  // This local state is for the edit modal form ONLY.
+  const [employeeData, setEmployeeData] = useState({});
 
-  const EMPLOYEE_ID_TO_FETCH = empID;
+  // ✅ NEW: Store the viewed employee data separately
+  const [viewedEmployeeData, setViewedEmployeeData] = useState(null);
 
-useEffect(() => {
-  // empID (URL నుండి) ఉంటేనే API కాల్ చేయాలి
-  if (!empID) {
-    return;
-  }
-
-  const fetchEmployeeDetails = async () => {
-    try {
-      // 1. ఎండ్‌పాయింట్ మార్గాన్ని సరిచేశాను
-      const relativePath = `/employee/${empID}`;
-
-      console.log(`Requesting data from: ${relativePath}`);
-
-      // publicinfoApi instance వాడుతున్నాను, దీని baseURL సరిగ్గా '/api'కి పాయింట్ చేయాలి
-      const response = await publicinfoApi.get(relativePath);
-
-      console.log("✅ API Response Received:", response);
-      console.log("✅ Employee Data:", response.data);
-      setUserProfileData(response.data)
-
-      const data = response.data;
-
-      // 2. EmployeeDTO ప్రకారం డేటా మ్యాపింగ్‌ను అప్‌డేట్ చేశాను
-      setEmployeeData({
-        name: data.employeeName || "N/A",
-        empId: data.employeeId,
-        company: data.jobDetails?.location || "Anasol",
-        department: data.jobDetails?.department || "N/A",
-        email: data.emailId || "N/A",
-        contact: data.mobileNo || "N/A",
-        role: data.jobDetails?.jobTitlePrimary || "N/A",
-      });
-
-    } catch (err) {
-      console.error("❌ Error fetching employee details:", err);
+  // ✅ UPDATED: Use profileEmployeeId instead of empID
+  useEffect(() => {
+    if (!profileEmployeeId) {
+      return;
     }
-  };
 
-  fetchEmployeeDetails();
-}, [empID]);
+    if (fromContextMenu && targetEmployeeId) {
+      console.log("Viewing profile from context menu for employee:", targetEmployeeId);
+    }
+
+    const fetchEmployeeDetails = async () => {
+      try {
+        const relativePath = `/employee/${profileEmployeeId}`;
+        console.log(`Requesting data from: ${relativePath}`);
+        const response = await publicinfoApi.get(relativePath);
+
+        console.log("✅ API Response Received:", response);
+        console.log("✅ Employee Data:", response.data);
+
+        if (fromContextMenu && targetEmployeeId && targetEmployeeId !== empID) {
+          // ✅ If viewing another employee, store in separate state
+          setViewedEmployeeData(response.data);
+        } else {
+          // ✅ If viewing own profile, update global context
+          setUserProfileData(response.data);
+          setEmployeeData(response.data); // Pre-fill local state for the edit modal
+        }
+
+      } catch (err) {
+        console.error("❌ Error fetching employee details:", err);
+      }
+    };
+
+    fetchEmployeeDetails();
+  }, [profileEmployeeId, setUserProfileData, fromContextMenu, targetEmployeeId, empID]);
 
   useEffect(() => {
     setActiveTab(location.pathname);
   }, [location.pathname]);
 
-  const initials = employeeData.name
+  // ✅ UPDATED: Use the correct data source for display
+  const displayData = isReadOnly ? viewedEmployeeData : userprofiledata;
+
+  const initials = (displayData?.displayName || "  ")
     .split(" ")
     .map((word) => word[0])
-    .join("");
+    .join("")
+    .substring(0,2);
 
   const tabs = [
     { name: "About", path: `about`, icon: MdPerson },
     { name: "Profile", path: `profile`, icon: HiIdentification },
     { name: "Job", path: `job`, icon: MdWork },
     { name: "Documents", path: `documents`, icon: MdBusiness },
+    { name: "Achievements", path: 'achievements', icon: MdStar }, // Add Achievements tab
   ];
 
   const handleImageUpload = (event) => {
+    if (isReadOnly) {
+      alert("You cannot upload images for another employee's profile.");
+      return;
+    }
+    
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result);
+        setProfileImagePreview(reader.result); // Show preview
       };
       reader.readAsDataURL(file);
+      // Here, you would typically call an API to upload the `file` object
+      // e.g., uploadImage(empID, file);
     }
   };
 
   const handleEditClick = () => {
+    if (isReadOnly) {
+      alert("You can only view this employee's profile. Editing is not allowed.");
+      return;
+    }
+    
+    // When opening edit modal, ensure local state is synced with context
+    setEmployeeData(displayData);
     setIsEditing(true);
   };
 
   const handleSave = (e) => {
     e.preventDefault();
+    // Here you would call an API to save the 'employeeData' state
+    // e.g., updateEmployee(empID, employeeData);
     setIsEditing(false);
   };
 
@@ -139,80 +159,111 @@ useEffect(() => {
     }));
   };
 
-  // This function now receives the full path to navigate to
+  // ✅ UPDATED: Handle tab navigation with context menu parameters
   const handleTabClick = (path) => {
-    navigate(path);
+    const basePath = `/profile/${empID}/${path}`;
+    if (fromContextMenu && targetEmployeeId) {
+      navigate(`${basePath}?fromContextMenu=true&targetEmployeeId=${targetEmployeeId}`);
+    } else {
+      navigate(basePath);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className={`min-h-screen flex flex-col ${
+      theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
+      
       {/* Header */}
-      <div className="bg-[#B7D4FF] h-48 relative">
-        <div className="absolute top-4 right-8">
-          <button
-            onClick={handleEditClick}
-            className="p-2 bg-white hover:bg-gray-100 rounded transition-colors"
-            title="Edit Profile"
-          >
-            <HiPencil className="w-4 h-4 text-gray-600" />
-          </button>
-        </div>
+      <div className={`h-48 relative ${
+        theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'
+      }`}>
+        
+        {!isReadOnly && (
+          <div className="absolute top-4 right-8">
+            <button
+              onClick={handleEditClick}
+              className={`p-2 cursor-pointer rounded transition-colors ${
+                theme === 'dark'
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                  : 'bg-white hover:bg-gray-100 text-gray-600'
+              }`}
+              title="Edit Profile"
+            >
+              <HiPencil className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <div className="flex items-start pt-4 px-8">
           <div className="relative group cursor-pointer">
-            <label htmlFor="profile-upload" className="cursor-pointer block">
-              {profileImage ? (
+            <label htmlFor={!isReadOnly ? "profile-upload" : ""} className={isReadOnly ? "cursor-not-allowed" : "cursor-pointer block"}>
+              
+              {(profileImagePreview || displayData?.employeeImage) ? (
                 <img
-                  src={profileImage}
+                  src={profileImagePreview || displayData.employeeImage}
                   alt="Profile"
                   className="w-32 h-32 rounded-full bg-white border-2 border-white shadow-lg object-cover"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full bg-gray-200 border-2 border-white shadow-lg flex items-center justify-center text-xl font-medium text-gray-600">
+                <div className={`w-32 h-32 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-2xl font-medium ${
+                  theme === 'dark'
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
                   {initials}
                 </div>
               )}
-              <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <span className="text-white text-sm">Upload Photo</span>
-              </div>
+
+              {!isReadOnly && (
+                <div className="absolute inset-0 rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <span className="text-white text-sm">Upload Photo</span>
+                </div>
+              )}
             </label>
-            <input
-              type="file"
-              id="profile-upload"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+            {!isReadOnly && (
+              <input
+                type="file"
+                id="profile-upload"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            )}
           </div>
 
-          <div className="ml-8 text-gray-800">
+          <div className={`ml-8 ${
+            theme === 'dark' ? 'text-white' : 'text-gray-800'
+          }`}>
             <h1 className="text-3xl font-bold tracking-wide mb-4">
-              {userprofiledata?.displayName}
+              {displayData?.displayName}
             </h1>
-            <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-gray-700">
+            <div className={`grid grid-cols-2 gap-x-12 gap-y-2 text-sm ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               <div className="flex items-center space-x-2">
                 <HiIdentification className="w-5 h-5" />
-                <p>{userprofiledata?.employeeId}</p>
+                <p>{displayData?.employeeId}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaBuilding className="w-5 h-5" />
-                <p>{userprofiledata?.location}</p>
+                <p>{displayData?.location}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdWork className="w-5 h-5" />
-                <p>{userprofiledata?.jobTitlePrimary}</p>
+                <p>{displayData?.jobTitlePrimary}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdEmail className="w-5 h-5" />
-                <p>{userprofiledata?.workEmail}</p>
+                <p>{displayData?.workEmail}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <FaPhone className="w-5 h-5" />
-                <p>{userprofiledata?.workNumber}</p>
+                <p>{displayData?.workNumber}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <MdPerson className="w-5 h-5" />
-                <p>{userprofiledata?.jobTitleSecondary}</p>
+                <p>{displayData?.jobTitleSecondary}</p>
               </div>
             </div>
           </div>
@@ -220,46 +271,63 @@ useEffect(() => {
       </div>
 
       <div className="flex flex-1">
-        <main className="flex-1 p-6 bg-gray-50">
+        <main className={`flex-1 p-6 ${
+          theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
+        }`}>
           <Routes>
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="about" element={<About />} />
             <Route path="profile" element={<Profile />} />
             <Route path="job" element={<Job />} />
             <Route path="documents" element={<Document />} />
+            <Route path="achievements" element={<Achievements />} /> // Add Achievements route
           </Routes>
         </main>
 
         <div
           className={`transition-all duration-300 ${
             sidebarOpen ? "w-64" : "w-20"
-          } bg-gray-50 border-l border-gray-200 min-h-full relative`}
+          } border-l min-h-full relative ${
+            theme === 'dark'
+              ? 'bg-gray-900 border-gray-700'
+              : 'bg-gray-50 border-gray-200'
+          }`}
         >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="absolute -left-3 top-4 bg-white border border-gray-300 rounded-full p-1 shadow hover:bg-gray-100 z-10"
+            className={`absolute -left-3 top-4 border rounded-full p-1 shadow z-10 ${
+              theme === 'dark'
+                ? 'bg-gray-800 border-gray-600 hover:bg-gray-700 text-white'
+                : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-600'
+            }`}
           >
             {sidebarOpen ? <MdChevronRight /> : <MdChevronLeft />}
           </button>
           <nav className="p-4 sticky top-0">
             <div className="space-y-1">
               {tabs.map((tab) => {
-                // This is the full, absolute path for the tab
-                const tabPath = `/profile/${empID}/${tab.path}`;
+                const isActive = location.pathname.endsWith(tab.path);
                 return (
                   <div
                     key={tab.path}
-                    // ***FIX: Pass the full `tabPath` to the handler***
-                    onClick={() => handleTabClick(tabPath)}
+                    onClick={() => handleTabClick(tab.path)}
                     className={`cursor-pointer flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === tabPath
-                        ? "bg-black text-white"
+                      isActive
+                        ? theme === 'dark'
+                          ? "bg-blue-600 text-white"
+                          : "bg-black text-white"
+                        : theme === 'dark'
+                        ? "text-gray-300 hover:bg-gray-800"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     <tab.icon
                       className={`w-5 h-5 ${
-                        activeTab === tabPath ? "text-white" : "text-gray-500"
+                        isActive 
+                          ? "text-white" 
+                          : theme === 'dark'
+                          ? "text-gray-400"
+                          : "text-gray-500"
                       }`}
                     />
                     {sidebarOpen && (
@@ -273,10 +341,14 @@ useEffect(() => {
         </div>
       </div>
 
-      {isEditing && (
-        <div className="fixed inset-0 backdrop-blur-sm   bg-opacity-100 flex items-center justify-center z-100">
-          <div className="bg-white rounded-lg p-6 w-[500px] shadow-2xl">
-            <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
+      {isEditing && !isReadOnly && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-[200]">
+          <div className={`rounded-lg p-6 w-[500px] shadow-2xl ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-4 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>Edit Profile</h2>
             <form onSubmit={handleSave}>
               <div className="space-y-4">
                 {[
@@ -289,15 +361,21 @@ useEffect(() => {
                   "role",
                 ].map((field) => (
                   <div key={field}>
-                    <label className="block text-sm font-medium text-gray-700 capitalize">
+                    <label className={`block text-sm font-medium capitalize ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
                       {field}
                     </label>
                     <input
                       type={field === "email" ? "email" : "text"}
                       name={field}
-                      value={employeeData[field]}
+                      value={employeeData[field] || ''}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${
+                        theme === 'dark'
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400'
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                      }`}
                     />
                   </div>
                 ))}
@@ -306,13 +384,17 @@ useEffect(() => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  className={`px-4 py-2 border rounded-md transition-colors ${
+                    theme === 'dark'
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                 >
                   Save Changes
                 </button>

@@ -1,18 +1,16 @@
-import React, { useState, useEffect, useRef,useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Context } from "../HrmsContext";
 import { useNavigate } from "react-router-dom";
+import DarkModeToggle from "./DarkModeToggle";
 import logo from "../assets/anasol-logo.png"
-
-// Note: For authenticated API calls, it's recommended to use the Axios instance
-// we previously discussed instead of the native fetch API.
-
+import { Context } from "../HrmsContext";
 const MAX_ATTEMPTS_PHASE1 = 5;
-const MAX_ATTEMPTS_PHASE2 = 7; // 5 + 2 additional attempts
-const LOCKOUT_DURATION_PHASE1 = 60; // 1 minute
-const LOCKOUT_DURATION_PHASE2 = 300; // 5 minutes
+const MAX_ATTEMPTS_PHASE2 = 7;
+const LOCKOUT_DURATION_PHASE1 = 60;
+const LOCKOUT_DURATION_PHASE2 = 300;
+const anasolLogoUrl = "https://placehold.co/120x40/000000/FFFFFF?text=ANASOL";
 
-// Helper function to decode JWT payload without an external library
+// Helper function to decode JWT payload
 const decodeJwt = (token) => {
   try {
     const base64Url = token.split('.')[1];
@@ -27,16 +25,11 @@ const decodeJwt = (token) => {
   }
 };
 
-// The Context import is removed as it's not provided in the prompt.
-// We'll simulate the context functionality for this self-contained example.
-// const useDummyContext = () => {
-//   const [userData, setUserData] = useState(null);
-//   const [accessToken, setAccessToken] = useState(null);
-//   return { userData, setUserData, setAccessToken };
-// };
-
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
+
+  // ✅ FIX: Get setUserData from the context to update it directly
+  const { theme, setTheme, setUserData, setAccessToken } = useContext(Context);
 
   const [selectedRole, setSelectedRole] = useState("Admin");
   const [name, setName] = useState("");
@@ -55,46 +48,31 @@ const LoginPage = ({ onLogin }) => {
   const [forgotPasswordScreen, setForgotPasswordScreen] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotMobile, setForgotMobile] = useState(""); // New state for mobile
+  const [forgotMobile, setForgotMobile] = useState("");
   const [forgotOtp, setForgotOtp] = useState(["", "", "", "", "", ""]);
-  const [forgotMobileOtp, setForgotMobileOtp] = useState(["", "", "", ""]); // New state for mobile OTP
-  const [forgotPasswordMethod, setForgotPasswordMethod] = useState(null); // New state for selection
+  const [forgotMobileOtp, setForgotMobileOtp] = useState(["", "", "", ""]);
+  const [forgotPasswordMethod, setForgotPasswordMethod] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   let employeeIdFromToken = null;
 
-  // New state variables for the lockout feature
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
   const [lockoutTimer, setLockoutTimer] = useState(0);
 
-  // const { setUserData, setAccessToken } = useDummyContext();
-  const { setUserData, setAccessToken } = useContext(Context);
-
   const forgotOtpRefs = [
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
+    useRef(null), useRef(null), useRef(null),
+    useRef(null), useRef(null), useRef(null),
   ];
   const forgotMobileOtpRefs = [
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
+    useRef(null), useRef(null), useRef(null), useRef(null),
   ];
   const mobileRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
   const emailRefs = [
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
+    useRef(null), useRef(null), useRef(null),
+    useRef(null), useRef(null), useRef(null),
   ];
 
   useEffect(() => {
@@ -126,6 +104,11 @@ const LoginPage = ({ onLogin }) => {
     return () => clearInterval(timerId);
   }, [isLockedOut, lockoutTimer]);
 
+  const handleThemeToggle = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     if (!isLockedOut) {
@@ -155,22 +138,19 @@ const LoginPage = ({ onLogin }) => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Login Successful! Access Token Received:", data);
         localStorage.setItem("accessToken", data.accessToken);
-        console.log("Access token has been saved to Local Storage.");
         setAccessToken(data.accessToken);
 
-        try {
-          const decodedPayload = decodeJwt(data.accessToken);
-           localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
-          setUserData(decodedPayload);
-          employeeIdFromToken = decodedPayload.employeeId;
-          console.log("Decoded Access Token Payload:", decodedPayload);
+        const decodedPayload = decodeJwt(data.accessToken);
+        if (decodedPayload) {
+          localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
           localStorage.setItem("logedempid", decodedPayload.employeeId);
           localStorage.setItem("logedemprole", decodedPayload.roles[0]);
-          localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
-        } catch (decodeError) {
-          console.error("Failed to decode access token:", decodeError);
+          
+          // ✅ FIX: Update the context state directly so the app re-renders
+          setUserData(decodedPayload);
+          
+          employeeIdFromToken = decodedPayload.employeeId;
         }
 
         setWrongAttempts(0);
@@ -204,7 +184,8 @@ const LoginPage = ({ onLogin }) => {
       setIsLoading(false);
     }
   };
-
+  
+  // ... (the rest of the file remains the same) ...
   const handleOtpMethodSelect = (method) => {
     setOtpMethod(method);
     resetTimer();
@@ -213,14 +194,7 @@ const LoginPage = ({ onLogin }) => {
     setEmailOtp(["", "", "", "", "", ""]);
   };
 
-  const handleOtpChange = (
-    otpArray,
-    setOtpArray,
-    index,
-    value,
-    refs,
-    event
-  ) => {
+  const handleOtpChange = (otpArray, setOtpArray, index, value, refs, event) => {
     const regex = /^[0-9]$/;
     if (event.key === "Backspace") {
       const newOtp = [...otpArray];
@@ -269,7 +243,6 @@ const LoginPage = ({ onLogin }) => {
     if (forgotPasswordScreen) {
       if (forgotPasswordStep > 1) {
         if (forgotPasswordStep === 2 && forgotPasswordMethod) {
-          // Go back to the method selection screen
           setForgotPasswordStep(1);
           setForgotPasswordMethod(null);
           setError("");
@@ -327,7 +300,6 @@ const LoginPage = ({ onLogin }) => {
     setError("");
   };
 
-  // New handler for selecting forgot password method
   const handleForgotMethodSelect = (method) => {
     setForgotPasswordMethod(method);
     setError("");
@@ -400,9 +372,7 @@ const LoginPage = ({ onLogin }) => {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      console.log(
-        "Password updated successfully! Please login with your new password."
-      );
+      console.log("Password updated successfully! Please login with your new password.");
       setForgotPasswordScreen(false);
       setForgotEmail("");
       setForgotMobile("");
@@ -416,18 +386,45 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100 p-4 relative overflow-hidden">
+    <div className={`flex items-center justify-center min-h-screen p-4 relative overflow-hidden transition-all duration-500 ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black' 
+        : 'bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100'
+    }`}>
+    
+      {/* <div className="fixed top-6 right-6 z-50">
+        <DarkModeToggle 
+          isDark={theme === 'dark'} 
+          onToggle={handleThemeToggle}
+        />
+      </div> */}
+     
+
       <div className="absolute inset-0 overflow-hidden z-0">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200/60 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-200/60 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-200/50 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+        <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob ${
+          theme === 'dark' ? 'bg-purple-800/60' : 'bg-purple-200/60'
+        }`}></div>
+        <div className={`absolute -bottom-40 -left-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000 ${
+          theme === 'dark' ? 'bg-blue-800/60' : 'bg-blue-200/60'
+        }`}></div>
+        <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000 ${
+          theme === 'dark' ? 'bg-pink-800/50' : 'bg-pink-200/50'
+        }`}></div>
       </div>
-      <div
-        className={`relative z-10 flex w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl bg-white/80 backdrop-blur-lg ring-1 ring-black/10 transition-all duration-700 ease-out
+      
+      <div className={`relative z-10 flex w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl backdrop-blur-lg ring-1 transition-all duration-700 ease-out
           ${isMounted ? "scale-100 opacity-100" : "scale-95 opacity-0"}
-          max-h-[90vh] min-h-[600px]`}
-      >
-        <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-800 text-white p-10 lg:p-14">
+          max-h-[90vh] min-h-[600px] ${
+          theme === 'dark' 
+            ? 'bg-gray-800/90 ring-gray-700' 
+            : 'bg-white/80 ring-black/10'
+        }`}>
+        
+        <div className={`hidden md:flex flex-col justify-between w-1/2 text-white p-10 lg:p-14 ${
+          theme === 'dark' 
+            ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900' 
+            : 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-800'
+        }`}>
           <div className="space-y-8 mt-8">
             <img
               src={logo}
@@ -455,12 +452,16 @@ const LoginPage = ({ onLogin }) => {
             </p>
           </div>
         </div>
-        <div className="w-full md:w-1/2 p-10 md:p-14 bg-white/95 backdrop-blur-md h-full overflow-y-auto flex flex-col justify-center items-center">
-          <div
-            style={{ marginTop: "80px" }}
-            className="max-w-md mx-auto w-full"
-          >
-            <h2 className="text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 mb-6">
+
+        <div className={`w-full md:w-1/2 p-10 md:p-14 backdrop-blur-md h-full overflow-y-auto flex flex-col justify-center items-center ${
+          theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
+        }`}>
+          <div style={{ marginTop: "80px" }} className="max-w-md mx-auto w-full">
+            <h2 className={`text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r mb-6 ${
+              theme === 'dark' 
+                ? 'from-blue-400 to-purple-400' 
+                : 'from-purple-600 to-blue-600'
+            }`}>
               {forgotPasswordScreen
                 ? forgotPasswordStep === 1
                   ? "Forgot Password"
@@ -475,6 +476,7 @@ const LoginPage = ({ onLogin }) => {
                   : "Choose OTP Method"
                 : "Login"}
             </h2>
+            
             <div className="w-full">
               {!forgotPasswordScreen && !otpScreen && (
                 <form onSubmit={handleLoginSubmit} className="space-y-3">
@@ -484,7 +486,11 @@ const LoginPage = ({ onLogin }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={isLockedOut}
-                    className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                    className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                      theme === 'dark' 
+                        ? 'border-gray-600 text-white bg-transparent' 
+                        : 'border-gray-300 text-gray-800 bg-transparent'
+                    }`}
                   />
                   <div className="relative">
                     <input
@@ -493,13 +499,19 @@ const LoginPage = ({ onLogin }) => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLockedOut}
-                      className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                      className={`w-full border-b-2 py-3 px-2 pr-10 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                        theme === 'dark' 
+                          ? 'border-gray-600 text-white bg-transparent' 
+                          : 'border-gray-300 text-gray-800 bg-transparent'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLockedOut}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      className={`absolute right-2 top-1/2 transform -translate-y-1/2 hover:text-gray-600 cursor-pointer ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                      }`}
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
@@ -544,7 +556,7 @@ const LoginPage = ({ onLogin }) => {
 
               {otpScreen && otpMethod === "mobile" && (
                 <form onSubmit={handleOtpSubmit} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Enter the 4-digit code sent to your mobile.
                   </p>
                   <div className="flex justify-center space-x-2">
@@ -575,7 +587,11 @@ const LoginPage = ({ onLogin }) => {
                           )
                         }
                         ref={mobileRefs[index]}
-                        className="w-12 h-12 text-center text-2xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                        className={`w-12 h-12 text-center text-2xl border-2 rounded-lg focus:outline-none focus:border-blue-500 transition ${
+                          theme === 'dark' 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        }`}
                       />
                     ))}
                   </div>
@@ -588,7 +604,7 @@ const LoginPage = ({ onLogin }) => {
                   >
                     Verify Mobile OTP
                   </button>
-                  <p className="text-center text-sm text-gray-500">
+                  <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Time remaining: {timer}s
                     {resendEnabled ? (
                       <button
@@ -605,7 +621,7 @@ const LoginPage = ({ onLogin }) => {
 
               {otpScreen && otpMethod === "email" && (
                 <form onSubmit={handleOtpSubmit} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Enter the 6-digit code sent to your email.
                   </p>
                   <div className="flex justify-center space-x-2">
@@ -636,7 +652,11 @@ const LoginPage = ({ onLogin }) => {
                           )
                         }
                         ref={emailRefs[index]}
-                        className="w-10 h-10 text-center text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 transition"
+                        className={`w-10 h-10 text-center text-xl border-2 rounded-lg focus:outline-none focus:border-purple-500 transition ${
+                          theme === 'dark' 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        }`}
                       />
                     ))}
                   </div>
@@ -649,7 +669,7 @@ const LoginPage = ({ onLogin }) => {
                   >
                     Verify Email OTP
                   </button>
-                  <p className="text-center text-sm text-gray-500">
+                  <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Time remaining: {timer}s
                     {resendEnabled ? (
                       <button
@@ -664,10 +684,9 @@ const LoginPage = ({ onLogin }) => {
                 </form>
               )}
 
-              {/* New "Forgot Password" method selection screen */}
               {forgotPasswordScreen && forgotPasswordStep === 1 && !forgotPasswordMethod && (
                 <div className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Choose how you want to reset your password.
                   </p>
                   <button
@@ -687,7 +706,7 @@ const LoginPage = ({ onLogin }) => {
 
               {forgotPasswordScreen && forgotPasswordStep === 1 && forgotPasswordMethod === 'email' && (
                 <form onSubmit={handleRequestOtp} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Enter your email to receive a password reset OTP.
                   </p>
                   <input
@@ -695,7 +714,11 @@ const LoginPage = ({ onLogin }) => {
                     placeholder="Your Email"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                    className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                      theme === 'dark' 
+                        ? 'border-gray-600 text-white bg-transparent' 
+                        : 'border-gray-300 text-gray-800 bg-transparent'
+                    }`}
                   />
                   {error && (
                     <p className="text-red-500 text-center">{error}</p>
@@ -716,7 +739,7 @@ const LoginPage = ({ onLogin }) => {
 
               {forgotPasswordScreen && forgotPasswordStep === 1 && forgotPasswordMethod === 'mobile' && (
                 <form onSubmit={handleRequestOtp} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Enter your mobile number to receive a password reset OTP.
                   </p>
                   <input
@@ -724,7 +747,11 @@ const LoginPage = ({ onLogin }) => {
                     placeholder="Your Mobile Number"
                     value={forgotMobile}
                     onChange={(e) => setForgotMobile(e.target.value)}
-                    className="w-full border-b-2 border-gray-300 py-3 px-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                    className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                      theme === 'dark' 
+                        ? 'border-gray-600 text-white bg-transparent' 
+                        : 'border-gray-300 text-gray-800 bg-transparent'
+                    }`}
                   />
                   {error && (
                     <p className="text-red-500 text-center">{error}</p>
@@ -745,7 +772,7 @@ const LoginPage = ({ onLogin }) => {
 
               {forgotPasswordScreen && forgotPasswordStep === 2 && forgotPasswordMethod === 'email' && (
                 <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Enter the 6-digit OTP sent to {forgotEmail}.
                   </p>
                   <div className="flex justify-center space-x-2">
@@ -776,7 +803,11 @@ const LoginPage = ({ onLogin }) => {
                           )
                         }
                         ref={forgotOtpRefs[index]}
-                        className="w-10 h-10 text-center text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 transition"
+                        className={`w-10 h-10 text-center text-xl border-2 rounded-lg focus:outline-none focus:border-purple-500 transition ${
+                          theme === 'dark' 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        }`}
                       />
                     ))}
                   </div>
@@ -794,7 +825,7 @@ const LoginPage = ({ onLogin }) => {
                   >
                     {isLoading ? "Verifying..." : "Verify OTP"}
                   </button>
-                  <p className="text-center text-sm text-gray-500">
+                  <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Time remaining: {timer}s
                     {resendEnabled ? (
                       <button
@@ -811,7 +842,7 @@ const LoginPage = ({ onLogin }) => {
 
               {forgotPasswordScreen && forgotPasswordStep === 2 && forgotPasswordMethod === 'mobile' && (
                 <form onSubmit={handleVerifyForgotOtp} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Enter the 4-digit OTP sent to {forgotMobile}.
                   </p>
                   <div className="flex justify-center space-x-2">
@@ -842,7 +873,11 @@ const LoginPage = ({ onLogin }) => {
                           )
                         }
                         ref={forgotMobileOtpRefs[index]}
-                        className="w-12 h-12 text-center text-2xl border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                        className={`w-12 h-12 text-center text-2xl border-2 rounded-lg focus:outline-none focus:border-blue-500 transition ${
+                          theme === 'dark' 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        }`}
                       />
                     ))}
                   </div>
@@ -860,7 +895,7 @@ const LoginPage = ({ onLogin }) => {
                   >
                     {isLoading ? "Verifying..." : "Verify OTP"}
                   </button>
-                  <p className="text-center text-sm text-gray-500">
+                  <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Time remaining: {timer}s
                     {resendEnabled ? (
                       <button
@@ -877,7 +912,7 @@ const LoginPage = ({ onLogin }) => {
 
               {forgotPasswordScreen && forgotPasswordStep === 3 && (
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
-                  <p className="text-center text-gray-600">
+                  <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Set your new password.
                   </p>
                   <div className="relative">
@@ -886,12 +921,18 @@ const LoginPage = ({ onLogin }) => {
                       placeholder="New Password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                      className={`w-full border-b-2 py-3 px-2 pr-10 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                        theme === 'dark' 
+                          ? 'border-gray-600 text-white bg-transparent' 
+                          : 'border-gray-300 text-gray-800 bg-transparent'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className={`absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 hover:text-gray-600 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                      }`}
                     >
                       {showNewPassword ? (
                         <EyeOff size={20} />
@@ -906,14 +947,20 @@ const LoginPage = ({ onLogin }) => {
                       placeholder="Confirm New Password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full border-b-2 border-gray-300 py-3 px-2 pr-10 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition"
+                      className={`w-full border-b-2 py-3 px-2 pr-10 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                        theme === 'dark' 
+                          ? 'border-gray-600 text-white bg-transparent' 
+                          : 'border-gray-300 text-gray-800 bg-transparent'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className={`absolute right-2 top-1/2 transform -translate-y-1/2 hover:text-gray-600 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                      }`}
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={20} />
@@ -944,18 +991,18 @@ const LoginPage = ({ onLogin }) => {
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm text-blue-500 hover:underline cursor-pointer"
                   >
                     Back
                   </button>
                 </div>
               )}
               {!otpScreen && !forgotPasswordScreen && (
-                <div className="text-center">
+                <div className="text-center ">
                   <button
                     type="button"
                     onClick={handleForgotPasswordClick}
-                    className="text-sm text-blue-500 hover:underline mt-2"
+                    className="text-sm text-blue-500 hover:underline cursor-pointer mt-2"
                   >
                     Forgot Password?
                   </button>

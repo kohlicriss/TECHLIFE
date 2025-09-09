@@ -84,7 +84,7 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
   return (
     <>
       <div
-        className={`fixed inset-0  bg-opacity-100 z-[150] lg:hidden transition-opacity ${
+        className={`fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -94,7 +94,7 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } bg-white shadow-lg z-[160] transform transition-all duration-200 ease-in-out ${
+        } bg-white shadow-lg z-60 transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >

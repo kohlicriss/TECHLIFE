@@ -7,6 +7,7 @@ import {
   RocketLaunchIcon,
   BriefcaseIcon
 } from '@heroicons/react/24/solid';
+
 import AttendancesDashboard from './AttendancesDashboard';
 import LeavesDashboard from './LeavesDashboard';
 import CombinedDashboard from './CombinedDashBoard';

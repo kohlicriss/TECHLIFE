@@ -1,5 +1,24 @@
 import React, { useState } from 'react';
+import {CircleUserRound} from 'lucide-react';
 
+const Data=[
+     {
+      title:"Total Present",
+      value:"104/108" 
+     },
+     {
+       title:"Paid Leaves",
+       value:"10" 
+     },
+     {
+       title:"Unpaid Leaves",
+      value:"10"
+     },
+     {
+       title:"Pending Request",
+       value:"15"
+      }
+]
 
 
 const ChartCard = ({ title, value, icon, color, progressText }) => {
@@ -33,30 +52,45 @@ const LeaveCharts = () => {
   return (
     <div className="p-4 bg-gray-100">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <ChartCard
-          title="Total Present"
-          value="104/108"
-          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>}
-          color="#34D399" 
-        />
-        <ChartCard
-          title="Planned Leaves"
-          value="10"
-          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>}
-          color="#EC4899" 
-        />
-        <ChartCard
-          title="Unplanned Leaves"
-          value="10"
-          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>}
-          color="#FACC15" 
-        />
-        <ChartCard
-          title="Pending Requests"
-          value="15"
-          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>}
-          color="#3B82F6" 
-        />
+         {Data.map((Data, index) => {
+                      
+                      let icon,titlecolor,colorHandler;
+                
+                      switch (Data.title){
+                        case "Total Present":
+                          icon = <CircleUserRound className="w-10 h-10 sm:w-10 sm:h-10 inline-block text-white-600 mr-2" />
+                          titlecolor="text-orange-500"
+                          colorHandler="#34D399"
+                          break;
+                        case "Paid Leaves":
+                          icon = <CircleUserRound className="w-10 h-10 sm:w-10 sm:h-10 inline-block text-white-600 mr-2" />
+                          titlecolor="text-blue-500";
+                          colorHandler="#EC4899"
+                          break;
+                        case "Unpaid Leaves":
+                          icon = <CircleUserRound className="w-10 h-10 sm:w-10 sm:h-10 inline-block text-white-600 mr-2" />
+                          titlecolor="text-pink-500";
+                          colorHandler="#FACC15" 
+                          break;
+                        case "Pending Request":
+                          icon = <CircleUserRound className="w-10 h-10 sm:w-10 sm:h-10 inline-block text-white-600 mr-2" />
+                          titlecolor="text-yellow-500";
+                          colorHandler="#3B82F6"
+                          break;
+                        default:
+                      }
+                
+                      return (
+                        <ChartCard
+                          key={index}
+                          icon={icon}
+                          color={colorHandler}
+                          value={Data.value}
+                          title={Data.title}
+                          titlecolor={titlecolor}
+                        />
+                      );
+                    })}
       </div>
     </div>
   );

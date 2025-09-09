@@ -1,36 +1,65 @@
 import { chatApi } from "../axiosInstance";
 
-export const transformOverviewToChatList = (overviewData) => {
-  if (!overviewData || !Array.isArray(overviewData)) {
-    return { groups: [], privateChatsWith: [] };
-  }
+export const generateChatListPreview = (item, currentUserId) => {
+    if (!item.lastMessage || item.lastMessage === 'Chat cleared') {
+      return '';
+    }
 
-  const chatList = {
-    groups: [],
-    privateChatsWith: [],
-  };
+    const lastMessageContent = item.lastMessage;
+    const prefix = item.lastMessageSenderId === currentUserId ? 'You: ' : '';
 
-  overviewData.forEach(item => {
-    const chatItem = {
-      chatId: item.chatId,
-      name: item.groupName || item.employeeName,
-      lastMessage: item.lastMessage,
-      lastMessageTimestamp: item.lastSeen,
-      unreadMessageCount: item.unreadMessageCount,
-      profile: item.profile || null,
-      isOnline: item.isOnline,
-      memberCount: item.memberCount || 0,
-      type: item.chatType === 'GROUP' ? 'group' : 'private',
+    if (item.lastMessageType) {
+        switch (item.lastMessageType.toUpperCase()) {
+            case 'IMAGE': return prefix + '📷 Image';
+            case 'AUDIO': return prefix + '🎤 Voice Message';
+            case 'FILE': return prefix + `📎 ${lastMessageContent}`;
+            case 'DELETED': return 'This message was deleted';
+        }
+    }
+    if (lastMessageContent.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+        return prefix + '📷 Image';
+    }
+    if (lastMessageContent.match(/\.(mp3|wav|ogg|m4a|webm)$/i)) {
+        return prefix + '🎤 Voice Message';
+    }
+    if (lastMessageContent.match(/\.(pdf|doc|docx|ppt|pptx|xls|xlsx|zip|rar)$/i)) {
+        return prefix + `📎 ${lastMessageContent}`;
+    }
+
+    return prefix + lastMessageContent;
+};
+
+export const transformOverviewToChatList = (overviewData, currentUserId) => { 
+    if (!overviewData || !Array.isArray(overviewData)) {
+        return { groups: [], privateChatsWith: [] };
+    }
+
+    const chatList = {
+        groups: [],
+        privateChatsWith: [],
     };
 
-    if (chatItem.type === 'group') {
-      chatList.groups.push(chatItem);
-    } else {
-      chatList.privateChatsWith.push(chatItem);
-    }
-  });
+    overviewData.forEach(item => {
+        const chatItem = {
+            chatId: item.chatId,
+            name: item.groupName || item.employeeName,
+            lastMessage: generateChatListPreview(item, currentUserId), 
+            lastMessageTimestamp: item.lastSeen,
+            unreadMessageCount: item.unreadMessageCount,
+            profile: item.profile || null,
+            isOnline: item.isOnline,
+            memberCount: item.memberCount || 0,
+            type: item.chatType === 'GROUP' ? 'group' : 'private',
+        };
 
-  return chatList;
+        if (chatItem.type === 'group') {
+            chatList.groups.push(chatItem);
+        } else {
+            chatList.privateChatsWith.push(chatItem);
+        }
+    });
+
+    return chatList;
 };
 
 export const transformMessageDTOToUIMessage = (msgDto) => {
@@ -46,29 +75,32 @@ export const transformMessageDTOToUIMessage = (msgDto) => {
   } catch (e) {
     timestamp = new Date().toISOString();
   }
-
-  const API_BASE_URL = chatApi;
   
   let messageType = 'text';
   let fileUrl = msgDto.fileUrl || null;
 
-  if (msgDto.fileName && msgDto.fileType) {
-    if (msgDto.fileType.startsWith('image/')) {
-      messageType = 'image';
-    } else if (msgDto.fileType.startsWith('audio/')) {
-      messageType = 'audio';
-    } else if (msgDto.fileType.startsWith('video/')) {
-      messageType = 'video';
-    } else {
-      messageType = 'file';
+  if (msgDto.fileName) {
+    if (msgDto.fileType) {
+      if (msgDto.fileType.startsWith('image/')) messageType = 'image';
+      else if (msgDto.fileType.startsWith('audio/')) messageType = 'audio';
+      else if (msgDto.fileType.startsWith('video/')) messageType = 'video';
+      else messageType = 'file';
+    } 
+    else {
+      if (msgDto.fileName.match(/\.(jpeg|jpg|gif|png|webp)$/i)) messageType = 'image';
+      else if (msgDto.fileName.match(/\.(mp3|wav|ogg|m4a)$/i)) messageType = 'audio';
+      else if (msgDto.fileName.match(/\.(mp4|webm|mov)$/i)) messageType = 'video';
+      else messageType = 'file';
     }
   } else if (msgDto.kind && msgDto.kind !== 'text') {
     messageType = msgDto.kind.toLowerCase();
   }
   
   const messageIdForUrl = msgDto.id || msgDto.messageId;
+
   if (!fileUrl && ['image', 'video', 'audio', 'file'].includes(messageType) && messageIdForUrl) {
-    fileUrl = `${chatApi}/chat/file/${messageIdForUrl}`;
+      const baseUrl = chatApi.defaults.baseURL;
+      fileUrl = `${baseUrl}/chat/file/${messageIdForUrl}`;
   }
   
   if (msgDto.isDeleted) {
