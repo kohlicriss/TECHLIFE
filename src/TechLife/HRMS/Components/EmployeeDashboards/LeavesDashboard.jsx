@@ -22,11 +22,42 @@ import LeavesReports from "./LeavesReports";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // AddLeaveForm component
-const AddLeaveForm = ({ onClose }) => {
+const AddLeaveForm = ({ onClose, onAddLeave }) => {
   const [showFromCalendar, setShowFromCalendar] = useState(false);
   const [showToCalendar, setShowToCalendar] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [selectedLeaveType, setSelectedLeaveType] = useState("");
+  const [reason, setReason] = useState("");
+  const validity = [
+    { sickLeave: "5" },
+    { casualLeave: "10" },
+    { unpaidLeave: "0" },
+    { paidLeave: "15" },
+  ];
+  const handleLeaveTypeChange = (e) => {
+    setSelectedLeaveType(e.target.value);
+  };
+  const remainingDays = validity.find(
+    (item) => Object.keys(item)[0].toLowerCase() === selectedLeaveType.toLowerCase()
+  );
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newLeave = {
+      EmployeeId: "E_XX", // You can generate this dynamically if needed
+      Leave_type: selectedLeaveType,
+      Leave_On: fromDate && toDate ? [`${fromDate.toLocaleDateString("en-GB")}`, "-", `${toDate.toLocaleDateString("en-GB")}`] : [fromDate.toLocaleDateString("en-GB")],
+      status: "Pending",
+      Request_By: "Panalisation Policy",
+      Details: "https://www.flaticon.com/free-icon/document_16702688",
+      Action_Date: new Date().toLocaleDateString("en-GB"),
+      Rejection_Reason: reason,
+      Action: "https://icons8.com/icon/36944/ellipsis",
+    };
+    onAddLeave(newLeave); // Call the function passed from the parent
+    onClose(); // Close the form
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4">
@@ -37,160 +68,186 @@ const AddLeaveForm = ({ onClose }) => {
         >
           &times;
         </button>
-
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">
-          Request a Leave
-        </h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Employee Name
-            </label>
-            <input
-              type="text"
-              value="John Doe"
-              readOnly
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Leave Type
-            </label>
-            <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-              <option>Select</option>
-              <option>Sick Leave</option>
-              <option>Casual Leave</option>
-              <option>Unpaid Leave</option>
-              <option>Paid Leave</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                From
-              </label>
-              <div className="relative mt-1">
+        <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200">
+          <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">
+            Request a Leave
+          </h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Employee Id
+                </label>
                 <input
                   type="text"
-                  readOnly
-                  value={
-                    fromDate
-                      ? fromDate.toLocaleDateString("en-GB")
-                      : "dd-mm-yyyy"
-                  }
-                  onClick={() => setShowFromCalendar(!showFromCalendar)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
+                  value=""
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
                 />
-                {showFromCalendar && (
-                  <Calendar
-                    selectedDate={fromDate}
-                    onSelectDate={(date) => {
-                      setFromDate(date);
-                      setShowFromCalendar(false);
-                    }}
-                    onClose={() => setShowFromCalendar(false)}
-                  />
-                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Employee Name
+                </label>
+                <input
+                  type="text"
+                  value="John Doe"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
+                />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                To
+                Leave Type
               </label>
-              <div className="relative mt-1">
-                <input
-                  type="text"
-                  readOnly
-                  value={
-                    toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"
-                  }
-                  onClick={() => setShowToCalendar(!showToCalendar)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
-                />
-                {showToCalendar && (
-                  <Calendar
-                    selectedDate={toDate}
-                    onSelectDate={(date) => {
-                      setToDate(date);
-                      setShowToCalendar(false);
-                    }}
-                    onClose={() => setShowToCalendar(false)}
+              <select
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                onChange={handleLeaveTypeChange}
+                value={selectedLeaveType}
+              >
+                <option value="">Select</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Casual Leave">Casual Leave</option>
+                <option value="Unpaid Leave">Unpaid Leave</option>
+                <option value="Paid Leave">Paid Leave</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  From
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      fromDate
+                        ? fromDate.toLocaleDateString("en-GB")
+                        : "dd-mm-yyyy"
+                    }
+                    onClick={() => setShowFromCalendar(!showFromCalendar)}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
                   />
-                )}
+                  {showFromCalendar && (
+                    <Calendar
+                      selectedDate={fromDate}
+                      onSelectDate={(date) => {
+                        setFromDate(date);
+                        setShowFromCalendar(false);
+                      }}
+                      onClose={() => setShowFromCalendar(false)}
+                    />
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  To
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"
+                    }
+                    onClick={() => setShowToCalendar(!showToCalendar)}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
+                  />
+                  {showToCalendar && (
+                    <Calendar
+                      selectedDate={toDate}
+                      onSelectDate={(date) => {
+                        setToDate(date);
+                        setShowToCalendar(false);
+                      }}
+                      onClose={() => setShowToCalendar(false)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  No. of Days
+                </label>
+                <input
+                  readOnly
+                  type="text"
+                  value={
+                    fromDate && toDate
+                      ? `${
+                          Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +
+                          1
+                        } Days`
+                      : "0 Days"
+                  }
+                  className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Leave Duration
+                </label>
+                <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                  <option>Select</option>
+                  <option>Full Day</option>
+                  <option>First Half Day</option>
+                  <option>Second Half Day</option>
+                </select>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                No. of Days
+                Rejection Policy
               </label>
               <input
-                readOnly
                 type="text"
-                value={
-                  fromDate && toDate
-                    ? `${
-                        Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +
-                        1
-                      } Days`
-                    : "0 Days"
-                }
+                value="Panalisation Policy"
+                readOnly
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Remaining Days
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={remainingDays ? Object.values(remainingDays)[0] : "0"}
                 className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Leave Duration
+                Reason
               </label>
-              <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                <option>Select</option>
-                <option>Full Day</option>
-                <option>First Half Day</option>
-                <option>Second Half Day</option>
-              </select>
+              <textarea
+                rows="3"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              ></textarea>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Remaining Days
-            </label>
-            <input
-              type="text"
-              readOnly
-              value="8"
-              className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
-            />
+          <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
+            <button
+              onClick={onClose}
+              type="button"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            >
+              Add Leave
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Reason
-            </label>
-            <textarea
-              rows="3"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            ></textarea>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
-          <button
-            onClick={onClose}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-          >
-            Cancel
-          </button>
-          <button className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-            Add Leave
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -462,8 +519,8 @@ const WeeklyPattern = () => {
 };
 
 // LeaveHistory component
-const LeaveHistory = () => {
-  const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
+const LeaveHistory = ({leaveHistoryData}) => {
+  //const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOption, setSortOption] = useState("Recently added");
@@ -473,55 +530,51 @@ const LeaveHistory = () => {
   const [hasMoreData, setHasMoreData] = useState(true);
   const { empID } = useParams();
 
-  useEffect(() => {
-    const fetchLeaveData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${
-            currentPage - 1
-          }&size=${apiPageSize}`
-        );
-        const newData = Array.isArray(response.data) ? response.data : [];
+//useEffect(() => {
+//  const fetchLeaveData = async () => {
+//    setIsLoading(true);
+//    try {
+//      const response = await axios.get(
+//        `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${
+//          currentPage - 1
+//        }&size=${apiPageSize}`
+//      );
+//      const newData = Array.isArray(response.data) ? response.data : [];//
+//      if (newData.length < apiPageSize) {
+//        setHasMoreData(false);
+//      } else {
+//        setHasMoreData(true);
+//      }//
+//      const formatted = newData.map((item) => ({
+//        Leave_type: item.leave_type,
+//        Leave_On: item.leave_on,
+//        status: item.status,
+//        Request_By: item.request_By,
+//        Details: item.details,
+//        Action_Date: item.action_Date,
+//        Rejection_Reason: item.rejection_Reason,
+//        Action: item.action,
+//      }));//
+//      setCurrentLeaveHistoryData((prevData) => [...prevData, ...formatted]);
+//    } catch (error) {
+//      console.error("Failed to fetch leave data:", error);
+//    } finally {
+//      setIsLoading(false);
+//    }
+//  };
+//  fetchLeaveData();
+//}, [currentPage, apiPageSize, empID]);//
+//useEffect(() => {
+//  setCurrentLeaveHistoryData([]);
+//  setCurrentPage(1);
+//}, [leaveTypeFilter, statusFilter, sortOption]);
 
-        if (newData.length < apiPageSize) {
-          setHasMoreData(false);
-        } else {
-          setHasMoreData(true);
-        }
-
-        const formatted = newData.map((item) => ({
-          Leave_type: item.leave_type,
-          Leave_On: item.leave_on,
-          status: item.status,
-          Request_By: item.request_By,
-          Details: item.details,
-          Action_Date: item.action_Date,
-          Rejection_Reason: item.rejection_Reason,
-          Action: item.action,
-        }));
-
-        setCurrentLeaveHistoryData((prevData) => [...prevData, ...formatted]);
-      } catch (error) {
-        console.error("Failed to fetch leave data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchLeaveData();
-  }, [currentPage, apiPageSize, empID]);
-
-  useEffect(() => {
-    setCurrentLeaveHistoryData([]);
-    setCurrentPage(1);
-  }, [leaveTypeFilter, statusFilter, sortOption]);
-
-  const leaveTypes = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.Leave_type))];
-  const statuses = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.status))];
+  const leaveTypes = ["All", ...new Set(leaveHistoryData.map((d) => d.Leave_type))];
+  const statuses = ["All", ...new Set(leaveHistoryData.map((d) => d.status))];
   const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
 
   const filterAndSortData = () => {
-    let data = [...currentLeaveHistoryData];
+    let data = [...leaveHistoryData];
     data = data.filter((item) => {
       return (
         (leaveTypeFilter === "All" || item.Leave_type === leaveTypeFilter) &&
@@ -761,8 +814,73 @@ const LeavesDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+  const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
+    // Existing data
+    {
+      EmployeeId: "E_01",
+      Leave_type: "Unpaid Leave",
+      Leave_On: ["2025/07/10", "-", "2025/05/12"],
+      status: "Reject",
+      Request_By: "Panalisation Policy",
+      Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+      Action_Date: "2025/07/12",
+      Rejection_Reason: "Taking Continues leave in every month",
+      Action: "https://icons8.com/icon/36944/ellipsis",
+    },
+    {
+    EmployeeId: "E_02",
+    Leave_type: "Sick Leave",
+    Leave_On: ["2025/07/20"],
+    Days: 1,
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/07/22",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_03",
+    Leave_type: "Sick Leave",
+    Leave_On: ["2025/06/22", "-", "2025/06/24"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/06/26",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_04",
+    Leave_type: "Casual Leave",
+    Leave_On: ["2025/06/01"],
+    status: "Approve",
+    "Request By": "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/06/03",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_05",
+    Leave_type: "Sick Leave",
+    Leave_On: ["2025/05/22", "-", "2025/05/23"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/05/24",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+    // ... rest of the existing data
+  ]);
 
+  const handleAddLeave = (newLeave) => {
+    setCurrentLeaveHistoryData((prevData) => [newLeave, ...prevData]);
+  };
+  
   useEffect(() => {
+    // API calls to fetch leave summary data
     axios
       .get(
         `http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`
@@ -839,7 +957,6 @@ const LeavesDashboard = () => {
           >
             <ChevronRight />
           </button>
-
           <h3
             className="text-lg font-bold text-gray-800 cursor-pointer mb-4 hover:bg-gray-100 p-2 rounded-md"
             onClick={handleShowReports}
@@ -855,7 +972,10 @@ const LeavesDashboard = () => {
         }`}
       >
         {showReport ? (
-          <LeavesReports onBack={handleGoBackToDashboard} />
+          <LeavesReports
+            onBack={handleGoBackToDashboard}
+            leaveHistoryData={currentLeaveHistoryData} // Pass the state down
+          />
         ) : (
           <>
             <header className="p-3 mb-6 text-left">
@@ -864,41 +984,24 @@ const LeavesDashboard = () => {
               </h1>
               <UserGreeting handleRequestLeave={handleRequestLeave} />
             </header>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              <LeaveTypeCard
-                title="Casual Leave"
-                leaveData={casualLeaveQuota}
-                color="#4CAF50"
-              />
-              <LeaveTypeCard
-                title="Paid Leave"
-                leaveData={paidLeaveQuota}
-                color="#2196F3"
-              />
-              <LeaveTypeCard
-                title="Sick Leave"
-                leaveData={sickLeaveQuota}
-                color="#FFC107"
-              />
-              <LeaveTypeCard
-                title="Unpaid Leave"
-                leaveData={unpaidLeaveQuota}
-                color="#EF5350"
-              />
+              <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
+              <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />
+              <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota} color="#FFC107" />
+              <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <LeaveType />
               <WeeklyPattern />
             </div>
-
-            <LeaveHistory />
-            {showAddLeaveForm && <AddLeaveForm onClose={handleCloseForm} />}
+            <LeaveHistory leaveHistoryData={currentLeaveHistoryData} /> {/* Pass the state down */}
+            {showAddLeaveForm && (
+              <AddLeaveForm onClose={handleCloseForm} onAddLeave={handleAddLeave} />
+            )}
           </>
         )}
       </main>
     </div>
   );
 };
-export default LeavesDashboard;
+export default LeavesDashboard

@@ -48,7 +48,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "My Leaves", icon: <FileText size={18} />, path: empId ? `/leaves/${empId}` : "/leaves" },
     { name: "My Team", icon: <Users size={18} />, path: empId ? `/my-teams/${empId}` : "/my-teams" },
     { name: "My Projects", icon: <Database size={18} />, path: empId ? `/projects/${empId}` : "/projects" },
-    { name: "My Performance", icon: <ToolCase size={18} />, path: empId ? `/performance/${empId}` : "/performance" },
     { name: "My Tasks",icon: <ListChecks size={18} />,path: empId ? `/tasks/${empId}` : "/tasks",},
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },

@@ -26,7 +26,7 @@ const CombinedDashBoard=lazy(() => import("./EmployeeDashboards/CombinedDashBoar
 const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
 const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
 const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
-const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
+//const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
 const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
 
@@ -140,7 +140,7 @@ const HrmsApp = () => {
                                 <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
                                 <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
-                                <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />
+                               {/* <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />*/}
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
                                 <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />

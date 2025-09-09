@@ -2,35 +2,57 @@ import { CalendarDaysIcon, ClockIcon, ArrowPathIcon } from "@heroicons/react/24/
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import React, { useMemo, useState, Fragment } from "react";
+import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
+import { MdEditCalendar } from "react-icons/md";
+import { FaCalendarCheck, FaRegCalendarCheck } from "react-icons/fa";
 const ChartData = [
   {
     title: "Total Working Days in Month",
-    value: "25"
+    value: "25",
+    trend: "up",
+    trendPercentage:"83.3",
+    trendPeriod:"This Month"
   },
   {
     title: "Total Leave Taken Today",
-    value: "12"
+    value: "12",
+    trend: "down",
+    trendPercentage:"20",
+    trendPeriod:"This Week"
   },
   {
     title: "Total Holidays per Year",
-    value: "6"
+    value: "6",
+    trend: "up",
+    trendPercentage:"50",
+    trendPeriod:"This Year"
   },
   {
     title: "Total Halfdays per Day",
-    value: "5"
+    value: "5",
+    trend: "down",
+    trendPercentage:"16.6",
+    trendPeriod:"This Month"
   }
 ];
 
-const ChartCard = ({ title, titlecolor, icon, value,color }) => {
+const ChartCard = ({ title, titlecolor, icon, value,color,trend,trendPercentage,trendPeriod }) => {
+  const isUp = trend === 'up';
   return (
     <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center">
-      <div className={`w-20 h-20 flex items-center justify-center rounded-full mb-2 ${titlecolor.replace('text-')}-100`} style={{ backgroundColor: color }}>
-        {React.cloneElement(icon, { className: `w-16 h-16 rounded-full` })}
+      <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2  p-3 ${color}`}>
+        {React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}
       </div>
       <div>
-        <h3 className={`text-xl font-semibold ${titlecolor}`}>{title}</h3> 
-        <p className="text-4xl font-bold mt-2 text-gray-900">{value}</p> 
+        <h3 className={`text-lg font-medium ${titlecolor}`}>{title}</h3> 
+        <p className="text-3xl font-bold mt-2 text-gray-900">{value}</p> 
       </div>
+       <div className="flex items-center mt-auto">
+                {isUp ? <TrendingUpIcon className="w-5 h-5 text-green-500" /> : <TrendingDownIcon className="w-5 h-5 text-red-500" />}
+                <span className={`ml-1 text-sm ${isUp ? 'text-green-500' : 'text-red-500'}`}>
+                    {trendPercentage}% {trendPeriod}
+                </span>
+            </div>
     </div>
   );
 };
@@ -43,13 +65,13 @@ const DashboardGrid = () => {
           let icon, titlecolor,colorHandler;
 
           switch (chart.title) {
-            case "Total Working Days in Month":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;colorHandler = "#F57D27";;titlecolor = "text-orange-600";
+            case "Total Working Days in Month":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;colorHandler = "bg-orange-100";;titlecolor = "text-orange-600";
               break;
-            case "Total Leave Taken Today":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;  colorHandler = "#27BEF5";titlecolor = "text-blue-600";
+            case "Total Leave Taken Today":icon = <FaCalendarCheck className="w-10 h-10 text-white" />;  colorHandler = "bg-blue-100";titlecolor = "text-blue-600";
               break;
-            case "Total Holidays per Year":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;  colorHandler = "#F527CC"; titlecolor = "text-pink-600";
+            case "Total Holidays per Year":icon = <FaRegCalendarCheck className="w-8 h-8 text-white" />;  colorHandler = "bg-pink-100"; titlecolor = "text-pink-600";
               break;
-            case "Total Halfdays per Day":icon = <CalendarDaysIcon className="w-10 h-10 text-white" />;  colorHandler = "#F5F227"; titlecolor = "text-yellow-600";
+            case "Total Halfdays per Day":icon = <MdEditCalendar  className="w-10 h-10 text-white" />;  colorHandler = "bg-yellow-100"; titlecolor = "text-yellow-600";
               break;
             default:
               icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler="#D3D3D3"; titlecolor = "text-gray-500";
@@ -63,6 +85,9 @@ const DashboardGrid = () => {
               value={chart.value}
               title={chart.title}
               titlecolor={titlecolor}
+              trend={chart.trend} 
+              trendPercentage={chart.trendPercentage} 
+              trendPeriod={chart.trendPeriod} 
             />
           );
         })}

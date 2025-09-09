@@ -113,10 +113,10 @@ const TrendingDownIcon = ({ className }) => (
  ]
  const Data = [
    { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:40 - 17:10", hours: 0.5 }, { Time: "19:20 - 19:40", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "19:00 - 19:20", hours: 0.2 }] },
+   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
+   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
  ];
 const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod }) => {
     const isUp = trend === 'up';
@@ -241,7 +241,7 @@ const MyComponent = ({ Data, selectedDate }) => {
             const { start, end } = getHourValue(hour.time);
             const leftPosition = scaleHour(start);
             const widthPercentage = scaleHour(end) - scaleHour(start);
-            const colorClass = hour.type === 'working' ? 'bg-indigo-600' : 'bg-orange-500';
+            const colorClass = hour.type === 'working' ? 'bg-green-400' : 'bg-yellow-400';
             return (
               <div
                 key={index}
@@ -398,15 +398,9 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                 setGrossHours(diffInSeconds);
                 setEffectiveHours(diffInSeconds); // Assuming effective hours are the same as gross hours for now
             }, 1000);
-        } else {
-            setGrossHours(0);
-            setEffectiveHours(0);
-        }
+        } else { setGrossHours(0); setEffectiveHours(0);}
         const clockTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => {
-            clearInterval(interval);
-            clearInterval(clockTimer);
-        };
+        return () => { clearInterval(interval); clearInterval(clockTimer);};
     }, [isLoggedIn, startTime]);
     // Action Handlers
     const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
@@ -443,9 +437,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
         const paginatedData = formattedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
         return { paginatedData, totalPages, totalCount: formattedData.length };
     }, [rawTableData, selectedMonth, sortOption, rowsPerPage, currentPage, MONTHS]);
-
     const { paginatedData, totalPages } = finalAttendanceData;
-
     const filteredPieData = useMemo(() => {
         const dataToProcess = selectedDate === "All" ? rawPieData : rawPieData.filter((d) => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
         const totalWorking = dataToProcess.reduce((sum, row) => sum + row.Working_hour, 0);
@@ -457,205 +449,221 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
         return selectedDate === "All" ? barChartData : barChartData.filter((d) => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
     }, [selectedDate, barChartData]);
 
-
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-gray-800 relative">
             {/* Sidebar */}
             {showSidebar && (
                 <>
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}
-                        aria-label="Open Sidebar"
-                    >
-                        <ChevronLeft />
+                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}aria-label="Open Sidebar">
+                      <ChevronLeft />
                     </button>
                     <div className={`fixed inset-y-0 right-0 w-60 bg-white shadow-xl z-40 p-4 flex flex-col transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                        <button
-                            onClick={() => setIsSidebarOpen(false)}
-                            className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
-                            aria-label="Close Sidebar"
-                        >
-                            <ChevronRight />
+                        <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg" aria-label="Close Sidebar" >
+                          <ChevronRight />
                         </button>
-                        <h3
-                            className="text-lg font-bold text-gray-800 cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100"
-                            onClick={() => {
-                                setShowAttendanceReports(true);
-                                setIsSidebarOpen(false);
-                            }}
-                        >
+                        <h3 className="text-lg font-bold text-gray-800 cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100" onClick={() => {setShowAttendanceReports(true);setIsSidebarOpen(false); }}  >
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
                         </h3>
                     </div>
                 </>
             )}
-
             {/* Main Content Wrapper */}
             <main className={`p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-60' : 'mr-0'}`}>
                 <header className="flex items-center justify-between mb-8">
-                    <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900">
-                        {showAttendanceReports ? "Attendance Reports" : "Attendance Dashboard"}
-                    </h1>
-                    <button
-                        onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack}
-                        className="flex items-center px-4 py-2 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
-                    >
-                        <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                        {showAttendanceReports ? "Back to Dashboard" : "Back"}
+                    <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900"> {showAttendanceReports ? "Attendance Reports" : "Attendance Dashboard"}</h1>
+                    <button onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack} className="flex items-center px-4 py-2 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
+                        <ArrowLeftIcon className="w-4 h-4 mr-2" />{showAttendanceReports ? "Back to Dashboard" : "Back"}
                     </button>
                 </header>
-
                 {/* Conditional Rendering of Main Content */}
                 {showAttendanceReports ? (
-                    <div className="p-2">
-                        <AttendanceReports role={role.toLowerCase()} />
-                    </div>
+                    <div className="p-2"> <AttendanceReports role={role.toLowerCase()} /> </div>
                 ) : (
                     <>
                         {/* Employee Profile and Clock Layouts - REFACTORED */}
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <div className="p-2 flex items-center justify-center">
-  <div className="bg-white shadow-2xl rounded-3xl p-2 w-full max-w-2xl flex flex-col items-center relative">
-    {/* Mode change button and confirmation (Top Right) */}
-    <div className="absolute top-4 right-4">
-      <button
-        onClick={() => setShowModeConfirm(!showModeConfirm)}
-        className="px-2 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center justify-center gap-2 text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg"
-      >
-        {mode === "office" ? (
-          <FaBuilding className="text-blue-500 text-xl" />
-        ) : (
-          <FaHome className="text-green-500 text-xl" />
-        )}
-        <span>{mode === "office" ? "Office Mode" : "Home Mode"}</span>
-      </button>
-      {showModeConfirm && (
-        <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 flex flex-col items-center space-y-3 animate-fade-in">
-          <p className="text-gray-700 font-semibold text-sm">
-            Confirm Mode Change?
-          </p>
-          <div className="flex space-x-2 w-full">
-            <button
-              onClick={() =>
-                handleModeChange(mode === "office" ? "home" : "office")
-              }
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-semibold"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => setShowModeConfirm(false)}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-semibold"
-            >
-              Cancel
-            </button>
+                          <div className="p-4 flex items-center justify-center">
+  <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl flex flex-col relative overflow-hidden border border-gray-100">
+    {/* Subtle background pattern */}
+    <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-indigo-50 z-0"></div>
+    <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-blue-50 z-0"></div>
+    
+    {/* Top section with profile on left and mode selector on right */}
+    <div className="flex flex-row items-start justify-between mb-6 relative z-10">
+      {/* Profile on left side */}
+      <div className="flex items-center">
+        <div className="relative mr-4">
+          <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg">
+            <img 
+              src={userData?.avatar || "https://i.pravatar.cc/100"} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white ${mode === "office" ? "bg-blue-500" : "bg-green-500"}`}>
+            {mode === "office" ? (
+              <FaBuilding className="text-white text-xs" />
+            ) : (
+              <FaHome className="text-white text-xs" />
+            )}
           </div>
         </div>
-      )}
+        {/* User info next to profile */}
+        <div>
+          <div className="flex space-x-4 mt-1">
+            <div className="flex flex-col">
+              <span className="text-lg text-gray-500">Attendance</span>
+              <span className="font-semibold text-green-600 text-lg">100%</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg text-gray-500">Avg. Hours</span>
+              <span className="font-semibold text-blue-600 text-lg">10h 9m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+       </div>
+
+    {/* Mode selector */}
+    <div className="absolute top-1 right-1 z-10">
+      <div className="relative">
+        <button 
+          onClick={() => setShowModeConfirm(!showModeConfirm)} 
+          className="px-4 py-2.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md border border-blue-100"
+        >
+          {mode === "office" ? (
+            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+              <FaBuilding className="text-white text-xs" />
+            </div>
+          ) : (
+            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+              <FaHome className="text-white text-xs" />
+            </div>
+          )}
+          <span>{mode === "office" ? "Office" : "Remote"}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {showModeConfirm && (
+          <div className="absolute top-full right-0 mt-1 w-48 p-2 bg-white border border-gray-200 rounded-xl shadow-lg z-20 flex flex-col items-center space-y-3 animate-fade-in">
+            <p className="text-gray-700 font-medium text-sm">
+              Switch to {mode === "office" ? "Remote" : "Office"} mode?
+            </p>
+            <div className="flex space-x-2 w-full">
+              <button 
+                onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-semibold"
+              >
+                Confirm
+              </button>
+              <button 
+                onClick={() => setShowModeConfirm(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
 
-    {/* Profile and Greeting (Centered) */}
-    <div className="flex flex-col items-center space-y-4 mb-2 mt-2">
-      <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-indigo-600 shadow-lg flex-shrink-0">
-        <img
-          src={userData?.avatar || "https://i.pravatar.cc/150"}
-          alt="Profile"
-          className="w-full h-full object-cover"
-        />
+    {/* Profile section */}
+      
+     {/* Welcome message centered below profile */}
+    <div className="text-center mb-2 relative z-10">
+      <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome, {userData?.fullName}</h2>
+      <p className="text-gray-500">Ready to start your day?</p>
+    </div>
+
+    {/* Divider with elegant style */}
+    <div className="relative my-2 w-full">
+      <div className="absolute inset-0 flex items-center" aria-hidden="true">
+        <div className="w-full border-t border-gray-200"></div>
       </div>
-      <div className="text-center Times New Roman">
-        <h2 className="text-2xl font-bold text-gray-900 leading-tight">
-          Welcome, {userData?.fullName} ({userData?.roles?.[0] || ""})
-        </h2>
-        <p className="text-gray-500 mt-2 text-md">
-          Attendance: <span className="font-bold text-green-600">100%</span>
-        </p>
-        <p className="text-gray-500 text-md">
-          Avg. Working Hours: <span className="font-bold text-green-600">10h 9m</span>
-        </p>
+      <div className="relative flex justify-center">
+        <span className="px-3 bg-white text-sm text-gray-500 font-medium">TIME TRACKING</span>
       </div>
     </div>
 
-    {/* Horizontal Line */}
-    <hr className="w-full border-t-2 border-gray-200 mt-2" />
-
-    {/* Digital Clock and Time Values */}
-    <div className="w-full flex flex-col items-center text-center mt-2">
-      {/* Current Time */}
+    {/* Time section */}
+    <div className="w-full flex flex-col items-center text-center mb-2 relative z-10">
       <div className="mb-2">
-        <div className="flex items-center justify-center gap-2 text-indigo-700 font-semibold text-lg mb-2">
-          <ClockIcon className="w-6 h-6" />
+        <div className="flex items-center justify-center gap-2 text-indigo-600 font-medium text-lg mb-2">
+          <ClockIcon className="w-5 h-5 text-indigo-500" />
           <span>Current Time</span>
         </div>
-        <p className="text-2xl font-bold text-indigo-900 tracking-wide">
+        <p className="text-2xl font-bold text-gray-800 tracking-wide mb-1">
           {formatClockTime(currentTime)}
         </p>
-        <p className="text-sm text-indigo-500 mt-1">
-          {currentTime.toLocaleDateString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
+        <p className="text-sm text-gray-500">
+          {currentTime.toLocaleDateString(undefined, { 
+            weekday: "long", 
+            month: "long", 
+            day: "numeric", 
+            year: "numeric" 
           })}
         </p>
       </div>
-
-      {/* Gross and Effective Time (Stacked Vertically) */}
-      <div className="w-full flex flex-col space-y-4 items-center">
-        {/* Gross Time */}
-        <div className="flex items-center space-x-2">
-          <p className="text-lg text-gray-600 font-semibold">Gross Time:</p>
-          <p className="text-xl font-bold text-purple-800 tracking-wider">
-            {grossHoursFormatted}
-          </p>
+      
+      {/* Time metrics in elegant cards */}
+      <div className="grid grid-cols-2 gap-5 w-full max-w-md">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2 text-center shadow-sm border border-gray-200">
+          <p className="text-sm text-gray-600 font-medium mb-2">Gross Time</p>
+          <p className="text-xl font-semibold text-purple-700">{grossHoursFormatted}</p>
         </div>
-
-        {/* Effective Time */}
-        <div className="flex items-center space-x-2">
-          <p className="text-lg text-gray-600 font-semibold">Effective Time:</p>
-          <p className="text-xl font-bold text-orange-800 tracking-wider">
-            {effectiveHoursFormatted}
-          </p>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2 text-center shadow-sm border border-gray-200">
+          <p className="text-sm text-gray-600 font-medium mb-2">Effective Time</p>
+          <p className="text-xl font-semibold text-orange-700">{effectiveHoursFormatted}</p>
         </div>
       </div>
     </div>
 
-    {/* Horizontal Line */}
-    <hr className="w-full border-t-2 border-gray-200 mt-2" />
+    {/* Divider */}
+    <div className="relative my-1 w-24">
+      <div className="absolute inset-0 flex items-center" aria-hidden="true">
+        <div className="w-full border-t border-gray-200"></div>
+      </div>
+    </div>
 
-    {/* Action Buttons (Clock In/Out) */}
-    <div className="w-full flex justify-center mt-2">
+    {/* Action buttons */}
+    <div className="w-full flex justify-center mt-1 relative z-5">
       {!isLoggedIn ? (
-        <button
-          onClick={handleLogin}
-          className="flex items-center justify-center sm:w-48 px-2 py-2 bg-green-600 text-white rounded-full shadow-xl hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 text-lg font-semibold transform hover:scale-105"
+        <button 
+          onClick={handleLogin} 
+          className="flex items-center justify-center w-48 max-w-md py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg font-semibold hover:from-green-600 hover:to-green-700"
         >
-          <ClockIcon className="w-6 h-6 mr-3" /> Clock In
+          <ClockIcon className="w-5 h-5 mr-2" />
+          Clock In
         </button>
       ) : (
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full justify-center">
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full max-w-md justify-center">
           {isLogoutConfirmed ? (
             <>
-              <button
-                onClick={handleConfirmLogout}
-                className="flex items-center justify-center w-full sm:w-48 px-4 py-3 bg-red-600 text-white rounded-full shadow-xl hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-300 text-base font-semibold transform hover:scale-105"
+              <button 
+                onClick={handleConfirmLogout} 
+                className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold"
               >
-                <ClockIcon className="w-5 h-5 mr-2" /> Confirm Logout
+                <ClockIcon className="w-4 h-4 mr-2" />
+                Confirm Logout
               </button>
-              <button
-                onClick={handleCancel}
-                className="flex items-center justify-center w-full sm:w-48 px-4 py-3 bg-gray-500 text-white rounded-full shadow-md hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 transition-all duration-200 text-base font-medium transform hover:scale-105"
+              <button 
+                onClick={handleCancel} 
+                className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-300 transition-all duration-200 font-medium"
               >
-                <XCircleIcon className="w-5 h-5 mr-2" /> Cancel
+                <XCircleIcon className="w-4 h-4 mr-2" />
+                Cancel
               </button>
             </>
           ) : (
-            <button
+            <button 
               onClick={handleLogout}
-              className="flex items-center justify-center sm:w-48 px-2 py-2  bg-red-600 text-white rounded-full shadow-xl hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-all duration-300 text-lg font-semibold transform hover:scale-105"
+              className="flex items-center justify-center w-48 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg font-semibold hover:from-red-600 hover:to-red-700"
             >
-              <ClockIcon className="w-6 h-6 mr-3" /> Clock Out
+              <ClockIcon className="w-5 h-5 mr-2" />
+              Clock Out
             </button>
           )}
         </div>
@@ -663,6 +671,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     </div>
   </div>
 </div>
+
 
                         {/* Stat Cards Grid */}
                         <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 h-full flex flex-col justify-between">
@@ -733,7 +742,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                 </div>
                             </section>
                         </div>
-
                         {/* Attendance Records Table */}
                         <div className="p-4 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-lg">
                             <section>
