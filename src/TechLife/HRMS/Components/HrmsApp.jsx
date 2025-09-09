@@ -1,131 +1,168 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Navigate,
+    Outlet,
 } from "react-router-dom";
+import logo from "./assets/anasol-logo.png";
 import HrmsContext from "./HrmsContext";
-import NotificationSystem from "./Notifications/NotificationSystem";
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
-import ChatApp from "./Chats/ChatApp";
-import Employees from "./Employees/Employees";
-import Profiles from "./Profile/Profiles";
-import LoginPage from "./Login/LoginPage"; 
-import AllTeams from "./Teams/AllTeams";
-import Tickets from  "./AdminTickets/Tickets";
-import EmployeeTicket from "./EmployeeTicket/EmployeeTicket";
-import AdminDashBoard from "./AdminDashBoards/AdminDashBoard";
-import Dashboard from "./EmployeeDashboards/Dashboard";
-import TasksApp from "./Tasks/TaskApp";
+import LoginPage from "./Login/LoginPage";
+import ProtectedRoute from "../../../ProtectedRoute";
 
+// Lazy loading components
+const NotificationSystem = lazy(() => import("./Notifications/NotificationSystem"));
+const ChatApp = lazy(() => import("./Chats/ChatApp"));
+const Employees = lazy(() => import("./Employees/Employees"));
+const Profiles = lazy(() => import("./Profile/Profiles"));
+const AllTeams = lazy(() => import("./Teams/AllTeams"));
+const Tickets = lazy(() => import("./AdminTickets/Tickets"));
+const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
+const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
+const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
+const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
+const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
+const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
+const TasksApp = lazy(() => import("./Tasks/TaskApp"));
+const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
+
+const FullPageSpinner = () => {
+    const [dots, setDots] = useState(1);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDots((prevDots) => (prevDots >= 3 ? 1 : prevDots + 1));
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-white">
+            <img
+                src={logo}
+                alt="Loading..."
+                className="h-20 w-20 animate-pulse"
+            />
+            <p className="mt-4 text-lg font-semibold text-gray-700">
+                Loading{'.'.repeat(dots)}
+            </p>
+        </div>
+    );
+};
 
 const MainLayout = ({
-  isSidebarOpen,
-  setSidebarOpen,
-  currentUser,
-  onLogout, // Receive onLogout prop
+    isSidebarOpen,
+    setSidebarOpen,
+    currentUser,
+    onLogout,
 }) => (
-  <div className="flex flex-col h-screen bg-gray-50">
-    <Navbar
-      setSidebarOpen={setSidebarOpen}
-      currentUser={currentUser}
-      onLogout={onLogout} // Pass it to Navbar
-    />
-    <div className="flex flex-1 overflow-hidden pt-16">
-      <Sidebar
-        isSidebarOpen={isSidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        onLogout={onLogout} // Pass it to Sidebar
-      />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+    <div className="flex flex-col h-screen bg-gray-50">
+        <Navbar
+            setSidebarOpen={setSidebarOpen}
+            currentUser={currentUser}
+        />
+        <div className="flex flex-1 overflow-hidden pt-16">
+            <Sidebar
+                isSidebarOpen={isSidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                onLogout={onLogout}
+            />
+            <main className="flex-1 overflow-y-auto">
+                <Outlet />
+            </main>
+        </div>
     </div>
-  </div>
 );
- 
+
 const HrmsApp = () => {
-  // Initialize state from localStorage to persist login
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("authToken")
-  );
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState({
-    
-    name: "Johnes",
-    designation: " Associate Software Engineer",
-    avatar: "https://i.pravatar.cc/100",
-  });
+    const [isAuthenticated, setIsAuthenticated] = useState(
+        !!localStorage.getItem("accessToken")
+    );
 
-  // Effect to sync state with localStorage - useful if auth changes in another tab
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem("authToken"));
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [currentUser] = useState({
+        name: "Johnes",
+        designation: " Associate Software Engineer",
+        avatar: "https://i.pravatar.cc/100",
+    });
+
+    useEffect(() => {
+        const handleStorageChange = () => {
+            setIsAuthenticated(!!localStorage.getItem("accessToken"));
+        };
+
+        window.addEventListener("storage", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, []);
+
+    const handleLogin = () => {
+        setIsAuthenticated(true);
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
+    const handleLogout = () => {
+        setIsAuthenticated(false);
     };
-  }, []);
 
-  // Handle Login: set auth state and save a token to localStorage
-  const handleLogin = () => {
-    localStorage.setItem("authToken", "true"); // Use a simple flag
-    setIsAuthenticated(true);
-  };
+    const loggedInEmpId = localStorage.getItem("logedempid");
 
-  // Handle Logout: clear auth state and remove the token from localStorage
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    setIsAuthenticated(false);
-  };
+    return (
+        <HrmsContext>
+            <Router>
+                <Suspense fallback={<FullPageSpinner />}>
+                    <Routes>
+                        {!isAuthenticated ? (
+                            <>
+                                <Route
+                                    path="/login"
+                                    element={<LoginPage onLogin={handleLogin} />}
+                                />
+                                <Route path="*" element={<Navigate to="/login" replace />} />
+                            </>
+                        ) : (
+                            <Route
+                                element={
+                                    <MainLayout
+                                        isSidebarOpen={isSidebarOpen}
+                                        setSidebarOpen={setSidebarOpen}
+                                        currentUser={currentUser}
+                                        onLogout={handleLogout}
+                                    />
+                                }
+                            >
+                                <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
+                                <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
+                                <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
+                                <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
+                                <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />
+                                <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
+                                <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                                <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
+                                <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                                
+                                {/* ADDED: Route for individual employee public profile */}
+                                <Route 
+                                    path="/employees/:empID/public/:employeeID" 
+                                    element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} 
+                                />
 
-  return (
-    <HrmsContext>
-      <Router>
-        <Routes>
-          {!isAuthenticated ? (
-            <>
-              <Route
-                path="/login"
-                element={<LoginPage onLogin={handleLogin} />}
-              />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </>
-          ) : (
-            <Route
-              element={
-                <MainLayout
-                  isSidebarOpen={isSidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                  currentUser={currentUser}
-                  onLogout={handleLogout} // Pass the logout handler down
-                />
-              }
-            >
-              <Route path="/AdminDashBoard" element={<AdminDashBoard/>}/>
-              <Route path="/dashboard" element={<Dashboard />}> </Route>
-              <Route path="/notifications" element={<NotificationSystem />} />
-              <Route path="/chat/:userId" element={<ChatApp />} />
-              <Route path="/profile/*" element={<Profiles />} />
-              <Route path="/employees/*" element={<Employees />} />  
-              <Route path="/my-teams" element={<AllTeams />} />
-              <Route path="/tickets" element={<Tickets />} />
-              <Route path="/tickets/employee/*" element={<EmployeeTicket />} />
-              <Route path="/tasks/*" element={<TasksApp />} />
-              {/* Redirect any unmatched route to the dashboard when logged in */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          )}
-        </Routes>
-      </Router>
-    </HrmsContext>
-  );
+                                <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                                <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
+                                <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
+                                <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
+                            </Route>
+                        )}
+                    </Routes>
+                </Suspense>
+            </Router>
+        </HrmsContext>
+    );
 };
- 
+
 export default HrmsApp;
- 

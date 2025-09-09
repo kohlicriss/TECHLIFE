@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -11,48 +11,54 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight, 
+  ChevronRight,
   UserCircle,
   BadgePlus,
   TicketCheck,
+  ToolCase,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { useContext } from 'react';
 
- 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
- const { userData, setUserData } = useContext(Context);
+  const { userData, setUserData, theme, setTheme } = useContext(Context);
   const empId = userData?.employeeId;
-// Sidebar.jsx
-const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
-const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUpperCase() : "";
 
- 
+  // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://hrms.anasolconsultancyservices.com/api/auth/logout", {
+      await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
     } catch (error) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
-      localStorage.clear();
+      // ✅ Remove only login-related keys, NOT theme
+      const keysToRemove = [
+        "accessToken", 
+        "emppayload", 
+        "logedempid", 
+        "logedemprole"
+      ];
+      
+      // Remove specific keys only
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // ✅ DO NOT use localStorage.clear() - it removes theme too!
+      // localStorage.clear(); // ❌ This was the problem
+
       setUserData(null);
       if (onLogout) {
         onLogout();
       }
     }
   };
- 
+
   const navItems = [
-    {
-      name: "Dashboard",
-      icon: <LayoutDashboard size={18} />,
-      path: empId ? `/dashboard/${empId}` : "/dashboard",
-    },
     { name: "Profile", icon: <UserCircle size={18} />, path: empId ? `/profile/${empId}` : "/profile" },
     {
       name: "Attendance",
@@ -62,6 +68,7 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
     { name: "My Leaves", icon: <FileText size={18} />, path: empId ? `/leaves/${empId}` : "/leaves" },
     { name: "My Team", icon: <Users size={18} />, path: empId ? `/my-teams/${empId}` : "/my-teams" },
     { name: "My Projects", icon: <Database size={18} />, path: empId ? `/projects/${empId}` : "/projects" },
+    { name: "My Performance", icon: <ToolCase size={18} />, path: empId ? `/performance/${empId}` : "/performance" },
     {
       name: "My Tasks",
       icon: <ListChecks size={18} />,
@@ -69,39 +76,30 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
     },
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
-   { name: "Tickets", icon: <TicketCheck size={18} />, path: empId? `/tickets/employee/${empId}` : "/tickets" },
-//       {
-//   name: "Tickets",
-//   icon: <TicketCheck size={18} />,
-//   path:
-//     normalizedRole === "EMPLOYEE"
-//       ? (empId ? `/tickets/employee/${empId}` : "/tickets")
-//       : "/tickets", // Admin/HR/Manager see global tickets
-// }
-
+    { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
   ];
- 
+
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black bg-opacity-40 z-50 lg:hidden transition-opacity ${
+        className={`fixed inset-0 bg-opacity-100 z-[150] lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
- 
+
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } bg-white shadow-lg z-60 transform transition-all duration-200 ease-in-out ${
+        } ${theme === 'dark' ? 'bg-black' : 'bg-white'} shadow-lg z-[50] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
           <div className="lg:hidden">
             <button
-              className="text-gray-600 hover:text-black"
+              className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-gray-600 hover:text-black'}`}
               onClick={() => setSidebarOpen(false)}
             >
               <X size={20} />
@@ -110,7 +108,11 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="bg-gray-100 border rounded-full p-1 hover:bg-gray-200 transition"
+              className={`border rounded-full p-1 transition ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 border-gray-600 hover:bg-gray-700 text-white' 
+                  : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
+              }`}
             >
               {collapsed ? (
                 <ChevronRight size={18} />
@@ -120,7 +122,7 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
             </button>
           </div>
         </div>
- 
+
         <nav className="mt-4">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -134,6 +136,8 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
                 } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
                   isActive
                     ? "bg-blue-500 text-white font-semibold"
+                    : theme === 'dark'
+                    ? "text-white hover:bg-gray-800"
                     : "text-gray-700 hover:bg-blue-100"
                 }`}
               >
@@ -142,13 +146,17 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
               </Link>
             );
           })}
- 
+
           <div className="mt-10">
             <button
-              onClick={onLogout}
-              className={`flex items-center ${
+              onClick={handleLogoutClick}
+              className={`flex items-center cursor-pointer ${
                 collapsed ? "justify-center" : "justify-start"
-              } gap-3 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md w-full text-left`}
+              } gap-3 px-4 py-2 rounded-md w-full text-left ${
+                theme === 'dark'
+                  ? 'text-red-400 hover:bg-gray-800'
+                  : 'text-red-600 hover:bg-red-50'
+              }`}
             >
               <LogOut size={18} />
               {!collapsed && <span>Log Out</span>}
@@ -159,6 +167,5 @@ const normalizedRole = typeof role === "string" ? role.replace("ROLE_", "").toUp
     </>
   );
 }
- 
+
 export default Sidebar;
- 

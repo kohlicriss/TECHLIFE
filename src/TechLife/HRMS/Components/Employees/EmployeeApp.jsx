@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Context } from "../HrmsContext";
-import { publicinfoApi } from "../../../../axiosInstance";
+import { publicinfoApi, chatApi } from "../../../../axiosInstance"; // Added chatApi import
 import {
     IoSearchOutline,
     IoMailOutline,
@@ -137,10 +137,24 @@ function EmployeeApp() {
         });
     };
 
-    const handleChatClick = (employee) => {
+    const handleChatClick = async (employee) => {
         if (employee) {
-            alert(`Starting a chat with ${employee.displayName || employee.name}...`);
-            navigate(`/chat/${employee.employeeId}`);
+            const chatPayload = {
+                senderId: empID,
+                recipientId: employee.employeeId,
+                content: "Hello, how are you?"
+            };
+    
+            console.log("Starting chat with payload:", chatPayload);
+    
+            try {
+                const response = await chatApi.post('/chat/send', chatPayload);
+                console.log("Chat started successfully:", response.data);
+                navigate(`/chat/${empID}/with?id=${employee.employeeId}`);
+            } catch (err) {
+                console.error("Error starting chat:", err);
+                alert("Could not start the chat. Please try again later.");
+            }
         }
         setContextMenu({ ...contextMenu, visible: false });
         setFlippedCard(null);
@@ -509,9 +523,9 @@ function EmployeeApp() {
                             onClick={handleFormSubmit}
                             disabled={isUpdating}
                             className={`px-10 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-xl
-                                            hover:shadow-lg transform hover:scale-105 transition-all duration-200
-                                            focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
-                                            ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
+                                         hover:shadow-lg transform hover:scale-105 transition-all duration-200
+                                         focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                                         ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
                         >
                             {isUpdating ? (
                                 <>
@@ -993,7 +1007,7 @@ function EmployeeApp() {
                                                                     theme === 'dark'
                                                                         ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                                                         : 'bg-blue-500 hover:bg-blue-600 text-white'
-                                                                    } shadow-lg hover:shadow-xl`}
+                                                                } shadow-lg hover:shadow-xl`}
                                                                 title="Start Chat"
                                                             >
                                                                 <IoChatbubbleOutline className="w-4 h-4" />
@@ -1010,7 +1024,7 @@ function EmployeeApp() {
                                                                             theme === 'dark'
                                                                                 ? 'bg-green-600 hover:bg-green-700 text-white'
                                                                                 : 'bg-green-500 hover:bg-green-600 text-white'
-                                                                            } shadow-lg hover:shadow-xl`}
+                                                                        } shadow-lg hover:shadow-xl`}
                                                                         title="View Profile"
                                                                     >
                                                                         <IoPersonOutline className="w-4 h-4" />
@@ -1024,7 +1038,7 @@ function EmployeeApp() {
                                                                             theme === 'dark'
                                                                                 ? 'bg-purple-600 hover:bg-purple-700 text-white'
                                                                                 : 'bg-purple-500 hover:bg-purple-600 text-white'
-                                                                            } shadow-lg hover:shadow-xl`}
+                                                                        } shadow-lg hover:shadow-xl`}
                                                                         title="Documents"
                                                                     >
                                                                         <IoDocumentsOutline className="w-4 h-4" />
