@@ -151,6 +151,7 @@ export default function TicketDashboard() {
       console.error("Reply failed", err);
     }
   };
+  
 
   const handleStatusChange = async (statusToUpdate) => {
     if (!selectedTicket) return;
@@ -203,8 +204,11 @@ export default function TicketDashboard() {
 
   const filtered = tickets
     .filter(
-      (t) => filterStatus === "all" || t.status?.toLowerCase() === filterStatus
-    )
+  (t) =>
+    filterStatus === "all" ||
+    t.status?.toLowerCase() === filterStatus.toLowerCase()
+)
+
     .filter(applyDateFilter)
     .filter((t) => {
       const term = searchTerm.toLowerCase();
@@ -303,6 +307,7 @@ export default function TicketDashboard() {
                 {num}
               </button>
             ))}
+            
 
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
