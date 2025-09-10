@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const AUTH_API_URL = 'http://localhost:8080/api/auth/refresh-token';
+const AUTH_API_URL = 'http://hrms.anasolconsultancyservices.com/api/auth/refresh-token';
 
 function cloneFormData(formData) {
     const newFormData = new FormData();
@@ -110,15 +110,12 @@ window.addEventListener('storage', (event) => {
         console.log("🔄 Token updated in another tab:", event.newValue);
     }
 });
+export const chatApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
 
-export const tasksApi = createAxiosInstance('http://localhost:8090/api/a/employee');
-export const publicinfoApi = createAxiosInstance('http://localhost:8090/api');
-export const chatApi = createAxiosInstance('http://192.168.0.244:8082/api');
-
-export const getChatOverview = async (employeeId) => {
+export const getChatOverview = async (employeeId, page = 0, size = 10) => {
   try {
-    const response = await chatApi.get(`/chat/overview/${employeeId}`);
-    console.log('Response:', response);
+    const response = await chatApi.get(`/chat/overview/${employeeId}?page=${page}&size=${size}`);
+    console.log(`Response for page ${page}:`, response);
     return response.data;
   } catch (error) {
     console.error("Failed to fetch chat overview:", error);
@@ -126,10 +123,10 @@ export const getChatOverview = async (employeeId) => {
   }
 };
 
-export const getMessages = async (employeeId, chatId) => {
+export const getMessages = async (employeeId, chatId, page = 0, size = 15) => {
   try {
-    const response = await chatApi.get(`/chat/${employeeId}/${chatId}`);
-    console.log('Response:', response);
+    const response = await chatApi.get(`/chat/${employeeId}/${chatId}?page=${page}&size=${size}`);
+    console.log(`Response for messages page ${page}:`, response);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch messages for chat ${chatId}:`, error);

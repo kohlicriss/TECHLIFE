@@ -1,13 +1,16 @@
-import React, { useState, useContext, useEffect } from "react";
-import { FiMenu, FiSearch } from "react-icons/fi";
+import React, { useState, useContext, useEffect, useRef } from "react";
+import { FiMenu, FiSearch, FiSettings, FiUser, FiLogOut } from "react-icons/fi";
 import { Bell } from "lucide-react";
-import logo from "../assets/anasol-logo.png"; // Using the imported logo
+import logo from "../assets/anasol-logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { Context } from "../HrmsContext";
-
-// A simple skeleton loader component for the Navbar
-const NavbarSkeleton = () => (
-  <header className="bg-white px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16 animate-pulse">
+import DarkModeToggle from "../Login/DarkModeToggle";
+const NavbarSkeleton = ({ theme }) => (
+  <header
+    className={`${
+      theme === "dark" ? "bg-black" : "bg-white"
+    } px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16 animate-pulse`}
+  >
     <div className="flex items-center space-x-4">
       <div className="h-8 w-8 bg-gray-300 rounded-full md:hidden"></div>
       <div className="flex items-center space-x-2">
@@ -24,73 +27,120 @@ const NavbarSkeleton = () => (
     </div>
     <div className="flex items-center space-x-5">
       <div className="h-6 w-6 bg-gray-300 rounded-full"></div>
+      {/* ✅ ADD SKELETON FOR TOGGLE */}
+      <div className="h-10 w-20 bg-gray-300 rounded-full hidden sm:block"></div>
       <div className="h-9 w-9 bg-gray-300 rounded-full"></div>
     </div>
   </header>
 );
-
-const Navbar = ({ setSidebarOpen, currentUser }) => {
+const Navbar = ({ setSidebarOpen }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const { unreadCount, userData } = useContext(Context);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { unreadCount, userData, userprofiledata, theme, setTheme, setUserData } =
+    useContext(Context);
   const location = useLocation();
-
+  const dropdownRef = useRef(null);
   useEffect(() => {
-    // Set a timeout to simulate a loading delay of 1 second
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
-
-    // Cleanup the timer if the component unmounts
     return () => clearTimeout(timer);
   }, []);
-
-  // Use startsWith for a more robust active state check
-  const isNotificationsActive = location.pathname.startsWith(`/notifications/${userData?.employeeId}`);
-
-  // If isLoading is true, show the skeleton component
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  const isNotificationsActive = location.pathname.startsWith(
+    `/notifications/${userData?.employeeId}`
+  );
+  const initials = (userprofiledata?.displayName || "  ")
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .substring(0, 2);
+  const handleThemeToggle = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    console.log(`Theme changed to: ${newTheme}`);
+  };
+  const handleProfileClick = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
   if (isLoading) {
-    return <NavbarSkeleton />;
+    return <NavbarSkeleton theme={theme} />;
   }
-
-  // If isLoading is false, render the actual Navbar
   return (
-    <header className="bg-white px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16">
+    <header
+      className={`${
+        theme === "dark" ? "bg-black" : "bg-white"
+      } px-6 py-3 shadow-md flex items-center justify-between w-full fixed top-0 left-0 z-50 h-16`}
+    >
       <div className="flex items-center space-x-4">
         <button
-          className="md:hidden text-gray-700 text-2xl"
+          className={`md:hidden text-2xl ${
+            theme === "dark" ? "text-white" : "text-gray-700"
+          }`}
           onClick={() => setSidebarOpen(true)}
         >
           <FiMenu />
         </button>
-
         <div className="flex items-center space-x-2">
-          {/* Using the imported logo */}
           <img src={logo} alt="Logo" className="h-8 w-auto" />
           <h1 className="text-xl font-bold text-blue-600">Anasol</h1>
         </div>
-
         <div className="hidden md:flex flex-col ml-6">
-          <span className="text-sm font-medium text-gray-900">{userData?.fullName}</span>
-          <span className="text-xs text-gray-500">{userData?.roles?.[0]}</span>
+          <span
+            className={`text-sm font-medium ${
+              theme === "dark" ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {userData?.fullName}
+          </span>
+          <span
+            className={`text-xs ${
+              theme === "dark" ? "text-gray-300" : "text-gray-500"
+            }`}
+          >
+            {userData?.roles?.[0]}
+          </span>
         </div>
       </div>
-
       <div className="hidden md:flex relative w-[400px]">
-        <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <FiSearch
+          className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+            theme === "dark" ? "text-gray-400" : "text-gray-400"
+          }`}
+        />
         <input
           type="text"
           placeholder="Type to search"
-          className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={`w-full border rounded-md pl-10 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            theme === "dark"
+              ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+              : "bg-white border-gray-300 text-black placeholder-gray-500"
+          }`}
         />
       </div>
-
       <div className="flex items-center space-x-5">
-        <Link to={`/notifications/${userData?.employeeId}`} className="relative">
+        <Link
+          to={`/notifications/${userData?.employeeId}`}
+          className="relative"
+        >
           <Bell
             size={22}
             className={
               isNotificationsActive
                 ? "text-blue-600 fill-blue-100"
+                : theme === "dark"
+                ? "text-white hover:text-gray-300"
                 : "text-gray-600 hover:text-black"
             }
           />
@@ -100,17 +150,115 @@ const Navbar = ({ setSidebarOpen, currentUser }) => {
             </span>
           )}
         </Link>
-
-        <div className="w-9 h-9 bg-gray-300 rounded-full overflow-hidden">
-          <img
-            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
-            alt="Profile"
-            className="w-full h-full object-cover"
+{/* Dark Mode Hider */}
+        {/* <div className="hidden sm:block">
+          <DarkModeToggle 
+            isDark={theme === 'dark'} 
+            onToggle={handleThemeToggle}
           />
+        </div> */}
+       
+        {/* Profile Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <div
+            className="w-9 h-9 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={handleProfileClick}
+          >
+            {userprofiledata?.employeeImage ? (
+              <img
+                src={userprofiledata.employeeImage}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span
+                className={`text-sm font-bold ${
+                  theme === "dark" ? "text-white" : "text-gray-600"
+                }`}
+              >
+                {initials}
+              </span>
+            )}
+          </div>
+          {/* Dropdown Menu */}
+          {dropdownOpen && (
+            <div
+              className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg z-[200] ${
+                theme === "dark"
+                  ? "bg-gray-800 border border-gray-600"
+                  : "bg-white border border-gray-200"
+              }`}
+            >
+              <div className="py-1">
+                {/* Profile Option */}
+                <Link
+                  to={`/profile/${userData?.employeeId}`}
+                  className={`flex items-center px-4 py-2 text-sm ${
+                    theme === "dark"
+                      ? "text-white hover:bg-gray-700"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <FiUser className="mr-3" size={16} />
+                  View Profile
+                </Link>
+                {/* // ✅ ADD NEW TOGGLE IN DROPDOWN FOR MOBILE ONLY 
+                <div className={`border-t ${theme === 'dark' ? 'border-gray-600' : 'border-gray-200'} mt-1 pt-1 sm:hidden`}>
+                  <div className={`flex items-center justify-between px-4 py-2 text-sm ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-700'
+                  }`}>
+                    <div className="flex items-center">
+                      <FiSettings className="mr-3" size={16} />
+                      Dark Mode
+                    </div>
+                    <DarkModeToggle 
+                      isDark={theme === 'dark'} 
+                      onToggle={handleThemeToggle}
+                    />
+                  </div>
+                </div>
+                */}
+                {/* Logout Option */}
+                <div
+                  className={`border-t ${
+                    theme === "dark" ? "border-gray-600" : "border-gray-200"
+                  } mt-1 pt-1`}
+                >
+                  <button
+                    className={`w-full flex items-center px-4 py-2 text-sm text-left ${
+                      theme === "dark"
+                        ? "text-red-400 hover:bg-gray-700"
+                        : "text-red-600 hover:bg-gray-100"
+                    }`}
+                    onClick={async () => {
+                      setDropdownOpen(false);
+                      try {
+                        await fetch(
+                          "http://hrms.anasolConsultancyservices.com/api/auth/logout",
+                          {
+                            method: "POST",
+                            credentials: "include",
+                          }
+                        );
+                      } catch (error) {
+                        console.error(error);
+                      } finally {
+                        localStorage.clear();
+                        setUserData(null);
+                      }
+                    }}
+                  >
+                    <FiLogOut className="mr-3" size={16} />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
   );
 };
-
 export default Navbar;

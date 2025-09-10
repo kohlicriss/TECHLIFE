@@ -36,17 +36,17 @@ const FullPageSpinner = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             setDots((prevDots) => (prevDots >= 3 ? 1 : prevDots + 1));
-        }, 500); 
+        }, 500);
 
-        return () => clearInterval(interval);  
+        return () => clearInterval(interval);
     }, []);
 
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center bg-white">
-            <img 
-                src={logo} 
-                alt="Loading..." 
-                className="h-20 w-20 animate-pulse" 
+            <img
+                src={logo}
+                alt="Loading..."
+                className="h-20 w-20 animate-pulse"
             />
             <p className="mt-4 text-lg font-semibold text-gray-700">
                 Loading{'.'.repeat(dots)}
@@ -142,9 +142,16 @@ const HrmsApp = () => {
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
                                {/* <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />*/}
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
-                                <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                                <Route path="/chat/:userId/*" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
                                 <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                                
+                                {/* ADDED: Route for individual employee public profile */}
+                                <Route 
+                                    path="/employees/:empID/public/:employeeID" 
+                                    element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} 
+                                />
+
                                 <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
                                 <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                                 <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
