@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function IssueForm({ onSubmit }) {
   const [formData, setFormData] = useState({
@@ -7,10 +7,22 @@ export default function IssueForm({ onSubmit }) {
     title: '',
     priority: 'Low',
     description: '',
-    roles:'',
+    roles: '',
   });
 
   const [showNotification, setShowNotification] = useState(false);
+
+
+  useEffect(() => {
+    const userData = localStorage.getItem("employeeId");
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      setFormData((prev) => ({
+        ...prev,
+        employeeId: parsed.employeeId || "", 
+      }));
+    }
+  }, []);
 
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -21,14 +33,14 @@ export default function IssueForm({ onSubmit }) {
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
     onSubmit(formData);
-    setFormData({
-      employeeId: '',
+    setFormData((prev) => ({
+      ...prev,
       ticketId: '',
       title: '',
       priority: 'Low',
       description: '',
-      roles:'',
-    });
+      roles: '',
+    }));
   };
 
   return (
@@ -39,23 +51,16 @@ export default function IssueForm({ onSubmit }) {
       >
         <h2 className="text-3xl font-bold text-blue-700 text-center">Fill the form</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input
+        <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
+          {/* ✅ Employee ID auto-filled & read-only */}
+          {/* <input
             name="employeeId"
             placeholder="Employee ID"
             value={formData.employeeId}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-           {/* <input
-            name="ticketId"
-            placeholder="Ticket ID"
-            value={formData.ticketId}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            readOnly
+            className="w-full p-3 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
           /> */}
+
           <input
             name="title"
             placeholder="Issue Title"
@@ -77,21 +82,20 @@ export default function IssueForm({ onSubmit }) {
           <option value="Medium">Medium</option>
           <option value="High">High</option>
         </select>
+
         <select
-  name="roles"
-  value={formData.roles}
-  onChange={handleChange}
-  required
-  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
->
-<option value="">Select Role</option>
-<option value="ROLE_ADMIN">Admin</option>
-<option value="ROLE_HR">HR</option>
-<option value="ROLE_MANAGER">Manager</option>
-<option value="ROLE_TEAM_LEAD">Team Lead</option>
-
-</select>
-
+          name="roles"
+          value={formData.roles}
+          onChange={handleChange}
+          required
+          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Select Role</option>
+          <option value="ROLE_ADMIN">Admin</option>
+          <option value="ROLE_HR">HR</option>
+          <option value="ROLE_MANAGER">Manager</option>
+          <option value="ROLE_TEAM_LEAD">Team Lead</option>
+        </select>
 
         <textarea
           name="description"
