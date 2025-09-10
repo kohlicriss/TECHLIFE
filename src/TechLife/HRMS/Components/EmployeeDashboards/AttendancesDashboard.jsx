@@ -7,7 +7,7 @@ import {
     BriefcaseIcon,
     ChartBarIcon,
     ChartPieIcon,
-    XCircleIcon ,
+    XCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
     PieChart,
@@ -21,6 +21,7 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from 'axios';
 import { useParams } from "react-router-dom";
@@ -51,79 +52,108 @@ const formatClockTime = (date) => {
 const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }) => (
     <div className={`flex gap-2 sm:gap-3 flex-wrap ${className}`}>
         {options.map((option) => (
-            <button
+            <motion.button
                 key={option}
                 onClick={() => onSelect(option)}
                 className={`px-3 py-2 rounded-lg border text-sm sm:text-base font-semibold
                 ${selectedOption === option ? "bg-indigo-600 text-white shadow-md" : "bg-white text-gray-700 border-gray-300"}
                 hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
                 aria-pressed={selectedOption === option}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
             >
                 {option}
-            </button>
+            </motion.button>
         ))}
     </div>
 );
 
 const TrendingUpIcon = ({ className }) => (
     <svg className={className} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor" >
-        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-        <polyline points="17 6 23 6 23 12"></polyline>
+        <motion.polyline
+            points="23 6 13.5 15.5 8.5 10.5 1 18"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+        />
+        <motion.polyline
+            points="17 6 23 6 23 12"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+        />
     </svg>
 );
 
 const TrendingDownIcon = ({ className }) => (
     <svg className={className} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-        <polyline points="17 18 23 18 23 12"></polyline>
+        <motion.polyline
+            points="23 18 13.5 8.5 8.5 13.5 1 6"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+        />
+        <motion.polyline
+            points="17 18 23 18 23 12"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+        />
     </svg>
 );
- const cardData=[
-  {value:"8.5/10",description:"Total Hours Today",trend:"up",trendPercentage:"5",trendPeriod:"This week"},
-  {value:"40.5/50",description:"Total Hours Week",trend:"up",trendPercentage:"7",trendPeriod:"Last week"},
-  {value:"162/200",description:"Total Hours Month",trend:"down",trendPercentage:"8",trendPeriod:"Last Month"},
-  {value:"16/28",description:"Overtime this Month",trend:"down",trendPercentage:"6",trendPeriod:"Last Month"}
- ]
- 
-;
- const dates = ["All", "11", "12", "13", "14", "15"];
- const rawTableData = [
-   {  employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-   {  employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
-   {  employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-   {  employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-   {  employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
-   {  employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-   {  employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-   {  employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
- ];
- const rawPieData = [
-   { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
-   { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
-   { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
-   { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
-   { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
- ]
-  const barChartData = [
-   { EmployeeId: "ACS000001",Date: "11",Month:"Aug",Year:"2025", Working_hour: 8.3, Break_hour: 1.7 },
-   { EmployeeId: "ACS000001",Date: "12",Month:"Aug",Year:"2025", Working_hour: 8.4, Break_hour: 1.6 },
-   { EmployeeId: "ACS000001",Date: "13",Month:"Aug",Year:"2025", Working_hour: 8.2, Break_hour: 1.8 },
-   { EmployeeId: "ACS000001",Date: "14",Month:"Aug",Year:"2025", Working_hour: 9.0, Break_hour: 1.0 },
-   { EmployeeId: "ACS000001",Date: "15",Month:"Aug",Year:"2025", Working_hour: 8.0, Break_hour: 2.0 },
- ]
- const Data = [
-   { EmployeeId: "ACS000001", Date: "11",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "12",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:40 - 17:10", hours: 0.5 }, { Time: "19:20 - 19:40", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "13",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "19:00 - 19:20", hours: 0.2 }] },
-   { EmployeeId: "ACS000001", Date: "14",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
-   { EmployeeId: "ACS000001", Date: "15",Month:"Aug",Year:"2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
- ];
+const cardData = [
+    { value: "8.5/10", description: "Total Hours Today", trend: "up", trendPercentage: "5", trendPeriod: "This week" },
+    { value: "40.5/50", description: "Total Hours Week", trend: "up", trendPercentage: "7", trendPeriod: "Last week" },
+    { value: "162/200", description: "Total Hours Month", trend: "down", trendPercentage: "8", trendPeriod: "Last Month" },
+    { value: "16/28", description: "Overtime this Month", trend: "down", trendPercentage: "6", trendPeriod: "Last Month" }
+];
+
+const dates = ["All", "11", "12", "13", "14", "15"];
+const rawTableData = [
+    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
+    { employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
+    { employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+];
+const rawPieData = [
+    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
+    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
+    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
+    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
+    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
+];
+const barChartData = [
+    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
+    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
+    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
+    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
+    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
+];
+const Data = [
+    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:40 - 17:10", hours: 0.5 }, { Time: "19:20 - 19:40", hours: 0.2 }] },
+    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "19:00 - 19:20", hours: 0.2 }] },
+    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
+    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
+];
 const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod }) => {
     const isUp = trend === 'up';
     return (
-           <div className="bg-white rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300  h-full flex flex-col items-center justify-center text-center">
+        <motion.div
+            className="bg-stone-100 rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            whileHover={{ scale: 1.05 }}
+        >
             <div className="flex justify-between items-start">
-                <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2  p-3 ${iconBgColor} ${iconTextColor}`}>{React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}</div>
+                <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2 p-3 ${iconBgColor} ${iconTextColor}`}>
+                    {React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}
+                </div>
             </div>
             <div className="mt-4">
                 <p className="text-3xl font-bold text-gray-800">{value}</p>
@@ -135,187 +165,224 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
                     {trendPercentage}% {trendPeriod}
                 </span>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
 // --- Sub-Component for Hours and Schedule Bar ---
 const MyComponent = ({ Data, selectedDate }) => {
-  const [hoveredHour, setHoveredHour] = useState(null);
+    const [hoveredHour, setHoveredHour] = useState(null);
 
-  // Helper to get start/end hour from time string
-  const getHourValue = useCallback((timeString) => {
-    const [start, end] = timeString.split(' - ');
-    const [startHour, startMinute] = start.split(':').map(Number);
-    const [endHour, endMinute] = end.split(':').map(Number);
-    return {
-      start: startHour + startMinute / 60,
-      end: endHour + endMinute / 60
+    // Helper to get start/end hour from time string
+    const getHourValue = useCallback((timeString) => {
+        const [start, end] = timeString.split(' - ');
+        const [startHour, startMinute] = start.split(':').map(Number);
+        const [endHour, endMinute] = end.split(':').map(Number);
+        return {
+            start: startHour + startMinute / 60,
+            end: endHour + endMinute / 60
+        };
+    }, []);
+
+    // Format seconds to hh mm ss
+    const formatDuration = (totalSeconds) => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+        let result = "";
+        if (hours > 0) result += `${String(hours).padStart(2, '0')}h `;
+        if (minutes > 0) result += `${String(minutes).padStart(2, '0')}m `;
+        if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`;
+        return result.trim() || '0s';
     };
-  }, []);
 
-  // Format seconds to hh mm ss
-  const formatDuration = (totalSeconds) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-    let result = "";
-    if (hours > 0) result += `${String(hours).padStart(2, '0')}h `;
-    if (minutes > 0) result += `${String(minutes).padStart(2, '0')}m `;
-    if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`;
-    return result.trim() || '0s';
-  };
+    // Calculate metrics for selected date
+    const calculateMetrics = useMemo(() => {
+        if (!Data || selectedDate === "All") return null;
+        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+        if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
 
-  // Calculate metrics for selected date
-  const calculateMetrics = useMemo(() => {
-    if (!Data || selectedDate === "All") return null;
-    const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
-    if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
+        const totalWorkingSeconds =
+            (new Date(`2000/01/01 ${dayData.End_time}`) - new Date(`2000/01/01 ${dayData.Start_time}`)) / 1000;
+        let breakSeconds = 0;
+        if (dayData.Break_hour) {
+            dayData.Break_hour.forEach(b => {
+                const [start, end] = b.Time.split(' - ');
+                breakSeconds += (new Date(`2000/01/01 ${end}`) - new Date(`2000/01/01 ${start}`)) / 1000;
+            });
+        }
+        const productiveSeconds = totalWorkingSeconds - breakSeconds;
+        const standardDaySeconds = 8 * 3600;
+        const overtimeSeconds = Math.max(0, productiveSeconds - standardDaySeconds);
 
-    const totalWorkingSeconds =
-      (new Date(`2000/01/01 ${dayData.End_time}`) - new Date(`2000/01/01 ${dayData.Start_time}`)) / 1000;
-    let breakSeconds = 0;
-    if (dayData.Break_hour) {
-      dayData.Break_hour.forEach(b => {
-        const [start, end] = b.Time.split(' - ');
-        breakSeconds += (new Date(`2000/01/01 ${end}`) - new Date(`2000/01/01 ${start}`)) / 1000;
-      });
-    }
-    const productiveSeconds = totalWorkingSeconds - breakSeconds;
-    const standardDaySeconds = 8 * 3600;
-    const overtimeSeconds = Math.max(0, productiveSeconds - standardDaySeconds);
+        return {
+            totalWorkingHours: formatDuration(totalWorkingSeconds),
+            productiveHours: formatDuration(productiveSeconds),
+            breakHours: formatDuration(breakSeconds),
+            overtime: formatDuration(overtimeSeconds)
+        };
+    }, [selectedDate, Data]);
 
-    return {
-      totalWorkingHours: formatDuration(totalWorkingSeconds),
-      productiveHours: formatDuration(productiveSeconds),
-      breakHours: formatDuration(breakSeconds),
-      overtime: formatDuration(overtimeSeconds)
-    };
-  }, [selectedDate, Data]);
+    // Scale hour for bar position (assuming 10:00 to 20:00 as full range)
+    const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
 
-  // Scale hour for bar position (assuming 10:00 to 20:00 as full range)
-  const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
+    // Render schedule bar for selected date
+    const renderScheduleBar = useCallback(() => {
+        if (!Data || selectedDate === "All")
+            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="text-gray-500 text-center py-4 italic">Select a specific day to view the timeline.</motion.div>;
+        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+        if (!dayData)
+            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="text-gray-500 text-center py-4 italic">No schedule available for {selectedDate}.</motion.div>;
+        const timePoints = new Set([dayData.Start_time, dayData.End_time]);
+        if (dayData.Break_hour)
+            dayData.Break_hour.forEach(b => {
+                const [start, end] = b.Time.split(' - ');
+                timePoints.add(start);
+                timePoints.add(end);
+            });
+        const sortedTimes = Array.from(timePoints).sort(
+            (a, b) => new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`)
+        );
+        const formatTimelineTime = (timeStr) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+            return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
+        };
+        const calculateDuration = (startTime, endTime) =>
+            (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
+        const workingHoursSegment = {
+            type: 'working',
+            time: `${dayData.Start_time} - ${dayData.End_time}`,
+            duration: calculateDuration(dayData.Start_time, dayData.End_time)
+        };
+        const breakHours = (dayData.Break_hour || []).map(h => ({
+            type: 'break',
+            time: h.Time,
+            duration: h.hour
+        }));
+        const allHours = [workingHoursSegment, ...breakHours].sort(
+            (a, b) => getHourValue(a.time).start - getHourValue(b.time).start
+        );
+        return (
+            <div>
+                <motion.div
+                    className="w-full h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300"
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    style={{ transformOrigin: "left" }}
+                >
+                    {allHours.map((hour, index) => {
+                        const { start, end } = getHourValue(hour.time);
+                        const leftPosition = scaleHour(start);
+                        const widthPercentage = scaleHour(end) - scaleHour(start);
+                        const colorClass = hour.type === 'working' ? 'bg-green-400' : 'bg-yellow-400';
+                        return (
+                            <motion.div
+                                key={index}
+                                className={`absolute h-full cursor-pointer transition-all duration-300 ${colorClass}`}
+                                style={{ left: `${leftPosition}%`, width: `${widthPercentage}%` }}
+                                onMouseEnter={() => setHoveredHour(hour)}
+                                onMouseLeave={() => setHoveredHour(null)}
+                                initial={{ opacity: 0, scaleY: 0 }}
+                                animate={{ opacity: 1, scaleY: 1 }}
+                                transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
+                            >
+                                {hoveredHour === hour && (
+                                    <div
+                                        className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-800 text-white text-xs whitespace-nowrap"
+                                        style={{ left: '50%', transform: 'translateX(-50%)' }}
+                                    >
+                                        <p>{hour.type === 'working' ? 'Working' : 'Break'}</p>
+                                        <p>Time: {hour.time}</p>
+                                        <p>Duration: {hour.duration.toFixed(2)} hours</p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        );
+                    })}
+                </motion.div>
+                <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-2 px-1">
+                    {sortedTimes.map((time, index) => (
+                        <motion.span
+                            key={index}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.8 + index * 0.1, duration: 0.3 }}
+                        >
+                            {formatTimelineTime(time)}
+                        </motion.span>
+                    ))}
+                </div>
+            </div>
+        );
+    }, [selectedDate, Data, hoveredHour, getHourValue, scaleHour]);
 
-  // Render schedule bar for selected date
-  const renderScheduleBar = useCallback(() => {
-    if (!Data || selectedDate === "All")
-      return <div className="text-gray-500 text-center py-4 italic">Select a specific day to view the timeline.</div>;
-    const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
-    if (!dayData)
-      return <div className="text-gray-500 text-center py-4 italic">No schedule available for {selectedDate}.</div>;
-    const timePoints = new Set([dayData.Start_time, dayData.End_time]);
-    if (dayData.Break_hour)
-      dayData.Break_hour.forEach(b => {
-        const [start, end] = b.Time.split(' - ');
-        timePoints.add(start);
-        timePoints.add(end);
-      });
-    const sortedTimes = Array.from(timePoints).sort(
-      (a, b) => new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`)
-    );
-    const formatTimelineTime = (timeStr) => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-      return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
-    };
-    const calculateDuration = (startTime, endTime) =>
-      (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
-    const workingHoursSegment = {
-      type: 'working',
-      time: `${dayData.Start_time} - ${dayData.End_time}`,
-      duration: calculateDuration(dayData.Start_time, dayData.End_time)
-    };
-    const breakHours = (dayData.Break_hour || []).map(h => ({
-      type: 'break',
-      time: h.Time,
-      duration: h.hour
-    }));
-    const allHours = [workingHoursSegment, ...breakHours].sort(
-      (a, b) => getHourValue(a.time).start - getHourValue(b.time).start
-    );
     return (
-      <div>
-        <div className="w-full h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300">
-          {allHours.map((hour, index) => {
-            const { start, end } = getHourValue(hour.time);
-            const leftPosition = scaleHour(start);
-            const widthPercentage = scaleHour(end) - scaleHour(start);
-            const colorClass = hour.type === 'working' ? 'bg-green-400' : 'bg-yellow-400';
-            return (
-              <div
-                key={index}
-                className={`absolute h-full cursor-pointer transition-all duration-300 ${colorClass}`}
-                style={{ left: `${leftPosition}%`, width: `${widthPercentage}%` }}
-                onMouseEnter={() => setHoveredHour(hour)}
-                onMouseLeave={() => setHoveredHour(null)}
-              >
-                {hoveredHour === hour && (
-                  <div
-                    className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-800 text-white text-xs whitespace-nowrap"
-                    style={{ left: '50%', transform: 'translateX(-50%)' }}
-                  >
-                    <p>{hour.type === 'working' ? 'Working' : 'Break'}</p>
-                    <p>Time: {hour.time}</p>
-                    <p>Duration: {hour.duration.toFixed(2)} hours</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-2 px-1">
-          {sortedTimes.map((time, index) => (
-            <span key={index}>{formatTimelineTime(time)}</span>
-          ))}
-        </div>
-      </div>
+        <motion.div
+            className="p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <motion.div
+                    className="flex flex-col items-center p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                >
+                    <div className="flex items-center text-gray-500 mb-2">
+                        <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
+                        <span className="text-sm font-medium">Total</span>
+                    </div>
+                    <span className="text-xl sm:text-xl font-bold text-gray-800">
+                        {calculateMetrics?.totalWorkingHours || 'N/A'}
+                    </span>
+                </motion.div>
+                <motion.div
+                    className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 shadow-sm"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                >
+                    <div className="flex items-center text-green-700 mb-2">
+                        <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                        <span className="text-sm font-medium">Productive</span>
+                    </div>
+                    <span className="text-xl sm:text-xl font-bold text-green-800">
+                        {calculateMetrics?.productiveHours || 'N/A'}
+                    </span>
+                </motion.div>
+                <motion.div
+                    className="flex flex-col items-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                >
+                    <div className="flex items-center text-yellow-700 mb-2">
+                        <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                        <span className="text-sm font-medium">Break</span>
+                    </div>
+                    <span className="text-xl sm:text-xl font-bold text-yellow-800">
+                        {calculateMetrics?.breakHours || 'N/A'}
+                    </span>
+                </motion.div>
+                <motion.div
+                    className="flex flex-col items-center p-4 rounded-lg bg-blue-50 border border-blue-200 shadow-sm"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                >
+                    <div className="flex items-center text-blue-700 mb-2">
+                        <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                        <span className="text-sm font-medium">Overtime</span>
+                    </div>
+                    <span className="text-xl sm:text-xl font-bold text-blue-800">
+                        {calculateMetrics?.overtime || 'N/A'}
+                    </span>
+                </motion.div>
+            </div>
+            {renderScheduleBar()}
+        </motion.div>
     );
-  }, [selectedDate, Data, hoveredHour, getHourValue, scaleHour]);
-
-  return (
-    <div className="p-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="flex flex-col items-center p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
-          <div className="flex items-center text-gray-500 mb-2">
-            <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Total</span>
-          </div>
-          <span className="text-xl sm:text-xl font-bold text-gray-800">
-            {calculateMetrics?.totalWorkingHours || 'N/A'}
-          </span>
-        </div>
-        <div className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 shadow-sm">
-          <div className="flex items-center text-green-700 mb-2">
-            <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Productive</span>
-          </div>
-          <span className="text-xl sm:text-xl font-bold text-green-800">
-            {calculateMetrics?.productiveHours || 'N/A'}
-          </span>
-        </div>
-        <div className="flex flex-col items-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm">
-          <div className="flex items-center text-yellow-700 mb-2">
-            <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Break</span>
-          </div>
-          <span className="text-xl sm:text-xl font-bold text-yellow-800">
-            {calculateMetrics?.breakHours || 'N/A'}
-          </span>
-        </div>
-        <div className="flex flex-col items-center p-4 rounded-lg bg-blue-50 border border-blue-200 shadow-sm">
-          <div className="flex items-center text-blue-700 mb-2">
-            <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Overtime</span>
-          </div>
-          <span className="text-xl sm:text-xl font-bold text-blue-800">
-            {calculateMetrics?.overtime || 'N/A'}
-          </span>
-        </div>
-      </div>
-      {renderScheduleBar()}
-    </div>
-  );
 };
 
 // --- Main Attendance Dashboard Component ---
@@ -329,16 +396,10 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [selectedDate, setSelectedDate] = useState("All");
     const isMobile = useMediaQuery('(max-width:768px)');
-    //const [barChartData, setBarChartData] = useState([]);
-    //const [rawPieData, setRawPieData] = useState([]);
-    //const [rawTableData, setrawTableData] = useState([]);
-    //const [dates, setDates] = useState([]);
-    //const [Data, setData] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [mode, setMode] = useState("office");
-    //const [cardData, setCardData] = useState([]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [grossHours, setGrossHours] = useState(0);
     const [effectiveHours, setEffectiveHours] = useState(0);
@@ -347,46 +408,10 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [sortOption, setSortOption] = useState("Recently added");
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    
+
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
     const rowsPerPageOptions = [10, 25, 50, 100];
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
-
-    // Data Fetching Effects
-    //useEffect(() => {
-    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/bar-chart`).then(response => {
-    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Work_Hours: item.working_hour, break_Hours: item.break_hour }));
-    //        setBarChartData(formatted);
-    //        const dates = ["All", ...formatted.map(item => item.Date)];
-    //        setDates(dates);
-    //    }).catch(error => console.error('Error fetching bar chart data:', error));
-    //}, [empID]);
-//
-    //useEffect(() => {
-    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/attendance?page=0&size=10`).then(response => {
-    //        setrawTableData(response.data);
-    //    }).catch(error => console.error('Error fetching attendance data:', error));
-    //}, [empID]);
-//
-    //useEffect(() => {
-    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/pie-chart`).then(response => {
-    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Working_hour: item.working_hour, Break_hour: item.break_hour, EmployeeId: item.employeeId }));
-    //        setRawPieData(formatted);
-    //    }).catch(error => console.error('Error fetching pie chart data:', error));
-    //}, [empID]);
-//
-    //useEffect(() => {
-    //    axios.get(`http://192.168.0.123:8081/api/attendance/employee/${empID}/line-graph`).then(response => {
-    //        const formatted = response.data.map(item => ({ EmployeeId: item.employeeId, Date: item.date, Month: item.month, Year: item.year, Start_time: item.start_time, End_time: item.end_time, Break_hour: item.breaks.map(b => ({ Time: b.time, hour: b.hour })) }));
-    //        setData(formatted);
-    //    }).catch(error => console.error('Error fetching line graph data:', error));
-    //}, [empID]);
-
-    //useEffect(() => {
-    //    axios.get(`http://192.168.0.123:8081/api/attendance/attendance/leaves/dashboard/${empID}`).then(response => {
-    //        setCardData(response.data);
-    //    }).catch(error => console.error('Error fetching card data:', error));
-    //}, [empID]);
 
     // Timer and Clock Effects
     useEffect(() => {
@@ -398,10 +423,11 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                 setGrossHours(diffInSeconds);
                 setEffectiveHours(diffInSeconds); // Assuming effective hours are the same as gross hours for now
             }, 1000);
-        } else { setGrossHours(0); setEffectiveHours(0);}
+        } else { setGrossHours(0); setEffectiveHours(0); }
         const clockTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => { clearInterval(interval); clearInterval(clockTimer);};
+        return () => { clearInterval(interval); clearInterval(clockTimer); };
     }, [isLoggedIn, startTime]);
+
     // Action Handlers
     const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
     const handleLogin = () => { setIsLoggedIn(true); setStartTime(new Date()); setEndTime(null); setGrossHours(0); setEffectiveHours(0); };
@@ -454,361 +480,548 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             {/* Sidebar */}
             {showSidebar && (
                 <>
-                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}aria-label="Open Sidebar">
-                      <ChevronLeft />
+                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? 'opacity-0' : 'opacity-100'}`} aria-label="Open Sidebar">
+                        <ChevronLeft />
                     </button>
-                    <div className={`fixed inset-y-0 right-0 w-60 bg-white shadow-xl z-40 p-4 flex flex-col transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    <motion.div
+                        className={`fixed inset-y-0 right-0 w-60 bg-white shadow-xl z-40 p-4 flex flex-col`}
+                        initial={{ x: '100%' }}
+                        animate={{ x: isSidebarOpen ? '0%' : '100%' }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
                         <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg" aria-label="Close Sidebar" >
-                          <ChevronRight />
+                            <ChevronRight />
                         </button>
-                        <h3 className="text-lg font-bold text-gray-800 cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100" onClick={() => {setShowAttendanceReports(true);setIsSidebarOpen(false); }}  >
+                        <motion.h3
+                            className="text-lg font-bold text-gray-800 cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100"
+                            onClick={() => { setShowAttendanceReports(true); setIsSidebarOpen(false); }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
-                        </h3>
-                    </div>
+                        </motion.h3>
+                    </motion.div>
                 </>
             )}
             {/* Main Content Wrapper */}
             <main className={`p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-60' : 'mr-0'}`}>
                 <header className="flex items-center justify-between mb-8">
-                    <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900"> {showAttendanceReports ? "Attendance Reports" : "Attendance Dashboard"}</h1>
-                    <button onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack} className="flex items-center px-4 py-2 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
+                    <motion.h1
+                        className="text-2xl sm:text-4xl font-extrabold text-gray-900"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        {showAttendanceReports ? "Attendance Reports" : "Attendance Dashboard"}
+                    </motion.h1>
+                    <motion.button
+                        onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack}
+                        className="flex items-center px-4 py-2 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
                         <ArrowLeftIcon className="w-4 h-4 mr-2" />{showAttendanceReports ? "Back to Dashboard" : "Back"}
-                    </button>
+                    </motion.button>
                 </header>
                 {/* Conditional Rendering of Main Content */}
-                {showAttendanceReports ? (
-                    <div className="p-2"> <AttendanceReports role={role.toLowerCase()} /> </div>
-                ) : (
-                    <>
-                        {/* Employee Profile and Clock Layouts - REFACTORED */}
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                          <div className="p-4 flex items-center justify-center">
-  <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl flex flex-col relative overflow-hidden border border-gray-100">
-    {/* Subtle background pattern */}
-    <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-indigo-50 z-0"></div>
-    <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-blue-50 z-0"></div>
-    
-    {/* Top section with profile on left and mode selector on right */}
-    <div className="flex flex-row items-start justify-between mb-6 relative z-10">
-      {/* Profile on left side */}
-      <div className="flex items-center">
-        <div className="relative mr-4">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg">
-            <img 
-              src={userData?.avatar || "https://i.pravatar.cc/100"} 
-              alt="Profile" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white ${mode === "office" ? "bg-blue-500" : "bg-green-500"}`}>
-            {mode === "office" ? (
-              <FaBuilding className="text-white text-xs" />
-            ) : (
-              <FaHome className="text-white text-xs" />
-            )}
-          </div>
-        </div>
-        {/* User info next to profile */}
-        <div>
-          <div className="flex space-x-4 mt-1">
-            <div className="flex flex-col">
-              <span className="text-lg text-gray-500">Attendance</span>
-              <span className="font-semibold text-green-600 text-lg">100%</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg text-gray-500">Avg. Hours</span>
-              <span className="font-semibold text-blue-600 text-lg">10h 9m</span>
-            </div>
-          </div>
-        </div>
-      </div>
-       </div>
+                <AnimatePresence mode="wait">
+                    {showAttendanceReports ? (
+                        <motion.div
+                            key="reports"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="p-2"
+                        >
+                            <AttendanceReports role={role.toLowerCase()} />
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="dashboard"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {/* Employee Profile and Clock Layouts - REFACTORED */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                <motion.div
+                                    className="p-4 flex items-center justify-center"
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.5, delay: 0.2 }}
+                                >
+                                    {/* Main container with motion and color accents */}
+                                    <div className="bg-stone-100 rounded-2xl shadow-xl p-6 w-full max-w-2xl from-purple-400 via-pink-500 to-red-500 transition-transform hover:scale-105 hover:shadow-2xl duration-300 relative overflow-hidden">
 
-    {/* Mode selector */}
-    <div className="absolute top-1 right-1 z-10">
-      <div className="relative">
-        <button 
-          onClick={() => setShowModeConfirm(!showModeConfirm)} 
-          className="px-4 py-2.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md border border-blue-100"
-        >
-          {mode === "office" ? (
-            <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-              <FaBuilding className="text-white text-xs" />
-            </div>
-          ) : (
-            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-              <FaHome className="text-white text-xs" />
-            </div>
-          )}
-          <span>{mode === "office" ? "Office" : "Remote"}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        
-        {showModeConfirm && (
-          <div className="absolute top-full right-0 mt-1 w-48 p-2 bg-white border border-gray-200 rounded-xl shadow-lg z-20 flex flex-col items-center space-y-3 animate-fade-in">
-            <p className="text-gray-700 font-medium text-sm">
-              Switch to {mode === "office" ? "Remote" : "Office"} mode?
-            </p>
-            <div className="flex space-x-2 w-full">
-              <button 
-                onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-semibold"
-              >
-                Confirm
-              </button>
-              <button 
-                onClick={() => setShowModeConfirm(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+                                        {/* Subtle animated background pattern */}
+                                        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-purple-200 via-pink-200 to-red-200 opacity-70 z-0 animate-bounce-slow"></div>
+                                        <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-gradient-to-tr from-green-200 via-blue-200 to-purple-200 opacity-70 z-0 animate-bounce-slow-reverse"></div>
 
-    {/* Profile section */}
-      
-     {/* Welcome message centered below profile */}
-    <div className="text-center mb-2 relative z-10">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome, {userData?.fullName}</h2>
-      <p className="text-gray-500">Ready to start your day?</p>
-    </div>
+                                        {/* Top section with profile on left and mode selector on right */}
+                                        <div className="flex flex-row items-start justify-between mb-6 relative z-10 transition-all duration-500 ease-in-out">
 
-    {/* Divider with elegant style */}
-    <div className="relative my-2 w-full">
-      <div className="absolute inset-0 flex items-center" aria-hidden="true">
-        <div className="w-full border-t border-gray-200"></div>
-      </div>
-      <div className="relative flex justify-center">
-        <span className="px-3 bg-white text-sm text-gray-500 font-medium">TIME TRACKING</span>
-      </div>
-    </div>
+                                            {/* Profile on left */}
+                                            <div className="flex items-center space-x-4">
+                                                <div className="relative">
+                                                    <motion.div
+                                                        className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg"
+                                                        whileHover={{ scale: 1.1 }}
+                                                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                                    >
+                                                        <img
+                                                            src={userData?.avatar || "https://i.pravatar.cc/100"}
+                                                            alt="Profile"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </motion.div>
+                                                    {/* Status indicator */}
+                                                    <motion.div
+                                                        className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white transition-colors ${mode === "office" ? "bg-blue-500" : "bg-green-500"}`}
+                                                        initial={{ scale: 0 }}
+                                                        animate={{ scale: 1 }}
+                                                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                                                    >
+                                                        {mode === "office" ? (
+                                                            <FaBuilding className="text-white text-xs" />
+                                                        ) : (
+                                                            <FaHome className="text-white text-xs" />
+                                                        )}
+                                                    </motion.div>
+                                                </div>
+                                                {/* User info */}
+                                                <div>
+                                                    <div className="flex space-x-4 mt-1">
+                                                        <motion.div
+                                                            className="flex flex-col text-center"
+                                                            initial={{ opacity: 0, x: -20 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: 0.3, duration: 0.5 }}
+                                                        >
+                                                            <span className="text-lg text-gray-500">Attendance</span>
+                                                            <span className="font-semibold text-green-600 text-xl">{`100%`}</span>
+                                                        </motion.div>
+                                                        <motion.div
+                                                            className="flex flex-col text-center"
+                                                            initial={{ opacity: 0, x: -20 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: 0.4, duration: 0.5 }}
+                                                        >
+                                                            <span className="text-lg text-gray-500">Avg. Hours</span>
+                                                            <span className="font-semibold text-blue-600 text-xl">{`10h 9m`}</span>
+                                                        </motion.div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-    {/* Time section */}
-    <div className="w-full flex flex-col items-center text-center mb-2 relative z-10">
-      <div className="mb-2">
-        <div className="flex items-center justify-center gap-2 text-indigo-600 font-medium text-lg mb-2">
-          <ClockIcon className="w-5 h-5 text-indigo-500" />
-          <span>Current Time</span>
-        </div>
-        <p className="text-2xl font-bold text-gray-800 tracking-wide mb-1">
-          {formatClockTime(currentTime)}
-        </p>
-        <p className="text-sm text-gray-500">
-          {currentTime.toLocaleDateString(undefined, { 
-            weekday: "long", 
-            month: "long", 
-            day: "numeric", 
-            year: "numeric" 
-          })}
-        </p>
-      </div>
-      
-      {/* Time metrics in elegant cards */}
-      <div className="grid grid-cols-2 gap-5 w-full max-w-md">
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2 text-center shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-600 font-medium mb-2">Gross Time</p>
-          <p className="text-xl font-semibold text-purple-700">{grossHoursFormatted}</p>
-        </div>
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2 text-center shadow-sm border border-gray-200">
-          <p className="text-sm text-gray-600 font-medium mb-2">Effective Time</p>
-          <p className="text-xl font-semibold text-orange-700">{effectiveHoursFormatted}</p>
-        </div>
-      </div>
-    </div>
+                                        </div>
 
-    {/* Divider */}
-    <div className="relative my-1 w-24">
-      <div className="absolute inset-0 flex items-center" aria-hidden="true">
-        <div className="w-full border-t border-gray-200"></div>
-      </div>
-    </div>
+                                        {/* Mode selector with animated pop-up */}
+                                        <div className="absolute top-1 right-1 z-20">
+                                            <div className="relative">
+                                                <motion.button
+                                                    onClick={() => setShowModeConfirm(!showModeConfirm)}
+                                                    className="px-4 py-2.5 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300 flex items-center justify-center gap-2 text-sm font-medium shadow-sm border border-blue-300 transition-transform hover:scale-105 duration-300"
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                >
+                                                    {/* Mode icon */}
+                                                    {mode === "office" ? (
+                                                        <motion.div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center" whileHover={{ rotate: 360 }}>
+                                                            <FaBuilding className="text-white text-xs" />
+                                                        </motion.div>
+                                                    ) : (
+                                                        <motion.div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center" whileHover={{ rotate: 360 }}>
+                                                            <FaHome className="text-white text-xs" />
+                                                        </motion.div>
+                                                    )}
+                                                    <span className="capitalize">{mode}</span>
+                                                    <motion.svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-4 w-4 ml-1 transition-transform duration-200"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        initial={{ rotate: 0 }}
+                                                        animate={{ rotate: showModeConfirm ? 180 : 0 }}
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </motion.svg>
+                                                </motion.button>
 
-    {/* Action buttons */}
-    <div className="w-full flex justify-center mt-1 relative z-5">
-      {!isLoggedIn ? (
-        <button 
-          onClick={handleLogin} 
-          className="flex items-center justify-center w-48 max-w-md py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg font-semibold hover:from-green-600 hover:to-green-700"
-        >
-          <ClockIcon className="w-5 h-5 mr-2" />
-          Clock In
-        </button>
-      ) : (
-        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full max-w-md justify-center">
-          {isLogoutConfirmed ? (
-            <>
-              <button 
-                onClick={handleConfirmLogout} 
-                className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold"
-              >
-                <ClockIcon className="w-4 h-4 mr-2" />
-                Confirm Logout
-              </button>
-              <button 
-                onClick={handleCancel} 
-                className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-300 transition-all duration-200 font-medium"
-              >
-                <XCircleIcon className="w-4 h-4 mr-2" />
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button 
-              onClick={handleLogout}
-              className="flex items-center justify-center w-48 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-lg font-semibold hover:from-red-600 hover:to-red-700"
-            >
-              <ClockIcon className="w-5 h-5 mr-2" />
-              Clock Out
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  </div>
-</div>
+                                                {/* Mode confirmation popup with smooth animation */}
+                                                <AnimatePresence>
+                                                    {showModeConfirm && (
+                                                        <motion.div
+                                                            className="absolute top-full right-0 mt-2 w-52 p-3 bg-white border border-gray-300 rounded-xl shadow-lg z-30"
+                                                            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                                                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                                        >
+                                                            <p className="text-gray-700 font-medium text-sm mb-3 text-center">
+                                                                Switch to {mode === "office" ? "Remote" : "Office"} mode?
+                                                            </p>
+                                                            <div className="flex space-x-2">
+                                                                <motion.button
+                                                                    onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
+                                                                    className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-colors font-semibold"
+                                                                    whileHover={{ scale: 1.05 }}
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                >
+                                                                    Confirm
+                                                                </motion.button>
+                                                                <motion.button
+                                                                    onClick={() => setShowModeConfirm(false)}
+                                                                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                                                    whileHover={{ scale: 1.05 }}
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                >
+                                                                    Cancel
+                                                                </motion.button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        </div>
+
+                                        {/* Welcome message */}
+                                        <motion.div
+                                            className="text-start mb-2 relative z-8 px-2"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.5, duration: 0.5 }}
+                                        >
+                                            <h2 className="text-2xl font-medium text-gray-800 mb-2">{`Welcome, ${userData?.fullName}`}</h2>
+                                        </motion.div>
+
+                                        {/* Divider with animated underline */}
+                                        <div className="relative my-3 w-full flex justify-center">
+                                            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                                <motion.div
+                                                    className="w-full border-t border-gray-300"
+                                                    initial={{ scaleX: 0 }}
+                                                    animate={{ scaleX: 1 }}
+                                                    transition={{ delay: 0.6, duration: 0.8 }}
+                                                    style={{ transformOrigin: "left" }}
+                                                />
+                                            </div>
+                                            <span className="px-3 bg-white text-md text-gray-500 font-medium z-10">TIME TRACKING</span>
+                                        </div>
+
+                                        {/* Time display section */}
+                                        <div className="w-full flex flex-col items-center text-center mb-4 relative z-10">
+                                            {/* Current Time */}
+                                            <div className="mb-4">
+                                                <motion.div
+                                                    className="flex items-center justify-center gap-2 text-indigo-600 font-medium mb-2"
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.8, duration: 0.5 }}
+                                                >
+                                                    <ClockIcon className="w-5 h-5 text-indigo-500" />
+                                                    <span>Current Time</span>
+                                                </motion.div>
+                                                <motion.p
+                                                    className="text-2xl font-bold text-gray-800 tracking-wide mb-1"
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: 1, duration: 0.5 }}
+                                                >
+                                                    {formatClockTime(currentTime)}
+                                                </motion.p>
+                                                <motion.p
+                                                    className="text-sm text-gray-500"
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 1.2, duration: 0.5 }}
+                                                >
+                                                    {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                                                </motion.p>
+                                            </div>
+                                            {/* Metrics Cards */}
+                                            <div className="grid grid-cols-2 gap-4 w-full max-w-md px-2">
+                                                {/* Gross Time Card */}
+                                                <motion.div
+                                                    className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 shadow-sm border border-gray-300"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    transition={{ type: "spring", stiffness: 300 }}
+                                                >
+                                                    <p className="text-sm text-gray-600 font-medium mb-2">Gross Time</p>
+                                                    <p className="text-xl font-semibold text-purple-700">{grossHoursFormatted}</p>
+                                                </motion.div>
+                                                {/* Effective Time Card */}
+                                                <motion.div
+                                                    className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 shadow-sm border border-gray-300"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    transition={{ type: "spring", stiffness: 300 }}
+                                                >
+                                                    <p className="text-sm text-gray-600 font-medium mb-2">Effective Time</p>
+                                                    <p className="text-xl font-semibold text-orange-700">{effectiveHoursFormatted}</p>
+                                                </motion.div>
+                                            </div>
+                                        </div>
+
+                                        {/* Divider */}
+                                        <div className="relative my-2 w-24 mx-auto">
+                                            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                                <motion.div
+                                                    className="w-full border-t border-gray-300"
+                                                    initial={{ scaleX: 0 }}
+                                                    animate={{ scaleX: 1 }}
+                                                    transition={{ delay: 1.4, duration: 0.8 }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="w-full flex justify-center mt-4 relative z-10">
+                                            {!isLoggedIn ? (
+                                                <motion.button
+                                                    onClick={handleLogin}
+                                                    className="flex items-center justify-center w-48 max-w-md py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:from-green-500 hover:to-green-600 font-semibold text-lg"
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                >
+                                                    <ClockIcon className="w-5 h-5 mr-2" />
+                                                    Clock In
+                                                </motion.button>
+                                            ) : (
+                                                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md justify-center">
+                                                    <AnimatePresence mode="wait">
+                                                        {isLogoutConfirmed ? (
+                                                            <>
+                                                                <motion.button
+                                                                    key="confirm"
+                                                                    onClick={handleConfirmLogout}
+                                                                    className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold"
+                                                                    initial={{ opacity: 0, x: -20 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    exit={{ opacity: 0, x: -20 }}
+                                                                    whileHover={{ scale: 1.05 }}
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                >
+                                                                    <ClockIcon className="w-4 h-4 mr-2" />
+                                                                    Confirm Logout
+                                                                </motion.button>
+                                                                <motion.button
+                                                                    key="cancel"
+                                                                    onClick={handleCancel}
+                                                                    className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-300 transition-all duration-200"
+                                                                    initial={{ opacity: 0, x: 20 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    exit={{ opacity: 0, x: 20 }}
+                                                                    whileHover={{ scale: 1.05 }}
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                >
+                                                                    <XCircleIcon className="w-4 h-4 mr-2" />
+                                                                    Cancel
+                                                                </motion.button>
+                                                            </>
+                                                        ) : (
+                                                            <motion.button
+                                                                key="logout"
+                                                                onClick={handleLogout}
+                                                                className="flex items-center justify-center w-48 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:from-red-600 hover:to-red-700 font-semibold"
+                                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                                animate={{ opacity: 1, scale: 1 }}
+                                                                exit={{ opacity: 0, scale: 0.8 }}
+                                                                whileHover={{ scale: 1.1 }}
+                                                                whileTap={{ scale: 0.9 }}
+                                                            >
+                                                                <ClockIcon className="w-5 h-5 mr-2" />
+                                                                Clock Out
+                                                            </motion.button>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </motion.div>
 
 
-                        {/* Stat Cards Grid */}
-                        <div className="p-6 rounded-xl bg-gray-50 border border-gray-200 h-full flex flex-col justify-between">
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
-                            {cardData.map((card, index) => {
-                                let icon, iconBgColor, iconTextColor;
-                                switch (card.description) {
-                                    case "Total Hours Today": icon = <ClockIcon className="w-6 h-6" />; iconBgColor = "bg-purple-100"; iconTextColor = "text-purple-500"; break;
-                                    case "Total Hours Week": icon = <CalendarDaysIcon className="w-6 h-6" />; iconBgColor = "bg-teal-100"; iconTextColor = "text-teal-500"; break;
-                                    case "Total Hours Month": icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-blue-100"; iconTextColor = "text-blue-500"; break;
-                                    case "Overtime this Month": icon = <TrendingUpIcon className="w-6 h-6" />; iconBgColor = "bg-pink-100"; iconTextColor = "text-pink-500"; break;
-                                    default: icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-gray-100"; iconTextColor = "text-gray-900";
-                                }
-                                return <StatCard key={index} icon={icon} iconBgColor={iconBgColor} iconTextColor={iconTextColor} value={card.value} description={card.description} trend={card.trend} trendPercentage={card.trendPercentage} trendPeriod={card.trendPeriod} />;
-                            })}
-                        </div>
-                        </div>
-                        </div>
+                                {/* Stat Cards Grid */}
+                                <motion.div
+                                    className="p-6 h-full flex flex-col justify-between"
+                                    initial={{ opacity: 0, x: 50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.4 }}
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
+                                        {cardData.map((card, index) => {
+                                            let icon, iconBgColor, iconTextColor;
+                                            switch (card.description) {
+                                                case "Total Hours Today": icon = <ClockIcon className="w-6 h-6" />; iconBgColor = "bg-purple-100"; iconTextColor = "text-purple-500"; break;
+                                                case "Total Hours Week": icon = <CalendarDaysIcon className="w-6 h-6" />; iconBgColor = "bg-teal-100"; iconTextColor = "text-teal-500"; break;
+                                                case "Total Hours Month": icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-blue-100"; iconTextColor = "text-blue-500"; break;
+                                                case "Overtime this Month": icon = <TrendingUpIcon className="w-6 h-6" />; iconBgColor = "bg-pink-100"; iconTextColor = "text-pink-500"; break;
+                                                default: icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-gray-100"; iconTextColor = "text-gray-900";
+                                            }
+                                            return <StatCard key={index} icon={icon} iconBgColor={iconBgColor} iconTextColor={iconTextColor} value={card.value} description={card.description} trend={card.trend} trendPercentage={card.trendPercentage} trendPeriod={card.trendPeriod} />;
+                                        })}
+                                    </div>
+                                </motion.div>
+                            </div>
 
-                        {/* Charts Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                            <section className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px]">
-                                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
-                                    <ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown
-                                </h2>
-                                <div className="mb-6 flex justify-center gap-2 flex-wrap">
-                                    {dates.map((date) => {
+                            {/* Charts Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                <motion.section
+                                    className="bg-stone-100 rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px]"
+                                    initial={{ opacity: 0, x: -50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.6 }}
+                                >
+                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
+                                        <ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown
+                                    </h2>
+                                    <div className="mb-6 flex justify-center gap-2 flex-wrap">
+                                        {dates.map((date) => {
                                             const pieItem = rawPieData.find((item) => item.Date === date);
                                             const barItem = barChartData.find((item) => item.Date === date);
                                             // Prefer pieItem, fallback to barItem, else just use the date
                                             const dataItem = pieItem || barItem;
                                             const dateToSet = date === "All" ? "All" : (dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date);
                                             return (
-                                                <button key={date} onClick={() => setSelectedDate(dateToSet)} className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}>
+                                                <motion.button
+                                                    key={date}
+                                                    onClick={() => setSelectedDate(dateToSet)}
+                                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                >
                                                     {date === "All" ? "All" : date}
-                                                </button>
+                                                </motion.button>
                                             );
                                         })}
-                                </div>
-                                <MyComponent Data={Data} selectedDate={selectedDate} />
-                                <div className="flex-grow flex items-center justify-center">
-                                    <ResponsiveContainer width="100%" height={isMobile ? 180 : 200}>
-                                        <PieChart>
-                                            <Pie data={filteredPieData} dataKey="value" nameKey="name" outerRadius={isMobile ? 60 : 80} label={({ percent }) => `${(percent * 100).toFixed(0)}%`} paddingAngle={2}>
-                                                {filteredPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
-                                            </Pie>
-                                            <Tooltip formatter={(value) => `${value.toFixed(1)} hours`} />
-                                            <Legend iconType="circle" wrapperStyle={{ paddingTop: "10px" }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </section>
-                            <section className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px]">
-                                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
-                                    <ChartBarIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Weekly Login & Break Hours
-                                </h2>
-                                <div className="flex-grow flex items-center justify-center">
-                                    <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
-                                        <BarChart data={filteredBarChartData} margin={{ top: 20, right: 10, left: 5, bottom: 5 }}>
-                                            <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }} className="text-sm" tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick} />
-                                            <YAxis allowDecimals={false} hide />
-                                            <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
-                                            <Legend wrapperStyle={{ paddingTop: "10px" }} />
-                                            <Bar dataKey="Working_hour" stackId="a" fill={BAR_COLORS.work} name="Work Hours" />
-                                            <Bar dataKey="Break_hour" stackId="a" fill={BAR_COLORS.break} name="Break Hours" />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </section>
-                        </div>
-                        {/* Attendance Records Table */}
-                        <div className="p-4 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-lg">
-                            <section>
-                                <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
-                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-                                        <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" /> Attendance Records
+                                    </div>
+                                    <MyComponent Data={Data} selectedDate={selectedDate} />
+                                    <div className="flex-grow flex items-center justify-center">
+                                        <ResponsiveContainer width="100%" height={isMobile ? 180 : 200}>
+                                            <PieChart>
+                                                <Pie data={filteredPieData} dataKey="value" nameKey="name" outerRadius={isMobile ? 60 : 80} label={({ percent }) => `${(percent * 100).toFixed(0)}%`} paddingAngle={2}>
+                                                    {filteredPieData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value) => `${value.toFixed(1)} hours`} />
+                                                <Legend iconType="circle" wrapperStyle={{ paddingTop: "10px" }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </motion.section>
+                                <motion.section
+                                    className="bg-stone-100 rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px]"
+                                    initial={{ opacity: 0, x: 50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.8 }}
+                                >
+                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
+                                        <ChartBarIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Weekly Login & Break Hours
                                     </h2>
-                                    <div className="flex flex-wrap items-center gap-4">
-                                        <FilterButtonGroup options={MONTHS} selectedOption={selectedMonth} onSelect={(month) => { setSelectedMonth(month); setCurrentPage(1); }} />
-                                        <div className="relative">
-                                            <label className="text-sm font-semibold mr-2 text-gray-700">Sort by:</label>
-                                            <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setCurrentPage(1); }} className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-700">
-                                                {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                            </select>
+                                    <div className="flex-grow flex items-center justify-center">
+                                        <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
+                                            <BarChart data={filteredBarChartData} margin={{ top: 20, right: 10, left: 5, bottom: 5 }}>
+                                                <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }} className="text-sm" tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick} />
+                                                <YAxis allowDecimals={false} hide />
+                                                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+                                                <Legend wrapperStyle={{ paddingTop: "10px" }} />
+                                                <Bar dataKey="Working_hour" stackId="a" fill={BAR_COLORS.work} name="Work Hours" />
+                                                <Bar dataKey="Break_hour" stackId="a" fill={BAR_COLORS.break} name="Break Hours" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </motion.section>
+                            </div>
+                            {/* Attendance Records Table */}
+                            <motion.div
+                                className="p-4 sm:p-6 bg-stone-100 rounded-xl border border-gray-200 shadow-lg"
+                                initial={{ opacity: 0, y: 50 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 1 }}
+                            >
+                                <section>
+                                    <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+                                            <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" /> Attendance Records
+                                        </h2>
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <FilterButtonGroup options={MONTHS} selectedOption={selectedMonth} onSelect={(month) => { setSelectedMonth(month); setCurrentPage(1); }} />
+                                            <div className="relative">
+                                                <label className="text-sm font-semibold mr-2 text-gray-700">Sort by:</label>
+                                                <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setCurrentPage(1); }} className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-700">
+                                                    {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider">Login Hours</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider">Daily Progress</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {paginatedData.length > 0 ? (
-                                                paginatedData.map((entry, idx) => (
-                                                    <tr key={idx} className="hover:bg-indigo-50 transition-colors duration-150">
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{entry.date}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800"><span className="font-semibold text-indigo-700">{entry.login_hours.toFixed(2)}</span> hrs</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                            <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
-                                                                <div className="bg-indigo-500 h-full rounded-full transition-all duration-300 ease-in-out" style={{ width: entry.barWidth }} />
-                                                                <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white mix-blend-difference">{entry.login_hours.toFixed(1)}h</span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500 italic">No attendance records found for the selected options.</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
-                                    <div className="flex items-center gap-2 mb-4 sm:mb-0">
-                                        <span className="text-sm text-gray-700">Rows per page:</span>
-                                        <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="border border-gray-300 px-2 py-1 rounded-md text-sm">
-                                            {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                        </select>
+                                    <div className="overflow-x-auto rounded-lg border border-gray-200">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
+                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
+                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
+                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider">Login Hours</th>
+                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider">Daily Progress</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                <AnimatePresence>
+                                                    {paginatedData.length > 0 ? (
+                                                        paginatedData.map((entry, idx) => (
+                                                            <motion.tr
+                                                                key={idx}
+                                                                className="hover:bg-indigo-50 transition-colors duration-150"
+                                                                initial={{ opacity: 0, y: 20 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                exit={{ opacity: 0, y: -20 }}
+                                                                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                                                            >
+                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{entry.date}</td>
+                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
+                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
+                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800"><span className="font-semibold text-indigo-700">{entry.login_hours.toFixed(2)}</span> hrs</td>
+                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                                    <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
+                                                                        <motion.div
+                                                                            className="bg-indigo-500 h-full rounded-full"
+                                                                            initial={{ width: 0 }}
+                                                                            animate={{ width: entry.barWidth }}
+                                                                            transition={{ duration: 0.8, ease: "easeOut" }}
+                                                                        />
+                                                                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white mix-blend-difference">{entry.login_hours.toFixed(1)}h</span>
+                                                                    </div>
+                                                                </td>
+                                                            </motion.tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500 italic">No attendance records found for the selected options.</td></tr>
+                                                    )}
+                                                </AnimatePresence>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <nav className="flex items-center gap-2">
-                                        <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                                        <span className="text-sm text-gray-700">Page {currentPage} of {totalPages}</span>
-                                        <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
-                                    </nav>
-                                </div>
-                            </section>
-                        </div>
-                    </>
-                )}
+                                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
+                                        <div className="flex items-center gap-2 mb-4 sm:mb-0">
+                                            <span className="text-sm text-gray-700">Rows per page:</span>
+                                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="border border-gray-300 px-2 py-1 rounded-md text-sm">
+                                                {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                                            </select>
+                                        </div>
+                                        <nav className="flex items-center gap-2">
+                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                                            <span className="text-sm text-gray-700">Page {currentPage} of {totalPages}</span>
+                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                                        </nav>
+                                    </div>
+                                </section>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </main>
         </div>
     );

@@ -61,7 +61,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200">
+      <div className="relative w-full max-w-3xl mx-auto rounded-lg bg-stone-100 p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
@@ -267,7 +267,7 @@ const LeaveTypeCard = ({
   ];
   const COLORS = [color, "#E0E0E0"];
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
+    <div className="bg-stone-100 rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h1 className="text-xl font-bold mb-4 text-center text-gray-800">
         {title}
       </h1>
@@ -376,7 +376,7 @@ const LeaveType = () => {
   const filteredData = initialLeaveTypeData.filter((item) => item.value > 0);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
+    <div className="bg-stone-100 rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
         Leave Type Breakdown
       </h2>
@@ -462,7 +462,7 @@ const WeeklyPattern = () => {
   const dayOptions = ["All", ...new Set(rawData.map((d) => d.Day))];
 
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
+    <div className="bg-stone-100 shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">
         Weekly Leave Pattern
       </h1>
@@ -609,7 +609,7 @@ const LeaveHistory = ({leaveHistoryData}) => {
   const filteredAndSortedData = filterAndSortData();
 
   return (
-    <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
+    <div className="bg-stone-100 shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Leave Requests History
       </h2>
@@ -665,7 +665,7 @@ const LeaveHistory = ({leaveHistoryData}) => {
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+          <thead className="bg-white">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                 Leave Type
@@ -776,7 +776,7 @@ const LeaveHistory = ({leaveHistoryData}) => {
 const UserGreeting = ({ handleRequestLeave }) => {
   const { userData } = useContext(Context);
   return (
-    <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mb-6">
+    <div className="flex justify-between items-center p-6 bg-purple-100 via-pink-100 rounded-lg shadow-md mb-6">
       <div className="flex items-center space-x-4">
         <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
           <img

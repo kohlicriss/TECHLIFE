@@ -168,121 +168,121 @@ const LeaveCharts = () => {
     </div>
   );
 };
-//const currentLeaveHistoryData = [
-//  {
-//    EmployeeId: "E_01",
-//    Leave_type: "Unpaid Leave",
-//    Leave_On: ["2025/07/10", "-", "2025/05/12"],
-//    status: "Reject",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/07/12",
-//    Rejection_Reason: "Taking Continues leave in every month",
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_02",
-//    Leave_type: "Sick Leave",
-//    Leave_On: ["2025/07/20"],
-//    Days: 1,
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/07/22",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_03",
-//    Leave_type: "Sick Leave",
-//    Leave_On: ["2025/06/22", "-", "2025/06/24"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/06/26",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_04",
-//    Leave_type: "Casual Leave",
-//    Leave_On: ["2025/06/01"],
-//    status: "Approve",
-//    "Request By": "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/06/03",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_05",
-//    Leave_type: "Sick Leave",
-//    Leave_On: ["2025/05/22", "-", "2025/05/23"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/05/24",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_06",
-//    Leave_type: "Casual Leave",
-//    Leave_On: ["2025/05/12"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/05/14",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_07",
-//    Leave_type: "Unpaid Leave",
-//    Leave_On: ["2025/04/01", "-", "2025/04/02"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/04/03",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_08",
-//    Leave_type: "Casual Leave",
-//    Leave_On: ["2025/04/01"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/07/12",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_09",
-//    Leave_type: "Paid Leave",
-//    Leave_On: ["2025/03/10"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/03/12",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//  {
-//    EmployeeId: "E_10",
-//    Leave_type: "Paid Leave",
-//    Leave_On: ["2025/03/20"],
-//    status: "Approve",
-//    Request_By: "Panalisation Policy",
-//    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
-//    Action_Date: "2025/03/22",
-//    Rejection_Reason: null,
-//    Action: "https://icons8.com/icon/36944/ellipsis",
-//  },
-//];
+const currentLeaveHistoryData = [
+  {
+    EmployeeId: "E_01",
+    Leave_type: "Unpaid Leave",
+    Leave_On: ["2025/07/10", "-", "2025/05/12"],
+    status: "Reject",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/07/12",
+    Rejection_Reason: "Taking Continues leave in every month",
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_02",
+    Leave_type: "Sick Leave",
+    Leave_On: ["2025/07/20"],
+    Days: 1,
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/07/22",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_03",
+    Leave_type: "Sick Leave",
+    Leave_On: ["2025/06/22", "-", "2025/06/24"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/06/26",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_04",
+    Leave_type: "Casual Leave",
+    Leave_On: ["2025/06/01"],
+    status: "Approve",
+    "Request By": "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/06/03",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_05",
+    Leave_type: "Sick Leave",
+    Leave_On: ["2025/05/22", "-", "2025/05/23"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/05/24",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_06",
+    Leave_type: "Casual Leave",
+    Leave_On: ["2025/05/12"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/05/14",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_07",
+    Leave_type: "Unpaid Leave",
+    Leave_On: ["2025/04/01", "-", "2025/04/02"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/04/03",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_08",
+    Leave_type: "Casual Leave",
+    Leave_On: ["2025/04/01"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/07/12",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_09",
+    Leave_type: "Paid Leave",
+    Leave_On: ["2025/03/10"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/03/12",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+  {
+    EmployeeId: "E_10",
+    Leave_type: "Paid Leave",
+    Leave_On: ["2025/03/20"],
+    status: "Approve",
+    Request_By: "Panalisation Policy",
+    Details: "https://www.flaticon.com/free-icon/document_16702688?term=detail+data&page=1&position=7&origin=search&related_id=16702688",
+    Action_Date: "2025/03/22",
+    Rejection_Reason: null,
+    Action: "https://icons8.com/icon/36944/ellipsis",
+  },
+];
 
-const LeaveHistory = ({leaveHistoryData}) => {
+const LeaveHistory = ({}) => {
   //const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([]);
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -332,12 +332,12 @@ const LeaveHistory = ({leaveHistoryData}) => {
 //  setCurrentPage(1);
 //}, [leaveTypeFilter, statusFilter, sortOption]);
 
-  const leaveTypes = ["All", ...new Set(leaveHistoryData.map((d) => d.Leave_type))];
-  const statuses = ["All", ...new Set(leaveHistoryData.map((d) => d.status))];
+  const leaveTypes = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.Leave_type))];
+  const statuses = ["All", ...new Set(currentLeaveHistoryData.map((d) => d.status))];
   const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
 
   const filterAndSortData = () => {
-    let data = [...leaveHistoryData];
+    let data = [...currentLeaveHistoryData];
     data = data.filter((item) => {
       return (
         (leaveTypeFilter === "All" || item.Leave_type === leaveTypeFilter) &&
