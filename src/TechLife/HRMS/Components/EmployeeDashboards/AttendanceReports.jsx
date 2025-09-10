@@ -48,8 +48,8 @@ const ChartCard = ({ title, titlecolor, icon, value, color, trend, trendPercenta
             transition={{ duration: 0.5, ease: "easeOut" }}
             whileHover={{ scale: 1.05 }}
         >
-            <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2 p-3 ${color}`}>
-                {React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}
+            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-2 ${color}`}>
+                {React.cloneElement(icon, { className: `w-10 h-10 rounded-full` })}
             </div>
             <div>
                 <h3 className={`text-lg font-medium ${titlecolor}`}>{title}</h3>
@@ -88,29 +88,14 @@ const DashboardGrid = () => {
                     let icon, titlecolor, colorHandler;
 
                     switch (chart.title) {
-                        case "Total Working Days in Month": icon = <CalendarDaysIcon className="w-10 h-10 text-white" />; colorHandler = "bg-orange-100"; titlecolor = "text-orange-600";
-                            break;
-                        case "Total Leave Taken Today": icon = <FaCalendarCheck className="w-10 h-10 text-white" />; colorHandler = "bg-blue-100"; titlecolor = "text-blue-600";
-                            break;
-                        case "Total Holidays per Year": icon = <FaRegCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-100"; titlecolor = "text-pink-600";
-                            break;
-                        case "Total Halfdays per Day": icon = <MdEditCalendar className="w-10 h-10 text-white" />; colorHandler = "bg-yellow-100"; titlecolor = "text-yellow-600";
-                            break;
-                        default:
-                            icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; titlecolor = "text-gray-500";
+                        case "Total Working Days in Month": icon = <CalendarDaysIcon className="w-8 h-8 text-white" />; colorHandler = "bg-orange-200"; titlecolor = "text-orange-400";  break;
+                        case "Total Leave Taken Today": icon = <FaCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-blue-200"; titlecolor = "text-blue-400";  break;
+                        case "Total Holidays per Year": icon = <FaRegCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-200"; titlecolor = "text-pink-400";  break;
+                        case "Total Halfdays per Day": icon = <MdEditCalendar className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-200"; titlecolor = "text-yellow-400";  break;
+                        default:  icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; titlecolor = "text-gray-200";
                     }
-
                     return (
-                        <ChartCard
-                            key={index}
-                            icon={icon}
-                            color={colorHandler}
-                            value={chart.value}
-                            title={chart.title}
-                            titlecolor={titlecolor}
-                            trend={chart.trend}
-                            trendPercentage={chart.trendPercentage}
-                            trendPeriod={chart.trendPeriod}
+                        <ChartCard key={index} icon={icon} color={colorHandler} value={chart.value} title={chart.title} titlecolor={titlecolor} trend={chart.trend} trendPercentage={chart.trendPercentage} trendPeriod={chart.trendPeriod}
                         />
                     );
                 })}
@@ -227,15 +212,7 @@ const ClockInOut = () => {
                                 <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
                             </MenuButton>
                         </div>
-                        <Transition
-                            as={Fragment}
-                            enter="transition ease-out duration-100"
-                            enterFrom="transform opacity-0 scale-95"
-                            enterTo="transform opacity-100 scale-100"
-                            leave="transition ease-in duration-75"
-                            leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
-                        >
+                        <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
                             <MenuItems className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
                                 <div className="py-1">
                                     {timeframes.map((timeframe) => (
@@ -263,25 +240,10 @@ const ClockInOut = () => {
             <div className="space-y-4 flex-grow overflow-y-auto custom-scrollbar pr-2">
                 <AnimatePresence>
                     {employees.map((employee, index) => (
-                        <motion.div
-                            key={index}
-                            className="flex items-center justify-between bg-gray-50 rounded-lg p-2 transition-colors duration-200 hover:bg-blue-50"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                        >
+                        <motion.div    key={index}    className="flex items-center justify-between bg-gray-50 rounded-lg p-2 transition-colors duration-200 hover:bg-blue-50"    initial={{ opacity: 0, y: 20 }}    animate={{ opacity: 1, y: 0 }}    exit={{ opacity: 0, y: -20 }}    transition={{ duration: 0.3, delay: index * 0.05 }}>
                             <div className="flex items-center">
-                                <motion.img
-                                    className="w-12 h-12 rounded-full mr-4 object-cover"
-                                    src={employee.profilePic}
-                                    alt={employee.name}
-                                    whileHover={{ scale: 1.1 }}
-                                />
-                                <div>
-                                    <p className="font-semibold text-gray-800">{employee.name}</p>
-                                    <p className="text-sm text-gray-500">{employee.title}</p>
-                                </div>
+                                <motion.img    className="w-12 h-12 rounded-full mr-4 object-cover"    src={employee.profilePic}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
+                                <div>  <p className="font-semibold text-gray-800">{employee.name}</p>  <p className="text-sm text-gray-500">{employee.title}</p>  </div>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <ClockIcon className="h-5 w-5 text-gray-400" />
@@ -295,32 +257,12 @@ const ClockInOut = () => {
 
                 <div className="mt-6 border-t pt-4 border-gray-200">
                     <p className="text-gray-500 font-medium mb-3">Late</p>
-                    <motion.div
-                        className="flex items-center justify-between bg-gray-50 rounded-lg p-4 transition-colors duration-200 hover:bg-red-50"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: employees.length * 0.05 }}
-                    >
+                    <motion.div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 transition-colors duration-200 hover:bg-red-50" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: employees.length * 0.05 }}>
                         <div className="flex items-center">
-                            <motion.img
-                                className="w-12 h-12 rounded-full mr-4 object-cover"
-                                src={lateEmployee.profilePic}
-                                alt={lateEmployee.name}
-                                whileHover={{ scale: 1.1 }}
-                            />
-                            <div>
-                                <p className="font-semibold text-gray-800">{lateEmployee.name}</p>
-                                <p className="text-sm text-gray-500">{lateEmployee.title}</p>
-                            </div>
+                            <motion.img className="w-12 h-12 rounded-full mr-4 object-cover" src={lateEmployee.profilePic} alt={lateEmployee.name} whileHover={{ scale: 1.1 }}/>
+                            <div>    <p className="font-semibold text-gray-800">{lateEmployee.name}</p>    <p className="text-sm text-gray-500">{lateEmployee.title}</p></div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
-                                {lateEmployee.lateTime}
-                            </span>
-                            <ClockIcon className="h-5 w-5 text-gray-400" />
-                            <div className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium">
-                                {lateEmployee.time}
-                            </div>
+                        <div className="flex items-center space-x-2"><span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">    {lateEmployee.lateTime}</span><ClockIcon className="h-5 w-5 text-gray-400" /><div className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium">    {lateEmployee.time}</div>
                         </div>
                     </motion.div>
                 </div>
