@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Ticket, CheckCircle2, AlertTriangle, LayoutDashboard } from 'lucide-react';
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaBars } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useParams, useNavigate } from 'react-router-dom';
 import IssueForm from '../EmployeeTicket/IssueForm';
@@ -18,13 +18,13 @@ export default function EmployeeTicket() {
   const [toDate, setToDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // desktop collapse
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // mobile collapse
   const [activeTab, setActiveTab] = useState('My Tickets');
   const navigate = useNavigate();
   const { empID } = useParams();
   const { userData } = useContext(Context);
 
-  
   const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
   let normalizedRole = "";
   if (typeof role === "string") {
@@ -35,63 +35,57 @@ export default function EmployeeTicket() {
 
   const token = localStorage.getItem("accessToken");
 
-const sidebarItems = [
-  { tab: "My Tickets", icon: Ticket },
-  ...(normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
-];
-
+  const sidebarItems = [
+    { tab: "My Tickets", icon: Ticket },
+    ...(normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
+  ];
 
   const statusLabels = { all: "All", resolved: "Resolved" };
   const statusIcons = { all: <LayoutDashboard size={20} />, resolved: <CheckCircle2 size={20} /> };
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
 
-useEffect(() => {
-  if (!token || !empID || !userData) return;
+  useEffect(() => {
+    if (!token || !empID || !userData) return;
 
-  const fetchTickets = async () => {
-    try {
-      let url;
+    const fetchTickets = async () => {
+      try {
+        let url;
+        if (activeTab === "Assigned Tickets") {
+          // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
+        } else {
+          url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}`;
+        }
 
-      if (activeTab === "Assigned Tickets") {
-        // ✅ Both role and empID required
-        // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
-      } else {
-        // ✅ Only empID for "My Tickets"
-        url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}`;
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        let ticketsData = res.data;
+        if (!Array.isArray(ticketsData)) {
+          ticketsData = ticketsData?.tickets || [ticketsData];
+        }
+        setTickets(ticketsData);
+        console.log("Fetched tickets:", ticketsData);
+      } catch (err) {
+        console.error("Error fetching tickets:", err);
+        setTickets([]);
       }
+    };
 
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    fetchTickets();
+  }, [activeTab, empID, normalizedRole, token, userData]);
 
-      let ticketsData = res.data;
-      if (!Array.isArray(ticketsData)) {
-        ticketsData = ticketsData?.tickets || [ticketsData];
-      }
-      setTickets(ticketsData);
-      console.log("Fetched tickets:", ticketsData);
-    } catch (err) {
-      console.error("Error fetching tickets:", err);
-      setTickets([]);
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    setIsMobileSidebarOpen(false); // close mobile sidebar on tab click
+    if (tab === "Assigned Tickets" && normalizedRole) {
+      navigate(`/tickets/role/${normalizedRole}/${empID}`);
+    } else {
+      navigate(`/tickets/employee/${empID}`);
     }
   };
-
-  fetchTickets();
-}, [activeTab, empID, normalizedRole, token, userData]);
-
-
-
-
- const handleTabClick = (tab) => {
-  setActiveTab(tab);
-
-  if (tab === "Assigned Tickets" && normalizedRole) {
-    navigate(`/tickets/role/${normalizedRole}/${empID}`);
-  } else {
-    navigate(`/tickets/employee/${empID}`);
-  }
-};
 
   const handleFormSubmit = async (data) => {
     try {
@@ -101,7 +95,6 @@ useEffect(() => {
         return;
       }
 
-      // ✅ Normalize role before sending to backend
       roleToSend = roleToSend.toUpperCase().startsWith("ROLE_")
         ? roleToSend.toUpperCase()
         : "ROLE_" + roleToSend.toUpperCase();
@@ -176,7 +169,7 @@ useEffect(() => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-100">
       <div className="flex flex-row-reverse max-w-7xl mx-auto px-4 py-8 gap-4">
 
-        {/* Sidebar */}
+        {/* Desktop Sidebar */}
         <aside className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200 ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"} hidden sm:flex sm:sticky sm:top-0 h-full`}>
           <div className="flex justify-start p-1.5 items-center">
             <motion.button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100" transition={{ duration: 0.3 }}>
@@ -185,44 +178,51 @@ useEffect(() => {
           </div>
 
           <nav className="flex-1 space-y-1.5 px-1.5">
-           {sidebarItems
-  .filter(({ tab }) => {
-    // Hide "Assigned Tickets" if user is employee
-    if (normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets") {
-      return false;
-    }
-    return true;
-  })
-  .map(({ tab, icon: Icon }) => (
-    <motion.button
-      key={tab}
-      className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
-        ${activeTab === tab ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"}
-        ${isSidebarCollapsed ? "justify-center" : ""}`}
-      onClick={() => handleTabClick(tab)}
-      whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
-    >
-      <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
-      {!isSidebarCollapsed && tab}
-    </motion.button>
-))}
-
-
-            {Object.keys(statusIcons).map((status) => (
-              <motion.button
-                key={status}
-                className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors 
-                  ${statusFilter === status ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"} 
+            {sidebarItems
+              .filter(({ tab }) => normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets" ? false : true)
+              .map(({ tab, icon: Icon }) => (
+                <motion.button
+                  key={tab}
+                  className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
+                  ${activeTab === tab ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"}
                   ${isSidebarCollapsed ? "justify-center" : ""}`}
-                onClick={() => setStatusFilter(status)}
-                whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
-              >
-                {statusIcons[status]}
-                {!isSidebarCollapsed && <span className="ml-2 capitalize">{statusLabels[status]}</span>}
-              </motion.button>
-            ))}
+                  onClick={() => handleTabClick(tab)}
+                  whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+                >
+                  <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
+                  {!isSidebarCollapsed && tab}
+                </motion.button>
+              ))}
           </nav>
         </aside>
+
+        {/* Mobile Sidebar Toggle */}
+        <div className="sm:hidden flex flex-col w-full">
+          <div className="flex justify-start mb-2">
+            <motion.button onClick={toggleMobileSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none p-2 rounded-full hover:bg-gray-100" transition={{ duration: 0.3 }}>
+              <FaBars size={20} />
+            </motion.button>
+          </div>
+
+          {isMobileSidebarOpen && (
+            <div className="bg-white border rounded-lg shadow p-2 mb-4">
+              {sidebarItems
+                .filter(({ tab }) => normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets" ? false : true)
+                .map(({ tab, icon: Icon }) => (
+                  <motion.button
+                    key={tab}
+                    onClick={() => handleTabClick(tab)}
+                    className={`flex w-full items-center gap-2 px-4 py-2 rounded-lg text-left text-sm font-medium
+                      ${activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <Icon size={16} />
+                    {tab}
+                  </motion.button>
+                ))}
+            </div>
+          )}
+        </div>
 
         {/* Main Content */}
         <main className="flex-1 space-y-8">
@@ -269,6 +269,22 @@ useEffect(() => {
                 onChange={(e) => setToDate(e.target.value)}
                 className="border border-gray-300 text-sm rounded-lg p-2.5 w-44 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
+
+              {/* Status Filter Buttons */}
+              <div className="flex gap-2 ml-4">
+                {Object.keys(statusIcons).map((status) => (
+                  <motion.button
+                    key={status}
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors 
+                      ${statusFilter === status ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    onClick={() => setStatusFilter(status)}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    {statusIcons[status]}
+                    <span>{statusLabels[status]}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -356,7 +372,6 @@ useEffect(() => {
                 />
               </div>
             </div>
-            
           )}
 
         </main>
