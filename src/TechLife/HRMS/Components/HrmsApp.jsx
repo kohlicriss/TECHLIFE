@@ -13,6 +13,7 @@ import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
 
+
 // Lazy loading components
 const NotificationSystem = lazy(() => import("./Notifications/NotificationSystem"));
 const ChatApp = lazy(() => import("./Chats/ChatApp"));
@@ -21,11 +22,11 @@ const Profiles = lazy(() => import("./Profile/Profiles"));
 const AllTeams = lazy(() => import("./Teams/AllTeams"));
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
 const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
-const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
+const CombinedDashBoard=lazy(() => import("./EmployeeDashboards/CombinedDashBoard"));
 const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
 const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
 const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
-const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
+//const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
 const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
 
@@ -135,11 +136,11 @@ const HrmsApp = () => {
                                     />
                                 }
                             >
-                                <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
+                                 <Route path="/admin-dashboard/empId/*" element={<ProtectedRoute><CombinedDashBoard /></ProtectedRoute>} />
                                 <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
                                 <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
-                                <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />
+                               {/* <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />*/}
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
                                 <Route path="/chat/:userId/*" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
