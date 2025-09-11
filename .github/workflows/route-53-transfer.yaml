@@ -1,0 +1,44 @@
+name: Hosting webpage
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  host-webpage: 
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.0.11
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run build
+      run: npm run build
+
+    - name: move to the templates folder
+      run: mv build/ terraform/webhosting/
+
+    - name: Terraform Init
+      run: terraform -chdir=./terraform/webhosting init
+
+    - name: Terraform Apply
+      run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve
