@@ -7,6 +7,7 @@ import { MdEditCalendar } from "react-icons/md";
 import { BiCalendarStar } from "react-icons/bi";
 import { LiaCalendarCheck } from "react-icons/lia";
 import { motion, AnimatePresence } from "framer-motion";
+import { FiUser } from "react-icons/fi";
 
 const ChartData = [
     {
@@ -272,7 +273,7 @@ const ClockInOut = () => {
     );
 };
 
-const AttendanceTable = () => {
+const AttendanceTable = ({rawTableData,setRawTableData}) => {
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [sortOption, setSortOption] = useState("Recently added");
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -280,23 +281,23 @@ const AttendanceTable = () => {
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
     const rowsPerPageOptions = [10, 25, 50, 100];
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    const rawTableData = [
-        { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_02", date: "2025-06-30", login_time: null, logout_time: null },
-        { employee_id: "E_03", date: "2025-06-30", login_time: "10:00 AM", logout_time: "06:00 PM" },
-        { employee_id: "E_04", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_05", date: "2025-06-30", login_time: null, logout_time: null },
-        { employee_id: "E_06", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_07", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_08", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { employee_id: "E_09", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_10", date: "2025-06-30", login_time: "09:45 AM", logout_time: "08:10 PM" },
-        { employee_id: "E_11", date: "2025-06-30", login_time: "09:55 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_12", date: "2025-06-30", login_time: null, logout_time: null },
-        { employee_id: "E_13", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-        { employee_id: "E_14", date: "2025-06-30", login_time: null, logout_time: null },
-        { employee_id: "E_15", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    ];
+    //const rawTableData = [
+    //    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_02", date: "2025-06-30", login_time: null, logout_time: null },
+    //    { employee_id: "E_03", date: "2025-06-30", login_time: "10:00 AM", logout_time: "06:00 PM" },
+    //    { employee_id: "E_04", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_05", date: "2025-06-30", login_time: null, logout_time: null },
+    //    { employee_id: "E_06", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_07", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_08", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
+    //    { employee_id: "E_09", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_10", date: "2025-06-30", login_time: "09:45 AM", logout_time: "08:10 PM" },
+    //    { employee_id: "E_11", date: "2025-06-30", login_time: "09:55 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_12", date: "2025-06-30", login_time: null, logout_time: null },
+    //    { employee_id: "E_13", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //    { employee_id: "E_14", date: "2025-06-30", login_time: null, logout_time: null },
+    //    { employee_id: "E_15", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    //];
     const STANDARD_WORKDAY_HOURS = 10;
     const calculateHours = (login, logout) => {
         if (!login || !logout) return 0;
@@ -368,6 +369,7 @@ const AttendanceTable = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><FiUser className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Employee_id</div></th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
@@ -387,6 +389,7 @@ const AttendanceTable = () => {
                                             exit={{ opacity: 0, y: -20 }}
                                             transition={{ duration: 0.3, delay: idx * 0.05 }}
                                         >
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{entry.employee_id}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{entry.date}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
@@ -435,7 +438,7 @@ const AttendanceTable = () => {
     );
 };
 
-function AttendanceReports() {
+function AttendanceReports({ rawTableData, setRawTableData }) {
     return (
         <div className="p-4 sm:p-8 min-h-screen font-sans">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 h-full items-stretch">
@@ -444,7 +447,7 @@ function AttendanceReports() {
             </div>
 
             <div className="w-full">
-                <AttendanceTable />
+                <AttendanceTable rawTableData={rawTableData} setRawTableData={setRawTableData} />
             </div>
         </div>
     );

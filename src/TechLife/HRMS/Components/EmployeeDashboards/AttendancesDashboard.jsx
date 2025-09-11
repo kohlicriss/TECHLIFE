@@ -408,6 +408,16 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [sortOption, setSortOption] = useState("Recently added");
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+    const [rawTableData , setRawTableData] = useState(  [
+    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
+    { employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
+    { employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+]);
 
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
     const rowsPerPageOptions = [10, 25, 50, 100];
@@ -430,9 +440,31 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
 
     // Action Handlers
     const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
-    const handleLogin = () => { setIsLoggedIn(true); setStartTime(new Date()); setEndTime(null); setGrossHours(0); setEffectiveHours(0); };
+   const handleLogin = () => {setIsLoggedIn(true);const now = new Date();setStartTime(now);setEndTime(null);setGrossHours(0);setEffectiveHours(0);
+
+    setRawTableData(prev => [...prev,{ employee_id:"E_XX",date: now.toLocaleDateString(), login_time: formatClockTime(now),logout_time: null,login_hours: 0, barWidth: "0%",    }]);// Add new record
+};
     const handleLogout = () => { setIsLogoutConfirmed(true); };
-    const handleConfirmLogout = () => { setIsLoggedIn(false); setIsLogoutConfirmed(false); setEndTime(new Date()); };
+    const handleConfirmLogout = () => {setIsLoggedIn(false);setIsLogoutConfirmed(false);const now = new Date();setEndTime(now);
+
+    setRawTableData(prev => {
+        if (prev.length === 0) return prev;
+        const lastIndex = prev.length - 1;
+        const lastRecord = prev[lastIndex];
+        const loginDate = new Date(`2000-01-01 ${lastRecord.login_time}`);
+        const logoutDate = now;
+        const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
+        return [
+            ...prev.slice(0, lastIndex),
+            {
+                ...lastRecord,
+                logout_time: formatClockTime(now),
+                login_hours: loginHours > 0 ? loginHours : 0,
+                barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
+            }
+        ];
+    });
+};
     const handleCancel = () => { setIsLogoutConfirmed(false); };
     // Format hours for display
     const formatHours = (seconds) => {
@@ -534,7 +566,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                             transition={{ duration: 0.3 }}
                             className="p-2"
                         >
-                            <AttendanceReports role={role.toLowerCase()} />
+                            <AttendanceReports rawTableData={rawTableData} role={role.toLowerCase()} />
                         </motion.div>
                     ) : (
                         <motion.div
