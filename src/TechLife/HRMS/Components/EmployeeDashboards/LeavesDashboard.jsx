@@ -65,64 +65,27 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
     };
 
     return (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-        >
-            <motion.div
-                className="relative w-full max-w-3xl mx-auto rounded-lg bg-stone-100 p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-            >
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                    &times;
-                </button>
+        <motion.div    className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4"    initial={{ opacity: 0 }}    animate={{ opacity: 1 }}    exit={{ opacity: 0 }}    transition={{ duration: 0.3 }}>
+            <motion.div    className="relative w-full max-w-3xl mx-auto rounded-lg bg-stone-100 p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
+                <button    onClick={onClose}    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">    &times;</button>
                 <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200">
-                    <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">
-                        Request a Leave
-                    </h2>
+                    <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">    Request a Leave</h2>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
                                 <label className="block text-sm font-medium text-gray-700">
                                     Employee Id
                                 </label>
-                                <input
-                                    type="text"
-                                    value={employeeId}
-                                    onChange={e => setEmployeeId(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
-                                />
+                                <input    type="text"    value={employeeId}    onChange={e => setEmployeeId(e.target.value)}    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"/>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Employee Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={employeeName}
-                                    onChange={e => setEmployeeName(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
-                                />
+                                <label className="block text-sm font-medium text-gray-700">    Employee Name</label>
+                                <input    type="text"    value={employeeName}    onChange={e => setEmployeeName(e.target.value)}    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"/>
                             </motion.div>
                         </div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Leave Type
-                            </label>
-                            <select
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                onChange={handleLeaveTypeChange}
-                                value={selectedLeaveType}
-                            >
+                            <label className="block text-sm font-medium text-gray-700">    Leave Type</label>
+                            <select    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"    onChange={handleLeaveTypeChange}    value={selectedLeaveType}>
                                 <option value="">Select</option>
                                 <option value="Sick Leave">Sick Leave</option>
                                 <option value="Casual Leave">Casual Leave</option>
@@ -132,83 +95,31 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                         </motion.div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    From
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700">    From</label>
                                 <div className="relative mt-1">
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value={
-                                            fromDate
-                                                ? fromDate.toLocaleDateString("en-GB")
-                                                : "dd-mm-yyyy"
-                                        }
-                                        onClick={() => setShowFromCalendar(!showFromCalendar)}
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
-                                    />
+                                    <input type="text" readOnly value={fromDate? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"} onClick={() => setShowFromCalendar(!showFromCalendar)}className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"/>
                                     {showFromCalendar && (
-                                        <Calendar
-                                            selectedDate={fromDate}
-                                            onSelectDate={(date) => {
-                                                setFromDate(date);
-                                                setShowFromCalendar(false);
-                                            }}
-                                            onClose={() => setShowFromCalendar(false)}
-                                        />
+                                        <Calendar    selectedDate={fromDate}    onSelectDate={(date) => {        setFromDate(date);        setShowFromCalendar(false);    }}    onClose={() => setShowFromCalendar(false)}/>
                                     )}
                                 </div>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    To
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700">    To</label>
                                 <div className="relative mt-1">
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value={
-                                            toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"
-                                        }
-                                        onClick={() => setShowToCalendar(!showToCalendar)}
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
-                                    />
+                                    <input    type="text"    readOnly    value={        toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"    }    onClick={() => setShowToCalendar(!showToCalendar)}    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"/>
                                     {showToCalendar && (
-                                        <Calendar
-                                            selectedDate={toDate}
-                                            onSelectDate={(date) => {
-                                                setToDate(date);
-                                                setShowToCalendar(false);
-                                            }}
-                                            onClose={() => setShowToCalendar(false)}
-                                        />
+                                        <Calendar    selectedDate={toDate}    onSelectDate={(date) => {        setToDate(date);        setShowToCalendar(false);    }}    onClose={() => setShowToCalendar(false)}/>
                                     )}
                                 </div>
                             </motion.div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    No. of Days
-                                </label>
-                                <input
-                                    readOnly
-                                    type="text"
-                                    value={
-                                        fromDate && toDate
-                                            ? `${
-                                            Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +
-                                            1
-                                            } Days`
-                                            : "0 Days"
-                                    }
-                                    className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
-                                />
+                                <label className="block text-sm font-medium text-gray-700">    No. of Days</label>
+                                <input    readOnly    type="text"    value={        fromDate && toDate            ? `${            Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +            1            } Days`            : "0 Days"    }    className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"/>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.7 }}>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Leave Duration
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700">    Leave Duration</label>
                                 <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                     <option>Select</option>
                                     <option>Full Day</option>
@@ -218,64 +129,27 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             </motion.div>
                         </div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Rejection Policy
-                            </label>
-                            <input
-                                type="text"
-                                value="Panalisation Policy"
-                                readOnly
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"
-                            />
+                            <label className="block text-sm font-medium text-gray-700">    Rejection Policy</label>
+                            <input    type="text"    value="Panalisation Policy"    readOnly    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"/>
                         </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9 }}>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Remaining Days
-                            </label>
-                            <input
-                                type="text"
-                                readOnly
-                                value={remainingDays ? Object.values(remainingDays)[0] : "0"}
-                                className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"
-                            />
+                            <label className="block text-sm font-medium text-gray-700">    Remaining Days</label>
+                            <input    type="text"    readOnly    value={remainingDays ? Object.values(remainingDays)[0] : "0"}    className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"/>
                         </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1 }}>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Reason
-                            </label>
-                            <textarea
-                                rows="3"
-                                value={reason}
-                                onChange={(e) => setReason(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            ></textarea>
+                            <label className="block text-sm font-medium text-gray-700">    Reason</label>
+                            <textarea    rows="3"    value={reason}    onChange={(e) => setReason(e.target.value)}    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></textarea>
                         </motion.div>
                     </div>
                     <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
-                        <motion.button
-                            onClick={onClose}
-                            type="button"
-                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Cancel
-                        </motion.button>
-                        <motion.button
-                            type="submit"
-                            className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Add Leave
-                        </motion.button>
+                        <motion.button    onClick={onClose}    type="button"    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"    whileHover={{ scale: 1.05 }}    whileTap={{ scale: 0.95 }}>    Cancel</motion.button>
+                        <motion.button    type="submit"    className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"    whileHover={{ scale: 1.05 }}    whileTap={{ scale: 0.95 }}>    Add Leave</motion.button>
                     </div>
                 </form>
             </motion.div>
         </motion.div>
     );
 };
-
 
 // LeaveTypeCard component
 const LeaveTypeCard = ({

@@ -616,6 +616,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                                 )}
                                 {actionType === "reject" && (
                                   <div className="mt-4 flex flex-col items-center">
+                                    <input type="text" row={1} placeholder="Enter Subject..."value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} className="border border-gray-300 rounded p-2 w-full mb-2" />
                                     <textarea
                                       rows={2}
                                       placeholder="Enter rejection reason..."

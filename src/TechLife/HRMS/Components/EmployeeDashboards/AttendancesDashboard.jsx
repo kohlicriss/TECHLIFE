@@ -388,7 +388,7 @@ const MyComponent = ({ Data, selectedDate }) => {
 // --- Main Attendance Dashboard Component ---
 const AttendancesDashboard = ({ onBack, currentUser }) => {
     const { empID } = useParams();
-    const { userData } = useContext(Context);
+    const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showAttendanceReports, setShowAttendanceReports] = useState(false);

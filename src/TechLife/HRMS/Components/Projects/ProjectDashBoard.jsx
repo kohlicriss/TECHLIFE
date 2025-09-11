@@ -7,6 +7,7 @@ import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip } from 'react
 import axios from 'axios';
 import { Context } from '../HrmsContext';
 import classNames from 'classnames';
+import { FiDelete, FiEdit } from "react-icons/fi";
 
 // --- ProjectCard Data and Component ---
 const projects = [
@@ -301,19 +302,48 @@ const ProjectCard = () => {
 
 // --- MyTeam Data and Component ---
 const MyTeam = () => {
+    const { userData } = useContext(Context);
+    const role = (userData?.roles?.[0] || "").toUpperCase();
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+
     const initialEmployeeData = [
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Rajesh", employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Ramesh", employee_id: "E_02", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Ramya", employee_id: "E_05", date: "2025-06-30", login_time: null, logout_time: null },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Swetha", employee_id: "E_07", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Rohit", employee_id: "E_09", date: "2025-06-30", login_time: null, logout_time: null },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Deepika", employee_id: "E_11", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/men/32.jpg Rajesh", employee_id: "E_01", date: "2025-06-30",role:"Full stack Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/men/32.jpg Ramesh", employee_id: "E_02", date: "2025-06-30",role:"Backend Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/women/65.jpg Ramya", employee_id: "E_05", date: "2025-06-30",role:"Devops Engineer", login_time: null, logout_time: null },
+        { name: "https://randomuser.me/api/portraits/women/65.jpg Swetha", employee_id: "E_07", date: "2025-06-30",role:"Tester", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/men/32.jpg Rohit", employee_id: "E_09", date: "2025-06-30",role:"Tester", login_time: null, logout_time: null },
+        { name: "https://randomuser.me/api/portraits/women/65.jpg Deepika", employee_id: "E_11", date: "2025-06-30",role:"Designer", login_time: "10:00 AM", logout_time: "07:00 PM" },
     ];
 
-    const [employeeData] = useState(initialEmployeeData);
+    const [employeeData, setEmployeeData] = useState(initialEmployeeData);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" });
+    const [editIndex, setEditIndex] = useState(null);
 
-    const handleProfileClick = (employeeId) => {
-        console.log(`Navigating to performance dashboard for employee ID: ${employeeId}`);
+    const handleAddOrEdit = (e) => {
+        e.preventDefault();
+        if (editIndex !== null) {
+            // Edit existing
+            setEmployeeData(prev =>
+                prev.map((emp, idx) => idx === editIndex ? formData : emp)
+            );
+        } else {
+            // Add new
+            setEmployeeData(prev => [...prev, formData]);
+        }
+        setShowForm(false);
+        setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" });
+        setEditIndex(null);
+    };
+
+    const handleEdit = (idx) => {
+        setFormData(employeeData[idx]);
+        setEditIndex(idx);
+        setShowForm(true);
+    };
+
+    const handleDelete = (idx) => {
+        setEmployeeData(prev => prev.filter((_, i) => i !== idx));
     };
 
     return (
@@ -323,7 +353,52 @@ const MyTeam = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">My Team</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">My Team</h2>
+                {showSidebar && (
+                    <motion.button
+                        className="flex items-center bg-gradient-to-br from-blue-200 to-blue-500 text-black font-bold py-2 px-4 rounded shadow transition"
+                        onClick={() => { setShowForm(true); setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" }); setEditIndex(null); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                       <FaPlus className="mr-2" /> Add Team
+                    </motion.button>
+                )}
+            </div>
+            {/* Add/Edit Form */}
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                    <motion.form
+                            className="w-full max-w-3xl bg-white rounded-lg shadow-2xl p-4 relative"
+                            onSubmit={handleAddOrEdit}
+                            initial={{ scale: 0.9, y: 50 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 50 }}
+                            transition={{ duration: 0.3 }}
+                     >       
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <input type="text" placeholder="Profile Image URL + Name" className="border p-2 rounded" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                            <input type="text" placeholder="Employee ID" className="border p-2 rounded" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
+                            <input type="date" className="border p-2 rounded" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                            <input type="text" placeholder="Role" className="border p-2 rounded" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
+                            <input type="text" placeholder="Login Time" className="border p-2 rounded" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
+                            <input type="text" placeholder="Logout Time" className="border p-2 rounded" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
+                            <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
+                        </div>
+                    </motion.form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white">
                     <thead>
@@ -332,9 +407,10 @@ const MyTeam = () => {
                             <th className="py-2 px-4">Emp ID</th>
                             <th className="py-2 px-4">Name</th>
                             <th className="py-2 px-4">Date</th>
-                            <th className="py-2 px-4">Login</th>
-                            <th className="py-2 px-4">Logout</th>
+                            <th className="py-2 px-4">Role</th>
                             <th className="py-2 px-4">Status</th>
+                            {showSidebar && <th className="py-2 px-4">Edit</th>}
+                            {showSidebar && <th className="py-2 px-4">Delete</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -359,7 +435,7 @@ const MyTeam = () => {
                                         <td className="py-2 px-4">
                                             <motion.div
                                                 className="cursor-pointer hover:opacity-80 transition-opacity"
-                                                onClick={() => handleProfileClick(emp.employee_id)}
+                                                onClick={() => {/* handle profile click if needed */}}
                                                 title={`View ${name}'s Performance`}
                                                 whileHover={{ scale: 1.1 }}
                                             >
@@ -379,16 +455,22 @@ const MyTeam = () => {
                                         <td className="py-2 px-4">{emp.employee_id}</td>
                                         <td className="py-2 px-4 font-medium">{name}</td>
                                         <td className="py-2 px-4">{emp.date}</td>
-                                        <td className="py-2 px-4">{emp.login_time || "-"}</td>
-                                        <td className="py-2 px-4">{emp.logout_time || "-"}</td>
-                                        <td
-                                            className={`py-2 px-4 font-semibold ${status.color}`}
-                                        >
-                                            {status.label}
+                                        <td className="py-2 px-4">{emp.role}</td>
+                                        <td className={`py-2 px-4 font-semibold ${status.color}`}>{status.label}</td>
+                                        <td className="py-2 px-4">
+                                            
+                                            {showSidebar && (
+                                                <button className="text-indigo-600 hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
+                                            )}
+                                        </td>
+                                        <td className="py-2 px-4">
+                                            {showSidebar && (
+                                                <button className="text-red-600 hover:text-red-800 font-bold" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
+                                            )}
                                         </td>
                                     </motion.tr>
-                                
-                            )})};
+                                );
+                            })}
                         </AnimatePresence>
                     </tbody>
                 </table>
@@ -398,71 +480,162 @@ const MyTeam = () => {
 };
 
 // --- ProjectStatus Data and Component ---
-const projectStatusData = [
-    { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
-    { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
-    { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
-    { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
-    { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
-    { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
-];
-
-const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
-
 function ProjectStatus() {
-    return (
+    const { userData } = useContext(Context);
+    const role = (userData?.roles?.[0] || "").toUpperCase();
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
+
+    const projectstatusData = [
+        { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
+        { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
+        { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
+        { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
+        { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
+        { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
+    ];
+
+    const [teamData, setTeamData] = useState(projectstatusData);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ Project_id: "", Project_name: "", Status: "", Duration: "" });
+    const [editIndex, setEditIndex] = useState(null);
+
+    const handleAddOrEdit = (e) => {
+        e.preventDefault();
+        if (editIndex !== null) {
+            setTeamData(prev =>
+                prev.map((item, idx) => idx === editIndex ? formData : item)
+            );
+        } else {
+            setTeamData(prev => [...prev, formData]);
+        }
+        setShowForm(false);
+        setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" });
+        setEditIndex(null);
+    };
+
+    const handleEdit = (idx) => {
+        setFormData(teamData[idx]);
+        setEditIndex(idx);
+        setShowForm(true);
+    };
+
+    const handleDelete = (idx) => {
+        setTeamData(prev => prev.filter((_, i) => i !== idx));
+    };
+
+     return (
         <motion.div
             className="p-6 bg-stone-100 rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Project Status Overview</h2>
-            <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
-                    <thead>
-                        <tr className="text-left bg-gradient-to-br from-green-200 to-green-600 text-sm md:text-base">
-                            <th className="p-2 font-semibold">Project Name</th>
-                            <th className="p-2 font-semibold">Duration</th>
-                            <th className="p-2 font-semibold">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <AnimatePresence>
-                            {projectStatusData.map((project, index) => (
-                                <motion.tr
-                                    key={project.Project_id}
-                                    className="border-t border-gray-100 hover:bg-gray-50"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                >
-                                    <td className="p-2 text-sm md:text-base">{project.Project_name}</td>
-                                    <td className="p-2 text-sm md:text-base">{project.Duration}</td>
-                                    <td className="p-2 w-24">
-                                        <ResponsiveContainer width="100%" height={25}>
-                                            <BarChart
-                                                layout="vertical"
-                                                data={[{ name: project.Project_name, value: project.Status }]}
-                                                margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
-                                            >
-                                                <XAxis type="number" domain={[0, 100]} hide />
-                                                <YAxis type="category" dataKey="name" hide />
-                                                <Tooltip formatter={(value) => `${value}%`} />
-                                                <Bar dataKey="value" radius={[5, 5, 5, 5]}>
-                                                    <Cell fill={COLORS[index % COLORS.length]} />
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                        <span className="text-xs text-gray-600 ml-2">{project.Status}%</span>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </AnimatePresence>
-                    </tbody>
-                </table>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Project Status Overview</h2>
+                {showSidebar && (
+                    <motion.button
+                        className="flex items-center bg-gradient-to-br from-green-200 to-green-600 text-black font-bold py-2 px-4 rounded shadow transition"
+                        onClick={() => { setShowForm(true); setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" }); setEditIndex(null); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <FaPlus className="mr-2" /> Update Status
+                    </motion.button>
+                )}
             </div>
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.form
+                            className="w-full max-w-md bg-white rounded-lg shadow-2xl p-4 relative"
+                            onSubmit={handleAddOrEdit}
+                            initial={{ scale: 0.9, y: 50 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 50 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <h3 className="text-xl font-bold mb-2 text-gray-800 text-center">{editIndex !== null ? "Edit Team" : "Add Team"}</h3>
+                            <div className="grid grid-cols-1 gap-2">
+                                <input type="text" placeholder="Project ID" className="border p-2 rounded" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
+                                <input type="text" placeholder="Project Name" className="border p-2 rounded" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
+                                <input type="number" placeholder="Status (%)" className="border p-2 rounded" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
+                                <input type="text" placeholder="Duration" className="border p-2 rounded" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
+                            </div>
+                            <div className="flex gap-2 mt-2 justify-center">
+                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
+                                <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
+                            </div>
+                        </motion.form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+    {/* Table container with responsive overflow */}
+    <div className="overflow-x-auto">
+        <table className="min-w-full bg-white">
+            <thead>
+                <tr className="text-left bg-gradient-to-br from-green-200 to-green-600 w-full text-sm md:text-base">
+                    <th className="py-2 px-4 font-semibold">Project ID</th>
+                    <th className="py-2 px-4 font-semibold">Project Name</th>
+                    <th className="py-2 px-4 font-semibold">Duration</th>
+                    <th className="py-2 px-4 font-semibold">Status</th>
+                    {showSidebar && <th className="py-2 px-4 ">Edit</th>}
+                    {showSidebar && <th className="py-2 px-4 ">Delete</th>}
+                </tr>
+            </thead>
+            <tbody>
+                <AnimatePresence>
+                    {teamData.map((project, index) => (
+                        <motion.tr
+                            key={project.Project_id}
+                            className="border-t border-gray-100 hover:bg-gray-50"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                        >
+                            <td className="py-2 px-4 text-sm ">{project.Project_id}</td>
+                            <td className="py-2 px-4 text-sm ">{project.Project_name}</td>
+                            <td className="py-2 px-4 text-sm ">{project.Duration}</td>
+                            <td className="py-2 px-4 w-32 flex items-center">
+                                <ResponsiveContainer width="75%" height={25}>
+                                    <BarChart
+                                        layout="vertical"
+                                        data={[{ name: project.Project_name, value: Number(project.Status) }]}
+                                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                                    >
+                                        <XAxis type="number" domain={[0, 100]} hide />
+                                        <YAxis type="category" dataKey="name" hide />
+                                        <Tooltip formatter={(value) => `${value}%`} />
+                                        <Bar dataKey="value" radius={[5, 5, 5, 5]}>
+                                            <Cell fill={COLORS[index % COLORS.length]} />
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                                <span className="text-xs text-gray-600 ml-2">{project.Status}%</span>
+                            </td>
+                            {showSidebar && (
+                                <td className="py-2 px-4">
+                                    <button className="text-indigo-600 hover:text-indigo-800 font-small" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
+                                </td>
+                            )}
+                            {showSidebar && (
+                                <td className="py-2 px-4">
+                                    <button className="text-red-600 hover:text-red-800 font-small" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
+                                </td>
+                            )}
+                        </motion.tr>
+                    ))}
+                </AnimatePresence>
+            </tbody>
+        </table>
+    </div>
         </motion.div>
     );
 }
@@ -686,7 +859,7 @@ function Project() {
                 <h2 className="text-2xl font-bold text-gray-800">Project Overview</h2>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition"
+                        className="flex items-center bg-gradient-to-br from-indigo-200 to-indigo-600 text-white font-bold py-2 px-4 rounded shadow transition"
                         onClick={() => setShowCreateForm(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -939,6 +1112,7 @@ function Project() {
                                         {proj.status}
                                     </span>
                                 </td>
+                                {showSidebar && (
                                 <td className="p-3 text-center">
                                     <a href={proj.Details} target="_blank" rel="noopener noreferrer">
                                         <motion.div whileHover={{ scale: 1.2 }}>
@@ -946,11 +1120,14 @@ function Project() {
                                         </motion.div>
                                     </a>
                                 </td>
+                                )}
+                                {showSidebar && (
                                 <td className="p-3 text-center">
                                     <motion.button whileHover={{ scale: 1.2 }}>
                                         <FaTrashAlt className="text-red-500 text-lg w-6 h-6 md:w-8 md:h-8 transition" />
                                     </motion.button>
                                 </td>
+                                )}
                             </motion.tr>
                         ))}
                     </AnimatePresence>

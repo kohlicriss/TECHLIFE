@@ -4,7 +4,8 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import React, { useMemo, useState, Fragment } from "react";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { MdEditCalendar } from "react-icons/md";
-import { FaCalendarCheck, FaRegCalendarCheck } from "react-icons/fa";
+import { BiCalendarStar } from "react-icons/bi";
+import { LiaCalendarCheck } from "react-icons/lia";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ChartData = [
@@ -89,8 +90,8 @@ const DashboardGrid = () => {
 
                     switch (chart.title) {
                         case "Total Working Days in Month": icon = <CalendarDaysIcon className="w-8 h-8 text-white" />; colorHandler = "bg-orange-200"; titlecolor = "text-orange-400";  break;
-                        case "Total Leave Taken Today": icon = <FaCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-blue-200"; titlecolor = "text-blue-400";  break;
-                        case "Total Holidays per Year": icon = <FaRegCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-200"; titlecolor = "text-pink-400";  break;
+                        case "Total Leave Taken Today": icon = <BiCalendarStar className="w-8 h-8 text-white" />; colorHandler = "bg-blue-200"; titlecolor = "text-blue-400";  break;
+                        case "Total Holidays per Year": icon = <LiaCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-200"; titlecolor = "text-pink-400";  break;
                         case "Total Halfdays per Day": icon = <MdEditCalendar className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-200"; titlecolor = "text-yellow-400";  break;
                         default:  icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; titlecolor = "text-gray-200";
                     }
