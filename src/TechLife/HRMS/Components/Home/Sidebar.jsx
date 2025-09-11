@@ -28,7 +28,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
+      await fetch("https://hrms.anasolConsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });

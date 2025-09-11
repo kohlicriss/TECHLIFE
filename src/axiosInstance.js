@@ -1,6 +1,6 @@
 import axios from 'axios';
  
-const AUTH_API_URL = 'http://hrms.anasolconsultancyservices.com/api/auth/refresh-token';
+const AUTH_API_URL = 'https://hrms.anasolconsultancyservices.com/api/auth/refresh-token';
  
 function cloneFormData(formData) {
     const newFormData = new FormData();
@@ -111,8 +111,8 @@ window.addEventListener('storage', (event) => {
     }
 });
  
-export const tasksApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api/employee');
-export const publicinfoApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
-export const chatApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
-export const notificationsApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api/notification');
-export const ticketsApi = createAxiosInstance('http://localhost:8088/api/ticket')
+export const tasksApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/employee');
+export const publicinfoApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
+export const chatApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
+export const notificationsApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/notification');
+export const ticketsApi = createAxiosInstance('https://localhost:8088/api/ticket')

@@ -235,7 +235,7 @@ const Navbar = ({ setSidebarOpen }) => {
                       setDropdownOpen(false);
                       try {
                         await fetch(
-                          "http://hrms.anasolConsultancyservices.com/api/auth/logout",
+                          "https://hrms.anasolConsultancyservices.com/api/auth/logout",
                           {
                             method: "POST",
                             credentials: "include",
