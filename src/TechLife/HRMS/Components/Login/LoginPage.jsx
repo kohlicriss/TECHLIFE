@@ -436,7 +436,7 @@ const LoginPage = ({ onLogin }) => {
                 Hello,
               </h2>
               <h1 className="text-4xl lg:text-5xl font-bold animate-fade-in animation-delay-200">
-                Welcome!
+                Welcome
               </h1>
               <p className="text-lg lg:text-xl opacity-80 animate-fade-in animation-delay-400 text-indigo-100">
                 Login to continue access
