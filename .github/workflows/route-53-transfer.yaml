@@ -49,14 +49,14 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y jq
 
     - name: echo output
-      run: terraform -chdir=./terraform/webhosting output -json
+      run: terraform -chdir=./terraform/webhosting output
 
     - name: test output
-      run: terraform -chdir=./terraform/webhosting output -json | jq .
-
+      run: terraform -chdir=./terraform/webhosting output -raw
+      
     - name: Export CloudFront Distribution ID
       run: |
-        dist_id=$(terraform -chdir=./terraform/webhosting output -json | jq -r '.cloud_front_distribution_id.value')
+        dist_id=$(terraform -chdir=./terraform/webhosting output -raw cloud_front_distribution_id)
         echo "cloud_front_distribution_id=$dist_id" >> $GITHUB_ENV
 
 
