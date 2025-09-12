@@ -41,6 +41,10 @@ module "cloud_front" {
   cirtificate_arn    = module.cirtificate.certificate_arn
 }
 
+output "cloudfront_hosted_zone" {
+  value = var.cloudfront_enabled ? module.cloud_front[0].cloud_front_hosted_zone_id : null
+}
+
 module "route_53" {
   count         = var.route_53_enable ? 1 : 0
   source        = "github.com/KoteshwarChinnolla/terraform-modules//modules/route_53"

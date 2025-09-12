@@ -44,3 +44,18 @@ jobs:
 
     - name: Terraform Apply
       run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve
+      
+    - name: Get CloudFront Hosted Zone
+      id: tf_output
+      run: |
+        value=$(terraform -chdir=./terraform/webhosting output -raw cloudfront_hosted_zone)
+        echo "cloudfront_hosted_zone=$value" >> $GITHUB_ENV
+
+    - name: CloudFront Invalidation
+      run: |
+        aws cloudfront create-invalidation \
+          --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+          --paths "/*"
+      env:
+        CLOUDFRONT_DISTRIBUTION_ID: ${{ env.cloudfront_hosted_zone }}
+
