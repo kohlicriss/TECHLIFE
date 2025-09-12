@@ -45,10 +45,13 @@ jobs:
     - name: Terraform Apply
       run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve
       
+    - name: Install jq
+      run: sudo apt-get update && sudo apt-get install -y jq
+
     - name: Get CloudFront Hosted Zone
       run: |
-        value=$(terraform -chdir=./terraform/webhosting output -raw cloudfront_hosted_zone | tr -d '\n\r')
-        echo "cloudfront_hosted_zone=$value" >> $GITHUB_ENV
+        value=$(terraform -chdir=./terraform/webhosting output -json | jq -r .cloud_front_distribution_id.value)
+        echo "cloud_front_distribution_id=$value" >> $GITHUB_ENV
 
 
     - name: CloudFront Invalidation
@@ -57,5 +60,5 @@ jobs:
           --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
           --paths "/*"
       env:
-        CLOUDFRONT_DISTRIBUTION_ID: ${{ env.cloudfront_hosted_zone }}
+        CLOUDFRONT_DISTRIBUTION_ID: ${{ env.cloud_front_distribution_id }}
 
