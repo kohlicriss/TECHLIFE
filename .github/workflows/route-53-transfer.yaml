@@ -28,22 +28,22 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Install dependencies
-      run: npm install
+    # - name: Install dependencies
+    #   run: npm install
 
-    - name: Run build
-      env:
-        CI: ""
-      run: npm run build
+    # - name: Run build
+    #   env:
+    #     CI: ""
+    #   run: npm run build
 
-    - name: move to the templates folder
-      run: mv build/ terraform/webhosting/
+    # - name: move to the templates folder
+    #   run: mv build/ terraform/webhosting/
 
     - name: Terraform Init
       run: terraform -chdir=./terraform/webhosting init
 
-    - name: Terraform Apply
-      run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve
+    # - name: Terraform Apply
+    #   run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve
       
     - name: Install jq
       run: sudo apt-get update && sudo apt-get install -y jq
@@ -52,7 +52,7 @@ jobs:
       run: terraform -chdir=./terraform/webhosting output
 
     - name: test output
-      run: terraform -chdir=./terraform/webhosting output -raw cloud_front_distribution_id
+      run: terraform -chdir=./terraform/webhosting output cloud_front_distribution_id
       
     - name: Export CloudFront Distribution ID
       run: |
