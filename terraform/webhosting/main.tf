@@ -41,8 +41,8 @@ module "cloud_front" {
   cirtificate_arn    = module.cirtificate.certificate_arn
 }
 
-output "cloudfront_hosted_zone" {
-  value = var.cloudfront_enabled ? module.cloud_front[0].cloud_front_hosted_zone_id : null
+output "cloud_front_distribution_id" {
+  value = var.cloudfront_enabled ? module.cloud_front[0].cloud_front_distribution_id : null
 }
 
 module "route_53" {
