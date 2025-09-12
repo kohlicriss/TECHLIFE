@@ -23,7 +23,7 @@ import {
   MdChevronRight,
   MdStar,
 } from "react-icons/md";
-import { FaPhone, FaBuilding, FaCamera, FaTrash, FaTimes } from "react-icons/fa"; // Added new icons
+import { FaPhone, FaBuilding, FaCamera, FaTrash, FaTimes, FaExpand, FaCompress } from "react-icons/fa"; // Added new icons
 import { publicinfoApi } from "../../../../axiosInstance";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -51,6 +51,8 @@ const Profiles = () => {
 
   // ✅ New state for the image management modal
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  // ✅ NEW: State for full image view
+  const [isImageFullView, setIsImageFullView] = useState(false);
   const fileInputRef = useRef(null); // To trigger file input click
 
   useEffect(() => {
@@ -73,13 +75,22 @@ const Profiles = () => {
     fetchEmployeeDetails();
   }, [profileEmployeeId, setUserProfileData, fromContextMenu, targetEmployeeId, empID]);
 
+  //      useEffect(() => {
+  // // Start of new logic
+  // const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // const now = new Date();
+  // const formattedTime = now.toLocaleTimeString('en-US');
+  // console.log("Current Time Zone:", userTimeZone);
+  // console.log("Current Time:", formattedTime);
+  //      })
+
   useEffect(() => {
     setActiveTab(location.pathname);
   }, [location.pathname]);
 
   const displayData = isReadOnly ? viewedEmployeeData : userprofiledata;
 
-  const initials = (displayData?.displayName || "  ")
+  const initials = (displayData?.displayName || "  ")
     .split(" ")
     .map((word) => word[0])
     .join("")
@@ -108,8 +119,13 @@ const Profiles = () => {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setUserProfileData(response.data);
+        // NEW: Update localStorage with new image
+        if (response.data.employeeImage) {
+            localStorage.setItem("loggedInUserImage", response.data.employeeImage);
+        }
         alert('Profile picture updated successfully!');
         setIsImageModalOpen(false); // Close modal on success
+        setIsImageFullView(false); // Reset full view
       } catch (err) {
         console.error("Error uploading image:", err);
         alert('Failed to upload image. Please try again.');
@@ -123,9 +139,12 @@ const Profiles = () => {
         try {
             await publicinfoApi.delete(`/employee/${profileEmployeeId}/deleteImage`);
             setUserProfileData({ ...userprofiledata, employeeImage: null });
+            // NEW: Remove image from localStorage
+            localStorage.removeItem("loggedInUserImage");
             setProfileImagePreview(null);
             alert('Profile picture deleted successfully.');
             setIsImageModalOpen(false);
+            setIsImageFullView(false);
         } catch (err) {
             console.error("Error deleting image:", err);
             alert('Failed to delete image. Please try again.');
@@ -152,6 +171,21 @@ const Profiles = () => {
     const basePath = `/profile/${empID}/${path}`;
     navigate(fromContextMenu && targetEmployeeId ? `${basePath}?fromContextMenu=true&targetEmployeeId=${targetEmployeeId}` : basePath);
   };
+
+  // ✅ NEW: Handle image full view toggle
+  const handleImageFullView = () => {
+    setIsImageFullView(true);
+  };
+
+  const handleCloseFullView = () => {
+    setIsImageFullView(false);
+  };
+
+  // ✅ NEW: Handle modal close with full view reset
+  const handleModalClose = () => {
+    setIsImageModalOpen(false);
+    setIsImageFullView(false);
+  };
   
   return (
     <div className={`min-h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -172,7 +206,7 @@ const Profiles = () => {
           {/* ✅ UPDATED: Image container now opens the modal */}
           <div 
             className="relative group cursor-pointer"
-            onClick={() => !isReadOnly && setIsImageModalOpen(true)}
+            onClick={() => setIsImageModalOpen(true)}
           >
             {(profileImagePreview || displayData?.employeeImage) ? (
               <img
@@ -240,68 +274,149 @@ const Profiles = () => {
         </div>
       </div>
 
-      {/* ✅ IMAGE MANAGEMENT MODAL */}
       <AnimatePresence>
         {isImageModalOpen && (
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 backdrop-blur-sm bg-opacity-75 flex items-center justify-center z-[200] p-4"
-                onClick={() => setIsImageModalOpen(false)}
+                className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-75 flex items-center justify-center z-[200] p-4"
+                onClick={handleModalClose}
             >
-                <motion.div
-                    initial={{ scale: 0.9, y: 20 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.9, y: 20 }}
-                    className={`relative rounded-2xl shadow-xl p-8 text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-                    onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking inside
-                >
-                    <button onClick={() => setIsImageModalOpen(false)} className={`absolute top-4 right-4 p-2 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-200'}`}>
-                        <FaTimes/>
-                    </button>
-                    <h3 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Profile Picture</h3>
-                    <div className="mb-6">
-                        {(profileImagePreview || displayData?.employeeImage) ? (
-                            <img src={profileImagePreview || displayData.employeeImage} alt="Profile Preview" className="w-48 h-48 rounded-full object-cover mx-auto shadow-lg" />
+                {isReadOnly ? (
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button 
+                            onClick={handleModalClose}
+                            className="absolute top-4 right-4 z-10 p-3 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
+                            title="Close"
+                        >
+                            <FaTimes className="w-5 h-5" />
+                        </button>
+                        {(displayData?.employeeImage) ? (
+                            <img 
+                                src={displayData.employeeImage} 
+                                alt="Profile Full View" 
+                                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+                            />
                         ) : (
-                            <div className={`w-48 h-48 rounded-full mx-auto shadow-lg flex items-center justify-center text-5xl font-medium ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                            <div className={`w-[500px] h-[500px] rounded-xl shadow-2xl flex items-center justify-center text-8xl font-medium ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
                                 {initials}
                             </div>
                         )}
-                    </div>
-                    <div className="flex justify-center space-x-4">
-                        <button 
-                            onClick={() => fileInputRef.current.click()}
-                            className="flex items-center space-x-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-transform transform hover:scale-105"
+                    </motion.div>
+                ) : (
+                    <>
+                    {isImageFullView ? (
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            <FaCamera/>
-                            <span>Change</span>
-                        </button>
-                        {displayData?.employeeImage && (
-                            <button
-                                onClick={handleDeleteImage}
-                                className="flex items-center space-x-2 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-transform transform hover:scale-105"
+                            <button 
+                                onClick={handleCloseFullView}
+                                className="absolute top-4 right-4 z-10 p-3 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-70 transition-all duration-200"
+                                title="Back to Modal"
                             >
-                                <FaTrash/>
-                                <span>Delete</span>
+                                <FaCompress className="w-5 h-5" />
                             </button>
-                        )}
-                    </div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                    />
-                </motion.div>
+
+                            {(profileImagePreview || displayData?.employeeImage) ? (
+                                <img 
+                                    src={profileImagePreview || displayData.employeeImage} 
+                                    alt="Profile Full View" 
+                                    className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+                                />
+                            ) : (
+                                <div className={`w-[500px] h-[500px] rounded-xl shadow-2xl flex items-center justify-center text-8xl font-medium ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                                    {initials}
+                                </div>
+                            )}
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className={`relative rounded-2xl shadow-xl p-8 text-center max-w-md w-full ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button 
+                                onClick={handleModalClose} 
+                                className={`absolute top-4 right-4 p-2 rounded-full transition-all duration-200 ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700 hover:text-white' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}
+                            >
+                                <FaTimes className="w-5 h-5" />
+                            </button>
+
+                            <h3 className={`text-2xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                Profile Picture
+                            </h3>
+                            <div className="mb-6 relative group">
+                                {(profileImagePreview || displayData?.employeeImage) ? (
+                                    <div className="relative cursor-pointer" onClick={handleImageFullView}>
+                                        <img 
+                                            src={profileImagePreview || displayData.employeeImage} 
+                                            alt="Profile Preview" 
+                                            className="w-48 h-48 rounded-full object-cover mx-auto shadow-xl transition-transform duration-300 group-hover:scale-105" 
+                                        />
+                                        <div className="absolute inset-0 rounded-full bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all duration-300">
+                                            <FaExpand className="text-white opacity-0 group-hover:opacity-100 text-2xl transition-all duration-300 transform group-hover:scale-110" />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div 
+                                        className={`w-48 h-48 rounded-full mx-auto shadow-xl flex items-center justify-center text-5xl font-medium cursor-pointer transition-transform duration-300 group-hover:scale-105 ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-600'}`}
+                                        onClick={handleImageFullView}
+                                    >
+                                        {initials}
+                                        <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all duration-300">
+                                            <FaExpand className="text-white opacity-0 group-hover:opacity-100 text-2xl transition-all duration-300 transform group-hover:scale-110" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex justify-center space-x-4">
+                                <button 
+                                    onClick={() => fileInputRef.current.click()}
+                                    className="flex items-center space-x-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                                >
+                                    <FaCamera className="w-4 h-4" />
+                                    <span>Change</span>
+                                </button>
+                                {displayData?.employeeImage && (
+                                    <button
+                                        onClick={handleDeleteImage}
+                                        className="flex items-center space-x-2 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                                    >
+                                        <FaTrash className="w-4 h-4" />
+                                        <span>Delete</span>
+                                    </button>
+                                )}
+                            </div>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                        </motion.div>
+                    )}
+                    </>
+                )}
             </motion.div>
         )}
       </AnimatePresence>
 
       {isEditing && !isReadOnly && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-100 flex items-center justify-center z-[200]">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center z-[200]">
           <div className={`rounded-lg p-6 w-[500px] shadow-2xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Edit Profile</h2>
             <form onSubmit={handleSave}>

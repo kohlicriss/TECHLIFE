@@ -150,8 +150,8 @@ function EmployeeApp() {
             console.log("Starting chat with payload:", chatPayload);
     
             try {
-                const response = await chatApi.post('/chat/send', chatPayload);
-                console.log("Chat started successfully:", response.data);
+                // const response = await chatApi.post('/chat/send', chatPayload);
+                // console.log("Chat started successfully:", response.data);
                 navigate(`/chat/${empID}/with?id=${employee.employeeId}`);
             } catch (err) {
                 console.error("Error starting chat:", err);
@@ -331,7 +331,7 @@ function EmployeeApp() {
 
         return (
             <div className="group relative" key={name}>
-                <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                <label className={`block text-sm font-semibold mb-2 flex items-center ${
                     theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
                     {label}
@@ -344,8 +344,8 @@ function EmployeeApp() {
                             name={name}
                             value={fieldValue}
                             onChange={handleFormChange}
-                            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none
-                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                            className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 appearance-none text-sm
+                                focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                                 ${isError
                                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                                 : theme === 'dark'
@@ -356,8 +356,8 @@ function EmployeeApp() {
                             <option value="">Choose {label}</option>
                             {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
                         </select>
-                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                         </div>
@@ -368,8 +368,8 @@ function EmployeeApp() {
                         name={name}
                         value={fieldValue}
                         onChange={handleFormChange}
-                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                        className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 text-sm
+                            focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                             ${isError
                                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                                 : theme === 'dark'
@@ -382,8 +382,8 @@ function EmployeeApp() {
                         name={name}
                         value={fieldValue}
                         onChange={handleFormChange}
-                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 resize-none h-32
-                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                        className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 resize-none h-24 text-sm
+                            focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                             ${isError
                                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                                 : theme === 'dark'
@@ -399,8 +399,8 @@ function EmployeeApp() {
                         name={name}
                         value={fieldValue}
                         onChange={handleFormChange}
-                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
-                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                        className={`w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 text-sm
+                            focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                             ${isError
                                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                                 : theme === 'dark'
@@ -412,9 +412,9 @@ function EmployeeApp() {
                     />
                 )}
                 {isError && (
-                    <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                    <div className="mt-2 flex items-center space-x-2 text-red-600 animate-slideIn">
                         <IoWarning className="w-4 h-4 flex-shrink-0" />
-                        <p className="text-sm font-medium">{isError}</p>
+                        <p className="text-xs font-medium">{isError}</p>
                     </div>
                 )}
             </div>
@@ -431,28 +431,28 @@ function EmployeeApp() {
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     exit={{ y: -50, opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.3 }}
-                    className={`relative w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl rounded-3xl ${
+                    className={`relative w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl rounded-2xl ${
                         theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
                     }`}
                 >
-                    <div className={`px-8 py-6 bg-gradient-to-r from-blue-500 to-blue-700 text-white relative overflow-hidden`}>
+                    <div className={`px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white relative overflow-hidden`}>
                         <div className="absolute inset-0 bg-black/10"></div>
                         <div className="relative flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <div className="text-4xl"><IoAddCircleOutline /></div>
+                            <div className="flex items-center space-x-3">
+                                <div className="text-2xl"><IoAddCircleOutline /></div>
                                 <div>
-                                    <h2 className="text-2xl font-bold">Create New Employee</h2>
+                                    <h2 className="text-xl font-bold">Create New Employee</h2>
                                     <p className="text-white/90 text-sm">Fill in the details to add a new employee to the system.</p>
                                 </div>
                             </div>
-                            <button onClick={() => setIsFormOpen(false)} className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" aria-label="Close">
-                                <IoClose className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+                            <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group" aria-label="Close">
+                                <IoClose className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
                             </button>
                         </div>
                     </div>
-                    <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-                        <form className="p-8" onSubmit={handleFormSubmit}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+                        <form className="p-6" onSubmit={handleFormSubmit}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {renderField("Employee ID", "employeeId", "text", true)}
                                 {renderField("First Name", "firstName", "text", true)}
                                 {renderField("Middle Name", "middleName", "text")}
@@ -492,19 +492,18 @@ function EmployeeApp() {
                                 {renderField("Department ID", "departmentId", "text")}
                             </div>
                             {errors.general && (
-                                <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
+                                <div className={`mt-4 p-4 border-l-4 border-red-400 rounded-r-lg animate-slideIn ${
                                     theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
                                 }`}>
                                     <div className="flex items-center">
-                                        <IoWarning className="w-6 h-6 text-red-400 mr-3" />
-                                        <p className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
+                                        <IoWarning className="w-5 h-5 text-red-400 mr-3" />
+                                        <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
                                     </div>
                                 </div>
                             )}
                         </form>
                     </div>
-
-                    <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
+                    <div className={`px-6 py-4 border-t flex justify-end space-x-3 ${
                         theme === 'dark'
                             ? 'bg-gray-700 border-gray-600'
                             : 'bg-gray-50 border-gray-200'
@@ -512,7 +511,7 @@ function EmployeeApp() {
                         <button
                             type="button"
                             onClick={() => setIsFormOpen(false)}
-                            className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+                            className={`px-6 py-2.5 border-2 rounded-lg font-semibold text-sm transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
                                 theme === 'dark'
                                     ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
                                     : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
@@ -524,19 +523,19 @@ function EmployeeApp() {
                             type="submit"
                             onClick={handleFormSubmit}
                             disabled={isUpdating}
-                            className={`px-10 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-xl
+                            className={`px-8 py-2.5 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg text-sm
                                          hover:shadow-lg transform hover:scale-105 transition-all duration-200
                                          focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
                                          ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
                         >
                             {isUpdating ? (
                                 <>
-                                    <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin-slow"></div>
                                     <span>Creating...</span>
                                 </>
                             ) : (
                                 <>
-                                    <IoCheckmarkCircle className="w-5 h-5" />
+                                    <IoCheckmarkCircle className="w-4 h-4" />
                                     <span>Create Employee</span>
                                 </>
                             )}
@@ -557,18 +556,18 @@ function EmployeeApp() {
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="text-center">
                         <div className="relative">
-                            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+                            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <IoPersonOutline className="w-8 h-8 text-blue-500" />
+                                <IoPersonOutline className="w-6 h-6 text-blue-500" />
                             </div>
                         </div>
-                        <h2 className={`text-2xl font-bold mb-2 ${
+                        <h2 className={`text-xl font-bold mb-2 ${
                             theme === 'dark' ? 'text-white' : 'text-gray-800'
                             }`}>Loading Employee Directory</h2>
-                        <p className={`${
+                        <p className={`text-sm ${
                             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                             }`}>Discovering your colleagues...</p>
-                        <div className="flex justify-center space-x-2 mt-4">
+                        <div className="flex justify-center space-x-1 mt-4">
                             {[...Array(3)].map((_, i) => (
                                 <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`}
                                     style={{ animationDelay: `${i * 0.2}s` }}></div>
@@ -586,27 +585,29 @@ function EmployeeApp() {
                 ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
                 : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
             }`}>
-            <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Search and Filter Bar */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className={`rounded-2xl p-8 shadow-lg border mb-12 ${
+                    className={`rounded-xl p-6 shadow-lg border mb-8 ${
                         theme === 'dark'
                             ? 'bg-gray-800 border-gray-700'
                             : 'bg-white border-gray-200'
                         }`}
                 >
-                    <div className="flex flex-col lg:flex-row gap-6 items-center">
-                        <div className="flex-1 relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <IoSearchOutline className={`h-6 w-6 ${
+                    {/* First Row - Search Bar */}
+                    <div className="mb-4">
+                        <div className="relative group max-w-md">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <IoSearchOutline className={`h-5 w-5 ${
                                     theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
                                     }`} />
                             </div>
                             <input
                                 type="text"
-                                className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all duration-300 placeholder-gray-500 ${
+                                className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all duration-300 placeholder-gray-500 text-sm ${
                                     theme === 'dark'
                                         ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
                                         : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
@@ -616,19 +617,22 @@ function EmployeeApp() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                    </div>
 
-                        <div className="flex flex-wrap gap-4">
+                    {/* Second Row - Filters and Actions */}
+                    <div className="flex flex-wrap gap-3 items-center justify-between">
+                        <div className="flex flex-wrap gap-3">
                             {dynamicFilters.map((filter) => {
                                 const IconComponent = filter.icon;
                                 return (
                                     <div key={filter.name} className="relative group">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <IconComponent className={`h-5 w-5 ${
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <IconComponent className={`h-4 w-4 ${
                                                 theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
                                                 }`} />
                                         </div>
                                         <select
-                                            className={`pl-12 pr-10 py-4 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all duration-300 appearance-none cursor-pointer min-w-[180px] ${
+                                            className={`pl-9 pr-8 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all duration-300 appearance-none cursor-pointer min-w-[140px] text-sm ${
                                                 theme === 'dark'
                                                     ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
                                                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
@@ -647,8 +651,8 @@ function EmployeeApp() {
                                                 </option>
                                             ))}
                                         </select>
-                                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                                            <IoChevronDownOutline className={`h-5 w-5 ${
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <IoChevronDownOutline className={`h-4 w-4 ${
                                                 theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
                                                 }`} />
                                         </div>
@@ -657,33 +661,33 @@ function EmployeeApp() {
                             })}
                         </div>
 
-                        <div className="flex gap-3">
+                        <div className="flex gap-2">
                             <button
                                 onClick={clearFilters}
-                                className={`flex items-center space-x-2 px-6 py-3 border-2 rounded-xl font-semibold transition-all duration-200 ${
+                                className={`flex items-center space-x-2 px-4 py-2.5 border-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
                                     theme === 'dark'
                                         ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
                                         : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
                                     }`}
                             >
-                                <IoRefreshOutline className="w-5 h-5" />
+                                <IoRefreshOutline className="w-4 h-4" />
                                 <span>Clear</span>
                             </button>
                             {hasManagementAccess && (
                                 <button
                                     onClick={() => setIsFormOpen(true)}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                                    className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-sm"
                                 >
-                                    <IoAddCircleOutline className="w-5 h-5" />
+                                    <IoAddCircleOutline className="w-4 h-4" />
                                     <span>Add Employee</span>
                                 </button>
                             )}
-                            <div className={`flex rounded-xl p-1 ${
+                            <div className={`flex rounded-lg p-1 ${
                                 theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
                                 }`}>
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-3 rounded-lg transition-all duration-200 ${
+                                    className={`p-2 rounded-md transition-all duration-200 ${
                                         viewMode === 'grid'
                                             ? theme === 'dark'
                                                 ? 'bg-gray-600 text-blue-400 shadow-sm'
@@ -693,11 +697,11 @@ function EmployeeApp() {
                                                 : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
-                                    <IoGridOutline className="w-5 h-5" />
+                                    <IoGridOutline className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
-                                    className={`p-3 rounded-lg transition-all duration-200 ${
+                                    className={`p-2 rounded-md transition-all duration-200 ${
                                         viewMode === 'list'
                                             ? theme === 'dark'
                                                 ? 'bg-gray-600 text-blue-400 shadow-sm'
@@ -707,14 +711,15 @@ function EmployeeApp() {
                                                 : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
-                                    <IoListOutline className="w-5 h-5" />
+                                    <IoListOutline className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
                     </div>
                 </motion.div>
 
-                <div className="flex items-center justify-between mb-8">
+                {/* Results Count */}
+                <div className="flex items-center justify-between mb-6">
                     <h3 className={`text-lg font-semibold ${
                         theme === 'dark' ? 'text-white' : 'text-gray-800'
                         }`}>
@@ -722,6 +727,7 @@ function EmployeeApp() {
                     </h3>
                 </div>
 
+                {/* Employee Cards/List */}
                 {filteredEmployees.length > 0 ? (
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -729,7 +735,7 @@ function EmployeeApp() {
                         transition={{ delay: 0.4 }}
                         className={
                             viewMode === 'grid'
-                                ? "grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                                 : "space-y-4"
                         }
                     >
@@ -747,7 +753,7 @@ function EmployeeApp() {
                                     {viewMode === 'grid' ? (
                                         /* GRID VIEW WITH 3D FLIP */
                                         <div
-                                            className={`relative w-full h-96 cursor-pointer transition-transform duration-700 preserve-3d ${
+                                            className={`relative w-full h-80 cursor-pointer transition-transform duration-700 preserve-3d ${
                                                 flippedCard === employee.employeeId ? 'rotate-y-180' : ''
                                             }`}
                                             onMouseEnter={() => setFlippedCard(employee.employeeId)}
@@ -759,7 +765,7 @@ function EmployeeApp() {
                                         >
                                             {/* FRONT SIDE */}
                                             <div
-                                                className={`absolute inset-0 w-full h-full rounded-2xl shadow-xl border cursor-pointer group backface-hidden transform-gpu transition-all duration-300 hover:shadow-2xl ${
+                                                className={`absolute inset-0 w-full h-full rounded-xl shadow-lg border cursor-pointer group backface-hidden transform-gpu transition-all duration-300 hover:shadow-xl ${
                                                     theme === 'dark'
                                                         ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 hover:border-blue-500/50'
                                                         : 'bg-gradient-to-br from-white to-gray-50 border-gray-200 hover:border-blue-400/50'
@@ -769,77 +775,77 @@ function EmployeeApp() {
                                                     backfaceVisibility: 'hidden'
                                                 }}
                                             >
-                                                <div className="flex flex-col items-center text-center h-full justify-center p-6 relative overflow-hidden">
+                                                <div className="flex flex-col items-center text-center h-full justify-center p-5 relative overflow-hidden">
                                                     {/* Background Pattern */}
-                                                    <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+                                                    <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
                                                         <div className={`w-full h-full rounded-full ${
                                                             theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'
-                                                        } transform translate-x-16 -translate-y-16`}></div>
+                                                        } transform translate-x-12 -translate-y-12`}></div>
                                                     </div>
 
-                                                    <div className="relative mb-6 z-10">
+                                                    <div className="relative mb-4 z-10">
                                                         {employee.employeeImage ? (
                                                             <div className="relative">
                                                                 <img
                                                                     src={employee.employeeImage}
                                                                     alt={`${employee.displayName}'s profile picture`}
-                                                                    className="h-28 w-28 rounded-2xl object-cover border-4 border-gradient-to-r from-blue-400 to-indigo-500 shadow-2xl group-hover:border-blue-400 transition-all duration-300 transform group-hover:scale-110"
+                                                                    className="h-20 w-20 rounded-xl object-cover border-4 border-gradient-to-r from-blue-400 to-indigo-500 shadow-xl group-hover:border-blue-400 transition-all duration-300 transform group-hover:scale-110"
                                                                 />
-                                                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white shadow-lg"></div>
+                                                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
                                                             </div>
                                                         ) : (
                                                             <div className="relative">
-                                                                <div className="h-28 w-28 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-2xl group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-110">
+                                                                <div className="h-20 w-20 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-xl group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-110">
                                                                     {generateInitials(employee.displayName)}
                                                                 </div>
-                                                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white shadow-lg"></div>
+                                                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
                                                             </div>
                                                         )}
                                                     </div>
 
                                                     <div className="w-full z-10">
-                                                        <h3 className={`text-xl font-bold mb-2 truncate ${
+                                                        <h3 className={`text-lg font-bold mb-2 truncate ${
                                                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                                                             }`}>
                                                             {employee.displayName}
                                                         </h3>
-                                                        <p className="text-blue-600 font-semibold mb-4 text-sm bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                                                        <p className="text-blue-600 font-semibold mb-3 text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
                                                             {employee.jobTitlePrimary}
                                                         </p>
 
-                                                        <div className="space-y-3 text-sm">
-                                                            {/* ✅ ADDED: Employee ID */}
-                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-lg ${
+                                                        <div className="space-y-2 text-xs">
+                                                            {/* Employee ID */}
+                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-md ${
                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
                                                                 }`}>
-                                                                <IoIdCardOutline className={`w-4 h-4 ${
+                                                                <IoIdCardOutline className={`w-3 h-3 ${
                                                                     theme === 'dark' ? 'text-orange-400' : 'text-orange-500'
                                                                     }`} />
                                                                 <span className="truncate font-mono text-xs">{employee.employeeId}</span>
                                                             </div>
-                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-lg ${
+                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-md ${
                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
                                                                 }`}>
-                                                                <IoBriefcaseOutline className={`w-4 h-4 ${
+                                                                <IoBriefcaseOutline className={`w-3 h-3 ${
                                                                     theme === 'dark' ? 'text-blue-400' : 'text-blue-500'
                                                                     }`} />
                                                                 <span className="truncate">{employee.departmentId || 'N/A'}</span>
                                                             </div>
-                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-lg ${
+                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-md ${
                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
                                                                 }`}>
-                                                                <IoLocationOutline className={`w-4 h-4 ${
+                                                                <IoLocationOutline className={`w-3 h-3 ${
                                                                     theme === 'dark' ? 'text-green-400' : 'text-green-500'
                                                                     }`} />
                                                                 <span className="truncate">{employee.location || 'N/A'}</span>
                                                             </div>
-                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-lg ${
+                                                            <div className={`flex items-center justify-center space-x-2 p-2 rounded-md ${
                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
                                                                 }`}>
-                                                                <IoMailOutline className={`w-4 h-4 ${
+                                                                <IoMailOutline className={`w-3 h-3 ${
                                                                     theme === 'dark' ? 'text-purple-400' : 'text-purple-500'
                                                                     }`} />
-                                                                <span className="truncate">{employee.workEmail || 'N/A'}</span>
+                                                                <span className="truncate text-xs">{employee.workEmail || 'N/A'}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -848,7 +854,7 @@ function EmployeeApp() {
 
                                             {/* BACK SIDE */}
                                             <div
-                                                className={`absolute inset-0 w-full h-full rounded-2xl shadow-xl border backface-hidden rotate-y-180 ${
+                                                className={`absolute inset-0 w-full h-full rounded-xl shadow-lg border backface-hidden rotate-y-180 ${
                                                     theme === 'dark'
                                                         ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'
                                                         : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
@@ -858,8 +864,8 @@ function EmployeeApp() {
                                                     transform: 'rotateY(180deg)'
                                                 }}
                                             >
-                                                <div className="flex flex-col items-center justify-center h-full space-y-4 p-6">
-                                                    <div className="text-center mb-6">
+                                                <div className="flex flex-col items-center justify-center h-full space-y-3 p-5">
+                                                    <div className="text-center mb-4">
                                                         <h3 className={`text-lg font-bold mb-2 ${
                                                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                                                             }`}>
@@ -872,19 +878,19 @@ function EmployeeApp() {
                                                         </p>
                                                     </div>
 
-                                                    <div className="space-y-3 w-full max-w-xs">
+                                                    <div className="space-y-2 w-full max-w-xs">
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleChatClick(employee);
                                                             }}
-                                                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                                                            className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
                                                                 theme === 'dark'
                                                                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg'
                                                                     : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg'
                                                                 }`}
                                                         >
-                                                            <IoChatbubbleOutline className="w-5 h-5" />
+                                                            <IoChatbubbleOutline className="w-4 h-4" />
                                                             <span className="font-medium">Start Chat</span>
                                                         </button>
 
@@ -895,13 +901,13 @@ function EmployeeApp() {
                                                                         e.stopPropagation();
                                                                         handleViewProfileClick(employee);
                                                                     }}
-                                                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                                                                    className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
                                                                         theme === 'dark'
                                                                             ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg'
                                                                             : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg'
                                                                         }`}
                                                                 >
-                                                                    <IoPersonOutline className="w-5 h-5" />
+                                                                    <IoPersonOutline className="w-4 h-4" />
                                                                     <span className="font-medium">View Profile</span>
                                                                 </button>
                                                                 <button
@@ -909,13 +915,13 @@ function EmployeeApp() {
                                                                         e.stopPropagation();
                                                                         handleDocumentsClick(employee);
                                                                     }}
-                                                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                                                                    className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
                                                                         theme === 'dark'
                                                                             ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg'
                                                                             : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg'
                                                                         }`}
                                                                 >
-                                                                    <IoDocumentsOutline className="w-5 h-5" />
+                                                                    <IoDocumentsOutline className="w-4 h-4" />
                                                                     <span className="font-medium">Documents</span>
                                                                 </button>
                                                             </>
@@ -929,7 +935,7 @@ function EmployeeApp() {
                                         <motion.div
                                             whileHover={{ scale: 1.02, x: 10 }}
                                             whileTap={{ scale: 0.98 }}
-                                            className={`w-full rounded-2xl shadow-lg border cursor-pointer group transition-all duration-300 hover:shadow-xl ${
+                                            className={`w-full rounded-xl shadow-lg border cursor-pointer group transition-all duration-300 hover:shadow-xl ${
                                                 theme === 'dark'
                                                     ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700 hover:border-blue-500/50'
                                                     : 'bg-gradient-to-r from-white to-gray-50 border-gray-200 hover:border-blue-400/50'
@@ -937,12 +943,12 @@ function EmployeeApp() {
                                             onClick={() => navigate(`/employees/${empID}/public/${employee.employeeId}`)}
                                             onContextMenu={(e) => handleContextMenu(e, employee)}
                                         >
-                                            <div className="flex items-center p-6 space-x-6 relative overflow-hidden">
+                                            <div className="flex items-center p-4 space-x-4 relative overflow-hidden">
                                                 {/* Background Pattern */}
-                                                <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
+                                                <div className="absolute top-0 right-0 w-20 h-20 opacity-10">
                                                     <div className={`w-full h-full rounded-full ${
                                                         theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'
-                                                    } transform translate-x-12 -translate-y-12`}></div>
+                                                    } transform translate-x-10 -translate-y-10`}></div>
                                                 </div>
 
                                                 {/* Profile Image */}
@@ -952,16 +958,16 @@ function EmployeeApp() {
                                                             <img
                                                                 src={employee.employeeImage}
                                                                 alt={`${employee.displayName}'s profile picture`}
-                                                                className="h-16 w-16 rounded-2xl object-cover border-4 border-blue-200 shadow-lg group-hover:border-blue-400 transition-all duration-300 transform group-hover:scale-110"
+                                                                className="h-12 w-12 rounded-xl object-cover border-4 border-blue-200 shadow-lg group-hover:border-blue-400 transition-all duration-300 transform group-hover:scale-110"
                                                             />
-                                                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                                                         </div>
                                                     ) : (
                                                         <div className="relative">
-                                                            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-110">
+                                                            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-110">
                                                                 {generateInitials(employee.displayName)}
                                                             </div>
-                                                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -970,48 +976,48 @@ function EmployeeApp() {
                                                 <div className="flex-1 min-w-0 z-10">
                                                     <div className="flex items-start justify-between">
                                                         <div className="min-w-0 flex-1">
-                                                            <h3 className={`text-xl font-bold truncate mb-1 ${
+                                                            <h3 className={`text-lg font-bold truncate mb-1 ${
                                                                 theme === 'dark' ? 'text-white' : 'text-gray-900'
                                                                 }`}>
                                                                 {employee.displayName}
                                                             </h3>
-                                                            <p className="text-blue-600 font-semibold mb-3 text-sm bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full inline-block">
+                                                            <p className="text-blue-600 font-semibold mb-3 text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full inline-block">
                                                                 {employee.jobTitlePrimary}
                                                             </p>
                                                             
-                                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-                                                                {/* ✅ ADDED: Employee ID */}
-                                                                <div className={`flex items-center space-x-2 p-2 rounded-lg ${
+                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                                                {/* Employee ID */}
+                                                                <div className={`flex items-center space-x-1 p-2 rounded-md ${
                                                                     theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                                                                     }`}>
-                                                                    <IoIdCardOutline className={`w-4 h-4 ${
+                                                                    <IoIdCardOutline className={`w-3 h-3 ${
                                                                         theme === 'dark' ? 'text-orange-400' : 'text-orange-500'
                                                                         }`} />
                                                                     <span className="truncate font-mono text-xs">{employee.employeeId}</span>
                                                                 </div>
-                                                                <div className={`flex items-center space-x-2 p-2 rounded-lg ${
+                                                                <div className={`flex items-center space-x-1 p-2 rounded-md ${
                                                                     theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                                                                     }`}>
-                                                                    <IoBriefcaseOutline className={`w-4 h-4 ${
+                                                                    <IoBriefcaseOutline className={`w-3 h-3 ${
                                                                         theme === 'dark' ? 'text-blue-400' : 'text-blue-500'
                                                                         }`} />
                                                                     <span className="truncate">{employee.departmentId || 'N/A'}</span>
                                                                 </div>
-                                                                <div className={`flex items-center space-x-2 p-2 rounded-lg ${
+                                                                <div className={`flex items-center space-x-1 p-2 rounded-md ${
                                                                     theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                                                                     }`}>
-                                                                    <IoLocationOutline className={`w-4 h-4 ${
+                                                                    <IoLocationOutline className={`w-3 h-3 ${
                                                                         theme === 'dark' ? 'text-green-400' : 'text-green-500'
                                                                         }`} />
                                                                     <span className="truncate">{employee.location || 'N/A'}</span>
                                                                 </div>
-                                                                <div className={`flex items-center space-x-2 p-2 rounded-lg ${
+                                                                <div className={`flex items-center space-x-1 p-2 rounded-md ${
                                                                     theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                                                                     }`}>
-                                                                    <IoMailOutline className={`w-4 h-4 ${
+                                                                    <IoMailOutline className={`w-3 h-3 ${
                                                                         theme === 'dark' ? 'text-purple-400' : 'text-purple-500'
                                                                         }`} />
-                                                                    <span className="truncate">{employee.workEmail || 'N/A'}</span>
+                                                                    <span className="truncate text-xs">{employee.workEmail || 'N/A'}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1076,25 +1082,25 @@ function EmployeeApp() {
                         </AnimatePresence>
                     </motion.div>
                 ) : (
-                    <div className="text-center py-20">
-                        <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                    <div className="text-center py-16">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
                             theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
                             }`}>
-                            <IoPersonOutline className={`w-12 h-12 ${
+                            <IoPersonOutline className={`w-10 h-10 ${
                                 theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
                                 }`} />
                         </div>
-                        <h2 className={`text-2xl font-bold mb-2 ${
+                        <h2 className={`text-xl font-bold mb-2 ${
                             theme === 'dark' ? 'text-white' : 'text-gray-800'
                             }`}>No Employees Found</h2>
-                        <p className={`text-lg mb-6 ${
+                        <p className={`text-base mb-4 ${
                             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                             }`}>
                             Try adjusting your search terms or filters.
                         </p>
                         <button
                             onClick={clearFilters}
-                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                         >
                             Clear All Filters
                         </button>
@@ -1106,17 +1112,17 @@ function EmployeeApp() {
                     <button
                         onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
                         disabled={pageNumber === 0}
-                        className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                        className={`flex items-center space-x-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
                             theme === 'dark'
                                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                        <IoArrowBack className="w-5 h-5" />
+                        <IoArrowBack className="w-4 h-4" />
                         <span>Previous</span>
                     </button>
                     <div className="flex items-center space-x-4">
-                        <span className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                             Page {pageNumber + 1}
                         </span>
                         <select
@@ -1125,7 +1131,7 @@ function EmployeeApp() {
                                 setPageSize(parseInt(e.target.value));
                                 setPageNumber(0);
                             }}
-                            className={`px-4 py-2 border rounded-xl ${
+                            className={`px-3 py-2 border rounded-lg text-sm ${
                                 theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-100 text-gray-800 border-gray-300'
                             }`}
                         >
@@ -1136,14 +1142,14 @@ function EmployeeApp() {
                     </div>
                     <button
                         onClick={() => setPageNumber(prev => prev + 1)}
-                        className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                        className={`flex items-center space-x-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
                             theme === 'dark'
                                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                     >
                         <span>Next</span>
-                        <IoArrowForward className="w-5 h-5" />
+                        <IoArrowForward className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -1157,7 +1163,7 @@ function EmployeeApp() {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.2 }}
-                        className={`fixed z-50 border-2 rounded-xl shadow-2xl py-2 min-w-[160px] ${
+                        className={`fixed z-50 border-2 rounded-lg shadow-2xl py-2 min-w-[140px] ${
                             theme === 'dark'
                                 ? 'bg-gray-800 border-gray-600'
                                 : 'bg-white border-gray-200'
@@ -1166,7 +1172,7 @@ function EmployeeApp() {
                     >
                         <button
                             onClick={() => handleChatClick(contextMenu.employee)}
-                            className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center space-x-2 ${
+                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center space-x-2 ${
                                 theme === 'dark'
                                     ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
                                     : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
@@ -1181,7 +1187,7 @@ function EmployeeApp() {
                                 <div className={`h-px mx-4 my-2 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`} />
                                 <button
                                     onClick={() => handleViewProfileClick(contextMenu.employee)}
-                                    className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center space-x-2 ${
+                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center space-x-2 ${
                                         theme === 'dark'
                                             ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
                                             : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
@@ -1192,7 +1198,7 @@ function EmployeeApp() {
                                 </button>
                                 <button
                                     onClick={() => handleDocumentsClick(contextMenu.employee)}
-                                    className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center space-x-2 ${
+                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center space-x-2 ${
                                         theme === 'dark'
                                             ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
                                             : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
@@ -1203,7 +1209,7 @@ function EmployeeApp() {
                                 </button>
                                 <button
                                     onClick={() => handleAboutClick(contextMenu.employee)}
-                                    className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center space-x-2 ${
+                                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center space-x-2 ${
                                         theme === 'dark'
                                             ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
                                             : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
