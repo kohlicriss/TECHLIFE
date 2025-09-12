@@ -51,7 +51,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   try {
     const res = await fetch(
-      `https://techlife.anasolconsultancy.com/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://techlife.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   const connectWebSocket = () => {
     const ws = new WebSocket(
-      `wss://techlife.anasolconsultancy.com/ws-ticket?ticketId=${ticketId}`
+      `wss://techlife.anasolconsultancyservices.com/ws-ticket?ticketId=${ticketId}`
     );
 
     ws.onopen = () => console.log("✅ WebSocket connected");
@@ -111,7 +111,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   try {
     await fetch(
-      `https://techlife.anasolconsultancy.com/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://techlife.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         method: "POST",
         headers: {
