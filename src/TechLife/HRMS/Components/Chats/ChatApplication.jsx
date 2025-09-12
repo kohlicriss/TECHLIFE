@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import {
     FaMicrophone, FaPaperclip, FaSmile, FaPaperPlane, FaArrowLeft, FaStop,
@@ -233,6 +234,8 @@ const getAudioDuration = (audioBlob) =>
         reader.readAsArrayBuffer(audioBlob);
     });
 function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore }) {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedChat, setSelectedChat] = useState(null);
@@ -282,6 +285,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const chatMenuButtonRef = useRef(null);
     const contextMenuRef = useRef(null);
     const messageInputRef = useRef(null);
+    const isManuallyClosing = useRef(false);
     const pinnedMenuRef = useRef(null);
     const pinnedMenuButtonRef = useRef(null);
     const onMessageReceivedRef = useRef(null);
@@ -826,17 +830,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     }, [currentUser.id]);
 
     const closeChat = useCallback(() => {
-        if (!selectedChat || !stompClient.current?.active || !currentUser?.id) return;
-        const destination = `/app/presence/close/${selectedChat.chatId}`;
-        stompClient.current.publish({ destination, body: "{}" });
+        isManuallyClosing.current = true;
+
+        if (!selectedChat || !currentUser?.id) {
+            isManuallyClosing.current = false;
+            return;
+        }
+
+        if (stompClient.current?.active) {
+            const destination = `/app/presence/close/${selectedChat.chatId}`;
+            stompClient.current.publish({ destination, body: "{}" });
+        }
 
         setSelectedChat(null);
         setIsChatOpen(false);
 
         const newUrl = `/chat/${currentUser.id}`;
-        window.history.pushState({ path: newUrl }, '', newUrl);
+        navigate(newUrl);
 
-    }, [selectedChat, currentUser.id]);
+    }, [selectedChat, currentUser.id, navigate]);
 
     const handleChatSelect = useCallback((chat) => {
         if ((chat.unreadMessageCount || 0) > 0) {
@@ -1349,17 +1361,37 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const filteredChats = allChats.filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
     useEffect(() => {
+        if (isManuallyClosing.current) {
+            isManuallyClosing.current = false;
+            return;
+        }
+
         if (chatIdFromUrl && allChats.length > 0 && isConnected && !selectedChat) {
             const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
-
             if (chatToSelect) {
-                console.log("SUCCESS: All conditions met. Selecting chat from URL:", chatToSelect);
                 handleChatSelect(chatToSelect);
-            } else {
-                console.warn(`WARN: Chat with ID ${chatIdFromUrl} not found in the chat list.`);
             }
         }
     }, [allChats, chatIdFromUrl, selectedChat, handleChatSelect, isConnected]);
+
+    useEffect(() => {
+        const newChatTarget = location.state?.newChatTarget;
+        if (newChatTarget && isChatDataReady) {
+            const chatExists = allChats.some(chat => chat.chatId === newChatTarget.chatId);
+            if (!chatExists) {
+                console.log("New chat detected. Adding to chat list:", newChatTarget);
+
+                setChatData(prevData => {
+                    const updatedPrivateChats = [newChatTarget, ...prevData.privateChatsWith];
+
+                    return {
+                        ...prevData,
+                        privateChatsWith: updatedPrivateChats,
+                    };
+                });
+            }
+        }
+    }, [isChatDataReady, allChats, location.state]);
 
     const openGroupInfoModal = () => {
         if (selectedChat?.type === 'group') {
@@ -1512,7 +1544,17 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         )}
                                     </button>
                                     <div className="truncate">
-                                        <button onClick={openGroupInfoModal} disabled={currentChatInfo.type !== 'group'} className="text-left">
+                                        <button
+                                            onClick={() => {
+                                                if (currentChatInfo.type === 'private') {
+                                                    navigate(`/employees/${currentUser.id}/public/${currentChatInfo.chatId}`);
+                                                } else {
+                                                    openGroupInfoModal();
+                                                }
+                                            }}
+                                            disabled={!currentChatInfo}
+                                            className="text-left"
+                                        >
                                             <p className="font-bold text-lg truncate">{currentChatInfo.name}</p>
                                         </button>
                                         {currentChatInfo.type === 'private' ? (
