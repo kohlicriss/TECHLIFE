@@ -74,7 +74,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   const connectWebSocket = () => {
     const ws = new WebSocket(
-      `ws://192.168.0.247:8088/ws-ticket?ticketId=${ticketId}`
+      `wss://techlife.anasolconsultancy.com/ws-ticket?ticketId=${ticketId}`
     );
 
     ws.onopen = () => console.log("✅ WebSocket connected");
