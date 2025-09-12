@@ -751,13 +751,12 @@ const NotificationSystem = () => {
         </aside>
       </div>
 
-      {/* === MOBILE SIDEBAR MENU === */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
             <motion.div
               key="overlay"
-              className="fixed inset-0 bg-black bg-opacity-50 z-30 sm:hidden"
+              className="fixed inset-0 backdrop-blur-sm bg-opacity-50 z-30 sm:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
