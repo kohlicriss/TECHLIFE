@@ -115,4 +115,4 @@ export const tasksApi = createAxiosInstance('https://hrms.anasolconsultancyservi
 export const publicinfoApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
 export const chatApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
 export const notificationsApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/notification');
-export const ticketsApi = createAxiosInstance('https://localhost:8088/api/ticket')
+export const ticketsApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/ticket')
