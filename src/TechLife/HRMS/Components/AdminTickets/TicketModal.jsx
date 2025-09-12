@@ -57,7 +57,7 @@ export default function TicketModal({
     }
 
     const ws = new WebSocket(
-      `wss://techlife.anasolconsultancyservices.com/ws-ticket?ticketId=${ticket.ticketId}`
+      `wss://techlife.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}`
     );
     socketRef.current = ws;
 

@@ -74,7 +74,7 @@ export default function TicketDashboard() {
 
   // ✅ WebSocket
   const connectWebSocket = () => {
-    const socket = new WebSocket(`wss://techlife.anasolconsultancyservices.com/ws-ticket`);
+    const socket = new WebSocket(`wss://techlife.anasolconsultancyservices.com/api/ticket`);
     socket.onopen = () => console.log("✅ WebSocket connected");
 
     socket.onmessage = (event) => {
