@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from 'react';
-// Step 1: `useLocation` ni import cheskondi
 import { Link, useLocation } from 'react-router-dom';
 import { publicinfoApi } from '../../../../axiosInstance';
 import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye } from 'react-icons/fa';
@@ -43,13 +42,16 @@ const AllTeams = () => {
   const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
   const canCreateTeam = userRoles.includes('ADMIN') || userRoles.includes('HR');
 
-  // Step 2: URL parameters ni aadharanga cheskuni employee ID ni set cheyandi
+  // 🎯 URL parameters capture
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
 
+  // 🚀 Smart Employee ID selection
   const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : userData?.employeeId;
+
+  console.log('🔍 URL Parameters:', { fromContextMenu, targetEmployeeId, employeeIdToFetch });
 
   const toggleTeamExpansion = (teamId) => {
     const newExpandedTeams = new Set(expandedTeams);
@@ -63,47 +65,59 @@ const AllTeams = () => {
 
   const isTeamExpanded = (teamId) => expandedTeams.has(teamId);
 
+  // 🎯 Fetch teams for specific employee
   const fetchTeams = async () => {
     try {
       setLoading(true);
-      // employeeIdToFetch ni correct ga use cheyandi (Meeru chesinatle)
+      
       if (!employeeIdToFetch) {
         setError("Employee ID not found. Please login again.");
         return;
       }
 
+      console.log(`🚀 Fetching teams for employee: ${employeeIdToFetch}`);
+      
+      // 🔥 Use the correct employee ID in API call
       const response = await publicinfoApi.get(`employee/team/${employeeIdToFetch}`);
+      console.log('📊 Teams API Response:', response.data);
+      
       const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
       setTeams(teamsArray || []);
       setError(null);
     } catch (err) {
-      console.error("Error fetching teams:", err);
-      setError("Could not fetch teams data.");
+      console.error("❌ Error fetching teams:", err);
+      setError(`Could not fetch teams data for employee ${employeeIdToFetch}.`);
     } finally {
       setLoading(false);
     }
   };
 
+  // 🎯 Fetch all employees (for dropdowns - always uses current user context)
   const fetchEmployees = async () => {
     try {
+      console.log('🚀 Fetching all employees for dropdowns');
       const response = await publicinfoApi.get('employee/0/1000/employeeId/asc/employees');
       const formattedEmployees = response.data.map(emp => ({
         value: emp.employeeId,
         label: `${emp.displayName} (${emp.employeeId})`
       }));
       setEmployees(formattedEmployees);
+      console.log(`📋 Loaded ${formattedEmployees.length} employees for selection`);
     } catch (err) {
-      console.error("Error fetching employees:", err);
+      console.error("❌ Error fetching employees:", err);
     }
   };
 
-  // Step 3: useEffect lo employeeIdToFetch ni dependency ga add cheyandi
+  // 🔄 Effect with proper dependencies
   useEffect(() => {
-    fetchTeams();
+    console.log('🔄 useEffect triggered:', { canCreateTeam, employeeIdToFetch });
+    
+    fetchTeams(); // Always fetch teams based on employeeIdToFetch
+    
     if (canCreateTeam) {
-      fetchEmployees();
+      fetchEmployees(); // Only fetch employees if user can create teams
     }
-  }, [canCreateTeam, employeeIdToFetch]); // Dependency update cheyandi
+  }, [canCreateTeam, employeeIdToFetch]);
 
   const validateForm = () => {
     const errors = {};
@@ -113,6 +127,7 @@ const AllTeams = () => {
     return Object.keys(errors).length === 0;
   };
 
+  // 🎯 Create team (uses current user context)
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -127,8 +142,13 @@ const AllTeams = () => {
         projectId: "PRO1001"
     };
 
+    console.log('🚀 Creating team with data:', newTeamData);
+
     try {
-        await publicinfoApi.post('employee/team', newTeamData);
+        const response = await publicinfoApi.post('employee/team', newTeamData);
+        console.log('✅ Team created successfully:', response.data);
+        
+        // Refresh teams after creation
         await fetchTeams();
 
         setIsCreateModalOpen(false);
@@ -137,7 +157,7 @@ const AllTeams = () => {
         setTeamMembers([]);
         alert('Team created successfully!');
     } catch (err) {
-        console.error("Error creating team:", err);
+        console.error("❌ Error creating team:", err);
         setFormErrors({ general: err.response?.data?.message || 'Failed to create team. Please check the data and try again.' });
     } finally {
         setIsSubmitting(false);
@@ -145,22 +165,28 @@ const AllTeams = () => {
   };
 
   const handleDeleteClick = (team) => {
+    console.log('🗑️ Delete team clicked:', team);
     setSelectedTeam(team);
     setIsDeleteModalOpen(true);
   };
 
+  // 🎯 Delete team (uses current user context)
   const confirmDelete = async () => {
     if (!selectedTeam) return;
 
     setIsSubmitting(true);
+    console.log('🚀 Deleting team:', selectedTeam.teamId);
+    
     try {
-        await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
+        const response = await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
+        console.log('✅ Team deleted successfully:', response.data);
+        
         setTeams(teams.filter(t => t.teamId !== selectedTeam.teamId));
         setIsDeleteModalOpen(false);
         setSelectedTeam(null);
         alert('Team deleted successfully!');
     } catch (err) {
-        console.error("Error deleting team:", err);
+        console.error("❌ Error deleting team:", err);
         alert('Failed to delete team.');
     } finally {
         setIsSubmitting(false);
@@ -254,6 +280,7 @@ const AllTeams = () => {
                                     onChange={setTeamLead}
                                     isClearable
                                     styles={customSelectStyles}
+                                    placeholder="Select a team lead..."
                                 />
                             )}
                             {renderField("Team Members", "teamMembers",
@@ -264,6 +291,7 @@ const AllTeams = () => {
                                     value={teamMembers}
                                     onChange={setTeamMembers}
                                     styles={customSelectStyles}
+                                    placeholder="Select team members..."
                                 />
                             )}
                         </div>
@@ -305,106 +333,146 @@ const AllTeams = () => {
 
   return (
     <div className={`p-6 md:p-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        {/* Step 4: Conditional banner ni add cheyandi */}
+        {/* 🎯 Context Menu Banner */}
         {fromContextMenu && targetEmployeeId && (
             <div className={`mb-6 p-4 rounded-xl border-l-4 border-blue-500 shadow-md flex items-center space-x-3 ${theme === 'dark' ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
                 <FaEye />
                 <p className="font-semibold">
-                    Viewing teams for employee: {targetEmployeeId}
+                    🔍 Viewing teams for employee: <span className="font-mono">{targetEmployeeId}</span>
                 </p>
             </div>
         )}
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className={`text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          <FaUsers className="mr-3 text-blue-500" /> All Teams
-        </h1>
-        {canCreateTeam && (
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center shadow-md"
-          >
-            <FaPlus className="mr-2" /> Create Team
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
-        <ErrorDisplay message={error} />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teams.map((team, index) => {
-            const teamId = team.teamId || index;
-            const isExpanded = isTeamExpanded(teamId);
-            const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
-            const hasMoreMembers = team.employees?.length > 5;
-            const teamLead = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD');
-
-            return (
-              <div key={teamId} className={`rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
-                <div className="p-5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className={`text-xl font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{team.teamName}</h2>
-                      {teamLead && (
-                        <div className={`flex items-center text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                          <FaUserShield className="mr-2 text-green-500" />
-                          <strong>Lead:</strong><span className="ml-1">{teamLead.displayName}</span>
-                        </div>
-                      )}
-                    </div>
-                     <div className="flex space-x-2">
-                        <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors"><FaEye /></Link>
-                        {canModifyTeam && (
-                             <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors"><FaTrash /></button>
-                        )}
-                    </div>
-                  </div>
-                </div>
-                <div className={`px-5 py-4 border-t mt-auto ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                  <h3 className={`font-semibold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Members ({team.employees?.length || 0})</h3>
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      {membersToShow?.map(member => (
-                        <span key={member.employeeId} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
-                          {member.displayName}
-                        </span>
-                      ))}
-                    </div>
-                    {hasMoreMembers && (
-                      <button
-                        onClick={() => toggleTeamExpansion(teamId)}
-                        className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                      >
-                        {isExpanded ? (
-                          <><span>Show Less</span><FaChevronUp className="w-3 h-3" /></>
-                        ) : (
-                          <><span>+{team.employees.length - 5} more</span><FaChevronDown className="w-3 h-3" /></>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex justify-between items-center mb-6">
+            <h1 className={`text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                <FaUsers className="mr-3 text-blue-500" /> 
+                {fromContextMenu ? 'Employee Teams' : 'All Teams'}
+            </h1>
+            {canCreateTeam && !fromContextMenu && (
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center shadow-md"
+                >
+                    <FaPlus className="mr-2" /> Create Team
+                </button>
+            )}
         </div>
-      )}
 
-      {renderCreateTeamModal()}
+        {loading ? (
+            <LoadingSpinner />
+        ) : error ? (
+            <ErrorDisplay message={error} />
+        ) : (
+            <>
+                {teams.length === 0 ? (
+                    <div className="text-center py-16">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                        }`}>
+                            <FaUsers className={`w-10 h-10 ${
+                                theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                            }`} />
+                        </div>
+                        <h2 className={`text-xl font-bold mb-2 ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-800'
+                        }`}>
+                            {fromContextMenu ? 'No Teams Found' : 'No Teams Available'}
+                        </h2>
+                        <p className={`text-base mb-4 ${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>
+                            {fromContextMenu 
+                                ? `Employee ${targetEmployeeId} is not part of any teams yet.`
+                                : 'No teams have been created yet. Create your first team!'
+                            }
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {teams.map((team, index) => {
+                            const teamId = team.teamId || index;
+                            const isExpanded = isTeamExpanded(teamId);
+                            const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
+                            const hasMoreMembers = team.employees?.length > 5;
+                            const teamLead = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD');
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Delete Team"
-        message={`Are you sure you want to delete the team "${selectedTeam?.teamName}"? This action cannot be undone.`}
-        confirmText="Delete"
-        isConfirming={isSubmitting}
-      />
+                            return (
+                                <div key={teamId} className={`rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
+                                    <div className="p-5">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h2 className={`text-xl font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                    {team.teamName}
+                                                </h2>
+                                                {teamLead && (
+                                                    <div className={`flex items-center text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                        <FaUserShield className="mr-2 text-green-500" />
+                                                        <strong>Lead:</strong><span className="ml-1">{teamLead.displayName}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
+                                                    <FaEye />
+                                                </Link>
+                                                {canModifyTeam && !fromContextMenu && (
+                                                    <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
+                                                        <FaTrash />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={`px-5 py-4 border-t mt-auto ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                                        <h3 className={`font-semibold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Members ({team.employees?.length || 0})
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <div className="flex flex-wrap gap-2">
+                                                {membersToShow?.map(member => (
+                                                    <span key={member.employeeId} className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                                        member.employeeId === employeeIdToFetch 
+                                                            ? theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800'
+                                                            : theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'
+                                                    }`}>
+                                                        {member.displayName}
+                                                        {member.employeeId === employeeIdToFetch && ' (You)'}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            {hasMoreMembers && (
+                                                <button
+                                                    onClick={() => toggleTeamExpansion(teamId)}
+                                                    className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                                                >
+                                                    {isExpanded ? (
+                                                        <><span>Show Less</span><FaChevronUp className="w-3 h-3" /></>
+                                                    ) : (
+                                                        <><span>+{team.employees.length - 5} more</span><FaChevronDown className="w-3 h-3" /></>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </>
+        )}
 
+        {renderCreateTeamModal()}
+
+        <ConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={confirmDelete}
+            title="Delete Team"
+            message={`Are you sure you want to delete the team "${selectedTeam?.teamName}"? This action cannot be undone.`}
+            confirmText="Delete"
+            isConfirming={isSubmitting}
+        />
     </div>
   );
 };
