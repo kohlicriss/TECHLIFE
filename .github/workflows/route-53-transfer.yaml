@@ -51,6 +51,9 @@ jobs:
     - name: echo output
       run: terraform -chdir=./terraform/webhosting output -json
 
+    - name: test output
+      run: terraform -chdir=./terraform/webhosting output -json | jq .
+
     - name: Export CloudFront Distribution ID
       run: |
         dist_id=$(terraform -chdir=./terraform/webhosting output -json | jq -r '.cloud_front_distribution_id.value')
