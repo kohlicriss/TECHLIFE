@@ -51,7 +51,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   try {
     const res = await fetch(
-      `http://192.168.0.247:8088/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://techlife.anasolconsultancy.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -111,7 +111,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   try {
     await fetch(
-      `http://192.168.0.247:8088/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://techlife.anasolconsultancy.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         method: "POST",
         headers: {

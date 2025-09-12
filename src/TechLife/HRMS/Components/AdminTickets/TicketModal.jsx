@@ -94,7 +94,7 @@ export default function TicketModal({
       try {
         const token = localStorage.getItem("accessToken");
         const response = await axios.get(
-          `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+          `https://techlife.anasolconsultancy.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -128,7 +128,7 @@ export default function TicketModal({
 
     try {
       await axios.put(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        `https://techlife.anasolconsultancy.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
         payload,
         {
           headers: {
@@ -164,7 +164,7 @@ export default function TicketModal({
 
     try {
       const res = await axios.put(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        `https://techlife.anasolconsultancy.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
         payload,
         {
           headers: {

@@ -132,7 +132,7 @@ export default function TicketDashboard() {
 
     try {
       await fetch(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `https://techlife.anasolconsultancy.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -168,7 +168,7 @@ export default function TicketDashboard() {
 
     try {
       await fetch(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `https://techlife.anasolconsultancy.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
