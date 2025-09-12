@@ -854,6 +854,7 @@ function Profile() {
         
         <div className="p-8">
           {hasData ? (
+             // ✅ FIX: Changed grid-cols-2 to grid-cols-3 for better alignment
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {children}
             </div>
@@ -1036,16 +1037,17 @@ function Profile() {
                 <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
               </Section>
 
+              {/* ✅ UPDATED: Education and Experience sections now use flat structure with React.Fragment */}
               <Section sectionKey="education" title="Education Details" data={eduData}>
                 {eduData?.map((edu, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <React.Fragment key={index}>
                     <DetailItem label="Degree" value={edu.degreeType} />
                     <DetailItem label="Institution" value={edu.universityOrCollege} />
                     <DetailItem label="Specialization" value={edu.branchOrSpecialization} />
                     <DetailItem label="Years" value={`${edu.startYear} - ${edu.endYear}`} />
                     <DetailItem label="CGPA/Percentage" value={edu.cgpaOrPercentage} />
                     {edu.addFiles && (
-                       <div className="md:col-span-2 lg:col-span-1">
+                       <div className="md:col-span-1">
                          <a href={edu.addFiles} target="_blank" rel="noopener noreferrer" className={`p-4 rounded-xl border flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 ${
                            theme === 'dark' 
                              ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20' 
@@ -1056,19 +1058,19 @@ function Profile() {
                          </a>
                        </div>
                      )}
-                  </div>
+                  </React.Fragment>
                 ))}
               </Section>
               
               <Section sectionKey="experience" title="Previous Experience" data={experience}>
                 {experience?.map((exp, index) => (
-                  <div key={exp.id || index} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <React.Fragment key={exp.id || index}>
                     <DetailItem label="Company Name" value={exp.companyName} />
                     <DetailItem label="Job Title" value={exp.jobTitle} />
                     <DetailItem label="Location" value={exp.location} />
                     <DetailItem label="Duration" value={`${exp.startMonth} ${exp.startYear} - ${exp.endMonth ? exp.endMonth + ' ' + exp.endYear : 'Present'}`} />
                     <DetailItem label="Description" value={exp.description} />
-                  </div>
+                  </React.Fragment>
                 ))}
               </Section>
             </>

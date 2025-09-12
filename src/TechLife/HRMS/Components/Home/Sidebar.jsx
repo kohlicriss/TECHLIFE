@@ -28,7 +28,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
-      await fetch("http://hrms.anasolConsultancyservices.com/api/auth/logout", {
+      await fetch("https://hrms.anasolConsultancyservices.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -40,7 +40,8 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         "accessToken", 
         "emppayload", 
         "logedempid", 
-        "logedemprole"
+        "logedemprole",
+        "loggedInUserImage"
       ];
       
       // Remove specific keys only
@@ -83,7 +84,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } ${theme === 'dark' ? 'bg-black' : 'bg-white'} shadow-lg z-[50] transform transition-all duration-200 ease-in-out ${
+        } ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-lg z-[50] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
@@ -101,7 +102,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               onClick={() => setCollapsed(!collapsed)}
               className={`border rounded-full p-1 transition ${
                 theme === 'dark' 
-                  ? 'bg-gray-800 border-gray-600 hover:bg-gray-700 text-white' 
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
                   : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
               }`}
             >

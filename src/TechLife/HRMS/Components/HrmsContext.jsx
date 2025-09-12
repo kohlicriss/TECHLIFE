@@ -58,7 +58,7 @@ const HrmsContext = ({ children }) => {
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://hrms.anasolconsultancyservices.com/api/notification/unread-count/${userData?.employeeId}`
+        `https://hrms.anasolconsultancyservices.com/api/notification/unread-count/${userData?.employeeId}`
       );
       setUnreadCount(res.data);
       console.log("Notification count", res.data);
@@ -75,7 +75,7 @@ const HrmsContext = ({ children }) => {
           prev.map((msg) => (msg.id === id ? { ...msg, read: true } : msg))
         );
         await axios.post(
-          `http://hrms.anasolconsultancyservices.com/api/notification/read/${id}`
+          `https://hrms.anasolconsultancyservices.com/api/notification/read/${id}`
         );
         fetchUnreadCount();
       } catch (err) {
@@ -94,7 +94,7 @@ const HrmsContext = ({ children }) => {
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await axios.get(
-        `http://hrms.anasolconsultancyservices.com/api/notification/all/${userData?.employeeId}`
+        `https://hrms.anasolconsultancyservices.com/api/notification/all/${userData?.employeeId}`
       );
       const data = res.data;
       setGdata(data);
@@ -114,7 +114,7 @@ const HrmsContext = ({ children }) => {
   useEffect(() => {
     console.log("Setting up SSE connection...");
     const eventSource = new EventSource(
-      `http://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData?.employeeId}`
+      `https://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData?.employeeId}`
     );
 
 

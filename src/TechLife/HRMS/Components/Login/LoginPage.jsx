@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
 import logo from "../assets/anasol-logo.png"
 import { Context } from "../HrmsContext";
+import { publicinfoApi } from "../../../../axiosInstance"; // Import publicinfoApi
+
 const MAX_ATTEMPTS_PHASE1 = 5;
 const MAX_ATTEMPTS_PHASE2 = 7;
 const LOCKOUT_DURATION_PHASE1 = 60;
@@ -128,7 +130,7 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const response = await fetch("http://hrms.anasolconsultancyservices.com/api/auth/login", {
+      const response = await fetch("https://hrms.anasolconsultancyservices.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, password: password }),
@@ -151,6 +153,18 @@ const LoginPage = ({ onLogin }) => {
           setUserData(decodedPayload);
           
           employeeIdFromToken = decodedPayload.employeeId;
+
+          // NEW: Fetch full profile to get image and store it
+          try {
+            const profileResponse = await publicinfoApi.get(`/employee/${employeeIdFromToken}`, {
+              headers: { 'Authorization': `Bearer ${data.accessToken}` }
+            });
+            if (profileResponse.data.employeeImage) {
+              localStorage.setItem("loggedInUserImage", profileResponse.data.employeeImage);
+            }
+          } catch (profileError) {
+            console.error("Failed to fetch profile info on login:", profileError);
+          }
         }
 
         setWrongAttempts(0);
@@ -392,12 +406,12 @@ const LoginPage = ({ onLogin }) => {
         : 'bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100'
     }`}>
     
-      {/* <div className="fixed top-6 right-6 z-50">
+      <div className="fixed top-6 right-6 z-50">
         <DarkModeToggle 
           isDark={theme === 'dark'} 
           onToggle={handleThemeToggle}
         />
-      </div> */}
+      </div>
      
 
       <div className="absolute inset-0 overflow-hidden z-0">
@@ -436,7 +450,7 @@ const LoginPage = ({ onLogin }) => {
                 Hello,
               </h2>
               <h1 className="text-4xl lg:text-5xl font-bold animate-fade-in animation-delay-200">
-                Welcome!
+                Welcome
               </h1>
               <p className="text-lg lg:text-xl opacity-80 animate-fade-in animation-delay-400 text-indigo-100">
                 Login to continue access

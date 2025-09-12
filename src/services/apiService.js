@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const AUTH_API_URL = 'http://hrms.anasolconsultancyservices.com/api/auth/refresh-token';
+const AUTH_API_URL = 'https://hrms.anasolconsultancyservices.com/api/auth/refresh-token';
 
 function cloneFormData(formData) {
     const newFormData = new FormData();
@@ -110,7 +110,7 @@ window.addEventListener('storage', (event) => {
         console.log("🔄 Token updated in another tab:", event.newValue);
     }
 });
-export const chatApi = createAxiosInstance('http://hrms.anasolconsultancyservices.com/api');
+export const chatApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
 
 export const getChatOverview = async (employeeId, page = 0, size = 10) => {
   try {
