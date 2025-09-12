@@ -48,6 +48,9 @@ jobs:
     - name: Install jq
       run: sudo apt-get update && sudo apt-get install -y jq
 
+    - name: echo output
+      run: terraform -chdir=./terraform/webhosting output -json
+
     - name: Get CloudFront Hosted Zone
       run: |
         value=$(terraform -chdir=./terraform/webhosting output -json | jq -r .cloud_front_distribution_id.value)
