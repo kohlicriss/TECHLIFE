@@ -45,18 +45,18 @@ jobs:
     # - name: Terraform Apply
     #   run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve
       
-    - name: Install jq
-      run: sudo apt-get update && sudo apt-get install -y jq
+    # - name: Install jq
+    #   run: sudo apt-get update && sudo apt-get install -y jq
 
     - name: echo output
       run: terraform -chdir=./terraform/webhosting output
 
     - name: test output
-      run: terraform -chdir=./terraform/webhosting output cloud_front_distribution_id
+      run: terraform -chdir=./terraform/webhosting output cloud_front_distribution_id | tr -d '"'
       
     - name: Export CloudFront Distribution ID
       run: |
-        dist_id=$(terraform -chdir=./terraform/webhosting output cloud_front_distribution_id)
+        dist_id=$(terraform -chdir=./terraform/webhosting output cloud_front_distribution_id | tr -d '"')
         echo "cloud_front_distribution_id=$dist_id" >> $GITHUB_ENV
 
 
