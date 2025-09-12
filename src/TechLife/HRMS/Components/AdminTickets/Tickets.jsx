@@ -74,7 +74,7 @@ export default function TicketDashboard() {
 
   // ✅ WebSocket
   const connectWebSocket = () => {
-    const socket = new WebSocket(`wss://techlife.anasolconsultancyservices.com/api/ticket`);
+    const socket = new WebSocket(`wss://hrms.anasolconsultancyservices.com/api/ticket`);
     socket.onopen = () => console.log("✅ WebSocket connected");
 
     socket.onmessage = (event) => {
@@ -132,7 +132,7 @@ export default function TicketDashboard() {
 
     try {
       await fetch(
-        `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -168,7 +168,7 @@ export default function TicketDashboard() {
 
     try {
       await fetch(
-        `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

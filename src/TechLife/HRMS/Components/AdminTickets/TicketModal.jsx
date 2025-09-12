@@ -57,7 +57,7 @@ export default function TicketModal({
     }
 
     const ws = new WebSocket(
-      `wss://techlife.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}`
+      `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}`
     );
     socketRef.current = ws;
 
@@ -94,7 +94,7 @@ export default function TicketModal({
       try {
         const token = localStorage.getItem("accessToken");
         const response = await axios.get(
-          `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+          `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -128,7 +128,7 @@ export default function TicketModal({
 
     try {
       await axios.put(
-        `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
         payload,
         {
           headers: {
@@ -164,7 +164,7 @@ export default function TicketModal({
 
     try {
       const res = await axios.put(
-        `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
         payload,
         {
           headers: {

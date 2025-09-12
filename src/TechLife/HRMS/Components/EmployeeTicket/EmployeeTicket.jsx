@@ -53,9 +53,9 @@ export default function EmployeeTicket() {
       try {
         let url;
         if (activeTab === "Assigned Tickets") {
-          // url = `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
+          // url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
         } else {
-          url = `https://techlife.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}`;
+          url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}`;
         }
 
         const res = await axios.get(url, {
@@ -110,7 +110,7 @@ export default function EmployeeTicket() {
 
       console.log("Payload being sent:", payload);
 
-      const res = await fetch("https://techlife.anasolconsultancyservices.com/api/ticket/employee/create", {
+      const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
