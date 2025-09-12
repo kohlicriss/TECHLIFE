@@ -56,7 +56,7 @@ jobs:
       
     - name: Export CloudFront Distribution ID
       run: |
-        dist_id=$(terraform -chdir=./terraform/webhosting output -raw cloud_front_distribution_id 2>/dev/null)
+        dist_id=$(terraform -chdir=./terraform/webhosting output cloud_front_distribution_id)
         echo "cloud_front_distribution_id=$dist_id" >> $GITHUB_ENV
 
 
