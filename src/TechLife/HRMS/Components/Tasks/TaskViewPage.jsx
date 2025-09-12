@@ -19,39 +19,32 @@ import {
     MessageSquare,
     Check,
     Trash2,
+    Plus,
+    AlertCircle,
 } from "lucide-react";
 
-// Customized Modal Components
-const Modal = ({ children, onClose, title, type }) => {
+// Modern Modal Components with Documents.jsx styling
+const Modal = ({ children, onClose, title, type, theme }) => {
     let titleClass = "";
-    let buttonClass = "";
     let icon = null;
 
     if (type === "confirm") {
         titleClass = "text-yellow-600";
-        buttonClass = "bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500";
         icon = <Info className="h-6 w-6 text-yellow-500" />;
     } else if (type === "success") {
         titleClass = "text-green-600";
-        buttonClass = "bg-green-500 hover:bg-green-600 focus:ring-green-500";
         icon = <CheckCircle className="h-6 w-6 text-green-500" />;
     } else if (type === "error") {
         titleClass = "text-red-600";
-        buttonClass = "bg-red-500 hover:bg-red-600 focus:ring-red-500";
         icon = <XCircle className="h-6 w-6 text-red-500" />;
     }
 
     return (
-        <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-200 transition-opacity duration-300 animate-in fade-in-0">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm mx-4 border border-gray-200 transform transition-all duration-300 scale-95 animate-in zoom-in-95">
-                <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
-                    <h3 className={`text-xl font-bold ${titleClass} flex items-center`}>
-                        {icon && <span className="mr-2">{icon}</span>}
-                        {title}
-                    </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition-colors rounded-full p-1">
-                        <XCircle className="h-6 w-6" />
-                    </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] animate-fadeIn">
+            <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md mx-4 border animate-slideUp ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {icon && <span className="mr-3">{icon}</span>}
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
                 </div>
                 {children}
             </div>
@@ -59,13 +52,13 @@ const Modal = ({ children, onClose, title, type }) => {
     );
 };
 
-const ErrorPopup = ({ message, onClose }) => (
-    <Modal onClose={onClose} title="An Error Occurred" type="error">
-        <p className="text-gray-700 mb-6 text-base whitespace-pre-wrap">{message}</p>
+const ErrorPopup = ({ message, onClose, theme }) => (
+    <Modal onClose={onClose} title="An Error Occurred" type="error" theme={theme}>
+        <p className={`mb-6 text-base whitespace-pre-wrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{message}</p>
         <div className="flex justify-end">
             <button
                 onClick={onClose}
-                className="bg-red-500 text-white font-medium py-2 px-6 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all"
+                className="bg-red-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-red-700 transition-all duration-200 focus:ring-4 focus:ring-red-500/20"
             >
                 OK
             </button>
@@ -73,13 +66,13 @@ const ErrorPopup = ({ message, onClose }) => (
     </Modal>
 );
 
-const SuccessPopup = ({ message, onClose }) => (
-    <Modal onClose={onClose} title="Success" type="success">
-        <p className="text-gray-700 mb-6 text-base whitespace-pre-wrap">{message}</p>
+const SuccessPopup = ({ message, onClose, theme }) => (
+    <Modal onClose={onClose} title="Success" type="success" theme={theme}>
+        <p className={`mb-6 text-base whitespace-pre-wrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{message}</p>
         <div className="flex justify-end">
             <button
                 onClick={onClose}
-                className="bg-green-500 text-white font-medium py-2 px-6 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all"
+                className="bg-green-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-green-700 transition-all duration-200 focus:ring-4 focus:ring-green-500/20"
             >
                 OK
             </button>
@@ -87,21 +80,21 @@ const SuccessPopup = ({ message, onClose }) => (
     </Modal>
 );
 
-const ConfirmDeletePopup = ({ onConfirm, onCancel }) => (
-    <Modal onClose={onCancel} title="Confirm Deletion" type="confirm">
-        <p className="text-gray-700 mb-6 text-base">
+const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
+    <Modal onClose={onCancel} title="Confirm Deletion" type="confirm" theme={theme}>
+        <p className={`mb-6 text-base ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
             Are you sure you want to permanently delete this history entry? This action cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
             <button
                 onClick={onCancel}
-                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                className={`px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-400/20 ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
                 Cancel
             </button>
             <button
                 onClick={onConfirm}
-                className="bg-red-500 text-white font-medium py-2 px-6 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all"
+                className="bg-red-600 text-white font-semibold py-3 px-8 rounded-xl hover:bg-red-700 transition-all duration-200 focus:ring-4 focus:ring-red-500/20"
             >
                 Delete
             </button>
@@ -109,6 +102,7 @@ const ConfirmDeletePopup = ({ onConfirm, onCancel }) => (
     </Modal>
 );
 
+// Modern Update History Popup - Documents.jsx Style
 const UpdateHistoryPopup = ({
     setShowUpdateHistoryPopup,
     handleUpdateHistorySubmit,
@@ -117,165 +111,200 @@ const UpdateHistoryPopup = ({
     handleUpdateHistoryFileChange,
     assignedBy,
     employeeId,
-}) => (
-    <div className="fixed inset-0  bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-150 transition-all duration-300 animate-in fade-in-0">
-        <div className="bg-gradient-to-br from-white to-blue-50 p-1 rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95">
-            <div className="bg-white p-5 sm:p-7 rounded-xl border border-blue-100">
-                <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-                        Update Task History
-                    </h3>
-                    <button
-                        onClick={() => setShowUpdateHistoryPopup(false)}
-                        className="text-gray-400 hover:text-red-500 transition-colors rounded-full p-1 focus:outline-none"
+    theme,
+}) => {
+    // Field renderer similar to Documents.jsx
+    const renderField = (label, name, type = "text", required = false, placeholder = "") => {
+        const fieldValue = updateHistoryData[name] || "";
+        
+        return (
+            <div className="group relative">
+                <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                }`}>
+                    {label}
+                    {required && <span className="text-red-500 ml-1 text-base">*</span>}
+                </label>
+
+                {type === "textarea" ? (
+                    <textarea
+                        name={name}
+                        value={fieldValue}
+                        onChange={handleUpdateHistoryInputChange}
+                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 resize-none h-32
+                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                            ${theme === 'dark'
+                                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                            }`}
+                        placeholder={placeholder}
+                        required={required}
+                    />
+                ) : (
+                    <input
+                        type={type}
+                        name={name}
+                        value={fieldValue}
+                        onChange={handleUpdateHistoryInputChange}
+                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                            ${theme === 'dark'
+                                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                            }`}
+                        placeholder={placeholder}
+                        required={required}
+                    />
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
+            <div className={`rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+            }`}>
+                {/* Header */}
+                <div className={`px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white relative overflow-hidden`}>
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <div className="text-4xl">
+                                <Plus className="w-10 h-10" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold">Update Task History</h2>
+                                <p className="text-white/90 text-sm">Add progress updates and track changes</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setShowUpdateHistoryPopup(false)} 
+                            className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" 
+                            aria-label="Close"
+                        >
+                            <XCircle className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Form Content */}
+                <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
+                    <form onSubmit={handleUpdateHistorySubmit} className="p-8 space-y-8">
+                        {/* Basic Information Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-8 rounded-full ${theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'}`}></div>
+                                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Update Information</h3>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {renderField('Changes', 'changes', 'text', true, 'e.g., Status: IN_PROGRESS → COMPLETED')}
+                                {renderField('Note', 'note', 'text', false, 'Add a descriptive note')}
+                            </div>
+
+                            {renderField('Related Links', 'relatedLinks', 'text', false, 'https://example.com, https://another.com')}
+
+                            {employeeId === assignedBy && (
+                                renderField('Remark', 'remark', 'text', false, 'Add a remark')
+                            )}
+                        </div>
+
+                        {/* File Upload Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center space-x-2">
+                                <div className={`w-2 h-8 rounded-full ${theme === 'dark' ? 'bg-orange-500' : 'bg-orange-600'}`}></div>
+                                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>File Attachments</h3>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className={`block text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    Upload Files (Max 5)
+                                </label>
+                                <div className={`relative border-2 border-dashed rounded-xl transition-all duration-300 cursor-pointer
+                                    ${theme === 'dark'
+                                        ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
+                                        : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                                    }`}>
+                                    <input
+                                        type="file"
+                                        name="files"
+                                        multiple
+                                        onChange={handleUpdateHistoryFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        accept="*/*"
+                                    />
+                                    <div className="px-6 py-8 text-center">
+                                        <Upload className={`mx-auto h-12 w-12 mb-4 ${
+                                            theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                                        }`} />
+                                        <p className={`text-sm font-medium mb-1 ${
+                                            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                            Drop your files here, or <span className="text-blue-600">browse</span>
+                                        </p>
+                                        <p className={`text-xs ${
+                                            theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+                                        }`}>Any files (Max 5 files)</p>
+                                    </div>
+                                </div>
+
+                                {updateHistoryData.relatedFileLinks.length > 0 && (
+                                    <div className="space-y-3">
+                                        <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Selected files:</p>
+                                        <div className="space-y-2">
+                                            {updateHistoryData.relatedFileLinks.map((file, index) => (
+                                                <div key={index} className={`flex justify-between items-center p-4 rounded-xl border transition-all duration-300 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className={`p-2 rounded ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
+                                                            <FileText className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                                                        </div>
+                                                        <span className={`text-sm truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}`} title={file.name}>
+                                                            {file.name}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                {/* Footer */}
+                <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
+                    theme === 'dark' 
+                        ? 'bg-gray-700 border-gray-600' 
+                        : 'bg-gray-50 border-gray-200'
+                }`}>
+                    <button 
+                        type="button" 
+                        onClick={() => setShowUpdateHistoryPopup(false)} 
+                        className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+                            theme === 'dark'
+                                ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                        }`}
                     >
-                        <XCircle className="h-6 w-6" />
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={handleUpdateHistorySubmit}
+                        className={`px-10 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl
+                                    hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                                    focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2`}
+                    >
+                        <Upload className="w-5 h-5" />
+                        <span>Update Changes</span>
                     </button>
                 </div>
-                <form onSubmit={handleUpdateHistorySubmit} className="space-y-4">
-                    <div>
-                        <label
-                            htmlFor="changes"
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Changes <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="changes"
-                            id="changes"
-                            placeholder="e.g., Status: IN_PROGRESS → COMPLETED"
-                            value={updateHistoryData.changes}
-                            onChange={handleUpdateHistoryInputChange}
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="note"
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Note
-                        </label>
-                        <input
-                            type="text"
-                            name="note"
-                            id="note"
-                            placeholder="Add a descriptive note"
-                            value={updateHistoryData.note}
-                            onChange={handleUpdateHistoryInputChange}
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="relatedLinks"
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Related Links
-                        </label>
-                        <input
-                            type="text"
-                            name="relatedLinks"
-                            id="relatedLinks"
-                            placeholder="https://example.com, https://another.com"
-                            value={updateHistoryData.relatedLinks}
-                            onChange={handleUpdateHistoryInputChange}
-                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                    </div>
-
-                    {employeeId === assignedBy && (
-                        <div>
-                            <label
-                                htmlFor="remark"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                                Remark
-                            </label>
-                            <input
-                                type="text"
-                                name="remark"
-                                id="remark"
-                                placeholder="Add a remark"
-                                value={updateHistoryData.remark}
-                                onChange={handleUpdateHistoryInputChange}
-                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                            />
-                        </div>
-                    )}
-
-                    <div>
-                        <label
-                            htmlFor="files"
-                            className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Upload Files (Max 5)
-                        </label>
-                        <div className="flex items-center justify-center w-full">
-                            <label className="flex flex-col w-full border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-lg cursor-pointer bg-blue-50 transition-all duration-200">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                                    <Upload className="h-8 w-8 text-blue-400 mb-2" />
-                                    <p className="text-sm text-gray-500 text-center">
-                                        <span className="font-semibold text-blue-600">Click to upload</span>
-                                    </p>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Any files (Max 5 files)
-                                    </p>
-                                </div>
-                                <input
-                                    type="file"
-                                    name="files"
-                                    id="files"
-                                    multiple
-                                    onChange={handleUpdateHistoryFileChange}
-                                    className="hidden"
-                                />
-                            </label>
-                        </div>
-
-                        {updateHistoryData.relatedFileLinks.length > 0 && (
-                            <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-100">
-                                <p className="text-sm font-medium text-blue-800 mb-1">Selected files:</p>
-                                <ul className="space-y-1 max-h-32 overflow-y-auto">
-                                    {updateHistoryData.relatedFileLinks.map((file, index) => (
-                                        <li
-                                            key={index}
-                                            className="text-xs bg-white rounded px-3 py-1.5 border border-blue-100 flex items-center"
-                                        >
-                                            <FileText className="h-3 w-3 mr-2 text-blue-500 flex-shrink-0" />
-                                            <span className="truncate">{file.name}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={() => setShowUpdateHistoryPopup(false)}
-                            className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
-                        >
-                            <Upload className="h-4 w-4 mr-2 text-blue-100" />
-                            Update Changes
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const TaskViewPage = () => {
     const { projectid, id } = useParams();
@@ -283,7 +312,7 @@ const TaskViewPage = () => {
 
     const [assignedBy, setAssignedBy] = useState("");
     const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);
-    const { userData } = useContext(Context);
+    const { userData, theme } = useContext(Context);
     const [updateHistoryData, setUpdateHistoryData] = useState({
         changes: "",
         note: "",
@@ -304,10 +333,9 @@ const TaskViewPage = () => {
     const [editingRowId, setEditingRowId] = useState(null);
     const [editRowData, setEditRowData] = useState(null);
     
-    // New helper function to extract detailed error messages
+    // Helper function to extract detailed error messages
     const getErrorMessage = (error) => {
         if (error.response) {
-            // Server responded with a status code outside the 2xx range
             if (error.response.data) {
                 if (typeof error.response.data.message === 'string') {
                     return error.response.data.message;
@@ -321,10 +349,8 @@ const TaskViewPage = () => {
             }
             return `Error: ${error.response.status} - ${error.response.statusText}`;
         } else if (error.request) {
-            // The request was made but no response was received
             return "No response from the server. Please check your network connection.";
         } else {
-            // Something else happened while setting up the request
             return error.message || "An unknown error occurred.";
         }
     };
@@ -581,7 +607,6 @@ const TaskViewPage = () => {
         }
     };
 
-
     const renderRelatedLinks = (links) => {
         if (!links || links.length === 0) return "-";
         return (
@@ -652,8 +677,8 @@ const TaskViewPage = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-100">
-                <div className="text-xl font-semibold text-gray-600">
+            <div className={`flex justify-center items-center h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
+                <div className={`text-xl font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Loading Task Details...
                 </div>
             </div>
@@ -662,15 +687,15 @@ const TaskViewPage = () => {
 
     if (error) {
         return (
-            <div className="flex justify-center items-center h-screen bg-red-50">
-                <div className="text-xl font-semibold text-red-600 p-8 text-center">{error}</div>
+            <div className={`flex justify-center items-center h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-red-50'}`}>
+                <div className={`text-xl font-semibold p-8 text-center ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{error}</div>
             </div>
         );
     }
 
     if (!currentTask) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gradient-to-br from-gray-50 to-blue-100 text-red-600 text-2xl font-semibold">
+            <div className={`flex justify-center items-center h-screen text-2xl font-semibold ${theme === 'dark' ? 'bg-gray-900 text-red-400' : 'bg-gradient-to-br from-gray-50 to-blue-100 text-red-600'}`}>
                 Task not found. Please check the ID.
             </div>
         );
@@ -681,30 +706,30 @@ const TaskViewPage = () => {
 
     return (
         <>
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 py-6 px-4 sm:py-10 sm:px-6 lg:px-8 flex items-start justify-center font-sans">
-                <div className="w-full bg-white p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl border border-gray-100">
-                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+            <div className={`min-h-screen py-6 px-4 sm:py-10 sm:px-6 lg:px-8 flex items-start justify-center font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
+                <div className={`w-full p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                    <div className={`flex items-center justify-between mb-8 pb-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <button
                             onClick={() => navigate(`/tasks/${userData?.employeeId}`)}
-                            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
+                            className={`p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700 hover:text-indigo-400' : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-700'}`}
                             aria-label="Go back to tasks list"
                         >
                             <ChevronLeft className="h-7 w-7" />
                         </button>
-                        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 flex-grow text-center">
+                        <h2 className={`text-3xl sm:text-4xl font-extrabold flex-grow text-center ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                             Task Details
                         </h2>
                     </div>
 
                     <div className="flex flex-col gap-8">
-                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
+                        <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                             <div className="mb-8 space-y-6">
-                                <h3 className="text-2xl sm:text-3xl font-bold text-slate-800 leading-tight">
+                                <h3 className={`text-2xl sm:text-3xl font-bold leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                                     {currentTask.title}
                                 </h3>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                                    <div className="flex items-center text-gray-700">
+                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                         <Info className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                                         <span className="font-semibold mr-2">Priority:</span>
                                         <span
@@ -715,7 +740,7 @@ const TaskViewPage = () => {
                                             {currentTask.priority}
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-gray-700">
+                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                         <Clock className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                                         <span className="font-semibold mr-2">Status:</span>
                                         <span
@@ -726,36 +751,36 @@ const TaskViewPage = () => {
                                             {currentTask.status}
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-gray-700">
+                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                         <CalendarDays className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                                         <span className="font-semibold mr-2">Due Date:</span>
-                                        <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
+                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
                                             {currentTask.dueDate}
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-gray-700">
+                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                         <CalendarDays className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                                         <span className="font-semibold mr-2">Created On:</span>
-                                        <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
+                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
                                             {currentTask.createdDate}
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-gray-700">
+                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                         <User className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                                         <span className="font-semibold mr-2">Created By:</span>
-                                        <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
+                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
                                             {currentTask.createdBy}
                                         </span>
                                     </div>
-                                    <div className="flex items-center text-gray-700">
+                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                         <User className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
                                         <span className="font-semibold mr-2">Assigned To:</span>
-                                        <span className="text-sm bg-white p-2 rounded-md border border-gray-200 shadow-sm flex-grow">
+                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
                                             {currentTask.assignedTo}
                                         </span>
                                     </div>
                                     {currentTask.completedDate && (
-                                        <div className="flex items-center text-gray-700">
+                                        <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                             <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
                                             <span className="font-semibold mr-2">
                                                 Completed On:
@@ -766,7 +791,7 @@ const TaskViewPage = () => {
                                         </div>
                                     )}
                                     {currentTask.rating && (
-                                        <div className="flex items-center text-gray-700">
+                                        <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                             <Star className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" />
                                             <span className="font-semibold mr-2">Rating:</span>
                                             <span className="text-sm">{currentTask.rating} / 10</span>
@@ -776,21 +801,21 @@ const TaskViewPage = () => {
                             </div>
 
                             <div className="mb-8">
-                                <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                                <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                                     Description
                                 </h4>
-                                <div className="bg-white p-5 rounded-lg border border-gray-200 text-gray-700 leading-relaxed shadow-sm">
+                                <div className={`p-5 rounded-lg border leading-relaxed shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-gray-300' : 'bg-white border-gray-200 text-gray-700'}`}>
                                     {currentTask.description}
                                 </div>
                             </div>
 
                             {currentTask.remark && (
                                 <div className="mb-8">
-                                    <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                                    <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                                         Remark
                                     </h4>
-                                    <div className="bg-gray-100 p-5 rounded-lg border border-gray-200 text-gray-800 leading-relaxed shadow-sm">
-                                        <MessageSquare className="inline-block h-4 w-4 mr-2 text-gray-500" />{" "}
+                                    <div className={`p-5 rounded-lg border leading-relaxed shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-gray-300' : 'bg-gray-100 border-gray-200 text-gray-800'}`}>
+                                        <MessageSquare className={`inline-block h-4 w-4 mr-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />{" "}
                                         {currentTask.remark}
                                     </div>
                                 </div>
@@ -798,10 +823,10 @@ const TaskViewPage = () => {
 
                             {currentTask.completionNote && (
                                 <div className="mb-8">
-                                    <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                                    <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                                         Completion Note
                                     </h4>
-                                    <div className="bg-green-50 p-5 rounded-lg border border-green-200 text-green-800 leading-relaxed shadow-sm">
+                                    <div className={`p-5 rounded-lg border leading-relaxed shadow-sm ${theme === 'dark' ? 'bg-green-900/30 border-green-700 text-green-300' : 'bg-green-50 border-green-200 text-green-800'}`}>
                                         {currentTask.completionNote}
                                     </div>
                                 </div>
@@ -809,13 +834,13 @@ const TaskViewPage = () => {
 
                             {(currentTask.relatedLinks?.length > 0 || currentTask.attachedFileLinks?.length > 0) && (
                                 <div className="mb-8">
-                                    <h4 className="text-xl font-semibold text-gray-800 mb-3">
+                                    <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                                         Related Links & Files
                                     </h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {currentTask.relatedLinks?.length > 0 && (
-                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
-                                                <h5 className="font-medium text-blue-800 flex items-center mb-2">
+                                            <div className={`p-4 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+                                                <h5 className={`font-medium flex items-center mb-2 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-800'}`}>
                                                     <GitFork className="h-4 w-4 mr-2" /> Related Links:
                                                 </h5>
                                                 <ul className="space-y-1">
@@ -835,8 +860,8 @@ const TaskViewPage = () => {
                                             </div>
                                         )}
                                         {currentTask.attachedFileLinks?.length > 0 && (
-                                            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 shadow-sm">
-                                                <h5 className="font-medium text-purple-800 flex items-center mb-2">
+                                            <div className={`p-4 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-purple-900/30 border-purple-700' : 'bg-purple-50 border-purple-200'}`}>
+                                                <h5 className={`font-medium flex items-center mb-2 ${theme === 'dark' ? 'text-purple-300' : 'text-purple-800'}`}>
                                                     <FileText className="h-4 w-4 mr-2" /> Attached Files:
                                                 </h5>
                                                 <ul className="space-y-1">
@@ -860,61 +885,62 @@ const TaskViewPage = () => {
                             )}
                         </div>
 
-                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
+                        <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                             <div className="mb-8">
                                 <div className="flex justify-between items-center mb-3">
-                                    <h4 className="text-xl font-semibold text-gray-800">
+                                    <h4 className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                                         Update History
                                     </h4>
                                     {!isTaskCompleted && !isAssigner && (
                                         <button
                                             onClick={() => setShowUpdateHistoryPopup(true)}
-                                            className="flex items-center justify-center bg-black text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all duration-200 text-sm"
+                                            className={`flex items-center justify-center font-semibold py-3 px-6 rounded-xl shadow-md focus:outline-none focus:ring-4 focus:ring-opacity-75 transition-all duration-200 ${theme === 'dark' ? 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500' : 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500'}`}
                                         >
+                                            <Plus className="w-4 h-4 mr-2" />
                                             Create History
                                         </button>
                                     )}
                                 </div>
                                 {updateHistory?.length > 0 ? (
-                                    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                                    <div className={`overflow-x-auto rounded-lg border shadow-sm ${theme === 'dark' ? 'border-gray-600' : 'border-gray-200'}`}>
                                         <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-white">
+                                            <thead className={theme === 'dark' ? 'bg-gray-600' : 'bg-white'}>
                                                 <tr>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated Date</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Changes</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Related Links</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Related Files</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviewed By</th>
-                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>S.No</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Updated Date</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Changes</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Note</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Related Links</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Related Files</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Remarks</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Reviewed By</th>
+                                                    <th scope="col" className={`px-4 py-2 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>Actions</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            <tbody className={`divide-y transition-colors duration-150 ${theme === 'dark' ? 'bg-gray-700 divide-gray-600' : 'bg-white divide-gray-200'}`}>
                                                 {updateHistory.map((history, index) => (
-                                                    <tr key={history.id} className="hover:bg-gray-50 transition-colors duration-150">
-                                                        <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{index + 1}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500 border border-gray-300">{new Date(history.updatedDate).toLocaleString()}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{history.changes}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">{history.note || "-"}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{renderRelatedLinks(history.relatedLinks)}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{renderRelatedFiles(history.relatedFileLinks)}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500 italic border border-gray-300">
+                                                    <tr key={history.id} className={`transition-colors duration-150 ${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}`}>
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>{index + 1}</td>
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-gray-300 border-gray-600' : 'text-gray-500 border-gray-300'}`}>{new Date(history.updatedDate).toLocaleString()}</td>
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>{history.changes}</td>
+                                                        <td className={`px-4 py-3 text-sm italic border ${theme === 'dark' ? 'text-gray-300 border-gray-600' : 'text-gray-500 border-gray-300'}`}>{history.note || "-"}</td>
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>{renderRelatedLinks(history.relatedLinks)}</td>
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>{renderRelatedFiles(history.relatedFileLinks)}</td>
+                                                        <td className={`px-4 py-3 text-sm italic border ${theme === 'dark' ? 'text-gray-300 border-gray-600' : 'text-gray-500 border-gray-300'}`}>
                                                             {editingRowId === history.id ? (
                                                                 <input
                                                                     type="text"
                                                                     name="remark"
                                                                     value={editRowData?.remark || ""}
                                                                     onChange={handleInlineInputChange}
-                                                                    className="w-full p-1 border rounded"
+                                                                    className={`w-full p-1 border rounded ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-300 text-black'}`}
                                                                 />
                                                             ) : (
                                                                 history.remark || "-"
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">{history.reviewedBy || "-"}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 border border-gray-300">
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>{history.reviewedBy || "-"}</td>
+                                                        <td className={`px-4 py-3 text-sm border ${theme === 'dark' ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>
                                                             <div className="flex gap-2">
                                                                 {isAssigner && (
                                                                     editingRowId === history.id ? (
@@ -935,7 +961,7 @@ const TaskViewPage = () => {
                                         </table>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-4 text-gray-500">
+                                    <div className={`text-center py-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                         No history recorded for this task yet.
                                     </div>
                                 )}
@@ -944,6 +970,8 @@ const TaskViewPage = () => {
                     </div>
                 </div>
             </div>
+            
+            {/* Modern Update History Popup */}
             {showUpdateHistoryPopup && (
                 <UpdateHistoryPopup
                     setShowUpdateHistoryPopup={setShowUpdateHistoryPopup}
@@ -953,6 +981,7 @@ const TaskViewPage = () => {
                     handleUpdateHistoryFileChange={handleUpdateHistoryFileChange}
                     assignedBy={assignedBy}
                     employeeId={userData?.employeeId}
+                    theme={theme}
                 />
             )}
             
@@ -960,6 +989,7 @@ const TaskViewPage = () => {
                 <ErrorPopup
                     message={errorPopup.message}
                     onClose={() => setErrorPopup({ show: false, message: "" })}
+                    theme={theme}
                 />
             )}
 
@@ -967,6 +997,7 @@ const TaskViewPage = () => {
                 <SuccessPopup
                     message={successPopup.message}
                     onClose={() => setSuccessPopup({ show: false, message: "" })}
+                    theme={theme}
                 />
             )}
 
@@ -974,8 +1005,19 @@ const TaskViewPage = () => {
                 <ConfirmDeletePopup
                     onConfirm={confirmDelete}
                     onCancel={() => setConfirmDeletePopup({ show: false, historyId: null })}
+                    theme={theme}
                 />
             )}
+
+            {/* Animations CSS */}
+            <style jsx>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+                .animate-slideUp { animation: slideUp 0.4s ease-out; }
+                .animate-slideIn { animation: slideIn 0.3s ease-out; }
+            `}</style>
         </>
     );
 };

@@ -1,76 +1,47 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell,
     PieChart, Pie,
     AreaChart, Area, Legend, CartesianGrid
 } from 'recharts';
+import { useParams } from "react-router-dom";
+import { Context } from "../HrmsContext";
 
 // --- EmployeeProfile Component ---
-const EmployeeProfile = () => {
-    return (
-        <div className="lg:col-span-2 bg-white shadow-xl rounded-lg p-6 flex flex-col sm:flex-row items-center justify-center sm:justify-start
-                         hover:translate-y-[-4px] transition-transform duration-300 ease-in-out">
-            {/* Left Section: Profile Picture */}
-            <div className="flex-shrink-0 w-28 h-28 sm:w-32 sm:h-32 bg-indigo-100 rounded-full flex items-center justify-center mr-0 sm:mr-6 mb-4 sm:mb-0">
-                <span className="text-4xl sm:text-5xl font-semibold text-indigo-700">JD</span>
-            </div>
-
-            {/* Right Section: Details */}
-            <div className="flex-grow text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-3 sm:mb-2">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-0">JOHN DOE</h2>
-                    {/* Edit Icon */}
-                    <button className="p-2 bg-gray-100 rounded-full shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                    </button>
-                </div>
-
-                {/* Contact Information Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 text-gray-700 text-base sm:text-lg">
-                    <div className="flex items-center justify-center sm:justify-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h10a2 2 0 002-2v-5m-7-5a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-5 5v1h10v-1a5 5 0 00-5-5z" />
-                        </svg>
-                        <span>E123</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m8-10v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2z" />
-                        </svg>
-                        <span>ABC Services</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-1.208-8.455-3.245m16.91 0c.75.053 1.5.044 2.247-.027m-4.502 0c.266-.026.53-.06.792-.102M12 2v10m-3.486 1.848a3 3 0 000 4.31m6.972 0a3 3 0 000-4.31M12 22v-4m-3.93-2.618l-.928 2.062a1 1 0 01-1.488.587l-2.062-.928a1 1 0 01-.587-1.488l2.062-.928a1 1 0 011.488.587L9.93 19.382zM17.93 19.382l-.928-2.062a1 1 0 011.488-.587l2.062.928a1 1 0 01.587 1.488l-2.062.928a1 1 0 01-1.488-.587zM12 12h.01" />
-                        </svg>
-                        <span>Software</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-9 13a9 9 0 100-18 9 9 0 000 18z" />
-                        </svg>
-                        <span>john@gmail.com</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                        <span>+91123456789</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span>Associate Software</span>
-                    </div>
-                </div>
-            </div>
+const UserGreeting = ({currentUser}) => {
+     const {userData}=useContext(Context)
+    return(
+  <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
+    <div className="flex items-center space-x-4">
+      <div className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden">
+          <img
+            src={currentUser?.avatar || "https://i.pravatar.cc/100"}
+            alt="Profile"
+            className="w-20 h-20 object-cover"
+          />
         </div>
-    );
-}
+      <div>
+        <h2 className="text-2xl font-semibold flex items-center">
+          Welcome, {userData?.employeeId}, {userData?.fullName}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 ml-2 text-gray-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-4.604 4.549l2.828 2.829-5.46 5.46a1 1 0 01-.453.298l-3.268.817a1 1 0 01-1.218-1.218l.817-3.268a1 1 0 01.298-.453l5.46-5.46z" />
+          </svg>
+        </h2>
+        <p className="text-gray-500 mt-1">
+          You have to <span className="font-bold text-red-500">Improve work progress</span> as compare to {' '}
+          <span className="font-bold text-red-500">Last month's </span> performance
+        </p>
+      </div>
+    </div>
+  </div>
+);
+};
 
 // --- Assignment Component (Line Chart) ---
 const weeklyTaskData = [
@@ -293,14 +264,14 @@ const Preformancerating = () => {
                         tickLine={false}
                         axisLine={{ stroke: '#ccc' }}
                         tickFormatter={(value) => `${value}%`}
-                        className="text-sm fill-gray-600" hide
+                        className="text-sm fill-gray-600"  
                         // removed 'hide' prop to show X-axis labels
                     />
                     <YAxis
                         label={{ value: "User Count", angle: -90, position: "insideLeft" }}
                         tickLine={false}
                         axisLine={{ stroke: '#ccc' }}
-                        className="text-sm fill-gray-600" hide
+                        className="text-sm fill-gray-600" 
                         // removed 'hide' prop to show Y-axis labels
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.1)' }} />
@@ -486,7 +457,7 @@ const PerformanceDashboard = () => {
                 <h1 className="text-4xl font-bold text-gray-900 mb-8">
                     Performance Dashboard
                 </h1>
-                <EmployeeProfile />
+                <UserGreeting />
             </header>
             <div className="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Each chart component will now occupy its own grid cell */}

@@ -10,7 +10,7 @@ import {
 import AttendancesDashboard from './AttendancesDashboard';
 import LeavesDashboard from './LeavesDashboard';
 import PerformanceDashboard from './PerformanceDashBoard';
-import ProjectDashboard from './ProjectDashBoard';
+//import ProjectDashboard from './ProjectDashBoard';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LeaveForm from './LeaveForm';
 
@@ -19,7 +19,7 @@ const navItems = [
   { id: 'attendance', name: 'Attendance', icon: CalendarDaysIcon, component: AttendancesDashboard },
   { id: 'leaves', name: 'Leaves', icon: SwatchIcon, component: LeavesDashboard },
   { id: 'Performance', name: 'Performance', icon: RocketLaunchIcon, component: PerformanceDashboard },
-  { id: 'Projects', name: 'Projects', icon: BriefcaseIcon, component: ProjectDashboard },
+//  { id: 'Projects', name: 'Projects', icon: BriefcaseIcon, component: ProjectDashboard },
 ];
 
 const Dashboard = () => {

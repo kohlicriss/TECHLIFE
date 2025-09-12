@@ -12,31 +12,36 @@ import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
-// import Emloyees from "./Teams/Employees/Employees";
- 
+
+
 // Lazy loading components
 const NotificationSystem = lazy(() => import("./Notifications/NotificationSystem"));
 const ChatApp = lazy(() => import("./Chats/ChatApp"));
 const Employees = lazy(() => import("./Employees/Employees"));
 const Profiles = lazy(() => import("./Profile/Profiles"));
 const AllTeams = lazy(() => import("./Teams/AllTeams"));
+const TeamDetails = lazy(() => import("./Teams/TeamDetails")); // కొత్తగా జోడించిన ఇంపోర్ట్
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
 const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
-const AdminDashBoard = lazy(() => import("./AdminDashBoards/AdminDashBoard"));
-const Dashboard = lazy(() => import("./EmployeeDashboards/Dashboard"));
+const CombinedDashBoard=lazy(() => import("./EmployeeDashboards/CombinedDashBoard"));
+const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
+const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
+const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
+//const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
- 
+const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
+
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
- 
+
     useEffect(() => {
         const interval = setInterval(() => {
             setDots((prevDots) => (prevDots >= 3 ? 1 : prevDots + 1));
         }, 500);
- 
-        return () => clearInterval(interval);  
+
+        return () => clearInterval(interval);
     }, []);
- 
+
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center bg-white">
             <img
@@ -50,7 +55,7 @@ const FullPageSpinner = () => {
         </div>
     );
 };
- 
+
 const MainLayout = ({
     isSidebarOpen,
     setSidebarOpen,
@@ -74,40 +79,40 @@ const MainLayout = ({
         </div>
     </div>
 );
- 
+
 const HrmsApp = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(
         !!localStorage.getItem("accessToken")
     );
- 
+
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [currentUser] = useState({
         name: "Johnes",
         designation: " Associate Software Engineer",
         avatar: "https://i.pravatar.cc/100",
     });
- 
+
     useEffect(() => {
         const handleStorageChange = () => {
             setIsAuthenticated(!!localStorage.getItem("accessToken"));
         };
- 
+
         window.addEventListener("storage", handleStorageChange);
         return () => {
             window.removeEventListener("storage", handleStorageChange);
         };
     }, []);
- 
+
     const handleLogin = () => {
         setIsAuthenticated(true);
     };
- 
+
     const handleLogout = () => {
         setIsAuthenticated(false);
     };
- 
+
     const loggedInEmpId = localStorage.getItem("logedempid");
- 
+
     return (
         <HrmsContext>
             <Router>
@@ -132,16 +137,26 @@ const HrmsApp = () => {
                                     />
                                 }
                             >
-                                <Route path="/AdminDashBoard" element={<AdminDashBoard />} />
-                                <Route path="/dashboard/:empID/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                                 <Route path="/admin-dashboard/empId/*" element={<ProtectedRoute><CombinedDashBoard /></ProtectedRoute>} />
+                                <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
+                                <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
+                                <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
+                               {/* <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />*/}
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
-                                <Route path="/chat/:userId" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
+                                <Route path="/chat/:userId/*" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
                                 <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-                                <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
-                                <Route path="/tickets/role/:role/:empID" element={<ProtectedRoute><Tickets /></ProtectedRoute>} /> 
-                               <Route path="/tickets/employee/:empID" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
-                                 {/* <Route path="/tickets/:empID/:role" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} /> */}
+                                
+                                <Route 
+                                    path="/employees/:empID/public/:employeeID" 
+                                    element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} 
+                                />
+
+                                <Route path="/my-teams/:empID" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                                <Route path="/teams/:teamId" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
+                                
+                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                                <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
                                 <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                             </Route>
@@ -152,6 +167,5 @@ const HrmsApp = () => {
         </HrmsContext>
     );
 };
- 
+
 export default HrmsApp;
- 

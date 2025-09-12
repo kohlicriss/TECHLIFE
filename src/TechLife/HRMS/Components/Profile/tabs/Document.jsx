@@ -1,1557 +1,1146 @@
-// import React, { useState, useEffect, useRef } from 'react';
-// import { FaFileAlt } from 'react-icons/fa';
-// import { IoClose } from 'react-icons/io5';
+import React, { useState, useEffect, useContext } from "react";
+import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload, IoTrashOutline } from "react-icons/io5";
+import { Context } from "../../HrmsContext";
+import { publicinfoApi } from "../../../../../axiosInstance";
+import { useParams, useLocation } from "react-router-dom";
 
-// const months = [
-//   "January", "February", "March", "April", "May", "June",
-//   "July", "August", "September", "October", "November", "December"
-// ];
-// const years = Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - i));
+const identityFields = {
+    aadhaar: [
+        { label: "Aadhaar Number", name: "aadhaarNumber", type: "text", required: true, pattern: "^[2-9]{1}[0-9]{11}$", message: "Invalid Aadhaar number format" },
+        { label: "Enrollment Number", name: "enrollmentNumber", type: "text", required: true, pattern: "^[0-9]{4}/[0-9]{5}/[0-9]{7}$", message: "Invalid enrollment number format" },
+        { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
+        { label: "Name", name: "aadhaarName", type: "text", required: true },
+        { label: "Address", name: "address", type: "textarea", required: true },
+        { label: "Gender", name: "gender", type: "select", options: ["Male", "Female", "Other"], required: true },
+        { label: "Aadhaar Image", name: "aadhaarImage", type: "file" },
+    ],
+    pan: [
+        { label: "PAN Number", name: "panNumber", type: "text", required: true, pattern: "[A-Z]{5}[0-9]{4}[A-Z]{1}", message: "Invalid PAN format (e.g., ABCDE1234F)" },
+        { label: "PAN Name", name: "panName", type: "text", required: true },
+        { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
+        { label: "Parents Name", name: "parentsName", type: "text", required: true },
+        { label: "PAN Image", name: "panImage", type: "file" },
+    ],
+    drivingLicense: [
+        { label: "License Number", name: "licenseNumber", type: "text", required: true },
+        { label: "Name", name: "name", type: "text", required: true },
+        { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
+        { label: "Blood Group", name: "bloodGroup", type: "select", options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], required: true },
+        { label: "Father's Name", name: "fatherName", type: "text", required: true },
+        { label: "Issue Date", name: "issueDate", type: "date", required: true },
+        { label: "Expiry Date", name: "expiresOn", type: "date", required: true },
+        { label: "Address", name: "address", type: "textarea", required: true },
+        { label: "License Image", name: "licenseImage", type: "file" },
+    ],
+    passport: [
+        { label: "Passport Number", name: "passportNumber", type: "text", required: true, pattern: "^[A-Z0-9]{6,9}$", message: "Invalid passport number format" },
+        { label: "Country Code", name: "countryCode", type: "text", required: true, size: [2, 3] },
+        { label: "Passport Type", name: "passportType", type: "text", required: true },
+        { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
+        { label: "Name", name: "name", type: "text", required: true },
+        { label: "Gender", name: "gender", type: "select", options: ["Male", "Female", "Other"], required: true },
+        { label: "Date of Issue", name: "dateOfIssue", type: "date", required: true },
+        { label: "Place of Issue", name: "placeOfIssue", type: "text", required: true },
+        { label: "Place of Birth", name: "placeOfBirth", type: "text", required: true },
+        { label: "Date of Expiration", name: "dateOfExpiration", type: "date", required: true },
+        { label: "Address", name: "address", type: "textarea", required: true },
+        { label: "Passport Image", name: "passportImage", type: "file" },
+    ],
+    voter: [
+        { label: "Voter ID Number", name: "voterIdNumber", type: "text", required: true, pattern: "^[A-Z]{3}[0-9]{7}$", message: "Invalid Voter ID format (e.g., ABC1234567)" },
+        { label: "Full Name", name: "fullName", type: "text", required: true },
+        { label: "Relation Name", name: "relationName", type: "text", required: true },
+        { label: "Gender", name: "gender", type: "select", options: ["Male", "Female", "Other"], required: true },
+        { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
+        { label: "Address", name: "address", type: "textarea", required: true },
+        { label: "Issued Date", name: "issuedDate", type: "date", required: true },
+        { label: "Voter Image", name: "uploadVoter", type: "file" },
+    ],
+};
 
-// const identityDocs = [
-//   { name: 'Aadhaar Card', status: 'MANDATORY' },
-//   { name: 'Pan Card', status: 'MANDATORY' },
-//   { name: 'Voter Id Card', status: 'MANDATORY' },
-//   { name: 'Driving License', status: 'MANDATORY' },
-//   { name: 'Passport', status: 'MANDATORY' }
-// ];
+const documentConfig = {
+    aadhaar: {
+        icon: <IoDocumentText />,
+        color: 'from-blue-500 to-blue-700',
+        bgColor: 'bg-blue-50',
+        darkBgColor: 'bg-blue-900/20',
+        borderColor: 'border-blue-200',
+        darkBorderColor: 'border-blue-700',
+        textColor: 'text-blue-700',
+        darkTextColor: 'text-blue-400',
+        title: 'Aadhaar Card',
+        description: 'Government issued identity document'
+    },
+    pan: {
+        icon: <IoDocumentText />,
+        color: 'from-green-500 to-green-700',
+        bgColor: 'bg-green-50',
+        darkBgColor: 'bg-green-900/20',
+        borderColor: 'border-green-200',
+        darkBorderColor: 'border-green-700',
+        textColor: 'text-green-700',
+        darkTextColor: 'text-green-400',
+        title: 'PAN Card',
+        description: 'Permanent Account Number for taxation'
+    },
+    drivingLicense: {
+        icon: <IoDocumentText />,
+        color: 'from-orange-500 to-orange-700',
+        bgColor: 'bg-orange-50',
+        darkBgColor: 'bg-orange-900/20',
+        borderColor: 'border-orange-200',
+        darkBorderColor: 'border-orange-700',
+        textColor: 'text-orange-700',
+        darkTextColor: 'text-orange-400',
+        title: 'Driving License',
+        description: 'Valid driving permit document'
+    },
+    passport: {
+        icon: <IoDocumentText />,
+        color: 'from-purple-500 to-purple-700',
+        bgColor: 'bg-purple-50',
+        darkBgColor: 'bg-purple-900/20',
+        borderColor: 'border-purple-200',
+        darkBorderColor: 'border-purple-700',
+        textColor: 'text-purple-700',
+        darkTextColor: 'text-purple-400',
+        title: 'Passport',
+        description: 'International travel document'
+    },
+    voter: {
+        icon: <IoDocumentText />,
+        color: 'from-red-500 to-red-700',
+        bgColor: 'bg-red-50',
+        darkBgColor: 'bg-red-900/20',
+        borderColor: 'border-red-200',
+        darkBorderColor: 'border-red-700',
+        textColor: 'text-red-700',
+        darkTextColor: 'text-red-400',
+        title: 'Voter ID Card',
+        description: 'Electoral identity verification'
+    },
+};
 
-// // --- Styled Upload ---
-// function FileUploadZone({ label, accept, onFile, fileName, error, link, required }) {
-//   const inputRef = useRef();
-//   return (
-//     <div className="mb-4">
-//       <label className="block mb-1 font-medium">{label} {required && <span className="text-red-500">*</span>}</label>
-//       <div
-//         className={`
-//           flex flex-col items-center justify-center h-28 rounded-lg
-//           border-2 border-dashed ${error ? 'border-red-500 bg-red-50' : 'border-blue-400 bg-blue-50'}
-//           hover:bg-blue-100 transition-colors cursor-pointer
-//           text-blue-500 font-semibold relative
-//         `}
-//         onClick={(e) => {
-//           if (e.target.tagName !== "INPUT") inputRef.current?.click();
-//         }}
-//       >
-//         <input
-//           ref={inputRef}
-//           type="file"
-//           accept={accept}
-//           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-//           onChange={onFile}
-//         />
-//         {!fileName && (
-//           <span className="flex flex-col items-center pointer-events-none">
-//             <svg className="w-7 h-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-//                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-//             </svg>
-//             <span>{label}</span>
-//             <span className="text-xs text-gray-600">Click or drag file here (.png, .jpg, .jpeg, .pdf)</span>
-//           </span>
-//         )}
-//         {fileName && link && (
-//           <span>
-//             <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{fileName}</a>
-//           </span>
-//         )}
-//         {fileName && !link && (
-//           <span className="block text-green-700">{fileName}</span>
-//         )}
-//       </div>
-//       {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
-//     </div>
-//   );
-// }
+const Document = () => {
+    const [editingSection, setEditingSection] = useState(null);
+    const [identityData, setIdentityData] = useState({});
+    const [editingData, setEditingData] = useState({});
+    const { empID } = useParams();
+    const location = useLocation();
+    const { theme, userData } = useContext(Context);
+    const [loading, setLoading] = useState(true);
+    const [errors, setErrors] = useState({});
+    const [searchFilter, setSearchFilter] = useState('');
+    const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
+    const [isUpdating, setIsUpdating] = useState(false);
 
-// export default function Documents() {
-//   // Section states
-//   const [identityData, setIdentityData] = useState({});
-//   const [experienceList, setExperienceList] = useState([]);
-//   const [degreeList, setDegreeList] = useState([]);
-//   const [achievementList, setAchievementList] = useState([]);
-//   // Modal state
-//   const [popup, setPopup] = useState(null); // { type, docName/index }
-//   const [form, setForm] = useState({});
-//   const [formErrors, setFormErrors] = useState({});
+    const searchParams = new URLSearchParams(location.search);
+    const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+    const targetEmployeeId = searchParams.get('targetEmployeeId');
 
-//   // Fetch documents data
-//   useEffect(() => {
-//     const fetchDocuments = async () => {
-//       try {
-//         const response = await employeeService.getDocuments();
-//         const { identityDocs, experienceDocs, degreeDocs, achievementDocs } = response.data;
-//         setIdentityData(identityDocs || {});
-//         setExperienceList(experienceDocs || []);
-//         setDegreeList(degreeDocs || []);
-//         setAchievementList(achievementDocs || []);
-//       } catch (error) {
-//         console.error('Error fetching documents:', error);
-//       }
-//     };
-//     fetchDocuments();
-//   }, []);
+    const documentEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
+    
+    const isReadOnly = false;
+    
+    const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
 
-//   // API sync
-//   const updateDocument = async (type, data) => {
-//     try {
-//       if (type === 'identity') {
-//         await employeeService.uploadDocument('identity', data);
-//       } else if (type === 'experience') {
-//         await employeeService.uploadDocument('experience', data);
-//       } else if (type === 'degree') {
-//         await employeeService.uploadDocument('degree', data);
-//       } else if (type === 'achievement') {
-//         await employeeService.uploadDocument('achievement', data);
-//       }
-//     } catch (error) {
-//       console.error('Error updating document:', error);
-//       throw error;
-//     }
-//   };
+    const validatePanData = (data) => {
+        const errors = {};
+        if (!data.panNumber) {
+            errors.panNumber = "PAN number is required";
+        } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(data.panNumber)) {
+            errors.panNumber = "Invalid PAN format (e.g., ABCDE1234F)";
+        }
+        if (!data.panName) {
+            errors.panName = "PAN name is required";
+        } else if (data.panName.length < 3 || data.panName.length > 100) {
+            errors.panName = "PAN name must be between 3 and 100 characters";
+        }
+        if (!data.dateOfBirth) {
+            errors.dateOfBirth = "Date of birth is required";
+        } else if (!/^\d{4}-\d{2}-\d{2}$/.test(data.dateOfBirth)) {
+            errors.dateOfBirth = "Date of birth must be in YYYY-MM-DD format";
+        }
+        if (!data.parentsName) {
+            errors.parentsName = "Parent's name is required";
+        }
+        return errors;
+    };
 
-//   useEffect(() => {
-//     if (!popup) return;
-//     if (popup.type === "experience" && popup.index !== undefined) setForm(experienceList[popup.index] || {});
-//     else if (popup.type === "degree" && popup.index !== undefined) setForm(degreeList[popup.index] || {});
-//     else if (popup.type === "achievement" && popup.index !== undefined) setForm(achievementList[popup.index] || {});
-//     else if (popup.type === "identity") setForm(identityData[popup.docName] || {});
-//     else setForm({});
-//     setFormErrors({});
-//   }, [popup]);
+    const validateAadhaarData = (data) => {
+        const errors = {};
+        if (!data.aadhaarNumber) {
+            errors.aadhaarNumber = "Aadhaar number is required";
+        } else if (!/^[2-9]{1}[0-9]{11}$/.test(data.aadhaarNumber)) {
+            errors.aadhaarNumber = "Invalid Aadhaar number format";
+        }
+        if (!data.enrollmentNumber) {
+            errors.enrollmentNumber = "Enrollment number is required";
+        } else if (!/^[0-9]{4}\/[0-9]{5}\/[0-9]{7}$/.test(data.enrollmentNumber)) {
+            errors.enrollmentNumber = "Invalid enrollment number format";
+        }
+        if (!data.dateOfBirth) {
+            errors.dateOfBirth = "Date of birth is required";
+        }
+        if (!data.aadhaarName) {
+            errors.aadhaarName = "Name is required";
+        }
+        if (!data.address) {
+            errors.address = "Address is required";
+        }
+        if (!data.gender) {
+            errors.gender = "Gender is required";
+        }
+        return errors;
+    };
 
-//   // --- Aadhaar Card Form Special ---
-//   function renderAadhaarCardPopup() {
-//     return (
-//       <Modal title="Upload Aadhaar Card Details" onClose={() => setPopup(null)}>
-//         <form onSubmit={e => {
-//           e.preventDefault();
-//           let errors = {};
-//           if (!form.fileName || !form.fileData) errors.file = "Aadhaar file required";
-//           if (!form.aadhaarNumber) errors.aadhaarNumber = "Aadhaar Number required";
-//           if (!form.enrollmentNumber) errors.enrollmentNumber = "Enrollment Number required";
-//           if (!form.dob) errors.dob = "Date of Birth required";
-//           if (!form.name) errors.name = "Full Name required";
-//           if (!form.address) errors.address = "Address required";
-//           if (!form.gender) errors.gender = "Gender required";
-//           setFormErrors(errors);
-//           if (Object.keys(errors).length) return;
-//           setIdentityData(prev => ({
-//             ...prev,
-//             ["Aadhaar Card"]: { ...form }
-//           }));
-//           setForm({});
-//           setFormErrors({});
-//           setPopup(null);
-//         }}>
-//           <div className="mb-4">
-//             <div className="flex items-center gap-2 mb-2">
-//               <img src="https://img.icons8.com/color/32/india.png" alt="India" className="h-6 inline" />
-//               <span className="font-semibold text-base">Aadhaar Card</span>
-//             </div>
-//             <FileUploadZone
-//               label="Upload Aadhaar Card"
-//               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
-//               required
-//               error={formErrors.file}
-//               fileName={form.fileName}
-//               link={form.fileData}
-//               onFile={e => {
-//                 const file = e.target.files?.[0];
-//                 if (!file) return;
-//                 const reader = new FileReader();
-//                 reader.onload = ev => setForm(f => ({
-//                   ...f,
-//                   fileName: file.name,
-//                   fileType: file.type,
-//                   fileData: ev.target.result,
-//                 }));
-//                 reader.readAsDataURL(file);
-//               }}
-//             />
-//             <div className="text-xs text-gray-500 mb-3 mt-1">
-//               Supported file types are <b>.png, .jpg, .jpeg, .doc, .docx, .pdf, .xlsx, .xls</b>. Max file size supported is 20 MB
-//             </div>
-//           </div>
-//           <div className="grid grid-cols-2 gap-5">
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Aadhaar Number<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.aadhaarNumber ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Aadhaar Number"
-//                 value={form.aadhaarNumber || ""}
-//                 onChange={e => setForm(f => ({ ...f, aadhaarNumber: e.target.value }))}
-//               />
-//               {formErrors.aadhaarNumber && <div className="text-red-500 text-xs">{formErrors.aadhaarNumber}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Enrollment Number<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.enrollmentNumber ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter Enrollment Number"
-//                 value={form.enrollmentNumber || ""}
-//                 onChange={e => setForm(f => ({ ...f, enrollmentNumber: e.target.value }))}
-//               />
-//               {formErrors.enrollmentNumber && <div className="text-red-500 text-xs">{formErrors.enrollmentNumber}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Date of Birth<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.dob ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Date of Birth"
-//                 value={form.dob || ""}
-//                 onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-//               />
-//               {formErrors.dob && <div className="text-red-500 text-xs">{formErrors.dob}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.name ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Full Name"
-//                 value={form.name || ""}
-//                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//               />
-//               {formErrors.name && <div className="text-red-500 text-xs">{formErrors.name}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Address<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.address ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Your complete residential address"
-//                 value={form.address || ""}
-//                 onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-//               />
-//               {formErrors.address && <div className="text-red-500 text-xs">{formErrors.address}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Gender<span className="text-red-500">*</span>
-//               </label>
-//               <select
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.gender ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.gender || ""}
-//                 onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-//               >
-//                 <option value="">Select</option>
-//                 <option value="Male">Male</option>
-//                 <option value="Female">Female</option>
-//                 <option value="Other">Other</option>
-//               </select>
-//               {formErrors.gender && <div className="text-red-500 text-xs">{formErrors.gender}</div>}
-//             </div>
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-purple-700 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    const validateDrivingLicenseData = (data) => {
+        const errors = {};
+        if (!data.licenseNumber) {
+            errors.licenseNumber = "License number is required";
+        }
+        if (!data.name) {
+            errors.name = "Name is required";
+        }
+        if (!data.dateOfBirth) {
+            errors.dateOfBirth = "Date of birth is required";
+        }
+        if (!data.bloodGroup) {
+            errors.bloodGroup = "Blood group is required";
+        }
+        if (!data.fatherName) {
+            errors.fatherName = "Father's name is required";
+        }
+        if (!data.issueDate) {
+            errors.issueDate = "Issue date is required";
+        }
+        if (!data.expiresOn) {
+            errors.expiresOn = "Expiry date is required";
+        }
+        if (!data.address) {
+            errors.address = "Address is required";
+        }
+        return errors;
+    };
 
-//   // --- Identity Modal (styled upload + fields, no preview) ---
-//   function renderIdentityPopup(docName) {
-//     if (docName === 'Aadhaar Card') return renderAadhaarCardPopup();
-//     if (docName === 'Voter Id Card') return renderVoterIdCardPopup();
-//     if (docName === 'Pan Card') return renderPanCardPopup();
-//     if (docName === 'Driving License') return renderDrivingLicensePopup();
-//     if (docName === 'Passport') return renderPassportPopup();
+    const validatePassportData = (data) => {
+        const errors = {};
+        if (!data.passportNumber) {
+            errors.passportNumber = "Passport number is required";
+        } else if (!/^[A-Z0-9]{6,9}$/.test(data.passportNumber)) {
+            errors.passportNumber = "Invalid passport number format";
+        }
+        if (!data.countryCode) {
+            errors.countryCode = "Country code is required";
+        } else if (data.countryCode.length < 2 || data.countryCode.length > 3) {
+            errors.countryCode = "Country code must be 2-3 characters";
+        }
+        if (!data.passportType) {
+            errors.passportType = "Passport type is required";
+        }
+        if (!data.dateOfBirth) {
+            errors.dateOfBirth = "Date of birth is required";
+        }
+        if (!data.name) {
+            errors.name = "Name is required";
+        }
+        if (!data.gender) {
+            errors.gender = "Gender is required";
+        }
+        if (!data.dateOfIssue) {
+            errors.dateOfIssue = "Date of issue is required";
+        }
+        if (!data.placeOfIssue) {
+            errors.placeOfIssue = "Place of issue is required";
+        }
+        if (!data.placeOfBirth) {
+            errors.placeOfBirth = "Place of birth is required";
+        }
+        if (!data.dateOfExpiration) {
+            errors.dateOfExpiration = "Date of expiration is required";
+        }
+        if (!data.address) {
+            errors.address = "Address is required";
+        }
+        return errors;
+    };
 
-//   // --- Passport Form Special ---
-//   function renderPassportPopup() {
-//     return (
-//       <Modal title="Upload Passport Details" onClose={() => setPopup(null)}>
-//         <form onSubmit={e => {
-//           e.preventDefault();
-//           let errors = {};
-//           if (!form.fileName || !form.fileData) errors.file = "Passport file required";
-//           if (!form.countryCode) errors.countryCode = "Country Code required";
-//           if (!form.passportType) errors.passportType = "Passport Type required";
-//           if (!form.passportNumber) errors.passportNumber = "Passport Number required";
-//           if (!form.name) errors.name = "Full Name required";
-//           if (!form.gender) errors.gender = "Gender required";
-//           if (!form.dob) errors.dob = "Date of Birth required";
-//           if (!form.placeOfBirth) errors.placeOfBirth = "Place of Birth required";
-//           if (!form.issueDate) errors.issueDate = "Issue Date required";
-//           if (!form.placeOfIssue) errors.placeOfIssue = "Place of Issue required";
-//           if (!form.expiryDate) errors.expiryDate = "Expiry Date required";
-//           if (!form.address) errors.address = "Address required";
-//           setFormErrors(errors);
-//           if (Object.keys(errors).length) return;
-//           setIdentityData(prev => ({
-//             ...prev,
-//             ["Passport"]: { ...form }
-//           }));
-//           setForm({});
-//           setFormErrors({});
-//           setPopup(null);
-//         }}>
-//           <div className="mb-4">
-//             <div className="flex items-center gap-2 mb-2">
-//               <img src="https://img.icons8.com/color/32/india.png" alt="India" className="h-6 inline" />
-//               <span className="font-semibold text-base">Passport</span>
-//             </div>
-//             <FileUploadZone
-//               label="Upload Passport"
-//               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
-//               required
-//               error={formErrors.file}
-//               fileName={form.fileName}
-//               link={form.fileData}
-//               onFile={e => {
-//                 const file = e.target.files?.[0];
-//                 if (!file) return;
-//                 const reader = new FileReader();
-//                 reader.onload = ev => setForm(f => ({
-//                   ...f,
-//                   fileName: file.name,
-//                   fileType: file.type,
-//                   fileData: ev.target.result,
-//                 }));
-//                 reader.readAsDataURL(file);
-//               }}
-//             />
-//             <div className="text-xs text-gray-500 mb-3 mt-1">
-//               Supported file types are <b>.png, .jpg, .jpeg, .doc, .docx, .pdf, .xlsx, .xls</b>. Max file size supported is 20 MB
-//             </div>
-//           </div>
-//           <div className="grid grid-cols-2 gap-5">
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Country Code<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.countryCode ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Country Code"
-//                 value={form.countryCode || ""}
-//                 onChange={e => setForm(f => ({ ...f, countryCode: e.target.value }))}
-//               />
-//               {formErrors.countryCode && <div className="text-red-500 text-xs">{formErrors.countryCode}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Passport Type<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.passportType ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Passport type"
-//                 value={form.passportType || ""}
-//                 onChange={e => setForm(f => ({ ...f, passportType: e.target.value }))}
-//               />
-//               {formErrors.passportType && <div className="text-red-500 text-xs">{formErrors.passportType}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Passport Number<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.passportNumber ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Passport Number"
-//                 value={form.passportNumber || ""}
-//                 onChange={e => setForm(f => ({ ...f, passportNumber: e.target.value }))}
-//               />
-//               {formErrors.passportNumber && <div className="text-red-500 text-xs">{formErrors.passportNumber}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Full Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.name ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Full Name"
-//                 value={form.name || ""}
-//                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//               />
-//               {formErrors.name && <div className="text-red-500 text-xs">{formErrors.name}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Gender<span className="text-red-500">*</span>
-//               </label>
-//               <select
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.gender ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.gender || ""}
-//                 onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-//               >
-//                 <option value="">Select</option>
-//                 <option value="Male">Male</option>
-//                 <option value="Female">Female</option>
-//                 <option value="Other">Other</option>
-//               </select>
-//               {formErrors.gender && <div className="text-red-500 text-xs">{formErrors.gender}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Date of Birth<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.dob ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.dob || ""}
-//                 onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-//               />
-//               {formErrors.dob && <div className="text-red-500 text-xs">{formErrors.dob}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Place of Birth<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.placeOfBirth ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Birth Place"
-//                 value={form.placeOfBirth || ""}
-//                 onChange={e => setForm(f => ({ ...f, placeOfBirth: e.target.value }))}
-//               />
-//               {formErrors.placeOfBirth && <div className="text-red-500 text-xs">{formErrors.placeOfBirth}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Date of Issue<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.issueDate ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.issueDate || ""}
-//                 onChange={e => setForm(f => ({ ...f, issueDate: e.target.value }))}
-//               />
-//               {formErrors.issueDate && <div className="text-red-500 text-xs">{formErrors.issueDate}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Place of Issue<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.placeOfIssue ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Place Of Issue"
-//                 value={form.placeOfIssue || ""}
-//                 onChange={e => setForm(f => ({ ...f, placeOfIssue: e.target.value }))}
-//               />
-//               {formErrors.placeOfIssue && <div className="text-red-500 text-xs">{formErrors.placeOfIssue}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Expires On<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.expiryDate ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.expiryDate || ""}
-//                 onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))}
-//               />
-//               {formErrors.expiryDate && <div className="text-red-500 text-xs">{formErrors.expiryDate}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Address<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.address ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Your complete residential address"
-//                 value={form.address || ""}
-//                 onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-//               />
-//               {formErrors.address && <div className="text-red-500 text-xs">{formErrors.address}</div>}
-//             </div>
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-purple-700 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    const validateVoterData = (data) => {
+        const errors = {};
+        if (!data.voterIdNumber) {
+            errors.voterIdNumber = "Voter ID number is required";
+        } else if (!/^[A-Z]{3}[0-9]{7}$/.test(data.voterIdNumber)) {
+            errors.voterIdNumber = "Invalid Voter ID format (e.g., ABC1234567)";
+        }
+        if (!data.fullName) {
+            errors.fullName = "Full name is required";
+        }
+        if (!data.relationName) {
+            errors.relationName = "Relation name is required";
+        }
+        if (!data.gender) {
+            errors.gender = "Gender is required";
+        }
+        if (!data.dateOfBirth) {
+            errors.dateOfBirth = "Date of birth is required";
+        }
+        if (!data.address) {
+            errors.address = "Address is required";
+        }
+        if (!data.issuedDate) {
+            errors.issuedDate = "Issued date is required";
+        }
+        return errors;
+    };
 
-//   // --- Driving License Form Special ---
-//   function renderDrivingLicensePopup() {
-//     return (
-//       <Modal title="Upload Driving License Details" onClose={() => setPopup(null)}>
-//         <form onSubmit={e => {
-//           e.preventDefault();
-//           let errors = {};
-//           if (!form.fileName || !form.fileData) errors.file = "Driving License file required";
-//           if (!form.licenseNumber) errors.licenseNumber = "License Number required";
-//           if (!form.name) errors.name = "Full Name required";
-//           if (!form.fatherName) errors.fatherName = "Father's Name required";
-//           if (!form.bloodGroup) errors.bloodGroup = "Blood Group required";
-//           if (!form.dob) errors.dob = "Date of Birth required";
-//           if (!form.issueDate) errors.issueDate = "Issue Date required";
-//           if (!form.expiryDate) errors.expiryDate = "Expiry Date required";
-//           if (!form.address) errors.address = "Address required";
-//           setFormErrors(errors);
-//           if (Object.keys(errors).length) return;
-//           setIdentityData(prev => ({
-//             ...prev,
-//             ["Driving License"]: { ...form }
-//           }));
-//           setForm({});
-//           setFormErrors({});
-//           setPopup(null);
-//         }}>
-//           <div className="mb-4">
-//             <div className="flex items-center gap-2 mb-2">
-//               <img src="https://img.icons8.com/color/32/india.png" alt="India" className="h-6 inline" />
-//               <span className="font-semibold text-base">Driving License</span>
-//             </div>
-//             <FileUploadZone
-//               label="Upload Driving License"
-//               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
-//               required
-//               error={formErrors.file}
-//               fileName={form.fileName}
-//               link={form.fileData}
-//               onFile={e => {
-//                 const file = e.target.files?.[0];
-//                 if (!file) return;
-//                 const reader = new FileReader();
-//                 reader.onload = ev => setForm(f => ({
-//                   ...f,
-//                   fileName: file.name,
-//                   fileType: file.type,
-//                   fileData: ev.target.result,
-//                 }));
-//                 reader.readAsDataURL(file);
-//               }}
-//             />
-//             <div className="text-xs text-gray-500 mb-3 mt-1">
-//               Supported file types are <b>.png, .jpg, .jpeg, .doc, .docx, .pdf, .xlsx, .xls</b>. Max file size supported is 20 MB
-//             </div>
-//           </div>
-//           <div className="grid grid-cols-2 gap-5">
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 License Number<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.licenseNumber ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter License Number"
-//                 value={form.licenseNumber || ""}
-//                 onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))}
-//               />
-//               {formErrors.licenseNumber && <div className="text-red-500 text-xs">{formErrors.licenseNumber}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Full Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.name ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter Full Name"
-//                 value={form.name || ""}
-//                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//               />
-//               {formErrors.name && <div className="text-red-500 text-xs">{formErrors.name}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Father's Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.fatherName ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter Father's Name"
-//                 value={form.fatherName || ""}
-//                 onChange={e => setForm(f => ({ ...f, fatherName: e.target.value }))}
-//               />
-//               {formErrors.fatherName && <div className="text-red-500 text-xs">{formErrors.fatherName}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Blood Group<span className="text-red-500">*</span>
-//               </label>
-//               <select
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.bloodGroup ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.bloodGroup || ""}
-//                 onChange={e => setForm(f => ({ ...f, bloodGroup: e.target.value }))}
-//               >
-//                 <option value="">Select Blood Group</option>
-//                 <option value="A+">A+</option>
-//                 <option value="A-">A-</option>
-//                 <option value="B+">B+</option>
-//                 <option value="B-">B-</option>
-//                 <option value="O+">O+</option>
-//                 <option value="O-">O-</option>
-//                 <option value="AB+">AB+</option>
-//                 <option value="AB-">AB-</option>
-//               </select>
-//               {formErrors.bloodGroup && <div className="text-red-500 text-xs">{formErrors.bloodGroup}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Date of Birth<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.dob ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.dob || ""}
-//                 onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-//               />
-//               {formErrors.dob && <div className="text-red-500 text-xs">{formErrors.dob}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Issue Date<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.issueDate ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.issueDate || ""}
-//                 onChange={e => setForm(f => ({ ...f, issueDate: e.target.value }))}
-//               />
-//               {formErrors.issueDate && <div className="text-red-500 text-xs">{formErrors.issueDate}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Expiry Date<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.expiryDate ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.expiryDate || ""}
-//                 onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))}
-//               />
-//               {formErrors.expiryDate && <div className="text-red-500 text-xs">{formErrors.expiryDate}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Address<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.address ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Your complete residential address"
-//                 value={form.address || ""}
-//                 onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-//               />
-//               {formErrors.address && <div className="text-red-500 text-xs">{formErrors.address}</div>}
-//             </div>
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-purple-700 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    const validateFormData = (subSection, data) => {
+        switch (subSection) {
+            case 'pan': return validatePanData(data);
+            case 'aadhaar': return validateAadhaarData(data);
+            case 'drivingLicense': return validateDrivingLicenseData(data);
+            case 'passport': return validatePassportData(data);
+            case 'voter': return validateVoterData(data);
+            default: return {};
+        }
+    };
 
-//   // --- Pan Card Form Special ---
-//   function renderPanCardPopup() {
-//     return (
-//       <Modal title="Upload Pan Card Details" onClose={() => setPopup(null)}>
-//         <form onSubmit={e => {
-//           e.preventDefault();
-//           let errors = {};
-//           if (!form.fileName || !form.fileData) errors.file = "Pan Card file required";
-//           if (!form.panNumber) errors.panNumber = "PAN Number required";
-//           if (!form.name) errors.name = "Full Name required";
-//           if (!form.parentName) errors.parentName = "Parent's Name required";
-//           if (!form.dob) errors.dob = "Date of Birth required";
-//           setFormErrors(errors);
-//           if (Object.keys(errors).length) return;
-//           setIdentityData(prev => ({
-//             ...prev,
-//             ["Pan Card"]: { ...form }
-//           }));
-//           setForm({});
-//           setFormErrors({});
-//           setPopup(null);
-//         }}>
-//           <div className="mb-4">
-//             <div className="flex items-center gap-2 mb-2">
-//               <img src="https://img.icons8.com/color/32/india.png" alt="India" className="h-6 inline" />
-//               <span className="font-semibold text-base">Pan Card</span>
-//             </div>
-//             <FileUploadZone
-//               label="Upload Pan Card"
-//               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
-//               required
-//               error={formErrors.file}
-//               fileName={form.fileName}
-//               link={form.fileData}
-//               onFile={e => {
-//                 const file = e.target.files?.[0];
-//                 if (!file) return;
-//                 const reader = new FileReader();
-//                 reader.onload = ev => setForm(f => ({
-//                   ...f,
-//                   fileName: file.name,
-//                   fileType: file.type,
-//                   fileData: ev.target.result,
-//                 }));
-//                 reader.readAsDataURL(file);
-//               }}
-//             />
-//             <div className="text-xs text-gray-500 mb-3 mt-1">
-//               Supported file types are <b>.png, .jpg, .jpeg, .doc, .docx, .pdf, .xlsx, .xls</b>. Max file size supported is 20 MB
-//             </div>
-//           </div>
-//           <div className="grid grid-cols-2 gap-5">
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 PAN Number<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.panNumber ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter PAN Number"
-//                 value={form.panNumber || ""}
-//                 onChange={e => setForm(f => ({ ...f, panNumber: e.target.value.toUpperCase() }))}
-//                 maxLength={10}
-//               />
-//               {formErrors.panNumber && <div className="text-red-500 text-xs">{formErrors.panNumber}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Full Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.name ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter Full Name"
-//                 value={form.name || ""}
-//                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//               />
-//               {formErrors.name && <div className="text-red-500 text-xs">{formErrors.name}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Parent's Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.parentName ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter Parent's Name"
-//                 value={form.parentName || ""}
-//                 onChange={e => setForm(f => ({ ...f, parentName: e.target.value }))}
-//               />
-//               {formErrors.parentName && <div className="text-red-500 text-xs">{formErrors.parentName}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Date of Birth<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.dob ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.dob || ""}
-//                 onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-//               />
-//               {formErrors.dob && <div className="text-red-500 text-xs">{formErrors.dob}</div>}
-//             </div>
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-purple-700 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    useEffect(() => {
+        if (fromContextMenu && targetEmployeeId) {
+            console.log("clicked user from context", targetEmployeeId);
+        }
+        const fetchIdentityData = async () => {
+            setLoading(true);
+            try {
+                const identityPromises = [
+                    publicinfoApi.get(`employee/${documentEmployeeId}/aadhaar`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/pan`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/driving`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/passport`).catch(() => ({ data: null })),
+                    publicinfoApi.get(`employee/${documentEmployeeId}/voter`).catch(() => ({ data: null })),
+                ];
+                const [aadhaarRes, panRes, drivingRes, passportRes, voterRes] = await Promise.all(identityPromises);
+                const data = {
+                    aadhaar: aadhaarRes.data,
+                    pan: panRes.data,
+                    drivingLicense: drivingRes.data,
+                    passport: passportRes.data,
+                    voter: voterRes.data,
+                };
+                setIdentityData(data);
+                const completed = Object.values(data).filter(Boolean).length;
+                setCompletionStats({ completed, total: 5 });
+            } catch (err) {
+                console.error("Failed to fetch identity data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (documentEmployeeId) {
+            fetchIdentityData();
+        }
+    }, [documentEmployeeId, fromContextMenu, targetEmployeeId]);
 
-//   // --- Voter Id Card Form Special ---
-//   function renderVoterIdCardPopup() {
-//     return (
-//       <Modal title="Upload Voter Id Card Details" onClose={() => setPopup(null)}>
-//         <form onSubmit={e => {
-//           e.preventDefault();
-//           let errors = {};
-//           if (!form.fileName || !form.fileData) errors.file = "Voter Id file required";
-//           if (!form.voterIdNumber) errors.voterIdNumber = "Voter ID Number required";
-//           if (!form.name) errors.name = "Full Name required";
-//           if (!form.parentName) errors.parentName = "Parent's / Spouse's Name required";
-//           if (!form.gender) errors.gender = "Gender required";
-//           if (!form.dob) errors.dob = "Date of Birth required";
-//           if (!form.address) errors.address = "Address required";
-//           if (!form.issuedDate) errors.issuedDate = "Issued Date required";
-//           setFormErrors(errors);
-//           if (Object.keys(errors).length) return;
-//           setIdentityData(prev => ({
-//             ...prev,
-//             ["Voter Id Card"]: { ...form }
-//           }));
-//           setForm({});
-//           setFormErrors({});
-//           setPopup(null);
-//         }}>
-//           <div className="mb-4">
-//             <div className="flex items-center gap-2 mb-2">
-//               <img src="https://img.icons8.com/color/32/india.png" alt="India" className="h-6 inline" />
-//               <span className="font-semibold text-base">Voter Id Card</span>
-//             </div>
-//             <FileUploadZone
-//               label="Upload Voter Id Card"
-//               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
-//               required
-//               error={formErrors.file}
-//               fileName={form.fileName}
-//               link={form.fileData}
-//               onFile={e => {
-//                 const file = e.target.files?.[0];
-//                 if (!file) return;
-//                 const reader = new FileReader();
-//                 reader.onload = ev => setForm(f => ({
-//                   ...f,
-//                   fileName: file.name,
-//                   fileType: file.type,
-//                   fileData: ev.target.result,
-//                 }));
-//                 reader.readAsDataURL(file);
-//               }}
-//             />
-//             <div className="text-xs text-gray-500 mb-3 mt-1">
-//               Supported file types are <b>.png, .jpg, .jpeg, .doc, .docx, .pdf, .xlsx, .xls</b>. Max file size supported is 20 MB
-//             </div>
-//           </div>
-//           <div className="grid grid-cols-2 gap-5">
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Voter ID Number<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.voterIdNumber ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Voter ID Number"
-//                 value={form.voterIdNumber || ""}
-//                 onChange={e => setForm(f => ({ ...f, voterIdNumber: e.target.value }))}
-//               />
-//               {formErrors.voterIdNumber && <div className="text-red-500 text-xs">{formErrors.voterIdNumber}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.name ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Full Name"
-//                 value={form.name || ""}
-//                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//               />
-//               {formErrors.name && <div className="text-red-500 text-xs">{formErrors.name}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Parent's / Spouse's Name<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.parentName ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Enter Parent's / Spouse's Name"
-//                 value={form.parentName || ""}
-//                 onChange={e => setForm(f => ({ ...f, parentName: e.target.value }))}
-//               />
-//               {formErrors.parentName && <div className="text-red-500 text-xs">{formErrors.parentName}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Gender<span className="text-red-500">*</span>
-//               </label>
-//               <select
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.gender ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 value={form.gender || ""}
-//                 onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-//               >
-//                 <option value="">Select</option>
-//                 <option value="Male">Male</option>
-//                 <option value="Female">Female</option>
-//                 <option value="Other">Other</option>
-//               </select>
-//               {formErrors.gender && <div className="text-red-500 text-xs">{formErrors.gender}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Date of Birth<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.dob ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Date of Birth"
-//                 value={form.dob || ""}
-//                 onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-//               />
-//               {formErrors.dob && <div className="text-red-500 text-xs">{formErrors.dob}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Address<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.address ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Your complete residential address"
-//                 value={form.address || ""}
-//                 onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-//               />
-//               {formErrors.address && <div className="text-red-500 text-xs">{formErrors.address}</div>}
-//             </div>
-//             <div>
-//               <label className="block font-medium text-gray-800 mb-1">
-//                 Issued Date<span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 type="date"
-//                 className={`w-full border px-3 py-2 rounded ${formErrors.issuedDate ? "border-red-500 bg-red-50" : "border-gray-300"}`}
-//                 placeholder="Issued Date"
-//                 value={form.issuedDate || ""}
-//                 onChange={e => setForm(f => ({ ...f, issuedDate: e.target.value }))}
-//               />
-//               {formErrors.issuedDate && <div className="text-red-500 text-xs">{formErrors.issuedDate}</div>}
-//             </div>
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-purple-700 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    const openEditSection = (subSection) => {
+        if (isReadOnly) {
+            alert("You can only view this employee's documents. Editing is not allowed.");
+            return;
+        }
+        setErrors({});
+        const dataToEdit = identityData[subSection] || {};
+        setEditingData(dataToEdit);
+        setEditingSection({ subSection });
+    };
 
-//     return (
-//       <Modal title={docName} onClose={() => setPopup(null)}>
-//         <form onSubmit={e => {
-//           e.preventDefault();
-//           let errors = {};
-//           if (!form.fileName || !form.fileData) errors.file = "Please upload a file";
-//           if (!form.name) errors.name = "Required";
-//           if (!form.idNumber) errors.idNumber = "Required";
-//           if (!form.dob) errors.dob = "Required";
-//           if (!form.address) errors.address = "Required";
-//           setFormErrors(errors);
-//           if (Object.keys(errors).length) return;
-//           setIdentityData(prev => ({
-//             ...prev,
-//             [docName]: { ...form }
-//           }));
-//           setForm({});
-//           setFormErrors({});
-//           setPopup(null);
-//         }}>
-//           <FileUploadZone
-//             label={`Upload ${docName} File`}
-//             accept=".pdf,.jpg,.jpeg,.png"
-//             error={formErrors.file}
-//             fileName={form.fileName}
-//             link={form.fileData}
-//             required
-//             onFile={e => {
-//               const file = e.target.files?.[0];
-//               if (!file) return;
-//               const reader = new FileReader();
-//               reader.onload = ev =>
-//                 setForm(f => ({
-//                   ...f,
-//                   fileName: file.name,
-//                   fileType: file.type,
-//                   fileData: ev.target.result
-//                 }));
-//               reader.readAsDataURL(file);
-//             }}
-//           />
-//           <div>
-//             <label className="block mb-1 text-sm font-medium">Name<span className="text-red-500">*</span></label>
-//             <input className="w-full border px-2 py-1 rounded mb-1"
-//               value={form.name || ""}
-//               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//             />
-//             {formErrors.name && <div className="text-red-500 text-xs mb-2">{formErrors.name}</div>}
-//           </div>
-//           <div>
-//             <label className="block mb-1 text-sm font-medium">ID Number<span className="text-red-500">*</span></label>
-//             <input className="w-full border px-2 py-1 rounded mb-1"
-//               value={form.idNumber || ""}
-//               onChange={e => setForm(f => ({ ...f, idNumber: e.target.value }))}
-//             />
-//             {formErrors.idNumber && <div className="text-red-500 text-xs mb-2">{formErrors.idNumber}</div>}
-//           </div>
-//           <div>
-//             <label className="block mb-1 text-sm font-medium">Date of Birth<span className="text-red-500">*</span></label>
-//             <input
-//               type="date"
-//               className="w-full border px-2 py-1 rounded mb-1"
-//               value={form.dob || ""}
-//               onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-//             />
-//             {formErrors.dob && <div className="text-red-500 text-xs mb-2">{formErrors.dob}</div>}
-//           </div>
-//           <div>
-//             <label className="block mb-1 text-sm font-medium">Address<span className="text-red-500">*</span></label>
-//             <input className="w-full border px-2 py-1 rounded mb-1"
-//               value={form.address || ""}
-//               onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-//             />
-//             {formErrors.address && <div className="text-red-500 text-xs mb-2">{formErrors.address}</div>}
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    const handleEditFieldChange = (field, value) => {
+        setEditingData((prev) => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+            setErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+    };
 
-//   // --- Experience Modal ---
-//   function renderExperiencePopup() {
-//     const onSubmit = (e) => {
-//       e.preventDefault();
-//       let err = {};
-//       if (!form.title) err.title = "Required";
-//       if (!form.type) err.type = "Required";
-//       if (!form.company) err.company = "Required";
-//       if (!form.location) err.location = "Required";
-//       if (!form.locationType) err.locationType = "Required";
-//       if (!form.startMonth) err.startMonth = "Required";
-//       if (!form.startYear) err.startYear = "Required";
-//       if (!form.current) {
-//         if (!form.endMonth) err.endMonth = "Required";
-//         if (!form.endYear) err.endYear = "Required";
-//       }
-//       setFormErrors(err);
-//       if (Object.keys(err).length) return;
-//       let list = [...experienceList];
-//       if (popup.index !== undefined) list[popup.index] = form;
-//       else list.push(form);
-//       setExperienceList(list);
-//       setPopup(null);
-//       setForm({});
-//     };
-//     return (
-//       <Modal title={`${popup.index !== undefined ? "Edit" : "Add"} Experience`} onClose={() => setPopup(null)}>
-//         <form onSubmit={onSubmit}>
-//           <div className="grid grid-cols-2 gap-4">
-//             <div className="col-span-2">
-//               <label className="block text-sm font-medium">Title<span className="text-red-500">*</span></label>
-//               <input className="w-full border px-2 py-1 rounded" value={form.title || ""} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-//               {formErrors.title && <div className="text-red-500 text-xs">{formErrors.title}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block text-sm font-medium">Employment type<span className="text-red-500">*</span></label>
-//               <input className="w-full border px-2 py-1 rounded" value={form.type || ""} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} />
-//               {formErrors.type && <div className="text-red-500 text-xs">{formErrors.type}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block text-sm font-medium">Company or Organization<span className="text-red-500">*</span></label>
-//               <input className="w-full border px-2 py-1 rounded" value={form.company || ""} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
-//               {formErrors.company && <div className="text-red-500 text-xs">{formErrors.company}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block text-sm font-medium">Location<span className="text-red-500">*</span></label>
-//               <input className="w-full border px-2 py-1 rounded" value={form.location || ""} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
-//               {formErrors.location && <div className="text-red-500 text-xs">{formErrors.location}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block text-sm font-medium">Location Type<span className="text-red-500">*</span></label>
-//               <select className="w-full border px-2 py-1 rounded" value={form.locationType || ""} onChange={e => setForm(f => ({ ...f, locationType: e.target.value }))}>
-//                 <option value="">Please select</option>
-//                 <option>Onsite</option>
-//                 <option>Remote</option>
-//                 <option>Hybrid</option>
-//               </select>
-//               {formErrors.locationType && <div className="text-red-500 text-xs">{formErrors.locationType}</div>}
-//             </div>
-//             <div className="col-span-2">
-//               <label className="block text-sm font-medium">Description</label>
-//               <textarea className="w-full border px-2 py-1 rounded" rows={4}
-//                 value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-//             </div>
-//             <div className="col-span-2 flex items-center gap-2">
-//               <input type="checkbox" checked={!!form.current}
-//                 onChange={e => setForm(f => ({ ...f, current: e.target.checked }))}
-//                 id="exp_current_cb" />
-//               <label htmlFor="exp_current_cb" className="text-sm">I am currently working in this role</label>
-//             </div>
-//             <div>
-//               <label className="text-sm">Start Month<span className="text-red-500">*</span></label>
-//               <select className="w-full border px-2 py-1 rounded" value={form.startMonth || ""} onChange={e => setForm(f => ({ ...f, startMonth: e.target.value }))}>
-//                 <option value="">Select</option>
-//                 {months.map(m => <option key={m}>{m}</option>)}
-//               </select>
-//               {formErrors.startMonth && <div className="text-red-500 text-xs">{formErrors.startMonth}</div>}
-//             </div>
-//             <div>
-//               <label className="text-sm">Start Year<span className="text-red-500">*</span></label>
-//               <select className="w-full border px-2 py-1 rounded" value={form.startYear || ""} onChange={e => setForm(f => ({ ...f, startYear: e.target.value }))}>
-//                 <option value="">Select</option>
-//                 {years.map(y => <option key={y}>{y}</option>)}
-//               </select>
-//               {formErrors.startYear && <div className="text-red-500 text-xs">{formErrors.startYear}</div>}
-//             </div>
-//             <div>
-//               <label className="text-sm">End Month{!form.current && <span className="text-red-500">*</span>}</label>
-//               <select className="w-full border px-2 py-1 rounded" value={form.endMonth || ""} onChange={e => setForm(f => ({ ...f, endMonth: e.target.value }))} disabled={!!form.current}>
-//                 <option value="">Select</option>
-//                 {months.map(m => <option key={m}>{m}</option>)}
-//               </select>
-//               {!form.current && formErrors.endMonth && <div className="text-red-500 text-xs">{formErrors.endMonth}</div>}
-//             </div>
-//             <div>
-//               <label className="text-sm">End Year{!form.current && <span className="text-red-500">*</span>}</label>
-//               <select className="w-full border px-2 py-1 rounded" value={form.endYear || ""} onChange={e => setForm(f => ({ ...f, endYear: e.target.value }))} disabled={!!form.current}>
-//                 <option value="">Select</option>
-//                 {years.map(y => <option key={y}>{y}</option>)}
-//               </select>
-//               {!form.current && formErrors.endYear && <div className="text-red-500 text-xs">{formErrors.endYear}</div>}
-//             </div>
-//           </div>
-//           <div className="flex justify-end gap-3 mt-8 col-span-2">
-//             <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }}
-//               className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//             <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save</button>
-//           </div>
-//         </form>
-//       </Modal>
-//     );
-//   }
+    const handleFileChange = (field, file) => {
+        setEditingData((prev) => ({ ...prev, [field]: file }));
+    };
 
-//   // --- Academic Qualification Section ---
-//   function renderDegreeSection() {
-//     function renderDegreePopup() {
-//       const onSubmit = (e) => {
-//         e.preventDefault();
-//         let err = {};
-//         if (!form.college) err.college = "Required";
-//         if (!form.degree) err.degree = "Required";
-//         if (!form.fieldOfStudy) err.fieldOfStudy = "Required";
-//         if (!form.cgpa) err.cgpa = "Required";
-//         if (!form.startMonth) err.startMonth = "Required";
-//         if (!form.startYear) err.startYear = "Required";
-//         if (!form.endMonth) err.endMonth = "Required";
-//         if (!form.endYear) err.endYear = "Required";
-//         setFormErrors(err);
-//         if (Object.keys(err).length) return;
-//         let list = [...degreeList];
-//         if (popup.index !== undefined) list[popup.index] = form;
-//         else list.push(form);
-//         setDegreeList(list);
-//         setPopup(null);
-//         setForm({});
-//       };
-//       return (
-//         <Modal title={`${popup.index !== undefined ? "Edit" : "Add"} Academic Qualification`} onClose={() => setPopup(null)}>
-//           <form onSubmit={onSubmit}>
-//             <div className="grid grid-cols-2 gap-4">
-//               <div>
-//                 <label className="block text-sm font-medium">College/University<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.college || ""} onChange={e => setForm(f => ({ ...f, college: e.target.value }))}
-//                 />
-//                 {formErrors.college && <div className="text-red-500 text-xs">{formErrors.college}</div>}
-//               </div>
-//               <div>
-//                 <label className="block text-sm font-medium">Degree<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.degree || ""} onChange={e => setForm(f => ({ ...f, degree: e.target.value }))}
-//                 />
-//                 {formErrors.degree && <div className="text-red-500 text-xs">{formErrors.degree}</div>}
-//               </div>
-//               <div>
-//                 <label className="block text-sm font-medium">Field of Study<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.fieldOfStudy || ""} onChange={e => setForm(f => ({ ...f, fieldOfStudy: e.target.value }))}
-//                 />
-//                 {formErrors.fieldOfStudy && <div className="text-red-500 text-xs">{formErrors.fieldOfStudy}</div>}
-//               </div>
-//               <div>
-//                 <label className="block text-sm font-medium">CGPA/Percentage<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.cgpa || ""} onChange={e => setForm(f => ({ ...f, cgpa: e.target.value }))}
-//                 />
-//                 {formErrors.cgpa && <div className="text-red-500 text-xs">{formErrors.cgpa}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">Start Month<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.startMonth || ""}
-//                   onChange={e => setForm(f => ({ ...f, startMonth: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {months.map(m => <option key={m}>{m}</option>)}
-//                 </select>
-//                 {formErrors.startMonth && <div className="text-red-500 text-xs">{formErrors.startMonth}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">Start Year<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.startYear || ""}
-//                   onChange={e => setForm(f => ({ ...f, startYear: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {years.map(y => <option key={y}>{y}</option>)}
-//                 </select>
-//                 {formErrors.startYear && <div className="text-red-500 text-xs">{formErrors.startYear}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">End Month<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.endMonth || ""}
-//                   onChange={e => setForm(f => ({ ...f, endMonth: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {months.map(m => <option key={m}>{m}</option>)}
-//                 </select>
-//                 {formErrors.endMonth && <div className="text-red-500 text-xs">{formErrors.endMonth}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">End Year<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.endYear || ""}
-//                   onChange={e => setForm(f => ({ ...f, endYear: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {years.map(y => <option key={y}>{y}</option>)}
-//                 </select>
-//                 {formErrors.endYear && <div className="text-red-500 text-xs">{formErrors.endYear}</div>}
-//               </div>
-//             </div>
-//             <div className="flex justify-end gap-3 mt-8 col-span-2">
-//               <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }}
-//                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//               <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save</button>
-//             </div>
-//           </form>
-//         </Modal>
-//       );
-//     }
-//     return (
-//       <SectionCard name="Academic Qualification">
-//         <div className="flex justify-end mb-4">
-//           <button onClick={() => setPopup({ type: "degree" })} className="bg-blue-600 rounded px-3 py-1 text-white text-sm font-semibold"> + ADD </button>
-//         </div>
-//         {degreeList.length === 0 && <div className="text-gray-400 text-sm mb-4">No academic qualification added yet.</div>}
-//         {degreeList.map((data, i) =>
-//           <div className="mb-4 border rounded p-3 text-sm flex justify-between items-start" key={i}>
-//             <div>
-//               <div className="font-bold text-base mb-1">{data.college}</div>
-//               <div>{data.degree}</div>
-//               <div>{data.startMonth} {data.startYear} - {data.endMonth} {data.endYear}</div>
-//               <div>{data.cgpa}</div>
-//             </div>
-//             <button onClick={() => setPopup({ type: "degree", index: i })}
-//               className="bg-blue-600 rounded px-3 py-1 text-white text-sm font-semibold">Edit</button>
-//           </div>
-//         )}
-//         {popup?.type === "degree" && renderDegreePopup()}
-//       </SectionCard>
-//     );
-//   }
+    const handleUpdate = async (subSection) => {
+        setIsUpdating(true);
+        try {
+            const validationErrors = validateFormData(subSection, editingData);
+            if (Object.keys(validationErrors).length > 0) {
+                setErrors(validationErrors);
+                setIsUpdating(false);
+                return;
+            }
 
-//   function renderExperienceSection() {
-//     return (
-//       <SectionCard name="Experience">
-//         <div className="flex justify-end mb-4">
-//           <button onClick={() => setPopup({ type: "experience" })} className="bg-blue-600 rounded px-3 py-1 text-white text-sm font-semibold"> + ADD </button>
-//         </div>
-//         {experienceList.length === 0 && <div className="text-gray-400 text-sm mb-4">No experience added yet.</div>}
-//         {experienceList.map((data, i) =>
-//           <div className="mb-4 border rounded p-3 text-sm flex justify-between items-center" key={i}>
-//             <div>
-//               <div className="font-bold text-base mb-1">{data.title}</div>
-//               <div className="mb-1">{data.company}</div>
-//               <div className="mb-1">{data.startMonth} {data.startYear} - {data.current ? "Present" : `${data.endMonth} ${data.endYear}`}</div>
-//               <div className="mb-1">{data.location} ({data.locationType})</div>
-//               {data.description && <div className="text-gray-600">{data.description}</div>}
-//             </div>
-//             <button onClick={() => setPopup({ type: "experience", index: i })}
-//               className="bg-blue-600 rounded px-3 py-1 text-white text-sm font-semibold">Edit</button>
-//           </div>
-//         )}
-//         {popup?.type === "experience" && renderExperiencePopup()}
-//       </SectionCard>
-//     );
-//   }
+            const existingData = identityData[subSection];
+            const method = existingData ? 'put' : 'post';
+            const formData = new FormData();
 
-//   function renderAchievementSection() {
-//     function renderAchievementPopup() {
-//       const onSubmit = (e) => {
-//         e.preventDefault();
-//         let err = {};
-//         if (!form.name) err.name = "Required";
-//         if (!form.organization) err.organization = "Required";
-//         if (!form.issueMonth) err.issueMonth = "Required";
-//         if (!form.issueYear) err.issueYear = "Required";
-//         if (!form.expirationMonth) err.expirationMonth = "Required";
-//         if (!form.expirationYear) err.expirationYear = "Required";
-//         if (!form.credId) err.credId = "Required";
-//         if (!form.credUrl) err.credUrl = "Required";
-//         if (!form.fileName || !form.fileData) err.file = "Please upload your credential file";
-//         setFormErrors(err);
-//         if (Object.keys(err).length) return;
-//         let list = [...achievementList];
-//         if (popup.index !== undefined) list[popup.index] = form;
-//         else list.push(form);
-//         setAchievementList(list);
-//         setPopup(null);
-//         setForm({});
-//       };
-//       return (
-//         <Modal title={`${popup.index !== undefined ? "Edit" : "Add"} Achievement/Certification`} onClose={() => setPopup(null)}>
-//           <form onSubmit={onSubmit}>
-//             <div className="grid grid-cols-2 gap-4">
-//               <div>
-//                 <label className="block text-sm font-medium">Name<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.name || ""} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-//                 />
-//                 {formErrors.name && <div className="text-red-500 text-xs">{formErrors.name}</div>}
-//               </div>
-//               <div>
-//                 <label className="block text-sm font-medium">Issuing Organization<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.organization || ""} onChange={e => setForm(f => ({ ...f, organization: e.target.value }))}
-//                 />
-//                 {formErrors.organization && <div className="text-red-500 text-xs">{formErrors.organization}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">Issue Month<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.issueMonth || ""}
-//                   onChange={e => setForm(f => ({ ...f, issueMonth: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {months.map(m => <option key={m}>{m}</option>)}
-//                 </select>
-//                 {formErrors.issueMonth && <div className="text-red-500 text-xs">{formErrors.issueMonth}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">Issue Year<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.issueYear || ""}
-//                   onChange={e => setForm(f => ({ ...f, issueYear: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {years.map(y => <option key={y}>{y}</option>)}
-//                 </select>
-//                 {formErrors.issueYear && <div className="text-red-500 text-xs">{formErrors.issueYear}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">Expiration Month<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.expirationMonth || ""}
-//                   onChange={e => setForm(f => ({ ...f, expirationMonth: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {months.map(m => <option key={m}>{m}</option>)}
-//                 </select>
-//                 {formErrors.expirationMonth && <div className="text-red-500 text-xs">{formErrors.expirationMonth}</div>}
-//               </div>
-//               <div>
-//                 <label className="text-sm">Expiration Year<span className="text-red-500">*</span></label>
-//                 <select className="w-full border px-2 py-1 rounded" value={form.expirationYear || ""}
-//                   onChange={e => setForm(f => ({ ...f, expirationYear: e.target.value }))}>
-//                   <option value="">Select</option>
-//                   {years.map(y => <option key={y}>{y}</option>)}
-//                 </select>
-//                 {formErrors.expirationYear && <div className="text-red-500 text-xs">{formErrors.expirationYear}</div>}
-//               </div>
-//               <div>
-//                 <label className="block text-sm font-medium">Credentials ID<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.credId || ""} onChange={e => setForm(f => ({ ...f, credId: e.target.value }))}
-//                 />
-//                 {formErrors.credId && <div className="text-red-500 text-xs">{formErrors.credId}</div>}
-//               </div>
-//               <div>
-//                 <label className="block text-sm font-medium">Credentials URL<span className="text-red-500">*</span></label>
-//                 <input className="w-full border px-2 py-1 rounded"
-//                   value={form.credUrl || ""} onChange={e => setForm(f => ({ ...f, credUrl: e.target.value }))}
-//                 />
-//                 {formErrors.credUrl && <div className="text-red-500 text-xs">{formErrors.credUrl}</div>}
-//               </div>
-//               <div className="col-span-2">
-//                 <FileUploadZone
-//                   label="Upload Credential"
-//                   fileName={form.fileName}
-//                   accept=".png,.jpg,.jpeg,.pdf"
-//                   error={formErrors.file}
-//                   required
-//                   link={null}
-//                   onFile={e => {
-//                     const file = e.target.files?.[0];
-//                     if (!file) return;
-//                     const reader = new FileReader();
-//                     reader.onload = ev =>
-//                       setForm(f => ({
-//                         ...f,
-//                         fileName: file.name,
-//                         fileType: file.type,
-//                         fileData: ev.target.result
-//                       }));
-//                     reader.readAsDataURL(file);
-//                   }}
-//                 />
-//                 {form.fileType && form.fileType.startsWith("image/") && form.fileData && (
-//                   <img src={form.fileData} alt="preview" className="mt-2 border rounded" style={{ width: 160, height: 80, objectFit: "cover" }} />
-//                 )}
-//               </div>
-//             </div>
-//             <div className="flex justify-end gap-3 mt-8 col-span-2">
-//               <button type="button" onClick={() => { setPopup(null); setForm({}); setFormErrors({}); }}
-//                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md">Cancel</button>
-//               <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save</button>
-//             </div>
-//           </form>
-//         </Modal>
-//       );
-//     }
-//     return (
-//       <SectionCard name="Achievements & Certifications">
-//         <div className="flex justify-end mb-4">
-//           <button
-//             onClick={() => setPopup({ type: "achievement" })}
-//             className="bg-blue-600 rounded px-3 py-1 text-white text-sm font-semibold"
-//           >
-//             + ADD
-//           </button>
-//         </div>
+            const filePartNames = {
+                aadhaar: 'aadhaarImage', pan: 'panImage', drivingLicense: 'licenseImage',
+                passport: 'passportImage', voter: 'voterImage'
+            };
 
-//         {achievementList.length === 0 && (
-//           <div className="text-gray-400 text-sm mb-4">
-//             No achievements or certifications added yet.
-//           </div>
-//         )}
+            const fileInputNames = {
+                aadhaar: 'aadhaarImage', pan: 'panImage', drivingLicense: 'licenseImage',
+                passport: 'passportImage', voter: 'uploadVoter'
+            };
+            
+            let backendDtoPartName;
+            switch (subSection) {
+                case 'pan':
+                    backendDtoPartName = (method === 'post') ? 'panDetails' : 'panDTO';
+                    break;
+                case 'voter':
+                    backendDtoPartName = (method === 'post') ? 'voterDetails' : 'voterDTO';
+                    break;
+                case 'aadhaar':
+                    backendDtoPartName = 'aadhaar';
+                    break;
+                case 'drivingLicense':
+                    backendDtoPartName = 'drivingLicense';
+                    break;
+                case 'passport':
+                    backendDtoPartName = 'passportDetails';
+                    break;
+                default:
+                    throw new Error("Invalid subsection for DTO part name");
+            }
 
-//         {achievementList.map((data, i) => (
-//           <div
-//             key={i}
-//             className="mb-4 border rounded p-3 text-sm flex justify-between items-start gap-4"
-//           >
-//             {/* LEFT: Details */}
-//             <div className="flex-1">
-//               <div className="font-bold text-base mb-1">{data.name}</div>
-//               <div className="mb-1">{data.organization}</div>
-//               <div className="mb-1">Issued: {data.issueMonth} {data.issueYear}</div>
-//               <div className="mb-1">ID: {data.credId}</div>
+            const fileInputField = fileInputNames[subSection];
+            const file = editingData[fileInputField];
+            if (file && file instanceof File) {
+                formData.append(filePartNames[subSection], file);
+            }
+            
+            const dto = { ...editingData };
+            delete dto[fileInputField];
+            formData.append(backendDtoPartName, new Blob([JSON.stringify(dto)], { type: "application/json" }));
 
-//               {/* Image preview */}
-//               {data.fileType?.startsWith("image/") && data.fileData && (
-//                 <div
-//                   className="mt-4 border border-gray-300 rounded-md overflow-hidden"
-//                   style={{ maxHeight: '100%', width: '100%', maxWidth: '200px' }}
-//                 >
-//                   <img
-//                     src={data.fileData}
-//                     alt={data.fileName}
-//                     className="w-full h-full object-contain"
-//                     style={{ maxHeight: '400px' }}
-//                   />
-//                 </div>
-//               )}
+            const updateEmployeeId = documentEmployeeId;
+            let url;
+            switch (subSection) {
+                case 'aadhaar': url = `/employee/${method === 'put' ? `${updateEmployeeId}/aadhaar` : `aadhaar/${updateEmployeeId}`}`; break;
+                case 'pan': url = `/employee/${updateEmployeeId}/pan`; break;
+                case 'drivingLicense': url = `/employee/${method === 'put' ? `${updateEmployeeId}/driving` : `driving/license/${updateEmployeeId}`}`; break;
+                case 'passport': url = `/employee/${method === 'put' ? `${updateEmployeeId}/passport` : `passport/details/${updateEmployeeId}`}`; break;
+                case 'voter': url = `/employee/${updateEmployeeId}/voter`; break;
+                default: throw new Error("Invalid subsection for URL");
+            }
 
-//             </div>
+            await publicinfoApi[method](url, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
 
-//             {/* RIGHT: Edit button */}
-//             <div>
-//               <button
-//                 onClick={() => setPopup({ type: "achievement", index: i })}
-//                 className="bg-blue-600 rounded px-3 py-1 text-white text-sm font-semibold"
-//               >
-//                 Edit
-//               </button>
-//             </div>
-//           </div>
-//         ))}
+            setEditingSection(null);
+            setErrors({});
 
-//         {popup?.type === "achievement" && renderAchievementPopup()}
-//       </SectionCard>
-//     );
-//   }
+            const getUrlKey = subSection === 'drivingLicense' ? 'driving' : subSection;
+            const updatedIdentityData = await publicinfoApi.get(`employee/${documentEmployeeId}/${getUrlKey}`);
+            setIdentityData(prev => {
+                const newData = { ...prev, [subSection]: updatedIdentityData.data };
+                const completed = Object.values(newData).filter(Boolean).length;
+                setCompletionStats({ completed, total: 5 });
+                return newData;
+            });
 
-//   return (
-//     <div className="p-6 bg-gray-50 min-h-screen">
-//       <SectionCard name="Identity Documents">
-//         <div className="mb-2">
-//           {identityDocs.map(doc => (
-//             <div key={doc.name} className="flex items-center justify-between border-b pb-4 mb-3">
-//               {/* LEFT SIDE: Name, Status and Identity Details */}
-//               <div className="flex flex-col gap-1 text-sm">
-//                 <div className="flex items-center gap-3">
-//                   <div className="bg-gray-100 p-2 rounded">
-//                     <FaFileAlt className="text-gray-400 text-lg" />
-//                   </div>
-//                   <span>{doc.name}</span>
-//                   <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md font-medium">
-//                     {doc.status}
-//                   </span>
-//                 </div>
+        } catch (error) {
+            console.error(`Update for ${subSection} failed:`, error);
+            if (error.response) {
+                const { status, data } = error.response;
+                if (status === 400) {
+                    if (data && typeof data === 'object' && !data.timestamp) {
+                        setErrors(data);
+                    } else {
+                        const message = (data && data.message) ? data.message : "Validation failed. Please check your input.";
+                        setErrors({ general: message });
+                    }
+                } else {
+                    setErrors({ general: "An unexpected error occurred. Please try again." });
+                }
+            } else {
+                setErrors({ general: "Network error. Please check your internet connection." });
+            }
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
-//                 {/* Show identity details just below the name */}
-//                 {identityData[doc.name] && (
-//                   <div className="mt-2 space-y-1 text-xs text-left ml-12">
-//                     {doc.name === "Aadhaar Card" ? (
-//                       <>
-//                         <div><b>Aadhaar Number:</b> {identityData[doc.name].aadhaarNumber}</div>
-//                         <div><b>Enrollment Number:</b> {identityData[doc.name].enrollmentNumber}</div>
-//                         <div><b>Date of Birth:</b> {identityData[doc.name].dob}</div>
-//                         <div><b>Name:</b> {identityData[doc.name].name}</div>
-//                         <div><b>Address:</b> {identityData[doc.name].address}</div>
-//                         <div><b>Gender:</b> {identityData[doc.name].gender}</div>
-//                       </>
-//                     ) : (
-//                       <>
-//                         <div><b>Name:</b> {identityData[doc.name].name}</div>
-//                         <div><b>ID Number:</b> {identityData[doc.name].idNumber}</div>
-//                         <div><b>Date of Birth:</b> {identityData[doc.name].dob}</div>
-//                         <div><b>Address:</b> {identityData[doc.name].address}</div>
-//                       </>
-//                     )}
-//                     <div>
-//                       {identityData[doc.name].fileName && identityData[doc.name].fileData && (
-//                         <a
-//                           href={identityData[doc.name].fileData}
-//                           target="_blank"
-//                           rel="noopener noreferrer"
-//                           className="text-blue-600 underline"
-//                         >
-//                           {identityData[doc.name].fileName}
-//                         </a>
-//                       )}
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
+    const handleDelete = async (subSectionKey) => {
+        const docTitle = documentConfig[subSectionKey].title;
+        if (!window.confirm(`Are you sure you want to delete the ${docTitle} for employee ${documentEmployeeId}? This action cannot be undone.`)) {
+            return;
+        }
+        try {
+            let urlKey = subSectionKey;
+            if (subSectionKey === 'drivingLicense') {
+                urlKey = 'driving';
+            }
+            const url = `employee/${documentEmployeeId}/${urlKey}`;
+            
+            await publicinfoApi.delete(url);
 
-//               {/* RIGHT SIDE: Button */}
-//               <div>
-//                 <button
-//                   onClick={() => {
-//                     setPopup({ type: 'identity', docName: doc.name });
-//                     setForm(identityData[doc.name] || {});
-//                   }}
-//                   className="text-sm bg-blue-600 rounded px-3 py-1 text-white font-semibold"
-//                 >
-//                   {identityData[doc.name] ? 'Edit' : '+Add details'}
-//                 </button>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
+            alert(`${docTitle} deleted successfully.`);
+            setIdentityData(prev => {
+                const updatedData = { ...prev, [subSectionKey]: null };
+                const completed = Object.values(updatedData).filter(Boolean).length;
+                setCompletionStats({ completed, total: 5 });
+                return updatedData;
+            });
+        } catch (err) {
+            console.error(`Failed to delete ${docTitle}:`, err);
+            alert(`Error deleting ${docTitle}. You may not have the required permissions.`);
+        }
+    };
 
-//         {/* Render Popup */}
-//         {popup && popup.type === "identity" && renderIdentityPopup(popup.docName)}
-//       </SectionCard>
+    const SkeletonCard = () => (
+        <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
+            theme === 'dark' 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+        }`}>
+            <div className={`p-6 border-b ${
+                theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600' 
+                    : 'bg-gray-100 border-gray-200'
+            }`}>
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                        <div className={`w-12 h-12 rounded-xl ${
+                            theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                        }`}></div>
+                        <div>
+                            <div className={`h-5 rounded w-32 mb-2 ${
+                                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                            }`}></div>
+                            <div className={`h-3 rounded w-48 ${
+                                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                            }`}></div>
+                        </div>
+                    </div>
+                    <div className={`h-9 rounded-lg w-20 ${
+                        theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                    }`}></div>
+                </div>
+            </div>
+            <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className={`p-4 rounded-xl ${
+                            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+                        }`}>
+                            <div className={`h-3 rounded w-20 mb-2 ${
+                                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                            }`}></div>
+                            <div className={`h-4 rounded w-32 ${
+                                theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                            }`}></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 
-//       {renderExperienceSection()}
-//       {renderDegreeSection()}
-//       {renderAchievementSection()}
-//     </div>
-//   );
-// }
+    const renderField = (label, name, type = "text", required = false, options = [], isDisabled = false) => {
+        const isError = errors[name];
+        const fieldValue = editingData[name] || "";
 
-// // --------- Modal and SectionCard ---------
-// function Modal({ title, children, onClose }) {
-//   return (
-//     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-//       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
-//         <div className="flex items-center justify-between p-4 border-b">
-//           <h2 className="text-lg font-semibold">{title}</h2>
-//           <button
-//             onClick={onClose}
-//             className="text-gray-400 hover:text-gray-600"
-//           >
-//             <IoClose size={24} />
-//           </button>
-//         </div>
-//         <div className="p-4">{children}</div>
-//       </div>
-//     </div>
-//   );
-// }
-// function SectionCard({ name, children }) {
-//   return (
-//     <div className="bg-white rounded-lg p-6 mt-6 border">
-//       <h2 className="text-lg font-semibold mb-3">{name}</h2>
-//       {children}
-//     </div>
-//   );
-// }
+        const handleLocalFieldChange = (value) => {
+            handleEditFieldChange(name, value);
+            if (name === 'panNumber' && value) {
+                if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) {
+                    setErrors(prev => ({ ...prev, [name]: "PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)" }));
+                }
+            } else if (name === 'aadhaarNumber' && value) {
+                if (!/^[2-9]{1}[0-9]{11}$/.test(value)) {
+                    setErrors(prev => ({ ...prev, [name]: "Aadhaar must be 12 digits starting with 2-9" }));
+                }
+            } else if (name === 'voterIdNumber' && value) {
+                if (!/^[A-Z]{3}[0-9]{7}$/.test(value)) {
+                    setErrors(prev => ({ ...prev, [name]: "Voter ID format: 3 letters + 7 digits (e.g., ABC1234567)" }));
+                }
+            }
+        };
+
+        return (
+            <div className="group relative" key={name}>
+                <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                }`}>
+                    {label}
+                    {required && <span className="text-red-500 ml-1 text-base">*</span>}
+                    {isDisabled && (
+                        <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                            Read Only
+                        </span>
+                    )}
+                </label>
+
+                {type === "select" ? (
+                    <div className="relative">
+                        <select
+                            value={fieldValue}
+                            onChange={(e) => handleLocalFieldChange(e.target.value)}
+                            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none
+                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                                ${isError 
+                                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                    : theme === 'dark'
+                                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                                }
+                                ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            disabled={isDisabled}
+                        >
+                            <option value="">Choose {label}</option>
+                            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                ) : type === "date" ? (
+                    <input
+                        type="date"
+                        value={fieldValue}
+                        onChange={(e) => handleLocalFieldChange(e.target.value)}
+                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                            ${isError 
+                                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                : theme === 'dark'
+                                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                            }
+                            ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                        disabled={isDisabled}
+                    />
+                ) : type === "file" ? (
+                    <div className={`relative border-2 border-dashed rounded-xl transition-all duration-300
+                        ${isError 
+                            ? 'border-red-300 bg-red-50' 
+                            : theme === 'dark'
+                            ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
+                            : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                        }
+                        ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        <input
+                            type="file"
+                            onChange={(e) => handleFileChange(name, e.target.files?.[0])}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            disabled={isDisabled}
+                            accept=".jpg,.jpeg,.png,.pdf"
+                        />
+                        <div className="px-6 py-8 text-center">
+                            <IoCloudUpload className={`mx-auto h-12 w-12 mb-4 ${
+                                theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                            }`} />
+                            <p className={`text-sm font-medium mb-1 ${
+                                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
+                                Drop your file here, or <span className="text-blue-600">browse</span>
+                            </p>
+                            <p className={`text-xs ${
+                                theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+                            }`}>PNG, JPG, PDF up to 10MB</p>
+                        </div>
+                    </div>
+                ) : type === "textarea" ? (
+                    <textarea
+                        value={fieldValue}
+                        onChange={(e) => handleLocalFieldChange(e.target.value)}
+                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 resize-none h-32
+                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                            ${isError 
+                                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                : theme === 'dark'
+                                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                            }
+                            ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                        placeholder={`Enter ${label.toLowerCase()}...`}
+                        required={required}
+                        disabled={isDisabled}
+                    />
+                ) : (
+                    <input
+                        type={type}
+                        value={fieldValue}
+                        onChange={(e) => handleLocalFieldChange(e.target.value)}
+                        className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+                            focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                            ${isError 
+                                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                : theme === 'dark'
+                                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                            }
+                            ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                        placeholder={`Enter ${label.toLowerCase()}...`}
+                        required={required}
+                        disabled={isDisabled}
+                    />
+                )}
+                {isError && (
+                    <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                        <IoWarning className="w-4 h-4 flex-shrink-0" />
+                        <p className="text-sm font-medium">{isError}</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderEditModal = () => {
+        if (!editingSection) return null;
+        const { subSection } = editingSection;
+        const fields = identityFields[subSection] || [];
+        const isUpdate = !!identityData[subSection];
+        const config = documentConfig[subSection];
+
+        return (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
+                <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
+                    theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                }`}>
+                    <div className={`px-8 py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
+                        <div className="absolute inset-0 bg-black/10"></div>
+                        <div className="relative flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="text-4xl">{config.icon}</div>
+                                <div>
+                                    <h2 className="text-2xl font-bold">{isUpdate ? 'Update' : 'Add'} {config.title}</h2>
+                                    <p className="text-white/90 text-sm">{config.description}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setEditingSection(null)} className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" aria-label="Close">
+                                <IoClose className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
+                        <form className="p-8" onSubmit={(e) => { e.preventDefault(); handleUpdate(subSection); }}>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {fields.map((f) => {
+                                    const isIdField = ['aadhaarNumber', 'panNumber', 'licenseNumber', 'passportNumber', 'voterIdNumber'].includes(f.name);
+                                    const isDisabled = isUpdate && isIdField;
+                                    return renderField(f.label, f.name, f.type, f.required, f.options, isDisabled);
+                                })}
+                            </div>
+                            {errors.general && (
+                                <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
+                                    theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                                }`}>
+                                    <div className="flex items-center">
+                                        <IoWarning className="w-6 h-6 text-red-400 mr-3" />
+                                        <p className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                    </div>
+                    
+                    <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
+                        theme === 'dark' 
+                            ? 'bg-gray-700 border-gray-600' 
+                            : 'bg-gray-50 border-gray-200'
+                    }`}>
+                        <button 
+                            type="button" 
+                            onClick={() => setEditingSection(null)} 
+                            className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+                                theme === 'dark'
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                            }`}
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => handleUpdate(subSection)}
+                            disabled={isUpdating}
+                            className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
+                                            hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                                            focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                                            ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
+                        >
+                            {isUpdating ? (
+                                <>
+                                    <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                                    <span>Updating...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <IoCheckmarkCircle className="w-5 h-5" />
+                                    <span>{isUpdate ? 'Update Document' : 'Save Document'}</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const DetailItem = ({ label, value }) => (
+        <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
+            theme === 'dark'
+                ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
+                : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+        }`}>
+            <div className="flex items-start justify-between">
+                <div className="flex-1">
+                    <span className={`text-xs font-bold uppercase tracking-wider block mb-2 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                    }`}>{label}</span>
+                    <p className={`text-sm font-semibold leading-relaxed ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
+                        {value || (
+                            <span className={`italic ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>Not provided</span>
+                        )}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+
+    const DetailItemWithLink = ({ label, link }) => (
+        <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
+            theme === 'dark'
+                ? 'bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-blue-700'
+                : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'
+        }`}>
+            <div className="flex items-start justify-between">
+                <div className="flex-1">
+                    <span className={`text-xs font-bold uppercase tracking-wider block mb-2 ${
+                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                    }`}>{label}</span>
+                    {link ? (
+                        <a href={link} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center space-x-2 text-sm font-semibold hover:underline transition-all duration-200 group ${
+                            theme === 'dark' ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-900'
+                        }`}>
+                            <IoEye className="w-4 h-4" />
+                            <span>View Document</span>
+                            <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                    ) : (
+                        <p className={`text-sm font-medium italic ${
+                            theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                        }`}>Document not uploaded</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    const IdentitySubSection = ({ title, data, onEdit, subSectionKey, onDelete, isAdmin }) => {
+        const config = documentConfig[subSectionKey];
+        const hasData = !!data;
+        return (
+            <div className={`border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 overflow-hidden group hover:scale-[1.02] ${
+                theme === 'dark'
+                    ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
+                    : `bg-white ${config.borderColor}`
+            }`}>
+                <div className={`px-8 py-6 border-b-2 relative overflow-hidden ${
+                    theme === 'dark'
+                        ? `${config.darkBgColor} ${config.darkBorderColor}`
+                        : `${config.bgColor} ${config.borderColor}`
+                }`}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
+                    <div className="relative flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <div className="text-4xl transform group-hover:scale-110 transition-transform duration-300">{config.icon}</div>
+                            <div>
+                                <h4 className={`text-xl font-bold flex items-center space-x-2 ${
+                                    theme === 'dark' ? config.darkTextColor : config.textColor
+                                }`}>
+                                    <span>{title}</span>
+                                    {hasData && (
+                                        <div className="flex items-center space-x-1">
+                                            <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                                                Verified
+                                            </span>
+                                        </div>
+                                    )}
+                                </h4>
+                                <p className={`text-sm mt-1 ${
+                                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                                }`}>{config.description}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                           {fromContextMenu && isAdmin && hasData && (
+                                <button
+                                    onClick={() => onDelete(subSectionKey)}
+                                    className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg ${
+                                        theme === 'dark'
+                                            ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
+                                            : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
+                                    }`}
+                                >
+                                    <IoTrashOutline className="w-4 h-4" />
+                                    <span>Delete</span>
+                                </button>
+                            )}
+
+                            {!isReadOnly && (
+                                <button onClick={() => onEdit(subSectionKey)} className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg ${
+                                    hasData
+                                        ? theme === 'dark'
+                                            ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
+                                            : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
+                                        : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                                    }`}>
+                                    {hasData ? (
+                                        <>
+                                            <IoDocumentText className="w-4 h-4" />
+                                            <span>Edit Details</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <IoAdd className="w-4 h-4" />
+                                            <span>Add Document</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                <div className="p-8">
+                    {hasData ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {Object.keys(data).map(key => {
+                                if (key === 'employee') return null;
+                                if (key === 'uploadAadhaar' || key === 'panImage' || key === 'licenseImage' || key === 'passportImage' || key === 'uploadVoter') {
+                                    return <DetailItemWithLink key={key} label={key.replace(/([A-Z])/g, " $1")} link={data[key]} />;
+                                }
+                                return <DetailItem key={key} label={key.replace(/([A-Z])/g, " $1")} value={data[key]} />;
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                                theme === 'dark' ? config.darkBgColor : config.bgColor
+                            }`}>
+                                <div className={`text-3xl opacity-50 ${
+                                    theme === 'dark' ? config.darkTextColor : config.textColor
+                                }`}>{config.icon}</div>
+                            </div>
+                            <h3 className={`text-lg font-semibold mb-2 ${
+                                theme === 'dark' ? 'text-white' : 'text-gray-800'
+                            }`}>No {title} Added</h3>
+                            <p className={`text-sm mb-6 max-w-sm mx-auto ${
+                                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                                {isReadOnly
+                                    ? `This employee hasn't added their ${title.toLowerCase()} information yet.`
+                                    : `Add your ${title.toLowerCase()} information to complete your profile and enhance security.`
+                                }
+                            </p>
+                            {!isReadOnly && (
+                                <button onClick={() => onEdit(subSectionKey)} className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg">
+                                    <IoAdd className="w-4 h-4" />
+                                    <span>Add {title}</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const ProgressIndicator = () => {
+        const percentage = (completionStats.completed / completionStats.total) * 100;
+        return (
+            <div className={`rounded-2xl p-6 shadow-lg border ${
+                theme === 'dark' 
+                    ? 'bg-gray-800 border-gray-700' 
+                    : 'bg-white border-gray-200'
+            }`}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-bold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}>
+                        {isReadOnly ? 'Document Status' : 'Profile Completion'}
+                    </h3>
+                    <span className={`text-sm font-medium ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    }`}>{completionStats.completed}/{completionStats.total} Documents</span>
+                </div>
+                <div className={`w-full rounded-full h-3 mb-4 overflow-hidden ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                }`}>
+                    <div className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-700 ease-out" style={{ width: `${percentage}%` }}></div>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{percentage.toFixed(0)}% Complete</span>
+                    {percentage === 100 && (
+                        <span className="text-green-600 font-semibold flex items-center">
+                            <IoCheckmarkCircle className="w-4 h-4 mr-1" />
+                            All Set!
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const filteredSections = Object.keys(documentConfig).filter(key =>
+        documentConfig[key].title.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        documentConfig[key].description.toLowerCase().includes(searchFilter.toLowerCase())
+    );
+
+    return (
+        <div className={`min-h-screen ${
+            theme === 'dark' 
+                ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+                : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
+        }`}>
+            {loading ? (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="relative">
+                            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <IoDocumentText className="w-8 h-8 text-blue-500" />
+                            </div>
+                        </div>
+                        <h2 className={`text-2xl font-bold mb-2 ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-800'
+                        }`}>Loading Documents</h2>
+                        <p className={`${
+                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>Fetching identity information securely...</p>
+                        <div className="flex justify-center space-x-2 mt-4">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`} style={{ animationDelay: `${i * 0.2}s` }}></div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+                    {fromContextMenu && (
+                        <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+                            theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
+                        }`}>
+                            <div className="flex items-center space-x-3">
+                                <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                                <div>
+                                    <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+                                        Viewing Employee Documents
+                                    </p>
+                                    <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                                        Employee ID: {targetEmployeeId} 
+                                        {isReadOnly && " • Read-only access"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+                        <div className="lg:col-span-2">
+                            <ProgressIndicator />
+                        </div>
+                        <div className={`rounded-2xl p-6 shadow-lg border ${
+                            theme === 'dark' 
+                                ? 'bg-gray-800 border-gray-700' 
+                                : 'bg-white border-gray-200'
+                        }`}>
+                            <div className="relative">
+                                <input 
+                                    type="text" 
+                                    placeholder="Search documents..." 
+                                    value={searchFilter} 
+                                    onChange={(e) => setSearchFilter(e.target.value)} 
+                                    className={`w-full px-5 py-4 pl-12 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 ${
+                                        theme === 'dark'
+                                            ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-500'
+                                            : 'border-gray-200 bg-white text-black placeholder-gray-500 focus:border-blue-500'
+                                    }`} 
+                                />
+                                <svg className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                                    theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+                                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        {filteredSections.map(key => (
+                            <IdentitySubSection 
+                                key={key} 
+                                title={documentConfig[key].title} 
+                                data={identityData[key]} 
+                                onEdit={openEditSection} 
+                                subSectionKey={key}
+                                onDelete={handleDelete}
+                                isAdmin={isAdmin}
+                            />
+                        ))}
+                        {filteredSections.length === 0 && searchFilter && (
+                            <div className="text-center py-16">
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                                    theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+                                }`}>
+                                    <svg className={`w-8 h-8 ${
+                                        theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className={`text-lg font-semibold mb-2 ${
+                                    theme === 'dark' ? 'text-white' : 'text-gray-800'
+                                }`}>No documents found</h3>
+                                <p className={`${
+                                    theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                                }`}>Try adjusting your search terms</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {renderEditModal()}
+                </div>
+            )}
+            
+            <style jsx>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+                .animate-slideUp { animation: slideUp 0.4s ease-out; }
+                .animate-slideIn { animation: slideIn 0.3s ease-out; }
+                .animate-spin-slow {
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
+        </div>
+    );
+}
+
+export default Document;

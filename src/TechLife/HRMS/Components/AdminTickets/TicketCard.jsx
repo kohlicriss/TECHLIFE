@@ -56,8 +56,6 @@ export default function TicketCard({
   
 </span>
 
-
-
       </div>
     </div>
   );
