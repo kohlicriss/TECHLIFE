@@ -52,7 +52,7 @@ jobs:
       run: terraform -chdir=./terraform/webhosting output
 
     - name: test output
-      run: terraform -chdir=./terraform/webhosting output -raw
+      run: terraform -chdir=./terraform/webhosting output -raw cloud_front_distribution_id
       
     - name: Export CloudFront Distribution ID
       run: |
