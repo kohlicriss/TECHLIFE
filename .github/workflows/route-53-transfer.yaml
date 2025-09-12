@@ -57,19 +57,12 @@ jobs:
     - name: Get CloudFront Distribution ID
       id: get_dist
       run: |
-        dist_id=$(terraform -chdir=./terraform/webhosting output -raw cloud_front_distribution_id)
+        dist_id=$(terraform -chdir=./terraform/webhosting output cloud_front_distribution_id | tr -d '"')
         echo "DIST_ID=$dist_id" >> $GITHUB_ENV
-        echo "dist_id=$dist_id" >> $GITHUB_OUTPUT
-
-
-
-
 
     - name: CloudFront Invalidation
       run: |
         aws cloudfront create-invalidation \
           --distribution-id $DIST_ID \
           --paths "/*"
-      env:
-        CLOUDFRONT_DISTRIBUTION_ID: ${{ env.cloud_front_distribution_id }}
 
