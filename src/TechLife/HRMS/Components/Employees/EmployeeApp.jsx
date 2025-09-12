@@ -25,7 +25,8 @@ import {
     IoArrowForward,
     IoWarning,
     IoCheckmarkCircle,
-    IoIdCardOutline // Added for employee ID icon
+    IoIdCardOutline,
+      IoPeopleOutline
 } from "react-icons/io5";
 
 const generateInitials = (name) => {
@@ -126,6 +127,15 @@ function EmployeeApp() {
             window.removeEventListener("click", handleOutsideClick);
         };
     }, [contextMenu, flippedCard]);
+
+ const handleViewTeamsClick = (employee) => {
+    if (employee) {
+        navigate(`/my-teams/${empID}?fromContextMenu=true&targetEmployeeId=${employee.employeeId}`);
+    }
+    setContextMenu({ ...contextMenu, visible: false });
+    setFlippedCard(null);
+};
+
 
     const handleContextMenu = (e, employee) => {
         e.preventDefault();
@@ -853,82 +863,97 @@ function EmployeeApp() {
                                             </div>
 
                                             {/* BACK SIDE */}
-                                            <div
-                                                className={`absolute inset-0 w-full h-full rounded-xl shadow-lg border backface-hidden rotate-y-180 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'
-                                                        : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
-                                                }`}
-                                                style={{
-                                                    backfaceVisibility: 'hidden',
-                                                    transform: 'rotateY(180deg)'
-                                                }}
-                                            >
-                                                <div className="flex flex-col items-center justify-center h-full space-y-3 p-5">
-                                                    <div className="text-center mb-4">
-                                                        <h3 className={`text-lg font-bold mb-2 ${
-                                                            theme === 'dark' ? 'text-white' : 'text-gray-900'
-                                                            }`}>
-                                                            Quick Actions
-                                                        </h3>
-                                                        <p className={`text-sm ${
-                                                            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                                                            }`}>
-                                                            {employee.displayName}
-                                                        </p>
-                                                    </div>
+                                           <div
+    className={`absolute inset-0 w-full h-full rounded-xl shadow-lg border backface-hidden rotate-y-180 ${
+        theme === 'dark'
+            ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'
+            : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
+    }`}
+    style={{
+        backfaceVisibility: 'hidden',
+        transform: 'rotateY(180deg)'
+    }}
+>
+    <div className="flex flex-col items-center justify-center h-full space-y-3 p-5">
+        <div className="text-center mb-4">
+            <h3 className={`text-lg font-bold mb-2 ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
+                Quick Actions
+            </h3>
+            <p className={`text-sm ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                {employee.displayName}
+            </p>
+        </div>
 
-                                                    <div className="space-y-2 w-full max-w-xs">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleChatClick(employee);
-                                                            }}
-                                                            className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
-                                                                theme === 'dark'
-                                                                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg'
-                                                                    : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg'
-                                                                }`}
-                                                        >
-                                                            <IoChatbubbleOutline className="w-4 h-4" />
-                                                            <span className="font-medium">Start Chat</span>
-                                                        </button>
+        <div className="space-y-2 w-full max-w-xs">
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleChatClick(employee);
+                }}
+                className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
+                    theme === 'dark'
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg'
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg'
+                    }`}
+            >
+                <IoChatbubbleOutline className="w-4 h-4" />
+                <span className="font-medium">Start Chat</span>
+            </button>
 
-                                                        {hasManagementAccess && (
-                                                            <>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleViewProfileClick(employee);
-                                                                    }}
-                                                                    className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
-                                                                        theme === 'dark'
-                                                                            ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg'
-                                                                            : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg'
-                                                                        }`}
-                                                                >
-                                                                    <IoPersonOutline className="w-4 h-4" />
-                                                                    <span className="font-medium">View Profile</span>
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDocumentsClick(employee);
-                                                                    }}
-                                                                    className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
-                                                                        theme === 'dark'
-                                                                            ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg'
-                                                                            : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg'
-                                                                        }`}
-                                                                >
-                                                                    <IoDocumentsOutline className="w-4 h-4" />
-                                                                    <span className="font-medium">Documents</span>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
+            {hasManagementAccess && (
+                <>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewProfileClick(employee);
+                        }}
+                        className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
+                            theme === 'dark'
+                                ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg'
+                                : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg'
+                            }`}
+                    >
+                        <IoPersonOutline className="w-4 h-4" />
+                        <span className="font-medium">View Profile</span>
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDocumentsClick(employee);
+                        }}
+                        className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
+                            theme === 'dark'
+                                ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg'
+                                : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg'
+                            }`}
+                    >
+                        <IoDocumentsOutline className="w-4 h-4" />
+                        <span className="font-medium">Documents</span>
+                    </button>
+                    {/* Ee kinda button ni add cheyandi */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewTeamsClick(employee);
+                        }}
+                        className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
+                            theme === 'dark'
+                                ? 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg'
+                                : 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg'
+                            }`}
+                    >
+                        <IoPeopleOutline className="w-4 h-4" />
+                        <span className="font-medium">View Teams</span>
+                    </button>
+                </>
+            )}
+        </div>
+    </div>
+</div>
                                         </div>
                                     ) : (
                                         /* IMPROVED LIST VIEW */

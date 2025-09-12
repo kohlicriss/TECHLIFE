@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // useNavigate ఇంపోర్ట్ చేయండి
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { publicinfoApi } from '../../../../axiosInstance';
-import { FaUsers, FaProjectDiagram, FaArrowLeft, FaUserShield } from 'react-icons/fa';
+import { FaUsers, FaProjectDiagram, FaArrowLeft, FaUserShield, FaEdit } from 'react-icons/fa';
 import { Context } from '../HrmsContext';
+import EditTeamModal from './EditTeamModal';
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center h-64">
@@ -19,53 +20,85 @@ const ErrorDisplay = ({ message }) => (
 
 const TeamDetails = () => {
     const { teamId } = useParams();
-    const navigate = useNavigate(); // useNavigate ను ఇక్కడ ఉపయోగించండి
+    const navigate = useNavigate();
     const [team, setTeam] = useState(null);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { theme } = useContext(Context);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [allEmployees, setAllEmployees] = useState([]);
+
+    const { theme, userData } = useContext(Context);
+    const userRoles = userData?.roles || [];
+    const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
+
+    const fetchTeamDetails = async () => {
+        try {
+            setLoading(true);
+            const teamResponse = await publicinfoApi.get(`employee/team/employee/${teamId}`);
+            const teamData = Array.isArray(teamResponse.data) ? teamResponse.data[0] : teamResponse.data;
+            setTeam(teamData);
+
+            const projectsResponse = await publicinfoApi.get(`employee/team/projects/${teamId}`);
+            setProjects(projectsResponse.data || []);
+            
+            setError(null);
+        } catch (err) {
+            console.error("Error fetching team details:", err);
+            setError("Could not fetch team details. The team may not exist or an error occurred.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchAllEmployees = async () => {
+        try {
+          const response = await publicinfoApi.get('employee/0/1000/employeeId/asc/employees');
+          const formattedEmployees = response.data.map(emp => ({
+            value: emp.employeeId,
+            label: `${emp.displayName} (${emp.employeeId})`
+          }));
+          setAllEmployees(formattedEmployees);
+        } catch (err) {
+          console.error("Error fetching employees:", err);
+        }
+    };
 
     useEffect(() => {
-        const fetchTeamDetails = async () => {
-            try {
-                setLoading(true);
-                const teamResponse = await publicinfoApi.get(`employee/team/employee/${teamId}`);
-                const teamData = Array.isArray(teamResponse.data) ? teamResponse.data[0] : teamResponse.data;
-                setTeam(teamData);
-
-                const projectsResponse = await publicinfoApi.get(`employee/team/projects/${teamId}`);
-                setProjects(projectsResponse.data || []);
-                
-                setError(null);
-            } catch (err) {
-                console.error("Error fetching team details:", err);
-                setError("Could not fetch team details. The team may not exist or an error occurred.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (teamId) {
             fetchTeamDetails();
+            if (canModifyTeam) {
+                fetchAllEmployees();
+            }
         }
-    }, [teamId]);
+    }, [teamId, canModifyTeam]);
 
     if (loading) return <LoadingSpinner />;
     if (error) return <ErrorDisplay message={error} />;
     if (!team) return <div className={`text-center p-8 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>No team data found.</div>;
+    
+    const teamWithProjects = { ...team, projects };
 
     return (
         <div className={`p-6 md:p-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
             <div className="max-w-7xl mx-auto">
-                {/* <<<<<----- ఇక్కడ మార్పు చేయబడింది ----->>>>> */}
                 <button onClick={() => navigate(-1)} className="flex items-center text-blue-500 hover:underline mb-6">
                     <FaArrowLeft className="mr-2" /> Back to All Teams
                 </button>
 
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold">{team.teamName}</h1>
-                    <p className={`mt-2 text-lg ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Details for team ID: {team.teamId}</p>
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-4xl font-bold">{team.teamName}</h1>
+                        <p className={`mt-2 text-lg ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Details for team ID: {team.teamId}</p>
+                    </div>
+                    {canModifyTeam && (
+                        <button
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center shadow-md"
+                        >
+                            <FaEdit className="mr-2" /> Edit Team
+                        </button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -125,6 +158,14 @@ const TeamDetails = () => {
                     </div>
                 </div>
             </div>
+
+            <EditTeamModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                team={teamWithProjects}
+                onTeamUpdated={fetchTeamDetails}
+                employees={allEmployees}
+            />
         </div>
     );
 };
