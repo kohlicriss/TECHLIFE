@@ -20,6 +20,7 @@ const ChatApp = lazy(() => import("./Chats/ChatApp"));
 const Employees = lazy(() => import("./Employees/Employees"));
 const Profiles = lazy(() => import("./Profile/Profiles"));
 const AllTeams = lazy(() => import("./Teams/AllTeams"));
+const TeamDetails = lazy(() => import("./Teams/TeamDetails")); // కొత్తగా జోడించిన ఇంపోర్ట్
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
 const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
 const CombinedDashBoard=lazy(() => import("./EmployeeDashboards/CombinedDashBoard"));
@@ -146,13 +147,14 @@ const HrmsApp = () => {
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
                                 <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                                 
-                                {/* ADDED: Route for individual employee public profile */}
                                 <Route 
                                     path="/employees/:empID/public/:employeeID" 
                                     element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} 
                                 />
 
-                                <Route path="/my-teams/:empID/*" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                                <Route path="/my-teams/:empID" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
+                                <Route path="/teams/:teamId" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
+                                
                                 <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                                 <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />

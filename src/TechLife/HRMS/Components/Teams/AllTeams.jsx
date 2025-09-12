@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { publicinfoApi } from '../../../../axiosInstance';
-import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
 import Select from 'react-select';
+import { Link } from 'react-router-dom';
+import EditTeamModal from './EditTeamModal'; 
+import ConfirmationModal from './ConfirmationModal';
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center h-64">
@@ -22,7 +25,10 @@ const AllTeams = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
   
@@ -35,6 +41,7 @@ const AllTeams = () => {
   
   const { userData, theme } = useContext(Context);
   const userRoles = userData?.roles || [];
+  const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
   const canCreateTeam = userRoles.includes('ADMIN') || userRoles.includes('HR');
 
   const toggleTeamExpansion = (teamId) => {
@@ -86,15 +93,14 @@ const AllTeams = () => {
 
   useEffect(() => {
     fetchTeams();
-    if (canCreateTeam) {
+    if (canModifyTeam) {
       fetchEmployees();
     }
-  }, [canCreateTeam]);
+  }, [canModifyTeam]);
 
   const validateForm = () => {
     const errors = {};
     if (!teamName.trim()) errors.teamName = "Team Name is required.";
-    if (!teamLead) errors.teamLead = "Team Lead is required.";
     if (teamMembers.length === 0) errors.teamMembers = "At least one Team Member is required.";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -109,26 +115,56 @@ const AllTeams = () => {
 
     const newTeamData = {
         teamName,
-        teamLeadId: teamLead.value,
-        employeeIds: teamMembers.map(member => member.value),
+        teamDescription: "Default Description", 
+        employeeIds: [teamLead?.value, ...teamMembers.map(member => member.value)].filter(Boolean),
+        projectId: "PRO1001" 
     };
 
     try {
         await publicinfoApi.post('employee/team', newTeamData);
         await fetchTeams();
         
-        setIsModalOpen(false);
+        setIsCreateModalOpen(false);
         setTeamName('');
         setTeamLead(null);
         setTeamMembers([]);
         alert('Team created successfully!');
     } catch (err) {
         console.error("Error creating team:", err);
-        setFormErrors({ general: 'Failed to create team. Please check the data and try again.' });
+        setFormErrors({ general: err.response?.data?.message || 'Failed to create team. Please check the data and try again.' });
     } finally {
         setIsSubmitting(false);
     }
   };
+  
+  const handleEditClick = (team) => {
+    setSelectedTeam(team);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (team) => {
+    setSelectedTeam(team);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedTeam) return;
+
+    setIsSubmitting(true);
+    try {
+        await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
+        setTeams(teams.filter(t => t.teamId !== selectedTeam.teamId));
+        setIsDeleteModalOpen(false);
+        setSelectedTeam(null);
+        alert('Team deleted successfully!');
+    } catch (err) {
+        console.error("Error deleting team:", err);
+        alert('Failed to delete team.');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
 
   const renderField = (label, name, children) => {
     const isError = formErrors[name];
@@ -163,42 +199,16 @@ const AllTeams = () => {
         borderColor: state.isFocused ? '#3b82f6' : (theme === 'dark' ? '#6b7280' : '#d1d5db'),
       },
     }),
-    multiValue: (styles) => ({
-      ...styles,
-      backgroundColor: theme === 'dark' ? '#4f46e5' : '#e0e7ff',
-      color: theme === 'dark' ? 'white' : '#3730a3',
-      borderRadius: '0.5rem',
-    }),
-    multiValueLabel: (styles) => ({
-      ...styles,
-      color: theme === 'dark' ? 'white' : '#3730a3',
-    }),
-    multiValueRemove: (styles) => ({
-      ...styles,
-      color: theme === 'dark' ? '#e0e7ff' : '#4f46e5',
-      ':hover': {
-        backgroundColor: theme === 'dark' ? '#6366f1' : '#c7d2fe',
-        color: 'white',
-      },
-    }),
-    option: (styles, { isFocused, isSelected }) => ({
-        ...styles,
-        backgroundColor: isSelected ? (theme === 'dark' ? '#4f46e5' : '#6366f1') : isFocused ? (theme === 'dark' ? '#374151' : '#f3f4f6') : (theme === 'dark' ? '#1f2937' : 'white'),
-        color: isSelected ? 'white' : (theme === 'dark' ? '#d1d5db' : '#1f2937'),
-    }),
-    menu: (provided) => ({
-        ...provided,
-        backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
-        borderRadius: '0.75rem'
-    }),
-    singleValue: (provided) => ({
-        ...provided,
-        color: theme === 'dark' ? 'white' : 'black'
-    }),
+    multiValue: (styles) => ({...styles, backgroundColor: theme === 'dark' ? '#4f46e5' : '#e0e7ff', color: theme === 'dark' ? 'white' : '#3730a3', borderRadius: '0.5rem'}),
+    multiValueLabel: (styles) => ({...styles, color: theme === 'dark' ? 'white' : '#3730a3'}),
+    multiValueRemove: (styles) => ({...styles, color: theme === 'dark' ? '#e0e7ff' : '#4f46e5', ':hover': { backgroundColor: theme === 'dark' ? '#6366f1' : '#c7d2fe', color: 'white' }}),
+    option: (styles, { isFocused, isSelected }) => ({...styles, backgroundColor: isSelected ? (theme === 'dark' ? '#4f46e5' : '#6366f1') : isFocused ? (theme === 'dark' ? '#374151' : '#f3f4f6') : (theme === 'dark' ? '#1f2937' : 'white'), color: isSelected ? 'white' : (theme === 'dark' ? '#d1d5db' : '#1f2937')}),
+    menu: (provided) => ({...provided, backgroundColor: theme === 'dark' ? '#1f2937' : 'white', borderRadius: '0.75rem'}),
+    singleValue: (provided) => ({...provided, color: theme === 'dark' ? 'white' : 'black'}),
   };
 
   const renderCreateTeamModal = () => {
-    if (!isModalOpen) return null;
+    if (!isCreateModalOpen) return null;
     
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4">
@@ -214,7 +224,7 @@ const AllTeams = () => {
                                 <p className="text-white/90 text-sm">Organize employees into a new team.</p>
                             </div>
                         </div>
-                        <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-white/20 rounded-full transition-all group">
+                        <button onClick={() => setIsCreateModalOpen(false)} className="p-3 hover:bg-white/20 rounded-full transition-all group">
                             <FaTimes className="w-6 h-6 group-hover:rotate-90 transition-transform" />
                         </button>
                     </div>
@@ -268,7 +278,7 @@ const AllTeams = () => {
                 </div>
                 
                 <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                    <button type="button" onClick={() => setIsModalOpen(false)} className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>
+                    <button type="button" onClick={() => setIsCreateModalOpen(false)} className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>
                         Cancel
                     </button>
                     <button type="button" onClick={handleCreateTeam} disabled={isSubmitting} className={`px-10 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-xl
@@ -300,7 +310,7 @@ const AllTeams = () => {
         </h1>
         {canCreateTeam && (
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsCreateModalOpen(true)}
             className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center shadow-md"
           >
             <FaPlus className="mr-2" /> Create Team
@@ -319,19 +329,32 @@ const AllTeams = () => {
             const isExpanded = isTeamExpanded(teamId);
             const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
             const hasMoreMembers = team.employees?.length > 5;
+            const teamLead = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD');
             
             return (
-              <div key={teamId} className={`rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
+              <div key={teamId} className={`rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
                 <div className="p-5">
-                  <h2 className={`text-xl font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{team.teamName}</h2>
-                  {team.teamLead && (
-                    <div className={`flex items-center text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                      <FaUserShield className="mr-2 text-green-500" />
-                      <strong>Lead:</strong><span className="ml-1">{team.teamLead}</span>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className={`text-xl font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{team.teamName}</h2>
+                      {teamLead && (
+                        <div className={`flex items-center text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                          <FaUserShield className="mr-2 text-green-500" />
+                          <strong>Lead:</strong><span className="ml-1">{teamLead.displayName}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    {canModifyTeam && (
+                        <div className="flex space-x-2">
+                            {/* <<<<<----- ఇక్కడ మార్పు చేయబడింది ----->>>>> */}
+                            <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors"><FaEye /></Link>
+                            <button onClick={() => handleEditClick(team)} title="Edit Team" className="p-2 text-gray-500 hover:text-green-500 transition-colors"><FaEdit /></button>
+                            <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors"><FaTrash /></button>
+                        </div>
+                    )}
+                  </div>
                 </div>
-                <div className={`px-5 py-4 border-t ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`px-5 py-4 border-t mt-auto ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                   <h3 className={`font-semibold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Members ({team.employees?.length || 0})</h3>
                   <div className="space-y-2">
                     <div className="flex flex-wrap gap-2">
@@ -362,6 +385,25 @@ const AllTeams = () => {
       )}
       
       {renderCreateTeamModal()}
+
+      <EditTeamModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        team={selectedTeam}
+        onTeamUpdated={fetchTeams}
+        employees={employees}
+      />
+      
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Team"
+        message={`Are you sure you want to delete the team "${selectedTeam?.teamName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        isConfirming={isSubmitting}
+      />
+
     </div>
   );
 };
