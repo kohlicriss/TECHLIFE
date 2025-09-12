@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { publicinfoApi } from '../../../../axiosInstance';
-import { FaUsers, FaTimes, FaUserShield } from 'react-icons/fa';
+import { FaUsers, FaTimes } from 'react-icons/fa';
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
 import Select from 'react-select';
@@ -42,22 +42,34 @@ const EditTeamModal = ({ team, isOpen, onClose, onTeamUpdated, employees }) => {
         setIsSubmitting(true);
         setFormErrors({});
         
+        const projectIdToSend = (team && team.projects && team.projects.length > 0) 
+                                  ? team.projects[0] 
+                                  : "PRO1001"; 
+
+        if (!projectIdToSend) {
+            setFormErrors({ general: 'Error: Project ID is missing. Cannot update the team.' });
+            setIsSubmitting(false);
+            return;
+        }
+
         const updatedTeamData = {
             teamId: team.teamId,
             teamName,
-            teamDescription: team.teamDescription || "", // Assuming description might not be editable here
+            teamDescription: team.teamDescription || "",
             employeeIds: teamMembers.map(member => member.value),
-            projectId: team.projectId || "" // Assuming project is not changed here
+            projectId: projectIdToSend
         };
+
+        console.log("Update Team Payload:", updatedTeamData);
 
         try {
             await publicinfoApi.put(`employee/team/employee/${team.teamId}`, updatedTeamData);
-            onTeamUpdated(); // This will trigger a re-fetch in the parent component
+            onTeamUpdated();
             onClose();
             alert('Team updated successfully!');
         } catch (err) {
             console.error("Error updating team:", err);
-            setFormErrors({ general: 'Failed to update team. Please check the data and try again.' });
+            setFormErrors({ general: err.response?.data?.message || 'Failed to update team. Please check the data and try again.' });
         } finally {
             setIsSubmitting(false);
         }

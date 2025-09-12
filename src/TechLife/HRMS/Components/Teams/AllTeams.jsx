@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
+// Step 1: `useLocation` ni import cheskondi
+import { Link, useLocation } from 'react-router-dom';
 import { publicinfoApi } from '../../../../axiosInstance';
-import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye } from 'react-icons/fa';
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
 import Select from 'react-select';
-import { Link } from 'react-router-dom';
-import EditTeamModal from './EditTeamModal'; 
 import ConfirmationModal from './ConfirmationModal';
 
 const LoadingSpinner = () => (
@@ -26,23 +26,30 @@ const AllTeams = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
-  
+
   // Form state
   const [teamName, setTeamName] = useState('');
   const [teamLead, setTeamLead] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  
+
   const { userData, theme } = useContext(Context);
   const userRoles = userData?.roles || [];
   const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
   const canCreateTeam = userRoles.includes('ADMIN') || userRoles.includes('HR');
+
+  // Step 2: URL parameters ni aadharanga cheskuni employee ID ni set cheyandi
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
+  const targetEmployeeId = searchParams.get('targetEmployeeId');
+
+  const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : userData?.employeeId;
 
   const toggleTeamExpansion = (teamId) => {
     const newExpandedTeams = new Set(expandedTeams);
@@ -59,14 +66,13 @@ const AllTeams = () => {
   const fetchTeams = async () => {
     try {
       setLoading(true);
-      const empID = userData?.employeeId;
-      
-      if (!empID) {
+      // employeeIdToFetch ni correct ga use cheyandi (Meeru chesinatle)
+      if (!employeeIdToFetch) {
         setError("Employee ID not found. Please login again.");
         return;
       }
-      
-      const response = await publicinfoApi.get(`employee/team/${empID}`);
+
+      const response = await publicinfoApi.get(`employee/team/${employeeIdToFetch}`);
       const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
       setTeams(teamsArray || []);
       setError(null);
@@ -91,12 +97,13 @@ const AllTeams = () => {
     }
   };
 
+  // Step 3: useEffect lo employeeIdToFetch ni dependency ga add cheyandi
   useEffect(() => {
     fetchTeams();
-    if (canModifyTeam) {
+    if (canCreateTeam) {
       fetchEmployees();
     }
-  }, [canModifyTeam]);
+  }, [canCreateTeam, employeeIdToFetch]); // Dependency update cheyandi
 
   const validateForm = () => {
     const errors = {};
@@ -115,15 +122,15 @@ const AllTeams = () => {
 
     const newTeamData = {
         teamName,
-        teamDescription: "Default Description", 
+        teamDescription: "Default Description",
         employeeIds: [teamLead?.value, ...teamMembers.map(member => member.value)].filter(Boolean),
-        projectId: "PRO1001" 
+        projectId: "PRO1001"
     };
 
     try {
         await publicinfoApi.post('employee/team', newTeamData);
         await fetchTeams();
-        
+
         setIsCreateModalOpen(false);
         setTeamName('');
         setTeamLead(null);
@@ -135,11 +142,6 @@ const AllTeams = () => {
     } finally {
         setIsSubmitting(false);
     }
-  };
-  
-  const handleEditClick = (team) => {
-    setSelectedTeam(team);
-    setIsEditModalOpen(true);
   };
 
   const handleDeleteClick = (team) => {
@@ -164,7 +166,6 @@ const AllTeams = () => {
         setIsSubmitting(false);
     }
   };
-
 
   const renderField = (label, name, children) => {
     const isError = formErrors[name];
@@ -209,7 +210,7 @@ const AllTeams = () => {
 
   const renderCreateTeamModal = () => {
     if (!isCreateModalOpen) return null;
-    
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4">
             <div className={`rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col ${
@@ -233,35 +234,35 @@ const AllTeams = () => {
                 <div className="overflow-y-auto flex-grow">
                     <form className="p-8" onSubmit={handleCreateTeam}>
                         <div className="space-y-6">
-                            {renderField("Team Name", "teamName", 
-                                <input 
-                                    type="text" 
-                                    value={teamName} 
+                            {renderField("Team Name", "teamName",
+                                <input
+                                    type="text"
+                                    value={teamName}
                                     onChange={(e) => setTeamName(e.target.value)}
                                     className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
                                         focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-                                        ${formErrors.teamName ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : 
+                                        ${formErrors.teamName ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' :
                                         theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' : 'border-gray-200 bg-white hover:border-gray-300'}`}
                                     placeholder="e.g., Development Team"
                                 />
                             )}
                             {renderField("Team Lead", "teamLead",
-                                <Select 
+                                <Select
                                     name="teamLead"
-                                    options={employees} 
-                                    value={teamLead} 
-                                    onChange={setTeamLead} 
-                                    isClearable 
+                                    options={employees}
+                                    value={teamLead}
+                                    onChange={setTeamLead}
+                                    isClearable
                                     styles={customSelectStyles}
                                 />
                             )}
                             {renderField("Team Members", "teamMembers",
-                                <Select 
+                                <Select
                                     name="teamMembers"
-                                    isMulti 
-                                    options={employees} 
-                                    value={teamMembers} 
-                                    onChange={setTeamMembers} 
+                                    isMulti
+                                    options={employees}
+                                    value={teamMembers}
+                                    onChange={setTeamMembers}
                                     styles={customSelectStyles}
                                 />
                             )}
@@ -276,7 +277,7 @@ const AllTeams = () => {
                         )}
                     </form>
                 </div>
-                
+
                 <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                     <button type="button" onClick={() => setIsCreateModalOpen(false)} className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>
                         Cancel
@@ -304,6 +305,16 @@ const AllTeams = () => {
 
   return (
     <div className={`p-6 md:p-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        {/* Step 4: Conditional banner ni add cheyandi */}
+        {fromContextMenu && targetEmployeeId && (
+            <div className={`mb-6 p-4 rounded-xl border-l-4 border-blue-500 shadow-md flex items-center space-x-3 ${theme === 'dark' ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
+                <FaEye />
+                <p className="font-semibold">
+                    Viewing teams for employee: {targetEmployeeId}
+                </p>
+            </div>
+        )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className={`text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
           <FaUsers className="mr-3 text-blue-500" /> All Teams
@@ -330,7 +341,7 @@ const AllTeams = () => {
             const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
             const hasMoreMembers = team.employees?.length > 5;
             const teamLead = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD');
-            
+
             return (
               <div key={teamId} className={`rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
                 <div className="p-5">
@@ -344,14 +355,12 @@ const AllTeams = () => {
                         </div>
                       )}
                     </div>
-                    {canModifyTeam && (
-                        <div className="flex space-x-2">
-                            {/* <<<<<----- ఇక్కడ మార్పు చేయబడింది ----->>>>> */}
-                            <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors"><FaEye /></Link>
-                            <button onClick={() => handleEditClick(team)} title="Edit Team" className="p-2 text-gray-500 hover:text-green-500 transition-colors"><FaEdit /></button>
-                            <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors"><FaTrash /></button>
-                        </div>
-                    )}
+                     <div className="flex space-x-2">
+                        <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors"><FaEye /></Link>
+                        {canModifyTeam && (
+                             <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors"><FaTrash /></button>
+                        )}
+                    </div>
                   </div>
                 </div>
                 <div className={`px-5 py-4 border-t mt-auto ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
@@ -365,7 +374,7 @@ const AllTeams = () => {
                       ))}
                     </div>
                     {hasMoreMembers && (
-                      <button 
+                      <button
                         onClick={() => toggleTeamExpansion(teamId)}
                         className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
                       >
@@ -383,17 +392,9 @@ const AllTeams = () => {
           })}
         </div>
       )}
-      
+
       {renderCreateTeamModal()}
 
-      <EditTeamModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        team={selectedTeam}
-        onTeamUpdated={fetchTeams}
-        employees={employees}
-      />
-      
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
