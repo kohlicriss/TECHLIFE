@@ -28,16 +28,16 @@ jobs:
       with:
         node-version: '20'
 
-    # - name: Install dependencies
-    #   run: npm install
+    - name: Install dependencies
+      run: npm install
 
-    # - name: Run build
-    #   env:
-    #     CI: ""
-    #   run: npm run build
+    - name: Run build
+      env:
+        CI: ""
+      run: npm run build
 
-    # - name: move to the templates folder
-    #   run: mv build/ terraform/webhosting/
+    - name: move to the templates folder
+      run: mv build/ terraform/webhosting/
 
     - name: Terraform Init
       run: terraform -chdir=./terraform/webhosting init
@@ -51,10 +51,11 @@ jobs:
     - name: echo output
       run: terraform -chdir=./terraform/webhosting output -json
 
-    - name: Get CloudFront Hosted Zone
+    - name: Export CloudFront Distribution ID
       run: |
-        value=$(terraform -chdir=./terraform/webhosting output -json | jq -r .cloud_front_distribution_id.value)
-        echo "cloud_front_distribution_id=$value" >> $GITHUB_ENV
+        dist_id=$(terraform -chdir=./terraform/webhosting output -json | jq -r '.cloud_front_distribution_id.value')
+        echo "cloud_front_distribution_id=$dist_id" >> $GITHUB_ENV
+
 
 
     - name: CloudFront Invalidation
