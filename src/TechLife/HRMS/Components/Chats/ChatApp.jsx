@@ -1,67 +1,48 @@
-import { useEffect, useState, useRef, useContext } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getChatOverview } from '../../../../services/apiService';
 import { transformOverviewToChatList } from '../../../../services/dataTransformer';
 import ChatApplication from './ChatApplication';
-import { Context } from '../HrmsContext';
 
-const ChatListItemSkeleton = () => {
-    const { theme } = useContext(Context);
+const ChatListItemSkeleton = () => (
+    <div className="flex items-center space-x-4 p-3">
+        <div className="w-11 h-11 bg-gray-200 rounded-full animate-pulse"></div>
+        <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+        </div>
+    </div>
+);
 
-    // Background colors for light and dark mode skeleton items
-    const bgBase = theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200';
-
-    return (
-        <div className="flex items-center space-x-4 p-3">
-            <div className={`${bgBase} w-11 h-11 rounded-full animate-pulse`}></div>
-            <div className="flex-1 space-y-2">
-                <div className={`${bgBase} h-4 rounded w-3/4 animate-pulse`}></div>
-                <div className={`${bgBase} h-3 rounded w-1/2 animate-pulse`}></div>
+const ChatAppSkeleton = () => (
+    <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
+        {/* Sidebar Skeleton */}
+        <div className="w-full md:w-[30%] h-full p-4 bg-white flex flex-col shadow-xl md:rounded-lg space-y-4">
+            <div className="h-12 bg-gray-200 rounded-lg animate-pulse mb-4"></div>
+            <div className="flex-grow space-y-2 pr-2 overflow-hidden">
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
             </div>
         </div>
-    );
-};
 
-const ChatAppSkeleton = () => {
-    const { theme } = useContext(Context);
-
-    // Skeleton container bg colors for light vs dark
-    const sidebarBg = theme === 'dark' ? 'bg-gray-800' : 'bg-white';
-    const rightPanelBg = theme === 'dark' ? 'bg-gray-900' : 'bg-white';
-
-    // Text color for loading message
-    const loadingTextColor = theme === 'dark' ? 'text-gray-300' : 'text-gray-400';
-
-    return (
-        <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
-            {/* Sidebar Skeleton */}
-            <div className={`w-full md:w-[30%] h-full p-4 ${sidebarBg} flex flex-col shadow-xl md:rounded-lg space-y-4`}>
-                <div className={`h-12 rounded-lg animate-pulse mb-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
-                <div className="flex-grow space-y-2 pr-2 overflow-hidden">
-                    <ChatListItemSkeleton />
-                    <ChatListItemSkeleton />
-                    <ChatListItemSkeleton />
-                    <ChatListItemSkeleton />
-                    <ChatListItemSkeleton />
-                    <ChatListItemSkeleton />
-                    <ChatListItemSkeleton />
-                </div>
-            </div>
-
-            {/* Right Panel */}
-            <div className={`hidden md:flex flex-col w-[70%] h-full ${rightPanelBg} md:rounded-lg shadow-xl`}>
-                <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                        <p className={`text-xl ${loadingTextColor}`}>Loading Chats...</p>
-                    </div>
+        {/* This part is hidden on mobile to match the final layout's behavior */}
+        <div className="hidden md:flex flex-col w-[70%] h-full bg-white md:rounded-lg shadow-xl">
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <p className="text-xl text-gray-400">Loading Chats...</p>
                 </div>
             </div>
         </div>
-    );
-};
+    </div>
+);
+
 
 function ChatApp() {
-    const { theme } = useContext(Context);
     const { userId } = useParams();
     const [chatList, setChatList] = useState({ groups: [], privateChatsWith: [] });
     const [isLoading, setIsLoading] = useState(true);
@@ -151,12 +132,8 @@ function ChatApp() {
         }
     }, [userId]);
 
-    // Background and text color classes for main chat app container based on theme
-    const containerBg = theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100';
-    const containerTextColor = theme === 'dark' ? 'text-white' : 'text-black';
-
     return (
-        <div style={{ height: '90vh' }} className={`flex h-screen ${containerBg} ${containerTextColor}`}>
+        <div style={{ height: '90vh' }} className="flex h-screen bg-gray-100">
             {isLoading ? (
                 <ChatAppSkeleton />
             ) : (

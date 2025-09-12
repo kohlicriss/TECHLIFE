@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback, useContext } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback,useContext} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Context } from '../HrmsContext';
 import { Client } from '@stomp/stompjs';
@@ -36,7 +36,6 @@ const formatFileSize = (bytes) => {
 };
 
 const FileIcon = ({ fileName, className = "text-3xl" }) => {
-    const { theme } = useContext(Context);
     const extension = fileName?.split('.').pop()?.toLowerCase();
     if (['pdf'].includes(extension)) return <FaFilePdf className={`text-red-500 ${className}`} />;
     if (['doc', 'docx'].includes(extension)) return <FaFileWord className={`text-blue-700 ${className}`} />;
@@ -45,21 +44,20 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
     if (['zip', 'rar', '7z'].includes(extension)) return <FaFileArchive className={`text-yellow-500 ${className}`} />;
     if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) return <FaImage className={`text-purple-500 ${className}`} />;
     if (['mp3', 'wav', 'ogg'].includes(extension)) return <FaFileAudio className={`text-pink-500 ${className}`} />;
-    return <FaFileAlt className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} ${className}`} />;
+    return <FaFileAlt className={`text-gray-500 ${className}`} />;
 };
 
 const FileMessage = ({ msg, isMyMessage }) => {
-    const { theme } = useContext(Context);
     const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
 
     const content = (
-        <div className={`flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')}`}>
+        <div className={`flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'}`}>
             <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
                 <FileIcon fileName={msg.fileName} className="text-4xl" />
             </div>
             <div className="flex-grow overflow-hidden mr-2">
-                <p className={`font-semibold truncate ${isMyMessage ? 'text-white' : (theme === 'dark' ? 'text-gray-200' : 'text-gray-800')}`}>{msg.fileName}</p>
-                <p className={`text-sm ${isMyMessage ? 'text-blue-200' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}`}>{formatFileSize(msg.fileSize)}</p>
+                <p className={`font-semibold truncate ${isMyMessage ? 'text-white' : 'text-gray-800'}`}>{msg.fileName}</p>
+                <p className={`text-sm ${isMyMessage ? 'text-blue-200' : 'text-gray-600'}`}>{formatFileSize(msg.fileSize)}</p>
             </div>
             <div
                 onClick={(e) => {
@@ -77,7 +75,6 @@ const FileMessage = ({ msg, isMyMessage }) => {
 };
 
 const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0 }) => {
-    const { theme } = useContext(Context);
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -154,11 +151,11 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
                         <FaDownload size={16} />
                     </button>
                 )}
-                <div className={`flex-grow flex flex-col justify-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <p className="text-sm">Voice Message</p>
+                <div className="flex-grow flex flex-col justify-center">
+                    <p className="text-sm text-gray-700">Voice Message</p>
                     <div className="flex justify-between items-center mt-1">
-                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{formatFileSize(fileSize)}</span>
-                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{formatTime(duration)}</span>
+                        <span className="text-xs text-gray-500">{formatFileSize(fileSize)}</span>
+                        <span className="text-xs text-gray-500">{formatTime(duration)}</span>
                     </div>
                 </div>
             </div>
@@ -167,7 +164,7 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
     return (
         <div className="flex items-center gap-3 p-2 w-64">
             <audio ref={audioRef} src={localSrc} preload="metadata" />
-            <button onClick={togglePlayPause} className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isSender ? (theme === 'dark' ? 'bg-gray-200 text-blue-700' : 'bg-white text-blue-600') : 'bg-gray-400 bg-opacity-30 text-white'}`}>
+            <button onClick={togglePlayPause} className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isSender ? 'bg-white text-blue-600' : 'bg-gray-400 bg-opacity-30 text-white'}`}>
                 {isPlaying ? <FaPause size={16} /> : <FaPlay size={16} className="ml-1" />}
             </button>
             <div className="flex-grow flex flex-col justify-center">
@@ -178,9 +175,9 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
                     const newTime = (clickX / rect.width) * duration;
                     if (audioRef.current) audioRef.current.currentTime = newTime;
                 }}>
-                    <div style={{ width: `${progressPercentage}%` }} className={`h-full rounded-full ${isSender ? (theme === 'dark' ? 'bg-gray-200' : 'bg-white') : (theme === 'dark' ? 'bg-gray-400' : 'bg-gray-300')}`}></div>
+                    <div style={{ width: `${progressPercentage}%` }} className={`h-full rounded-full ${isSender ? 'bg-white' : 'bg-gray-300'}`}></div>
                 </div>
-                <span className={`text-xs self-end mt-1 ${isSender ? 'text-blue-200' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-500')}`}>{formatTime(duration)}</span>
+                <span className={`text-xs self-end mt-1 ${isSender ? 'text-blue-200' : 'text-gray-500'}`}>{formatTime(duration)}</span>
             </div>
         </div>
     );
@@ -188,24 +185,24 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
 const MessageSkeleton = () => (
     <div className="space-y-4 p-4">
         <div className="flex items-end gap-2 justify-start">
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"></div>
-            <div className="h-10 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse w-48"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+            <div className="h-10 rounded-lg bg-gray-200 animate-pulse w-48"></div>
         </div>
         <div className="flex items-end gap-2 justify-end">
-            <div className="h-12 rounded-lg bg-blue-200 dark:bg-blue-900/50 animate-pulse w-32"></div>
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"></div>
+            <div className="h-12 rounded-lg bg-blue-200 animate-pulse w-32"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
         </div>
         <div className="flex items-end gap-2 justify-start">
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"></div>
-            <div className="h-16 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse w-64"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+            <div className="h-16 rounded-lg bg-gray-200 animate-pulse w-64"></div>
         </div>
         <div className="flex items-end gap-2 justify-end">
-            <div className="h-10 rounded-lg bg-blue-200 dark:bg-blue-900/50 animate-pulse w-40"></div>
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"></div>
+            <div className="h-10 rounded-lg bg-blue-200 animate-pulse w-40"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
         </div>
         <div className="flex items-end gap-2 justify-start">
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"></div>
-            <div className="h-10 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse w-32"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0"></div>
+            <div className="h-10 rounded-lg bg-gray-200 animate-pulse w-32"></div>
         </div>
     </div>
 );
@@ -239,7 +236,7 @@ const getAudioDuration = (audioBlob) =>
     });
 function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore }) {
     const location = useLocation();
-    const { theme } = useContext(Context);
+    const {theme}=useContext(Context);
     const navigate = useNavigate();
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
     const [searchTerm, setSearchTerm] = useState('');
@@ -427,7 +424,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 setIsMessagesLoading(false);
             }
         }
-    }, [currentUser.id, isFetchingMoreMessages, isMessagesLoading]);
+    }, [currentUser.id, isFetchingMoreMessages, isMessagesLoading, getMessages]);
     useEffect(() => {
         if (!selectedChat) return;
 
@@ -775,7 +772,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 stompClient.current = null;
             }
         };
-    }, [currentUser?.id, isChatDataReady, handleTypingEvent]);
+    }, [currentUser?.id, isChatDataReady]);
 
     const groupIds = useMemo(() => {
         return (chatData.groups || []).map(g => g.chatId).sort().join(',');
@@ -813,7 +810,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         });
 
-    }, [isConnected, groupIds, chatData.groups, handleTypingEvent]);
+    }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
 
     const openChat = useCallback((targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
@@ -1488,28 +1485,28 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     return (
-        <div className={`w-full h-full font-sans ${theme === 'dark' ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-800'}`}>
+        <div className="w-full h-full bg-gray-100 font-sans">
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
-                <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-                    <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className={`w-full p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border border-gray-300 bg-gray-50'}`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                <div className={`relative w-full md:w-[30%] h-full p-4 bg-white flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'}`}>
+                    <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className="w-full p-3 rounded-lg border border-gray-300 bg-gray-50" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                     <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
                         {filteredChats.map(chat => (
-                            <div key={chat.chatId} onClick={() => handleChatSelect(chat)} className={`p-3 flex items-center rounded-lg cursor-pointer group ${selectedChat?.chatId === chat.chatId ? (theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-100') : (theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-blue-50')}`}>
+                            <div key={chat.chatId} onClick={() => handleChatSelect(chat)} className={`p-3 flex items-center rounded-lg cursor-pointer group ${selectedChat?.chatId === chat.chatId ? 'bg-blue-100' : 'hover:bg-blue-50'}`}>
                                 <div className="relative flex-shrink-0">
                                     {chat.type === 'group' ? (
-                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                            <FaUsers className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={24} />
+                                        <div className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <FaUsers className="text-gray-500" size={24} />
                                         </div>
                                     ) : chat.profile ? (
                                         <img src={chat.profile} alt={chat.name} className="w-11 h-11 rounded-full object-cover" />
                                     ) : (
-                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                            <FaUser className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={24} />
+                                        <div className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <FaUser className="text-gray-500" size={24} />
                                         </div>
                                     )}
                                     {chat.isOnline && (<span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-500"></span>)}
                                 </div>
-                                <div className="flex-1 min-w-0 mx-3"><p className={`font-semibold truncate ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>{chat.name}</p><p className={`text-sm truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{chat.lastMessage || 'No messages yet'}</p></div>
+                                <div className="flex-1 min-w-0 mx-3"><p className="font-semibold text-gray-800 truncate">{chat.name}</p><p className="text-sm text-gray-500 truncate">{chat.lastMessage || 'No messages yet'}</p></div>
                                 {(chat.unreadMessageCount || 0) > 0 && (<div className="flex-shrink-0"><span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">{chat.unreadMessageCount}</span></div>)}
                             </div>
                         ))}
@@ -1521,30 +1518,30 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full md:w-[70%] h-full flex flex-col md:rounded-lg shadow-xl relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className={`w-full md:w-[70%] h-full flex flex-col bg-white md:rounded-lg shadow-xl relative ${isChatOpen ? 'flex' : 'hidden md:flex'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
-                                <FaUsers className={`mx-auto text-6xl ${theme === 'dark' ? 'text-gray-600' : 'text-gray-300'}`} />
-                                <p className={`mt-4 text-xl text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Select a chat to begin</p>
-                                <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}>Start a conversation with your team or colleagues.</p>
+                                <FaUsers className="mx-auto text-6xl text-gray-300" />
+                                <p className="mt-4 text-xl text-center text-gray-600">Select a chat to begin</p>
+                                <p className="text-gray-400">Start a conversation with your team or colleagues.</p>
                             </div>
                         </div>
                     ) : (
                         <>
-                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
-                                    <button onClick={closeChat} className={`md:hidden p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaArrowLeft /></button>
+                                    <button onClick={closeChat} className="md:hidden p-2 rounded-full hover:bg-gray-100"><FaArrowLeft /></button>
                                     <button onClick={() => currentChatInfo.type !== 'group' && currentChatInfo.profile && setIsProfileModalOpen(true)} className="flex-shrink-0">
                                         {currentChatInfo.type === 'group' ? (
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                                <FaUsers className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={28} />
+                                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <FaUsers className="text-gray-500" size={28} />
                                             </div>
                                         ) : currentChatInfo.profile ? (
                                             <img src={currentChatInfo.profile} alt={currentChatInfo.name} className="w-12 h-12 rounded-full object-cover" />
                                         ) : (
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                                <FaUser className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={28} />
+                                            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <FaUser className="text-gray-500" size={28} />
                                             </div>
                                         )}
                                     </button>
@@ -1560,41 +1557,41 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                             disabled={!currentChatInfo}
                                             className="text-left"
                                         >
-                                            <p className={`font-bold text-lg truncate ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>{currentChatInfo.name}</p>
+                                            <p className="font-bold text-lg truncate">{currentChatInfo.name}</p>
                                         </button>
                                         {currentChatInfo.type === 'private' ? (
-                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{currentChatInfo.isOnline ? 'Online' : formatLastSeen(currentChatInfo.lastMessageTimestamp)}</p>
+                                            <p className="text-sm text-gray-500">{currentChatInfo.isOnline ? 'Online' : formatLastSeen(currentChatInfo.lastMessageTimestamp)}</p>
                                         ) : (
-                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{currentChatInfo.memberCount || 0} members</p>
+                                            <p className="text-sm text-gray-500">{currentChatInfo.memberCount || 0} members</p>
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2"><button className={`p-2 rounded-full text-gray-600 ${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}><FaVideo size={20} /></button><button className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20 ${theme === 'dark' ? 'bg-gray-900 border border-gray-700' : 'bg-white'}`}><button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className={`block w-full text-left px-4 py-2 text-sm ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}>Clear chat</button></div>)}</div></div>
+                                <div className="flex items-center space-x-2"><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaVideo size={20} /></button><button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className="p-2 rounded-full hover:bg-gray-100"><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
                             </div>
 
                             {pinnedMessage && (
-                                <div className={`flex-shrink-0 flex items-center justify-between p-2 border-b ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                                <div className="flex-shrink-0 flex items-center justify-between p-2 border-b border-gray-200 bg-gray-50">
                                     <div className="flex items-center gap-2 text-sm overflow-hidden cursor-pointer flex-grow min-w-0" onClick={handleGoToMessage}>
-                                        <FaThumbtack className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} />
-                                        <FileIcon fileName={pinnedMessage.fileName || ''} className="text-lg flex-shrink-0" />
+                                        <FaThumbtack className="text-gray-500 flex-shrink-0" />
+                                        <FileIcon fileName={pinnedMessage.fileName || ''} type={pinnedMessage.messageType} className="text-lg flex-shrink-0" />
                                         <div className="truncate">
-                                            <p className={`font-bold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>Pinned Message</p>
-                                            <p className={`truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            <p className="font-bold text-blue-600">Pinned Message</p>
+                                            <p className="text-gray-600 truncate">
                                                 {pinnedMessage.messageType === 'text' ? pinnedMessage.content : pinnedMessage.fileName || 'Pinned Media'}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="relative flex-shrink-0">
-                                        <button ref={pinnedMenuButtonRef} onClick={() => setShowPinnedMenu(!showPinnedMenu)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
+                                        <button ref={pinnedMenuButtonRef} onClick={() => setShowPinnedMenu(!showPinnedMenu)} className="p-2 rounded-full hover:bg-gray-200">
                                             <FaChevronDown />
                                         </button>
                                         {showPinnedMenu && (
-                                            <div ref={pinnedMenuRef} className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20 text-sm ${theme === 'dark' ? 'bg-gray-900 border border-gray-700' : 'bg-white'}`}>
+                                            <div ref={pinnedMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 text-sm">
                                                 <ul className="py-1">
-                                                    <li onClick={handleGoToMessage} className={`px-4 py-2 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                                    <li onClick={handleGoToMessage} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3">
                                                         <FaAngleDoubleRight /> Go to message
                                                     </li>
-                                                    <li onClick={handleUnpin} className={`px-4 py-2 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                                                    <li onClick={handleUnpin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600">
                                                         <FaTimes /> Unpin
                                                     </li>
                                                 </ul>
@@ -1604,7 +1601,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 </div>
                             )}
 
-                            <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                            <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-grow p-4 overflow-y-auto bg-gray-50">
                                 {isFetchingMoreMessages && (
                                     <div className="flex justify-center items-center py-4">
                                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -1629,7 +1626,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                 <React.Fragment key={msg.messageId || msg.id}>
                                                     {showDateHeader && (
                                                         <div className="text-center my-4">
-                                                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>{formatDateHeader(msg.timestamp)}</span>
+                                                            <span className="bg-gray-200 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">{formatDateHeader(msg.timestamp)}</span>
                                                         </div>
                                                     )}
                                                     <div data-message-index={index} className={`flex items-end gap-2 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
@@ -1639,19 +1636,19 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                             return profileSrc ? (
                                                                 <img src={profileSrc} alt={profileName} className="w-8 h-8 rounded-full object-cover self-start flex-shrink-0" />
                                                             ) : (
-                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center self-start flex-shrink-0 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                                                    <FaUser className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={18} />
+                                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center self-start flex-shrink-0">
+                                                                    <FaUser className="text-gray-500" size={18} />
                                                                 </div>
                                                             );
                                                         })()}
                                                         <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
                                                             {currentChatInfo.type === 'group' && !isMyMessage && (
-                                                                <p className={`text-xs mb-1 ml-2 font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{senderInfo?.name}</p>
+                                                                <p className="text-xs text-gray-500 mb-1 ml-2 font-semibold">{senderInfo?.name}</p>
                                                             )}
                                                             <div onContextMenu={(e) => handleContextMenu(e, msg, index)} className={`rounded-lg max-w-xs md:max-w-md group relative
                                                                 ${(msg.type === 'image' || msg.type === 'deleted') ? 'p-0 bg-transparent' : ''}
-                                                                ${(msg.type === 'text') ? (isMyMessage ? 'bg-blue-600 text-white p-3' : `${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'} p-3`) : ''}
-                                                                ${(msg.type === 'audio' || msg.type === 'file') ? (isMyMessage ? 'bg-blue-600' : `${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`) : ''}
+                                                                ${(msg.type === 'text') ? (isMyMessage ? 'bg-blue-600 text-white p-3' : 'bg-gray-200 text-gray-800 p-3') : ''}
+                                                                ${(msg.type === 'audio' || msg.type === 'file') ? (isMyMessage ? 'bg-blue-600' : 'bg-gray-200') : ''}
                                                                 `}>
                                                                 {msg.type === 'deleted' ? (
                                                                     <div className="flex items-center gap-2 italic text-sm opacity-70 p-3">
@@ -1663,7 +1660,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                                         {msg.isForwarded && <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 font-semibold"><FaShare /> Forwarded</div>}
 
                                                                         {msg.replyTo && (
-                                                                            <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : (theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300')}`}>
+                                                                            <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : 'bg-gray-300'}`}>
                                                                                 <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
                                                                                 <p className="opacity-80 truncate">
                                                                                     {['image', 'audio', 'file'].includes(msg.replyTo.type) ? msg.replyTo.content : msg.replyTo.content}
@@ -1683,7 +1680,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                                                 )}
                                                                             </div>
                                                                         ) : msg.type === 'audio' ? (
-                                                                            <div className={`${isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')} rounded-lg`}>
+                                                                            <div className={`${isMyMessage ? 'bg-blue-600' : 'bg-gray-200'} rounded-lg`}>
                                                                                 <AudioPlayer src={fileUrl} fileUrl={fileUrl} isSender={isMyMessage} initialDuration={msg.duration} fileSize={msg.fileSize} />
                                                                             </div>
                                                                         ) : msg.type === 'file' ? (
@@ -1708,15 +1705,15 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
                                         {typingUsers[selectedChat.chatId] && (
                                             <div className="flex items-end gap-2 justify-start">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center self-start flex-shrink-0 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                    <FaUser className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={18} />
+                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center self-start flex-shrink-0">
+                                                    <FaUser className="text-gray-500" size={18} />
                                                 </div>
                                                 <div className="flex flex-col items-start">
-                                                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                    <div className="p-3 rounded-lg bg-gray-200 text-gray-800">
                                                         <div className="flex items-center justify-center gap-1.5">
-                                                            <span className={`h-2 w-2 rounded-full animate-bounce [animation-delay:-0.3s] ${theme === 'dark' ? 'bg-gray-400' : 'bg-gray-500'}`}></span>
-                                                            <span className={`h-2 w-2 rounded-full animate-bounce [animation-delay:-0.15s] ${theme === 'dark' ? 'bg-gray-400' : 'bg-gray-500'}`}></span>
-                                                            <span className={`h-2 w-2 rounded-full animate-bounce ${theme === 'dark' ? 'bg-gray-400' : 'bg-gray-500'}`}></span>
+                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1726,12 +1723,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 )}
                             </div>
 
-                            <div className={`flex-shrink-0 flex flex-col p-4 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <div className="flex-shrink-0 flex flex-col p-4 border-t border-gray-200">
                                 {replyingTo && (
-                                    <div className={`p-2 rounded-t-lg flex justify-between items-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                    <div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center">
                                         <div className="text-sm overflow-hidden">
-                                            <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>Replying to {replyingTo.sender === currentUser?.id ? 'yourself' : getSenderInfo(replyingTo.sender).name}</p>
-                                            <p className={`truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            <p className="font-semibold text-blue-600">Replying to {replyingTo.sender === currentUser?.id ? 'yourself' : getSenderInfo(replyingTo.sender).name}</p>
+                                            <p className="text-gray-600 truncate">
                                                 {['image', 'audio', 'file'].includes(replyingTo.type) ? replyingTo.fileName : replyingTo.content}
                                             </p>
                                         </div>
@@ -1739,19 +1736,19 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                     </div>
                                 )}
 
-                                {editingInfo.index !== null && (<div className={`p-2 rounded-t-lg flex justify-between items-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}><div className="text-sm overflow-hidden"><p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>Editing message</p><p className={`truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{editingInfo.originalContent}</p></div><button onClick={cancelEdit}><FaTimes /></button></div>)}
+                                {editingInfo.index !== null && (<div className="bg-gray-100 p-2 rounded-t-lg flex justify-between items-center"><div className="text-sm overflow-hidden"><p className="font-semibold text-blue-600">Editing message</p><p className="text-gray-600 truncate">{editingInfo.originalContent}</p></div><button onClick={cancelEdit}><FaTimes /></button></div>)}
                                 {currentChatInfo && (
                                     <div className={`relative flex items-center w-full space-x-2 ${(replyingTo || editingInfo.index !== null) ? 'pt-2' : ''}`}>
                                         {showEmojiPicker && (
                                             <div ref={emojiPickerRef} className="absolute bottom-full mb-2 left-0 z-40 w-[95vw] max-w-sm">
-                                                <EmojiPicker onEmojiClick={onEmojiClick} width="100%" height={350} theme={theme} />
+                                                <EmojiPicker onEmojiClick={onEmojiClick} width="100%" height={350} />
                                             </div>
                                         )}
                                         <div className="relative flex-grow">
-                                            <input ref={messageInputRef} type="text" placeholder={isRecording ? "Recording..." : "Type a message..."} className={`w-full p-3 pr-24 rounded-full border focus:outline-none focus:ring-2 ${theme === 'dark' ? 'bg-gray-600 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500' : 'bg-gray-100 border-gray-100 focus:ring-blue-500'}`} value={message} onChange={(e) => { setMessage(e.target.value); sendTypingStatus(true); }} onKeyDown={handleKeyDown} disabled={isRecording} />
+                                            <input ref={messageInputRef} type="text" placeholder={isRecording ? "Recording..." : "Type a message..."} className="w-full p-3 pr-24 rounded-full border bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" value={message} onChange={(e) => { setMessage(e.target.value); sendTypingStatus(true); }} onKeyDown={handleKeyDown} disabled={isRecording} />
                                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                                                <button ref={emojiButtonRef} onClick={() => setShowEmojiPicker(!showEmojiPicker)} className={`p-2 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-100'}`}><FaSmile size={20} /></button>
-                                                <button onClick={handleFileButtonClick} className={`p-2 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-100'}`}><FaPaperclip size={20} /></button>
+                                                <button ref={emojiButtonRef} onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"><FaSmile size={20} /></button>
+                                                <button onClick={handleFileButtonClick} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"><FaPaperclip size={20} /></button>
                                             </div>
                                         </div>
                                         {message.trim() || editingInfo.index !== null ? (
@@ -1759,7 +1756,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                 {editingInfo.index !== null ? <FaCheck size={20} /> : <FaPaperPlane size={20} />}
                                             </button>
                                         ) : (
-                                            <button onClick={handleMicButtonClick} className={`p-3 rounded-full ${isRecording ? 'text-red-500 animate-pulse' : (theme === 'dark' ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-100')}`}>
+                                            <button onClick={handleMicButtonClick} className={`p-3 rounded-full hover:bg-gray-100 ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-500 hover:text-blue-600'}`}>
                                                 {isRecording ? <FaStop size={20} /> : <FaMicrophone size={20} />}
                                             </button>
                                         )}
@@ -1787,25 +1784,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             </div>
 
             {contextMenu.visible && (
-                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-50 text-sm ${theme === 'dark' ? 'bg-gray-900 border border-gray-700' : 'bg-white'}`}>
-                    <ul className={`py-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className="absolute bg-white rounded-md shadow-lg z-50 text-sm">
+                    <ul className="py-1">
                         {contextMenu.message.type === 'deleted' ? (
-                            <li onClick={() => handleDelete(false)} className={`px-4 py-2 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaTrash /> Delete for me</li>
+                            <li onClick={() => handleDelete(false)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for me</li>
                         ) : (
                             <>
-                                <li onClick={handleReply} className={`px-4 py-2 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaReply /> Reply</li>
-                                <li onClick={handlePin} className={`px-4 py-2 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaThumbtack /> Pin</li>
-                                <li onClick={handleForward} className={`px-4 py-2 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaShare /> Forward</li>
+                                <li onClick={handleReply} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaReply /> Reply</li>
+                                <li onClick={handlePin} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaThumbtack /> Pin</li>
+                                <li onClick={handleForward} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaShare /> Forward</li>
 
                                 {contextMenu.message.status !== 'sending' && contextMenu.message.status !== 'failed' && (
                                     <>
                                         {contextMenu.message.sender === currentUser?.id && contextMenu.message.type === 'text' && !contextMenu.message.isForwarded && (new Date() - new Date(contextMenu.message.timestamp) < 15 * 60 * 1000) && (
-                                            <li onClick={handleEdit} className={`px-4 py-2 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaEdit /> Edit</li>
+                                            <li onClick={handleEdit} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"><FaEdit /> Edit</li>
                                         )}
-                                        <hr className={`my-1 ${theme === 'dark' ? 'border-gray-700' : ''}`} />
-                                        <li onClick={() => handleDelete(false)} className={`px-4 py-2 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaTrash /> Delete for me</li>
+                                        <hr className="my-1" />
+                                        <li onClick={() => handleDelete(false)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for me</li>
                                         {contextMenu.message.sender === currentUser?.id && (
-                                            <li onClick={() => handleDelete(true)} className={`px-4 py-2 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><FaTrash /> Delete for everyone</li>
+                                            <li onClick={() => handleDelete(true)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600"><FaTrash /> Delete for everyone</li>
                                         )}
                                     </>
                                 )}
@@ -1815,16 +1812,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 </div>
             )}
 
-            {forwardingInfo.visible && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"><div className={`rounded-lg shadow-2xl w-full max-w-md ${theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-white'}`}><div className={`p-4 border-b flex justify-between items-center ${theme === 'dark' ? 'border-gray-700' : ''}`}><h3 className="font-bold text-lg">Forward message to...</h3><button onClick={() => setForwardingInfo({ visible: false, message: null })}><FaTimes /></button></div><div className="p-4"><input type="text" placeholder="Search for users or groups" className={`w-full p-2 border rounded-lg ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : ''}`} value={forwardSearchTerm} onChange={(e) => setForwardSearchTerm(e.target.value)} /></div><div className="h-64 overflow-y-auto p-4">{allChats.filter(c => c.name?.toLowerCase().includes(forwardSearchTerm.toLowerCase())).map(chat => (<div key={chat.chatId} className={`flex items-center p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><input type="checkbox" id={`fwd-${chat.chatId}`} className="mr-3 h-4 w-4 accent-blue-600" checked={forwardRecipients.includes(chat.chatId)} onChange={(e) => { if (e.target.checked) setForwardRecipients([...forwardRecipients, chat.chatId]); else setForwardRecipients(forwardRecipients.filter(id => id !== chat.chatId)); }} />
+            {forwardingInfo.visible && (<div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[100]"><div className="bg-white rounded-lg shadow-2xl w-full max-w-md"><div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-lg">Forward message to...</h3><button onClick={() => setForwardingInfo({ visible: false, message: null })}><FaTimes /></button></div><div className="p-4"><input type="text" placeholder="Search for users or groups" className="w-full p-2 border rounded-lg" value={forwardSearchTerm} onChange={(e) => setForwardSearchTerm(e.target.value)} /></div><div className="h-64 overflow-y-auto p-4">{allChats.filter(c => c.name?.toLowerCase().includes(forwardSearchTerm.toLowerCase())).map(chat => (<div key={chat.chatId} className="flex items-center p-2 rounded-lg hover:bg-gray-100"><input type="checkbox" id={`fwd-${chat.chatId}`} className="mr-3 h-4 w-4 accent-blue-600" checked={forwardRecipients.includes(chat.chatId)} onChange={(e) => { if (e.target.checked) setForwardRecipients([...forwardRecipients, chat.chatId]); else setForwardRecipients(forwardRecipients.filter(id => id !== chat.chatId)); }} />
                 <label htmlFor={`fwd-${chat.chatId}`} className="flex-grow flex items-center gap-3 cursor-pointer">
                     {chat.type === 'group' ? (
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}><FaUsers className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} /></div>
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"><FaUsers className="text-gray-500" /></div>
                     ) : (
                         <img src={chat.profile} alt={chat.name} className="w-10 h-10 rounded-full object-cover" onError={(e) => { e.target.src = 'https://placehold.co/100x100/E2E8F0/4A5568?text=U' }} />
                     )}
                     <span>{chat.name}</span>
                 </label>
-            </div>))}</div><div className={`p-4 border-t text-right ${theme === 'dark' ? 'border-gray-700' : ''}`}><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer">Forward</button></div></div></div>)}
+            </div>))}</div><div className="p-4 border-t text-right"><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer">Forward</button></div></div></div>)}
 
             {isProfileModalOpen && currentChatInfo && currentChatInfo.type !== 'group' && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]" onClick={() => setIsProfileModalOpen(false)}>
@@ -1834,14 +1831,14 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
             {isGroupInfoModalOpen && currentChatInfo?.type === 'group' && (
                 <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[100]" onClick={() => setIsGroupInfoModalOpen(false)}>
-                    <div className={`rounded-lg shadow-2xl w-full max-w-lg h-[80vh] flex flex-col ${theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
-                        <div className={`p-4 border-b flex justify-between items-center flex-shrink-0 ${theme === 'dark' ? 'border-gray-700' : ''}`}>
+                    <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                             <h3 className="font-bold text-xl">Group Info</h3>
-                            <button onClick={() => setIsGroupInfoModalOpen(false)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}><FaTimes /></button>
+                            <button onClick={() => setIsGroupInfoModalOpen(false)} className="p-2 rounded-full hover:bg-gray-200"><FaTimes /></button>
                         </div>
-                        <div className={`flex border-b flex-shrink-0 ${theme === 'dark' ? 'border-gray-700' : ''}`}>
+                        <div className="flex border-b flex-shrink-0">
                             {['Overview', 'Members', 'Media', 'Files', 'Links'].map(tab => (
-                                <button key={tab} onClick={() => setActiveGroupInfoTab(tab)} className={`flex-1 p-3 text-sm font-semibold ${activeGroupInfoTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : `${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}`}>
+                                <button key={tab} onClick={() => setActiveGroupInfoTab(tab)} className={`flex-1 p-3 text-sm font-semibold ${activeGroupInfoTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}>
                                     {tab}
                                 </button>
                             ))}
@@ -1849,11 +1846,11 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         <div className="p-4 overflow-y-auto flex-grow">
                             {activeGroupInfoTab === 'Overview' && (
                                 <div className="flex flex-col items-center text-center space-y-4">
-                                    <div className={`w-40 h-40 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                        <FaUsers className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={80} />
+                                    <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <FaUsers className="text-gray-500" size={80} />
                                     </div>
                                     <h2 className="text-2xl font-bold">{currentChatInfo.name}</h2>
-                                    <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>{currentChatInfo.memberCount || 0} members</p>
+                                    <p className="text-gray-600">{currentChatInfo.memberCount || 0} members</p>
                                 </div>
                             )}
                             {activeGroupInfoTab === 'Members' && (
@@ -1862,17 +1859,17 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         <p className="text-center text-gray-500">Loading members...</p>
                                     ) : (
                                         groupMembers.map((member, i) => (
-                                            <div key={member.employeeId || i} className={`flex items-center gap-4 p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                            <div key={member.employeeId || i} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50">
                                                 {member.employeeImage ? (
                                                     <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
                                                 ) : (
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                                        <FaUser className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} size={20} />
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                        <FaUser className="text-gray-500" size={20} />
                                                     </div>
                                                 )}
                                                 <div>
                                                     <span className="font-semibold">{member.displayName}</span>
-                                                    {member.jobTitlePrimary && <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{member.jobTitlePrimary}</p>}
+                                                    {member.jobTitlePrimary && <p className="text-sm text-gray-500">{member.jobTitlePrimary}</p>}
                                                 </div>
                                             </div>
                                         ))
@@ -1921,7 +1918,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
                                         return allLinks.length > 0 ? (
                                             allLinks.map((link, index) => (
-                                                <div key={`${link.id}-${index}`} className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                                <div key={`${link.id}-${index}`} className="p-3 bg-gray-100 rounded-lg">
                                                     <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{link.url}</a>
                                                     <p className="text-xs text-gray-500 mt-1">Shared by {link.sender} on {new Date(link.timestamp).toLocaleDateString()}</p>
                                                 </div>
@@ -1944,12 +1941,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             )}
 
             {showClearConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[110]">
-                    <div className={`rounded-lg shadow-xl p-6 w-full max-w-sm ${theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-white'}`}>
+                <div className="fixed inset-0 bg-opacity-100 flex items-center justify-center z-[110]">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
                         <h3 className="text-lg font-bold mb-4">Clear Chat?</h3>
-                        <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-6`}>Are you sure you want to clear all messages in this chat? This action cannot be undone.</p>
+                        <p className="text-gray-600 mb-6">Are you sure you want to clear all messages in this chat? This action cannot be undone.</p>
                         <div className="flex justify-end gap-4">
-                            <button onClick={() => setShowClearConfirm(false)} className={`px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}>
+                            <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300">
                                 Cancel
                             </button>
                             <button onClick={handleConfirmClearChat} className="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700">
