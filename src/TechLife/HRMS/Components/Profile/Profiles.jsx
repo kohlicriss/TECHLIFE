@@ -416,7 +416,7 @@ const Profiles = () => {
       </AnimatePresence>
 
       {isEditing && !isReadOnly && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center z-[200]">
+        <div className="fixed inset-0 backdrop-blur-sm  bg-opacity-50 flex items-center justify-center z-[200]">
           <div className={`rounded-lg p-6 w-[500px] shadow-2xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Edit Profile</h2>
             <form onSubmit={handleSave}>

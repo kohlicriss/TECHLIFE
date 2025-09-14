@@ -25,7 +25,8 @@ import {
     IoArrowForward,
     IoWarning,
     IoCheckmarkCircle,
-    IoIdCardOutline // Added for employee ID icon
+    IoIdCardOutline,
+    IoPeopleOutline
 } from "react-icons/io5";
 
 const generateInitials = (name) => {
@@ -126,6 +127,14 @@ function EmployeeApp() {
             window.removeEventListener("click", handleOutsideClick);
         };
     }, [contextMenu, flippedCard]);
+
+    const handleViewTeamsClick = (employee) => {
+        if (employee) {
+            navigate(`/my-teams/${empID}?fromContextMenu=true&targetEmployeeId=${employee.employeeId}`);
+        }
+        setContextMenu({ ...contextMenu, visible: false });
+        setFlippedCard(null);
+    };
 
     const handleContextMenu = (e, employee) => {
         e.preventDefault();
@@ -923,6 +932,21 @@ function EmployeeApp() {
                                                                 >
                                                                     <IoDocumentsOutline className="w-4 h-4" />
                                                                     <span className="font-medium">Documents</span>
+                                                                </button>
+                                                                {/* View Teams Button - Updated Route */}
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleViewTeamsClick(employee);
+                                                                    }}
+                                                                    className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
+                                                                        theme === 'dark'
+                                                                            ? 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg'
+                                                                            : 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg'
+                                                                        }`}
+                                                                >
+                                                                    <IoPeopleOutline className="w-4 h-4" />
+                                                                    <span className="font-medium">View Teams</span>
                                                                 </button>
                                                             </>
                                                         )}

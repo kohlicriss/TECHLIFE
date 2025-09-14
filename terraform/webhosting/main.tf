@@ -41,6 +41,10 @@ module "cloud_front" {
   cirtificate_arn    = module.cirtificate.certificate_arn
 }
 
+output "cloud_front_distribution_id" {
+  value = var.cloudfront_enabled ? module.cloud_front[0].cloud_front_distribution_id : null
+}
+
 module "route_53" {
   count         = var.route_53_enable ? 1 : 0
   source        = "github.com/KoteshwarChinnolla/terraform-modules//modules/route_53"
