@@ -25,6 +25,7 @@ import LeaveDetails from "./LeaveDetails";
 
 // AddLeaveForm component
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
+    const { theme } = useContext(Context);
     const { empID } = useParams();
     const [showFromCalendar, setShowFromCalendar] = useState(false);
     const [showToCalendar, setShowToCalendar] = useState(false);
@@ -56,7 +57,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
             Leave_On: fromDate && toDate ? [`${fromDate.toLocaleDateString("en-GB")}`, "-", `${toDate.toLocaleDateString("en-GB")}`] : [fromDate.toLocaleDateString("en-GB")],
             status: "Pending",
             Request_By: "Panalisation Policy",
-            Details: reason,
+            Reason: reason,
             Action_Date: new Date().toLocaleDateString("en-GB"),
             Action: "https://icons8.com/icon/36944/ellipsis",
         };
@@ -65,48 +66,48 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
     };
 
     return (
-        <motion.div    className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4"    initial={{ opacity: 0 }}    animate={{ opacity: 1 }}    exit={{ opacity: 0 }}    transition={{ duration: 0.3 }}>
-            <motion.div    className="relative w-full max-w-3xl mx-auto rounded-lg bg-stone-100 p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
+        <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4"    initial={{ opacity: 0 }}    animate={{ opacity: 1 }}    exit={{ opacity: 0 }}    transition={{ duration: 0.3 }}>
+            <motion.div className="relative w-full max-w-3xl mx-auto p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
                 <button    onClick={onClose}    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">    &times;</button>
-                <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto rounded-lg bg-white p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200">
-                    <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">    Request a Leave</h2>
+                <form onSubmit={handleSubmit} className={`relative w-full max-w-3xl mx-auto rounded-lg p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>
+                    <h2 className={`text-2xl font-bold mb-6 text-center border-b pb-4 ${theme === 'dark' ? 'bg-gradient-to-br from-orange-200 to-orange-600 bg-clip-text text-transparent border-gray-100' : 'text-gray-800 border-gray-200'}`}>     Request a Leave</h2>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                                <label className="block text-sm font-medium text-gray-700">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
                                     Employee Id
                                 </label>
-                                <input    type="text"    value={employeeId}    onChange={e => setEmployeeId(e.target.value)}    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"/>
+                                <input    type="text"    value={employeeId}    onChange={e => setEmployeeId(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                                <label className="block text-sm font-medium text-gray-700">    Employee Name</label>
-                                <input    type="text"    value={employeeName}    onChange={e => setEmployeeName(e.target.value)}    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"/>
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Employee Name</label>
+                                <input    type="text"    value={employeeName}    onChange={e => setEmployeeName(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                             </motion.div>
                         </div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                            <label className="block text-sm font-medium text-gray-700">    Leave Type</label>
-                            <select    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"    onChange={handleLeaveTypeChange}    value={selectedLeaveType}>
-                                <option value="">Select</option>
-                                <option value="Sick Leave">Sick Leave</option>
-                                <option value="Casual Leave">Casual Leave</option>
-                                <option value="Unpaid Leave">Unpaid Leave</option>
-                                <option value="Paid Leave">Paid Leave</option>
+                             <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>   Leave Type</label>
+                            <select    className={`mt-1 block w-full rounded-md ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}    onChange={handleLeaveTypeChange}    value={selectedLeaveType}>
+                                <option value=""            className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                <option value="Sick Leave"  className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Sick Leave</option>
+                                <option value="Casual Leave"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Casual Leave</option>
+                                <option value="Unpaid Leave"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Unpaid Leave</option>
+                                <option value="Paid Leave"  className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Paid Leave</option>
                             </select>
                         </motion.div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
-                                <label className="block text-sm font-medium text-gray-700">    From</label>
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>   From</label>
                                 <div className="relative mt-1">
-                                    <input type="text" readOnly value={fromDate? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"} onClick={() => setShowFromCalendar(!showFromCalendar)}className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"/>
+                                    <input type="text" readOnly value={fromDate? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"} onClick={() => setShowFromCalendar(!showFromCalendar)} className={`block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`}/>
                                     {showFromCalendar && (
-                                        <Calendar    selectedDate={fromDate}    onSelectDate={(date) => {        setFromDate(date);        setShowFromCalendar(false);    }}    onClose={() => setShowFromCalendar(false)}/>
+                                        <Calendar    selectedDate={fromDate}    onSelectDate={(date) => {        setFromDate(date);        setShowFromCalendar(false);    }}    onClose={() => setShowFromCalendar(false) } className={`$`} />
                                     )}
                                 </div>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
-                                <label className="block text-sm font-medium text-gray-700">    To</label>
+                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>     To</label>
                                 <div className="relative mt-1">
-                                    <input    type="text"    readOnly    value={        toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"    }    onClick={() => setShowToCalendar(!showToCalendar)}    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"/>
+                                    <input    type="text"    readOnly    value={        toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"    }    onClick={() => setShowToCalendar(!showToCalendar)}    className={`block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`}/>
                                     {showToCalendar && (
                                         <Calendar    selectedDate={toDate}    onSelectDate={(date) => {        setToDate(date);        setShowToCalendar(false);    }}    onClose={() => setShowToCalendar(false)}/>
                                     )}
@@ -115,30 +116,30 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
-                                <label className="block text-sm font-medium text-gray-700">    No. of Days</label>
-                                <input    readOnly    type="text"    value={        fromDate && toDate            ? `${            Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +            1            } Days`            : "0 Days"    }    className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"/>
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    No. of Days</label>
+                                <input    readOnly    type="text"    value={        fromDate && toDate            ? `${            Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +            1            } Days`            : "0 Days"    }    className={`mt-1 block w-full cursor-not-allowed rounded-md   shadow-sm ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.7 }}>
-                                <label className="block text-sm font-medium text-gray-700">    Leave Duration</label>
-                                <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                    <option>Select</option>
-                                    <option>Full Day</option>
-                                    <option>First Half Day</option>
-                                    <option>Second Half Day</option>
+                               <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>     Leave Duration</label>
+                                <select className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50  ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}>
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                     <option value="Full Day" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Full Day</option>
+                                     <option value="First Half Day"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>First Half Day</option>
+                                     <option value="Second Half Day"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Second Half Day</option>
                                 </select>
                             </motion.div>
                         </div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}>
-                            <label className="block text-sm font-medium text-gray-700">    Rejection Policy</label>
-                            <input    type="text"    value="Panalisation Policy"    readOnly    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed bg-gray-50"/>
+                            <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Rejection Policy</label>
+                            <input    type="text"    value="Panalisation Policy"    readOnly    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed   ${theme==='dark' ? 'border border-gray-100 text-white  ':'border border-gray-300 text-black'}`}/>
                         </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9 }}>
-                            <label className="block text-sm font-medium text-gray-700">    Remaining Days</label>
-                            <input    type="text"    readOnly    value={remainingDays ? Object.values(remainingDays)[0] : "0"}    className="mt-1 block w-full cursor-not-allowed rounded-md border-gray-300 bg-gray-100 shadow-sm"/>
+                             <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Remaining Days</label>
+                            <input    type="text"    readOnly    value={remainingDays ? Object.values(remainingDays)[0] : "0"}    className={`mt-1 block w-full cursor-not-allowed rounded-md  shadow-sm text-black ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                         </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1 }}>
-                            <label className="block text-sm font-medium text-gray-700">    Reason</label>
-                            <textarea    rows="3"    value={reason}    onChange={(e) => setReason(e.target.value)}    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></textarea>
+                            <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Reason</label>
+                            <textarea    rows="3"    value={reason}    onChange={(e) => setReason(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50  ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}></textarea>
                         </motion.div>
                     </div>
                     <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
@@ -164,9 +165,10 @@ const LeaveTypeCard = ({
         { name: "Remaining", value: Math.max(total - consumed, 0) },
     ];
     const COLORS = [color, "#E0E0E0"];
+    const { theme } = useContext(Context);
     return (
         <motion.div
-            className="bg-stone-100 rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out"
+            className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-purple-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -211,7 +213,7 @@ const LeaveTypeCard = ({
                         <Tooltip />
                     </PieChart>
                 </ResponsiveContainer>
-                <div className="text-center mt-4 space-y-2 text-sm text-gray-700">
+                <div className={`text-center mt-4 space-y-2 text-sm text-gray-700`}>
                     <div>
                         <strong>Consumed:</strong>{" "}
                         <span className="font-semibold text-sm text-red-600">
@@ -240,6 +242,7 @@ const LeaveTypeCard = ({
 const LeaveType = () => {
     const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
     const { empID } = useParams();
+    const { theme } = useContext(Context);
     const [initialLeaveTypeData, setInitialLeaveTypeData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -281,7 +284,7 @@ const LeaveType = () => {
 
     return (
         <motion.div
-            className="bg-stone-100 rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out"
+            className={` rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-blue-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -327,7 +330,7 @@ const LeaveType = () => {
                         </PieChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className="text-gray-500 text-center w-full">
+                    <div className={` text-center w-full ${theme === 'dark' ? 'text-black' : 'text-gray-500'} italic`}>
                         No leave data available.
                     </div>
                 )}
@@ -339,6 +342,7 @@ const LeaveType = () => {
 // WeeklyPattern component
 const WeeklyPattern = () => {
     const { empID } = useParams();
+    const { theme } = useContext(Context);
     const [selectedDay, setSelectedDay] = useState("All");
     const [rawData, setRawData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -372,7 +376,7 @@ const WeeklyPattern = () => {
 
     return (
         <motion.div
-            className="bg-stone-100 shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out"
+            className={` shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-purple-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
@@ -423,7 +427,7 @@ const WeeklyPattern = () => {
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className="text-gray-500 text-center w-full">
+                    <div className={` text-center w-full ${theme === 'dark' ? 'text-black' : 'text-gray-500'} italic`}>
                         No weekly leave pattern data available.
                     </div>
                 )}
@@ -443,6 +447,7 @@ const LeaveHistory = ({ leaveHistoryData }) => {
     const [hasMoreData, setHasMoreData] = useState(true);
     const { empID } = useParams();
     const [selectedLeave, setSelectedLeave] = useState(null);
+    const { theme } = useContext(Context);
 
 const handleDetailsClick = (leave) => {
   setSelectedLeave(leave);
@@ -493,12 +498,12 @@ const handleCloseModal = () => {
 
     return (
         <motion.div
-            className="bg-stone-100 shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out"
+            className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-green-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+            <h2 className={`text-2xl font-bold mb-4 text-left border-b pb-4 ${theme === 'dark' ? 'bg-gradient-to-br from-green-400 to-green-800 bg-clip-text text-transparent border-gray-100' : 'text-gray-800 border-gray-200'} `}>
                 Leave Requests History
             </h2>
             <div className="flex flex-wrap items-center gap-4 mb-6">
@@ -509,7 +514,7 @@ const handleCloseModal = () => {
                     <select
                         value={leaveTypeFilter}
                         onChange={(e) => setLeaveTypeFilter(e.target.value)}
-                        className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                        className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme==='dark' ? 'border-black  bg-gray-500 text-white':'border-gray-300'}`}
                     >
                         {leaveTypes.map((type) => (
                             <option key={type} value={type}>
@@ -525,7 +530,7 @@ const handleCloseModal = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                        className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme==='dark' ? 'border-black bg-gray-500 text-white':'border-gray-300'}`}
                     >
                         {statuses.map((status) => (
                             <option key={status} value={status}>
@@ -535,13 +540,13 @@ const handleCloseModal = () => {
                     </select>
                 </div>
                 <div className="relative">
-                    <label className="text-base font-semibold mr-2 text-gray-700">
+                    <label className={`text-base font-semibold mr-2 text-gray-700`}>
                         Sort by:
                     </label>
                     <select
                         value={sortOption}
                         onChange={(e) => setSortOption(e.target.value)}
-                        className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                        className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 ${theme==='dark' ? 'border-black  bg-gray-500 text-white':'border-gray-300'} border`}
                     >
                         {sortOptions.map((option) => (
                             <option key={option} value={option}>
@@ -553,20 +558,20 @@ const handleCloseModal = () => {
             </div>
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-white">
+                    <thead className={`bg-gray-50 ${theme==='dark' ? 'border-black  bg-gray-500 text-white':''}`}>
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Leave Type</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Leave On</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Status</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Request By</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Granted By</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Details</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Action Date</th>
-                            <th className="px-4 py-3 whitespace-pre-wrap text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Rejection Reason</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"> Action</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Leave Type</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Leave On</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Status</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Request By</th>
+                           <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Granted By</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Details</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Action Date</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Rejection Reason</th>
+                           <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Action</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-500">
                         <AnimatePresence mode="wait">
                             {filteredAndSortedData.length > 0 ? (
                                 filteredAndSortedData.map((row, index) => (
@@ -578,14 +583,14 @@ const handleCloseModal = () => {
                                         exit={{ opacity: 0, y: -20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"> {row.Leave_type}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"> {row.Leave_On}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>  {row.Leave_type}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Leave_On}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-300':''}`}>
                                             <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "Approve" ? "bg-green-500" : row.status === "Reject" ? "bg-red-500" : "bg-blue-500"}`}> {row.status}</span>
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"> {row.Request_By || "-"}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"> {row.Granted_By || "-"}</td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Request_By || "-"}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Granted_By || "-"}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ? ' bg-gray-300':''}`}>
                                             <button
                                                  onClick={() => handleDetailsClick(row)}
                                                  className="text-indigo-600 hover:text-indigo-800 text-lg"
@@ -595,13 +600,13 @@ const handleCloseModal = () => {
                                             </button>
                                         </td>
                                         <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
                                             {row.Action_Date}
                                         </td>
-                                        <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-900">
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
                                             {row.Rejection_Reason || "-"}
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
                                             <a
                                                 href={row.Action}
                                                 target="_blank"
@@ -619,7 +624,7 @@ const handleCloseModal = () => {
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <td colSpan="12" className="text-center py-4 text-gray-500">
+                                    <td colSpan="12" className={`text-center py-4 text-gray-500 ${theme==='dark' ? ' bg-gray-300 text-white':''} italic`}>
                                         {isLoading ? "Loading..." : "No matching records found."}
                                     </td>
                                 </motion.tr>
@@ -633,7 +638,7 @@ const handleCloseModal = () => {
                     <button
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                         disabled={!hasMoreData || isLoading}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 text-sm font-medium text-gray-700  border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${theme==='dark' ? 'bg-gray-700 text-white border-gray-600 ':''}`}
                     >
                         Load More
                     </button>
@@ -689,6 +694,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
 
 // LeavesDashboard component
 const LeavesDashboard = () => {
+    const { theme } = useContext(Context);
     const [leaveSummaryData, setLeaveSummaryData] = useState([]);
     const { empID } = useParams();
     const { userData } = useContext(Context);
@@ -819,7 +825,7 @@ const LeavesDashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 font-sans">
+        <div className={`min-h-screen p-4 sm:p-6 lg:p-8 font-sans ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
             <AnimatePresence>
                 {/* Sidebar Trigger Button */}
                 {showSidebar && !sidebarOpen && (

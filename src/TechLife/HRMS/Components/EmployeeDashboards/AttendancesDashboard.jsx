@@ -49,14 +49,17 @@ const formatClockTime = (date) => {
     return `${hours}:${minutes}:${seconds}`;
 };
 
-const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }) => (
+const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }) => {
+    const {theme} = useContext(Context);
+    return(
     <div className={`flex gap-2 sm:gap-3 flex-wrap ${className}`}>
         {options.map((option) => (
             <motion.button
                 key={option}
                 onClick={() => onSelect(option)}
-                className={`px-3 py-2 rounded-lg border text-sm sm:text-base font-semibold
+                className={`px-3 py-2  rounded-lg border text-sm sm:text-base font-semibold     
                 ${selectedOption === option ? "bg-indigo-600 text-white shadow-md" : "bg-white text-gray-700 border-gray-300"}
+                ${theme === 'dark' ? (selectedOption === option ? 'bg-indigo-500 text-white shadow-md' : 'bg-gray-800 text-gray-300 border-gray-600') : ''}
                 hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
                 aria-pressed={selectedOption === option}
                 whileHover={{ scale: 1.05 }}
@@ -66,10 +69,10 @@ const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }
             </motion.button>
         ))}
     </div>
-);
+)};
 
-const TrendingUpIcon = ({ className }) => (
-    <svg className={className} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor" >
+const TrendingUpIcon = ({className }) => (
+    <svg className={`${className}  `} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor" >
         <motion.polyline
             points="23 6 13.5 15.5 8.5 10.5 1 18"
             initial={{ pathLength: 0, opacity: 0 }}
@@ -85,8 +88,8 @@ const TrendingUpIcon = ({ className }) => (
     </svg>
 );
 
-const TrendingDownIcon = ({ className }) => (
-    <svg className={className} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+const TrendingDownIcon = ({ className,theme }) => (
+    <svg className={`${className}  ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor" >
         <motion.polyline
             points="23 18 13.5 8.5 8.5 13.5 1 6"
             initial={{ pathLength: 0, opacity: 0 }}
@@ -109,16 +112,16 @@ const cardData = [
 ];
 
 const dates = ["All", "11", "12", "13", "14", "15"];
-const rawTableData = [
-    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
-    { employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
-    { employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
-];
+//const rawTableData = [
+//    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
+//    { employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//    { employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//    { employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
+//    { employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+//    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+//];
 const rawPieData = [
     { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
     { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
@@ -140,11 +143,12 @@ const Data = [
     { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
     { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
 ];
-const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod }) => {
+const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod, }) => {
     const isUp = trend === 'up';
+    const {theme} = useContext(Context);
     return (
         <motion.div
-            className="bg-stone-100 rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center"
+            className={`rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-stone-100'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -156,12 +160,14 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
                 </div>
             </div>
             <div className="mt-4">
-                <p className="text-3xl font-bold text-gray-800">{value}</p>
-                <p className="text-gray-500 text-sm mt-1">{description}</p>
+                <p className={`text-3xl font-bold  ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                    {value}</p>
+                <p className={`text-gray-500 text-sm mt-1  ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
+                    {description}</p>
             </div>
             <div className="flex items-center mt-auto">
                 {isUp ? <TrendingUpIcon className="w-5 h-5 text-green-500" /> : <TrendingDownIcon className="w-5 h-5 text-red-500" />}
-                <span className={`ml-1 text-sm ${isUp ? 'text-green-500' : 'text-red-500'}`}>
+                <span className={`ml-1 text-sm ${isUp ? 'text-green-500' : 'text-red-500'} ${theme === 'dark' ? (isUp ? 'text-green-400' : 'text-red-400') : ''}`}>
                     {trendPercentage}% {trendPeriod}
                 </span>
             </div>
@@ -172,6 +178,7 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
 // --- Sub-Component for Hours and Schedule Bar ---
 const MyComponent = ({ Data, selectedDate }) => {
     const [hoveredHour, setHoveredHour] = useState(null);
+    const {theme} = useContext(Context);
 
     // Helper to get start/end hour from time string
     const getHourValue = useCallback((timeString) => {
@@ -229,10 +236,10 @@ const MyComponent = ({ Data, selectedDate }) => {
     // Render schedule bar for selected date
     const renderScheduleBar = useCallback(() => {
         if (!Data || selectedDate === "All")
-            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="text-gray-500 text-center py-4 italic">Select a specific day to view the timeline.</motion.div>;
+            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
         const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
         if (!dayData)
-            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="text-gray-500 text-center py-4 italic">No schedule available for {selectedDate}.</motion.div>;
+            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedDate}.</motion.div>;
         const timePoints = new Set([dayData.Start_time, dayData.End_time]);
         if (dayData.Break_hour)
             dayData.Break_hour.forEach(b => {
@@ -303,7 +310,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                         );
                     })}
                 </motion.div>
-                <div className="flex justify-between text-xs sm:text-sm text-gray-600 mt-2 px-1">
+                <div className={`flex justify-between text-xs sm:text-sm  mt-2 px-2 ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
                     {sortedTimes.map((time, index) => (
                         <motion.span
                             key={index}
@@ -508,7 +515,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     }, [selectedDate, barChartData]);
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-800 relative">
+        <div className={`min-h-screen ${theme === 'dark'? 'bg-gray-900': 'bg-gray-50'} font-sans text-gray-800 relative`}>
             {/* Sidebar */}
             {showSidebar && (
                 <>
@@ -539,7 +546,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             <main className={`p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-60' : 'mr-0'}`}>
                 <header className="flex items-center justify-between mb-8">
                     <motion.h1
-                        className="text-2xl sm:text-4xl font-extrabold text-gray-900"
+                        className={`text-2xl sm:text-4xl font-extrabold ${theme === 'dark'? 'text-white': 'text-gray-900'}`}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5 }}
@@ -585,7 +592,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     transition={{ duration: 0.5, delay: 0.2 }}
                                 >
                                     {/* Main container with motion and color accents */}
-                                    <div className="bg-stone-100 rounded-2xl shadow-xl p-6 w-full max-w-2xl from-purple-400 via-pink-500 to-red-500 transition-transform hover:scale-105 hover:shadow-2xl duration-300 relative overflow-hidden">
+                                    <div className={`rounded-2xl shadow-xl p-6 w-full max-w-2xl transition-transform hover:scale-105 hover:shadow-2xl duration-300 relative overflow-hidden ${theme === 'dark'? 'bg-gray-700 ': 'bg-stone-100 '}`}>
 
                                         {/* Subtle animated background pattern */}
                                         <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-purple-200 via-pink-200 to-red-200 opacity-70 z-0 animate-bounce-slow"></div>
@@ -598,7 +605,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                             <div className="flex items-center space-x-4">
                                                 <div className="relative">
                                                     <motion.div
-                                                        className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg"
+                                                        className={`w-20 h-20 rounded-full overflow-hidden border-4  shadow-lg cursor-pointer ${theme === 'dark'? 'border-gray-600': 'border-white'}`}
                                                         whileHover={{ scale: 1.1 }}
                                                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
                                                     >
@@ -631,7 +638,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                             animate={{ opacity: 1, x: 0 }}
                                                             transition={{ delay: 0.3, duration: 0.5 }}
                                                         >
-                                                            <span className="text-lg text-gray-500">Attendance</span>
+                                                            <span className={`text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Attendance</span>
                                                             <span className="font-semibold text-green-600 text-xl">{`100%`}</span>
                                                         </motion.div>
                                                         <motion.div
@@ -640,7 +647,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                             animate={{ opacity: 1, x: 0 }}
                                                             transition={{ delay: 0.4, duration: 0.5 }}
                                                         >
-                                                            <span className="text-lg text-gray-500">Avg. Hours</span>
+                                                            <span className={`text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Avg. Hours</span>
                                                             <span className="font-semibold text-blue-600 text-xl">{`10h 9m`}</span>
                                                         </motion.div>
                                                     </div>
@@ -686,7 +693,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 <AnimatePresence>
                                                     {showModeConfirm && (
                                                         <motion.div
-                                                            className="absolute top-full right-0 mt-2 w-52 p-3 bg-white border border-gray-300 rounded-xl shadow-lg z-30"
+                                                            className={`absolute top-full right-0 mt-2 w-52 p-3  border border-gray-300 rounded-xl shadow-lg z-30 ${theme === 'dark'? 'bg-gray-800 text-white': 'bg-white text-gray-800'}`}
                                                             initial={{ opacity: 0, y: -20, scale: 0.9 }}
                                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                                             exit={{ opacity: 0, y: -20, scale: 0.9 }}
@@ -726,7 +733,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: 0.5, duration: 0.5 }}
                                         >
-                                            <h2 className="text-2xl font-medium text-gray-800 mb-2">{`Welcome, ${userData?.fullName}`}</h2>
+                                            <h2 className={`text-2xl font-medium  mb-2 ${theme === 'dark'? 'text-white': 'text-gray-800'}`}>    {`Welcome, ${userData?.fullName}`}</h2>
                                         </motion.div>
 
                                         {/* Divider with animated underline */}
@@ -740,7 +747,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                     style={{ transformOrigin: "left" }}
                                                 />
                                             </div>
-                                            <span className="px-3 bg-white text-md text-gray-500 font-medium z-10">TIME TRACKING</span>
+                                            <span className={`px-3  text-md  font-medium z-10 ${theme === 'dark'? 'bg-gray-700 text-white': 'bg-white text-gray-500'}`}>TIME TRACKING</span>
                                         </div>
 
                                         {/* Time display section */}
@@ -757,7 +764,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                     <span>Current Time</span>
                                                 </motion.div>
                                                 <motion.p
-                                                    className="text-2xl font-bold text-gray-800 tracking-wide mb-1"
+                                                    className={`text-2xl font-bold  tracking-wide mb-1 ${theme === 'dark'? 'text-white': 'text-gray-900'}`}
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     transition={{ delay: 1, duration: 0.5 }}
@@ -765,7 +772,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                     {formatClockTime(currentTime)}
                                                 </motion.p>
                                                 <motion.p
-                                                    className="text-sm text-gray-500"
+                                                    className={`text-sm  ${theme === 'dark'? 'text-white': 'text-gray-500'}`}
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: 1.2, duration: 0.5 }}
@@ -777,21 +784,21 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                             <div className="grid grid-cols-2 gap-4 w-full max-w-md px-2">
                                                 {/* Gross Time Card */}
                                                 <motion.div
-                                                    className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 shadow-sm border border-gray-300"
+                                                    className={` rounded-xl p-4 shadow-sm  ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-purple-50 to-purple-100 border border-gray-300'}`}
                                                     whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
-                                                    <p className="text-sm text-gray-600 font-medium mb-2">Gross Time</p>
-                                                    <p className="text-xl font-semibold text-purple-700">{grossHoursFormatted}</p>
+                                                    <p className={`text-sm  font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-300'}`}>Gross Time</p>
+                                                    <p className={`text-xl font-semibold ${theme === 'dark'? 'text-white': 'text-purple-700 '}`}>{grossHoursFormatted}</p>
                                                 </motion.div>
                                                 {/* Effective Time Card */}
                                                 <motion.div
-                                                    className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-4 shadow-sm border border-gray-300"
+                                                    className={` ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-pink-50 to-pink-100 border border-gray-300'} rounded-xl p-4 shadow-sm border border-gray-300`}
                                                     whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
-                                                    <p className="text-sm text-gray-600 font-medium mb-2">Effective Time</p>
-                                                    <p className="text-xl font-semibold text-orange-700">{effectiveHoursFormatted}</p>
+                                                    <p className={`text-sm font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Effective Time</p>
+                                                    <p className={`text-xl font-semibold  ${theme === 'dark'? 'text-white': 'text-orange-700 '}`}>{effectiveHoursFormatted}</p>
                                                 </motion.div>
                                             </div>
                                         </div>
@@ -901,12 +908,12 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                             {/* Charts Grid */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                                 <motion.section
-                                    className="bg-stone-100 rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px]"
+                                    className={`rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px] ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
                                     initial={{ opacity: 0, x: -50 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.5, delay: 0.6 }}
                                 >
-                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
+                                    <h2 className={`text-xl sm:text-2xl font-bold  mb-4 text-center ${theme === 'dark' ? 'bg-gradient-to-br from-blue-200 to-blue-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
                                         <ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown
                                     </h2>
                                     <div className="mb-6 flex justify-center gap-2 flex-wrap">
@@ -920,7 +927,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 <motion.button
                                                     key={date}
                                                     onClick={() => setSelectedDate(dateToSet)}
-                                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+                                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} ${theme === 'dark' ? (selectedDate === dateToSet ? "bg-indigo-500 text-white shadow-md" : "bg-gray-400 text-gray-300") : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
                                                     whileHover={{ scale: 1.1 }}
                                                     whileTap={{ scale: 0.9 }}
                                                 >
@@ -945,18 +952,18 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     </div>
                                 </motion.section>
                                 <motion.section
-                                    className="bg-stone-100 rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px]"
+                                    className={`rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px] ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
                                     initial={{ opacity: 0, x: 50 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.5, delay: 0.8 }}
                                 >
-                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 text-center">
+                                    <h2 className={`text-xl sm:text-2xl font-bold  mb-4 text-center ${theme === 'dark' ? 'bg-gradient-to-br from-pink-200 to-pink-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
                                         <ChartBarIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Weekly Login & Break Hours
                                     </h2>
                                     <div className="flex-grow flex items-center justify-center">
                                         <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
                                             <BarChart data={filteredBarChartData} margin={{ top: 20, right: 10, left: 5, bottom: 5 }}>
-                                                <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }} className="text-sm" tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick} />
+                                                <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }}  tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick } className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}/>
                                                 <YAxis allowDecimals={false} hide />
                                                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
                                                 <Legend wrapperStyle={{ paddingTop: "10px" }} />
@@ -969,21 +976,21 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                             </div>
                             {/* Attendance Records Table */}
                             <motion.div
-                                className="p-4 sm:p-6 bg-stone-100 rounded-xl border border-gray-200 shadow-lg"
+                                className={`p-4 sm:p-6  rounded-xl border border-gray-200 shadow-lg mb-8 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.5, delay: 1 }}
                             >
                                 <section>
                                     <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
-                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+                                        <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-green-200 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
                                             <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" /> Attendance Records
                                         </h2>
                                         <div className="flex flex-wrap items-center gap-4">
                                             <FilterButtonGroup options={MONTHS} selectedOption={selectedMonth} onSelect={(month) => { setSelectedMonth(month); setCurrentPage(1); }} />
                                             <div className="relative">
-                                                <label className="text-sm font-semibold mr-2 text-gray-700">Sort by:</label>
-                                                <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setCurrentPage(1); }} className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-700">
+                                                <label className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Sort by:</label>
+                                                <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setCurrentPage(1); }} className={`border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
                                                     {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
                                                 </select>
                                             </div>
@@ -991,16 +998,16 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     </div>
                                     <div className="overflow-x-auto rounded-lg border border-gray-200">
                                         <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
+                                            <thead className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'}`}>
                                                 <tr>
-                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
-                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
-                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider"><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
-                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider">Login Hours</th>
-                                                    <th scope="col" className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wider">Daily Progress</th>
+                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
+                                                    <th scope="col"className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
+                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
+                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Login Hours</th>
+                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Daily Progress</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            <tbody className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'} divide-y divide-gray-200`}>
                                                 <AnimatePresence>
                                                     {paginatedData.length > 0 ? (
                                                         paginatedData.map((entry, idx) => (
@@ -1012,11 +1019,12 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                 exit={{ opacity: 0, y: -20 }}
                                                                 transition={{ duration: 0.3, delay: idx * 0.05 }}
                                                             >
-                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{entry.date}</td>
-                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800"><span className="font-semibold text-indigo-700">{entry.login_hours.toFixed(2)}</span> hrs</td>
-                                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.date}</td>
+                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
+                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
+                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><span className={`font-semibold text-indigo-700 ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}>
+                                                                    {entry.login_hours.toFixed(2)}</span> hrs</td>
+                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
                                                                     <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
                                                                         <motion.div
                                                                             className="bg-indigo-500 h-full rounded-full"
@@ -1030,7 +1038,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                             </motion.tr>
                                                         ))
                                                     ) : (
-                                                        <tr><td colSpan="5" className="px-4 py-3 text-center text-gray-500 italic">No attendance records found for the selected options.</td></tr>
+                                                        <tr><td colSpan="5"className={`px-4 py-3 text-center  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}italic`}>No attendance records found for the selected options.</td></tr>
                                                     )}
                                                 </AnimatePresence>
                                             </tbody>
@@ -1038,15 +1046,15 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     </div>
                                     <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
                                         <div className="flex items-center gap-2 mb-4 sm:mb-0">
-                                            <span className="text-sm text-gray-700">Rows per page:</span>
-                                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="border border-gray-300 px-2 py-1 rounded-md text-sm">
+                                            <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
+                                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`border border-gray-300 px-2 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
                                                 {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
                                             </select>
                                         </div>
                                         <nav className="flex items-center gap-2">
-                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                                            <span className="text-sm text-gray-700">Page {currentPage} of {totalPages}</span>
-                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Previous</button>
+                                            <span  className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
+                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Next</button>
                                         </nav>
                                     </div>
                                 </section>

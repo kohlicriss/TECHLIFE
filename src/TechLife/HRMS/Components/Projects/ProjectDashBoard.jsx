@@ -138,6 +138,7 @@ const projectIconMap = {
     "Internal Chatbot System": { icon: "💬", color: "text-teal-500" },
 };
 const ProjectCard = () => {
+    const {theme}=useContext(Context);
     const [currentIndex, setCurrentIndex] = useState(0);
     const currentProject = projects[currentIndex];
     const { icon, color } = projectIconMap[currentProject.name] || { icon: null, color: "" };
@@ -151,7 +152,7 @@ const ProjectCard = () => {
 
     return (
         <motion.div
-            className="relative p-6 bg-stone-100 rounded-lg shadow-xl mx-auto border border-gray-200"
+            className={`relative p-6  rounded-lg shadow-xl mx-auto border border-gray-200  ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
             key={currentIndex} // Key is important for Framer Motion to re-animate on state change
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -189,7 +190,7 @@ const ProjectCard = () => {
 
             {/* Description */}
             <motion.p
-                className="text-gray-700 text-base sm:text-lg mb-8 leading-relaxed"
+                className={`text-gray-700 text-base sm:text-lg mb-8 leading-relaxed ${theme==='dark' ? 'text-white':''}`}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
@@ -302,7 +303,7 @@ const ProjectCard = () => {
 
 // --- MyTeam Data and Component ---
 const MyTeam = () => {
-    const { userData } = useContext(Context);
+    const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
 
@@ -348,16 +349,17 @@ const MyTeam = () => {
 
     return (
         <motion.div
-            className="bg-stone-100 shadow-xl rounded-lg p-6 border border-gray-200 h-full overflow-hidden"
+            className={` shadow-xl rounded-lg p-6 border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">My Team</h2>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-400 to-blue-800 bg-clip-text text-transparent ':''}`}>
+                    My Team</h2>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-gradient-to-br from-blue-200 to-blue-500 text-black font-bold py-2 px-4 rounded shadow transition"
+                        className="flex items-center bg-gradient-to-br from-blue-200 to-blue-500 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
                         onClick={() => { setShowForm(true); setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" }); setEditIndex(null); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -400,7 +402,7 @@ const MyTeam = () => {
                 )}
             </AnimatePresence>
             <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
+                <table className={`min-w-full border-collapse  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}>
                     <thead>
                         <tr className="bg-gradient-to-br from-blue-200 to-blue-600 text-black text-left text-sm md:text-base">
                             <th className="py-2 px-4">Profile</th>
@@ -426,15 +428,15 @@ const MyTeam = () => {
                                 return (
                                     <motion.tr
                                         key={emp.employee_id}
-                                        className="border-t border-gray-100 hover:bg-gray-50 text-sm md:text-base"
+                                        className="border-t border-gray-100 hover:bg-gray-50 text-sm"
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className="py-2 px-4">
+                                        <td className={`py-2 px-4 flex items-center ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                             <motion.div
-                                                className="cursor-pointer hover:opacity-80 transition-opacity"
+                                                className={`cursor-pointer hover:opacity-80 transition-opacity  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}
                                                 onClick={() => {/* handle profile click if needed */}}
                                                 title={`View ${name}'s Performance`}
                                                 whileHover={{ scale: 1.1 }}
@@ -443,27 +445,27 @@ const MyTeam = () => {
                                                     <img
                                                         src={imageUrl}
                                                         alt={name}
-                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover"
+                                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}
                                                     />
                                                 ) : (
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full  flex items-center justify-center text-gray-500 font-bold  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}>
                                                         {name.charAt(0)}
                                                     </div>
                                                 )}
                                             </motion.div>
                                         </td>
-                                        <td className="py-2 px-4">{emp.employee_id}</td>
-                                        <td className="py-2 px-4 font-medium">{name}</td>
-                                        <td className="py-2 px-4">{emp.date}</td>
-                                        <td className="py-2 px-4">{emp.role}</td>
-                                        <td className={`py-2 px-4 font-semibold ${status.color}`}>{status.label}</td>
-                                        <td className="py-2 px-4">
+                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.employee_id}</td>
+                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{name}</td>
+                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.date}</td>
+                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.role}</td>
+                                        <td className={`py-2 px-4 font-semibold ${status.color} ${theme==='dark' ? 'bg-gray-300 ':''} `}>{status.label}</td>
+                                       <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                             
                                             {showSidebar && (
                                                 <button className="text-indigo-600 hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                             )}
                                         </td>
-                                        <td className="py-2 px-4">
+                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                             {showSidebar && (
                                                 <button className="text-red-600 hover:text-red-800 font-bold" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                             )}
@@ -481,7 +483,7 @@ const MyTeam = () => {
 
 // --- ProjectStatus Data and Component ---
 function ProjectStatus() {
-    const { userData } = useContext(Context);
+    const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
     const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
@@ -526,13 +528,13 @@ function ProjectStatus() {
 
      return (
         <motion.div
-            className="p-6 bg-stone-100 rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden"
+            className={`p-6  rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'} `}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Project Status Overview</h2>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-400 to-blue-800 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
                 {showSidebar && (
                     <motion.button
                         className="flex items-center bg-gradient-to-br from-green-200 to-green-600 text-black font-bold py-2 px-4 rounded shadow transition"
@@ -600,10 +602,10 @@ function ProjectStatus() {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                         >
-                            <td className="py-2 px-4 text-sm ">{project.Project_id}</td>
-                            <td className="py-2 px-4 text-sm ">{project.Project_name}</td>
-                            <td className="py-2 px-4 text-sm ">{project.Duration}</td>
-                            <td className="py-2 px-4 w-32 flex items-center">
+                            <td className={`py-2 px-4 text-sm ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{project.Project_id}</td>
+                           <td className={`py-2 px-4 text-sm ${theme==='dark' ? 'bg-gray-300  text-gray-800':''}`}>{project.Project_name}</td>
+                            <td className={`py-2 px-4 text-sm ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{project.Duration}</td>
+                            <td className={`py-2 px-4 w-32 flex items-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
                                 <ResponsiveContainer width="75%" height={25}>
                                     <BarChart
                                         layout="vertical"
@@ -621,12 +623,12 @@ function ProjectStatus() {
                                 <span className="text-xs text-gray-600 ml-2">{project.Status}%</span>
                             </td>
                             {showSidebar && (
-                                <td className="py-2 px-4">
+                                <td className={`py-2 px-4 ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                     <button className="text-indigo-600 hover:text-indigo-800 font-small" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                 </td>
                             )}
                             {showSidebar && (
-                                <td className="py-2 px-4">
+                                <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                     <button className="text-red-600 hover:text-red-800 font-small" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                 </td>
                             )}
@@ -642,7 +644,7 @@ function ProjectStatus() {
 
 // ...existing code...
 function Project() {
-    const { userData } = useContext(Context);
+    const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
 
@@ -850,13 +852,14 @@ function Project() {
 
     return (
         <motion.div
-            className="p-6 bg-stone-100 rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative"
+            className={`p-6  rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Project Overview</h2>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-400 to-blue-800 bg-clip-text text-transparent ':''}`}>
+                    Project Overview</h2>
                 {showSidebar && (
                     <motion.button
                         className="flex items-center bg-gradient-to-br from-indigo-200 to-indigo-600 text-white font-bold py-2 px-4 rounded shadow transition"
@@ -1071,8 +1074,10 @@ function Project() {
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
                         <th className="p-3 text-sm md:text-base">Status</th>
-                        <th className="p-3 text-sm md:text-base">Details</th>
-                        <th className="p-3 text-sm md:text-base">Delete</th>
+                        <th className="p-3 text-sm md:text-base">Open Task</th>
+                        <th className="p-3 text-sm md:text-base">Closed Task</th>
+                        {showSidebar &&<th className="p-3 text-sm md:text-base">Details</th>}
+                        {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -1086,8 +1091,8 @@ function Project() {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3, delay: index * 0.05 }}
                             >
-                                <td className="p-3 text-sm md:text-base font-semibold">{proj.project_name}</td>
-                                <td className="p-3">
+                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}> {proj.project_name}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
                                     <div className="flex -space-x-2 ">
                                         {proj.Employee_team.map((img, index) => (
                                             <motion.img
@@ -1100,20 +1105,22 @@ function Project() {
                                         ))}
                                     </div>
                                 </td>
-                                <td className="p-3">
-                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)}`}>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
+                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)} `}>
                                         {proj.Priority}
                                     </span>
                                 </td>
-                                <td className="p-3 text-sm md:text-base">{proj.start_date}</td>
-                                <td className="p-3 text-sm md:text-base">{proj.end_date}</td>
-                                <td className="p-3 ">
-                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)}`}>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.start_date}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.end_date}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
+                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)} `}>
                                         {proj.status}
                                     </span>
                                 </td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Open_task}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Closed_task}</td>
                                 {showSidebar && (
-                                <td className="p-3 text-center">
+                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
                                     <a href={proj.Details} target="_blank" rel="noopener noreferrer">
                                         <motion.div whileHover={{ scale: 1.2 }}>
                                             <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-8 md:h-8 transition" />
@@ -1122,7 +1129,7 @@ function Project() {
                                 </td>
                                 )}
                                 {showSidebar && (
-                                <td className="p-3 text-center">
+                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
                                     <motion.button whileHover={{ scale: 1.2 }}>
                                         <FaTrashAlt className="text-red-500 text-lg w-6 h-6 md:w-8 md:h-8 transition" />
                                     </motion.button>
@@ -1139,10 +1146,11 @@ function Project() {
 
 // --- Combined HRMS Dashboard Component ---
 const ProjectDashboard = () => {
+    const { userData,theme } = useContext(Context);
     return (
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+        <div className={`min-h-screen bg-gray-50 p-4 sm:p-8 ${theme==="dark"?"bg-gray-900":"bg-gray-50 "}`}>
             <motion.h1
-                className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 sm:mb-8 text-left drop-shadow-sm"
+                className={`text-3xl sm:text-4xl font-bold  mb-6 sm:mb-8 text-left drop-shadow-sm ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-400 to-indigo-800 bg-clip-text text-transparent ' : 'text-gray-800 '} `}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
