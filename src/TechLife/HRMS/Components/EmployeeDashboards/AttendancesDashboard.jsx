@@ -523,7 +523,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                         <ChevronLeft />
                     </button>
                     <motion.div
-                        className={`fixed inset-y-0 right-0 w-60 bg-white shadow-xl z-40 p-4 flex flex-col`}
+                        className={`fixed inset-y-0 right-0 w-60  shadow-xl z-40 p-4 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-l border-gray-700' : 'bg-white border-l border-gray-200'}`}
                         initial={{ x: '100%' }}
                         animate={{ x: isSidebarOpen ? '0%' : '100%' }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -532,7 +532,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                             <ChevronRight />
                         </button>
                         <motion.h3
-                            className="text-lg font-bold text-gray-800 cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100"
+                            className={`text-lg font-bold  cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
                             onClick={() => { setShowAttendanceReports(true); setIsSidebarOpen(false); }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -1013,7 +1013,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                         paginatedData.map((entry, idx) => (
                                                             <motion.tr
                                                                 key={idx}
-                                                                className="hover:bg-indigo-50 transition-colors duration-150"
+                                                                className="hover:bg-indigo-200 transition-colors duration-150"
                                                                 initial={{ opacity: 0, y: 20 }}
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 exit={{ opacity: 0, y: -20 }}
@@ -1022,8 +1022,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.date}</td>
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><span className={`font-semibold text-indigo-700 ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}>
-                                                                    {entry.login_hours.toFixed(2)}</span> hrs</td>
+                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><span className={`font-semibold text-indigo-700 ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}>{entry.login_hours.toFixed(2)}</span> hrs</td>
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
                                                                     <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
                                                                         <motion.div

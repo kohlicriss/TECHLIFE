@@ -22,6 +22,7 @@ import { Context } from "../HrmsContext";
 import LeavesReports from "./LeavesReports";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import LeaveDetails from "./LeaveDetails";
+import { FaFileAlt } from "react-icons/fa";
 
 // AddLeaveForm component
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
@@ -67,12 +68,14 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
 
     return (
         <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4"    initial={{ opacity: 0 }}    animate={{ opacity: 1 }}    exit={{ opacity: 0 }}    transition={{ duration: 0.3 }}>
-            <motion.div className="relative w-full max-w-3xl mx-auto p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
-                <button    onClick={onClose}    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">    &times;</button>
-                <form onSubmit={handleSubmit} className={`relative w-full max-w-3xl mx-auto rounded-lg p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-gray-200 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>
-                    <h2 className={`text-2xl font-bold mb-6 text-center border-b pb-4 ${theme === 'dark' ? 'bg-gradient-to-br from-orange-200 to-orange-600 bg-clip-text text-transparent border-gray-100' : 'text-gray-800 border-gray-200'}`}>     Request a Leave</h2>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <motion.div className="relative w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
+               
+                <form onSubmit={handleSubmit} className={`relative w-full max-w-3xl mx-auto rounded-lg   shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-green-200 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>
+                   <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-orange-200 to-orange-600"> 
+                    <h2 className={`text-2xl pt-6  font-bold border-b pb-8 ${theme === 'dark' ? 'text-white border-gray-100' : 'text-gray-800 border-gray-200'}`}>     Request a Leave</h2>
+                    </div>
+                    <div className="space-y-4 p-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
                                     Employee Id
@@ -142,7 +145,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             <textarea    rows="3"    value={reason}    onChange={(e) => setReason(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50  ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}></textarea>
                         </motion.div>
                     </div>
-                    <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
+                    <div className="mt-6 flex justify-end space-x-3 border-t p-4">
                         <motion.button    onClick={onClose}    type="button"    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"    whileHover={{ scale: 1.05 }}    whileTap={{ scale: 0.95 }}>    Cancel</motion.button>
                         <motion.button    type="submit"    className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"    whileHover={{ scale: 1.05 }}    whileTap={{ scale: 0.95 }}>    Add Leave</motion.button>
                     </div>
@@ -168,7 +171,7 @@ const LeaveTypeCard = ({
     const { theme } = useContext(Context);
     return (
         <motion.div
-            className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-purple-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
+            className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -284,7 +287,7 @@ const LeaveType = () => {
 
     return (
         <motion.div
-            className={` rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-blue-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
+            className={` rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -376,7 +379,7 @@ const WeeklyPattern = () => {
 
     return (
         <motion.div
-            className={` shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-purple-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
+            className={` shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
@@ -498,7 +501,7 @@ const handleCloseModal = () => {
 
     return (
         <motion.div
-            className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-green-100 to-indigo-400' : 'bg-stone-100 text-gray-800'}`}
+            className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
@@ -596,7 +599,7 @@ const handleCloseModal = () => {
                                                  className="text-indigo-600 hover:text-indigo-800 text-lg"
                                                  title="View Details"
                                                >
-                                                📄
+                                                <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-4 md:h-4 transition" />
                                             </button>
                                         </td>
                                         <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
@@ -650,10 +653,10 @@ const handleCloseModal = () => {
 
 // UserGreeting component
 const UserGreeting = ({ handleRequestLeave }) => {
-    const { userData } = useContext(Context);
+    const { userData,theme } = useContext(Context);
     return (
         <motion.div
-            className="flex justify-between items-center p-6 bg-purple-100 via-pink-100 rounded-lg shadow-md mb-6"
+            className={`flex justify-between items-center p-6 bg-purple-100 via-pink-100 rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gradient-to-r from-gray-100 via-gray-400 to-gray-400 ' : 'bg-purple-100 via-pink-100 '}`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

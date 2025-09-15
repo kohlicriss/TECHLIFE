@@ -355,7 +355,7 @@ const MyTeam = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-400 to-blue-800 bg-clip-text text-transparent ':''}`}>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-400 bg-clip-text text-transparent ':''}`}>
                     My Team</h2>
                 {showSidebar && (
                     <motion.button
@@ -378,33 +378,56 @@ const MyTeam = () => {
                         exit={{ opacity: 0 }}
                     >
                     <motion.form
-                            className="w-full max-w-3xl bg-white rounded-lg shadow-2xl p-4 relative"
+                            className={`w-full max-w-3xl rounded-lg shadow-2xl  relative ${theme==='dark' ? 'bg-gray-800 text-white':'bg-white text-black'}`}
                             onSubmit={handleAddOrEdit}
                             initial={{ scale: 0.9, y: 50 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 50 }}
                             transition={{ duration: 0.3 }}
-                     >       
+                     >    
+                        <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-400">
+                        <h3 className="text-2xl font-bold  border-gray-200   pt-6  text-gray-600 border-lg pb-8">{editIndex !== null ? "Edit Team Member" : "Add Team Member"}</h3>  
+                        </div>
+                        <div className="space-y-4 p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <input type="text" placeholder="Profile Image URL + Name" className="border p-2 rounded" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                            <input type="text" placeholder="Employee ID" className="border p-2 rounded" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
-                            <input type="date" className="border p-2 rounded" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
-                            <input type="text" placeholder="Role" className="border p-2 rounded" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
-                            <input type="text" placeholder="Login Time" className="border p-2 rounded" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
-                            <input type="text" placeholder="Logout Time" className="border p-2 rounded" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm  font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Profile Image & Name</label>
+                            <input type="text" placeholder="Profile Image URL + Name" className="border p-2 w-full rounded" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee ID</label>
+                            <input type="text" placeholder="Employee ID" className="border p-2 w-full rounded" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Date</label>
+                            <input type="date" className="border p-2 w-full rounded" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Role</label>
+                            <input type="text" placeholder="Role" className="border p-2 w-full rounded" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Login Time</label>
+                            <input type="text" placeholder="Login Time" className="border p-2 w-full rounded" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Logout Time</label>
+                            <input type="text" placeholder="Logout Time" className="border p-2 w-full rounded" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
+                            </div>
                         </div>
                         <div className="flex gap-2 mt-2">
                             <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
                             <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
+                        </div>
                         </div>
                     </motion.form>
                     </motion.div>
                 )}
             </AnimatePresence>
             <div className="overflow-x-auto">
-                <table className={`min-w-full border-collapse  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}>
+                <table className={`min-w-full border-collapse border-orange-200  ${theme==='dark' ? 'bg-gray-300':''}`}>
                     <thead>
-                        <tr className="bg-gradient-to-br from-blue-200 to-blue-600 text-black text-left text-sm md:text-base">
+                        <tr className="bg-gradient-to-br from-blue-100 to-blue-400 text-black text-left  w-full text-sm md:text-base">
                             <th className="py-2 px-4">Profile</th>
                             <th className="py-2 px-4">Emp ID</th>
                             <th className="py-2 px-4">Name</th>
@@ -454,18 +477,18 @@ const MyTeam = () => {
                                                 )}
                                             </motion.div>
                                         </td>
-                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.employee_id}</td>
-                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{name}</td>
-                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.date}</td>
-                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.role}</td>
-                                        <td className={`py-2 px-4 font-semibold ${status.color} ${theme==='dark' ? 'bg-gray-300 ':''} `}>{status.label}</td>
-                                       <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 ':''}`}>
+                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.employee_id}</td>
+                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{name}</td>
+                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.date}</td>
+                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.role}</td>
+                                        <td className={`py-2 px-4  ${status.color} ${theme==='dark' ? 'bg-gray-300 ':''} `}>{status.label}</td>
+                                       <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                             
                                             {showSidebar && (
                                                 <button className="text-indigo-600 hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                             )}
                                         </td>
-                                        <td className={`py-2 px-4 font-mono font-semibold ${theme==='dark' ? 'bg-gray-300 ':''}`}>
+                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 ':''}`}>
                                             {showSidebar && (
                                                 <button className="text-red-600 hover:text-red-800 font-bold" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                             )}
@@ -534,7 +557,7 @@ function ProjectStatus() {
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-400 to-blue-800 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
                 {showSidebar && (
                     <motion.button
                         className="flex items-center bg-gradient-to-br from-green-200 to-green-600 text-black font-bold py-2 px-4 rounded shadow transition"
@@ -555,23 +578,39 @@ function ProjectStatus() {
                         exit={{ opacity: 0 }}
                     >
                         <motion.form
-                            className="w-full max-w-md bg-white rounded-lg shadow-2xl p-4 relative"
+                            className={`w-full max-w-md  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
                             onSubmit={handleAddOrEdit}
                             initial={{ scale: 0.9, y: 50 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 50 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <h3 className="text-xl font-bold mb-2 text-gray-800 text-center">{editIndex !== null ? "Edit Team" : "Add Team"}</h3>
+                            <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-green-100 to-green-400">
+                            <h3 className={`text-2xl font-bold  border-gray-200   pt-6   border-lg pb-8 ${theme==='dark' ? 'text-gray-600 ':'text-gray-800'}`}>{editIndex !== null ? "Edit Project Status" : "Update Project Status"}</h3>
+                            </div>
+                             <div className="space-y-4 p-4">
                             <div className="grid grid-cols-1 gap-2">
-                                <input type="text" placeholder="Project ID" className="border p-2 rounded" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
-                                <input type="text" placeholder="Project Name" className="border p-2 rounded" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
-                                <input type="number" placeholder="Status (%)" className="border p-2 rounded" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
-                                <input type="text" placeholder="Duration" className="border p-2 rounded" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
+                                <div className='relative mb-2'>
+                                 <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project ID</label>   
+                                <input type="text" placeholder="Project ID" className="border p-2 w-full rounded" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
+                                </div>
+                                <div className='relative mb-2'>
+                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project Name</label>   
+                                <input type="text" placeholder="Project Name" className="border p-2 w-full rounded" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
+                                </div>
+                                <div className='relative mb-2'>
+                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Status (%)</label>
+                                <input type="number" placeholder="Status (%)" className="border p-2 w-full rounded" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
+                                </div>
+                                <div className='relative mb-2'>
+                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Duration</label>
+                                <input type="text" placeholder="Duration" className="border p-2 w-full rounded" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
+                                </div>
                             </div>
                             <div className="flex gap-2 mt-2 justify-center">
                                 <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
                                 <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
+                            </div>
                             </div>
                         </motion.form>
                     </motion.div>
@@ -580,9 +619,9 @@ function ProjectStatus() {
             
     {/* Table container with responsive overflow */}
     <div className="overflow-x-auto">
-        <table className="min-w-full bg-white">
+        <table className={`min-w-full  border-collapse ${theme==='dark' ? 'bg-gray-300':''}`}>
             <thead>
-                <tr className="text-left bg-gradient-to-br from-green-200 to-green-600 w-full text-sm md:text-base">
+                <tr className="text-left bg-gradient-to-br from-green-100 to-green-400 w-full text-sm md:text-base">
                     <th className="py-2 px-4 font-semibold">Project ID</th>
                     <th className="py-2 px-4 font-semibold">Project Name</th>
                     <th className="py-2 px-4 font-semibold">Duration</th>
@@ -798,7 +837,6 @@ function Project() {
         attachedFileLinks: [],
     });
     const [files, setFiles] = useState([]);
-
     const handleCreateProject = (e) => {
         e.preventDefault();
         setProjectTableData(prev => [
@@ -849,6 +887,30 @@ function Project() {
             relatedLinks: prev.relatedLinks.filter((_, i) => i !== index)
         }));
     };
+    const [editProjectIndex, setEditProjectIndex] = useState(null);
+const [editProjectData, setEditProjectData] = useState(null);
+
+const handleEditProject = (idx) => {
+    setEditProjectIndex(idx);
+    setEditProjectData(projectTableData[idx]);
+    setShowEditForm(true);
+};
+
+const handleDeleteProject = (idx) => {
+    setProjectTableData(prev => prev.filter((_, i) => i !== idx));
+};
+
+const [showEditForm, setShowEditForm] = useState(false);
+
+const handleUpdateProject = (e) => {
+    e.preventDefault();
+    setProjectTableData(prev =>
+        prev.map((proj, idx) => idx === editProjectIndex ? editProjectData : proj)
+    );
+    setShowEditForm(false);
+    setEditProjectIndex(null);
+    setEditProjectData(null);
+};
 
     return (
         <motion.div
@@ -858,11 +920,11 @@ function Project() {
             transition={{ duration: 0.5, delay: 0.6 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-400 to-blue-800 bg-clip-text text-transparent ':''}`}>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
                     Project Overview</h2>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-gradient-to-br from-indigo-200 to-indigo-600 text-white font-bold py-2 px-4 rounded shadow transition"
+                        className="flex items-center bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
                         onClick={() => setShowCreateForm(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -881,111 +943,145 @@ function Project() {
                         exit={{ opacity: 0 }}
                     >
                         <motion.form
-                            className="w-full max-w-3xl bg-white rounded-lg shadow-2xl p-4 relative"
+                            className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
                             onSubmit={handleCreateProject}
                             initial={{ scale: 0.9, y: 50 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 50 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <h3 className="text-2xl font-bold mb-2 bg-green-100 text-gray-800 text-center">Create New Project</h3>
+                            <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
+                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6   border-lg pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Create New Project</h3>
+                            </div>
+                            <div className="space-y-4 p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Project Name</label>
+                                 
                                 <input
                                     type="text"
                                     placeholder="Project Name"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
                                     required
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
+                                 
                                 <select
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.status}
                                     onChange={e => setNewProject({ ...newProject, status: e.target.value })}
                                 >
-                                    <option value="Ongoing">Ongoing</option>
-                                    <option value="Upcoming">Upcoming</option>
-                                    <option value="Completed">Completed</option>
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                    <option value="Ongoing"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
+                                    <option value="Upcoming"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
+                                    <option value="Completed"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
                                 </select>
+                                </div>
+                                <div className="relative mt-1">
+                                    <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
                                 <input
                                     type="date"
-                                    className="border p-2 rounded"
+                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.start_date}
                                     onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
                                     required
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                    <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
                                 <input
                                     type="date"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.end_date}
                                     onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
                                     required
                                 />
+                                </div>
+                                   <div className="relative mt-1">
+                                <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
+                             
                                 <select
-                                    className="border p-2 rounded"
+                                   className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.Priority}
                                     onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
                                 >
-                                    <option value="High">High</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Low">Low</option>
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                    <option value="High"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
+                                    <option value="Medium"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
+                                    <option value="Low"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
                                 </select>
+                                </div>
+                                 <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Open Tasks</label>
+                               
                                 <input
                                     type="number"
                                     placeholder="Open Tasks"
-                                    className="border p-2 rounded"
+                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Open_task}
                                     onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Closed Tasks</label>
                                 <input
                                     type="number"
                                     placeholder="Closed Tasks"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Closed_task}
                                     onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Rating</label>
                                 <input
                                     type="number"
                                     placeholder="Rating (1-5)"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     min="1"
                                     max="5"
                                     value={newProject.rating}
                                     onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
                                 />
+                                </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Employee_team</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
                                     <textarea
-                                        className="border p-2 rounded w-full"
+                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.Employee_team}
                                         onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Remark</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
                                     <textarea
-                                        className="border p-2 rounded w-full"
+                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.remark}
                                         onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Completion Note</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
                                     <textarea
-                                        className="border p-2 rounded w-full"
+                                        className={`border p-2 rounded shadow-sm w-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.completionNote}
                                         onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Related Links</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                                        Related Links</label>
                                     {newProject.relatedLinks.map((link, index) => (
                                         <div key={index} className="flex gap-2 mb-0">
                                             <input
                                                 type="url"
                                                 value={link}
                                                 onChange={e => handleRelatedLinkChange(index, e.target.value)}
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                                                className={`flex-1 px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                                 placeholder="Enter related link URL"
                                             />
                                             <button
@@ -1008,11 +1104,12 @@ function Project() {
                                     </button>
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Attach Files</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                                        Attach Files</label>
                                     <div className="flex items-center">
                                         <label className="flex items-center cursor-pointer">
                                             <FaPaperclip className="mr-2" />
-                                            <span className="text-sm text-gray-700">Attach</span>
+                                            <span className={`text-sm  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Attach</span>
                                             <input
                                                 type="file"
                                                 multiple
@@ -1061,12 +1158,116 @@ function Project() {
                                     Cancel
                                 </motion.button>
                             </div>
+                            </div>
                         </motion.form>
                     </motion.div>
                 )}
             </AnimatePresence>
+            <AnimatePresence>
+    {showEditForm && (
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+        >
+            <motion.form
+                className={`w-full max-w-3xl rounded-lg shadow-2xl relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
+                onSubmit={handleUpdateProject}
+                initial={{ scale: 0.9, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 50 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
+                    <h3 className={`text-2xl font-bold pt-6 pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Edit Project</h3>
+                </div>
+                <div className="space-y-4 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                            type="text"
+                            placeholder="Project Name"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.project_name || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
+                            required
+                        />
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.status || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
+                        >
+                            <option value="">Select Status</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Upcoming">Upcoming</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <input
+                            type="date"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.start_date || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
+                            required
+                        />
+                        <input
+                            type="date"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.end_date || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
+                            required
+                        />
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Priority || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
+                        >
+                            <option value="">Select Priority</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <input
+                            type="number"
+                            placeholder="Open Tasks"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Open_task || 0}
+                            onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
+                        />
+                        <input
+                            type="number"
+                            placeholder="Closed Tasks"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Closed_task || 0}
+                            onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
+                        />
+                    </div>
+                    {/* Add more fields as needed */}
+                    <div className="flex mt-2 gap-4 justify-center">
+                        <motion.button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Update Project
+                        </motion.button>
+                        <motion.button
+                            type="button"
+                            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
+                            onClick={() => setShowEditForm(false)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Cancel
+                        </motion.button>
+                    </div>
+                </div>
+            </motion.form>
+        </motion.div>
+    )}
+</AnimatePresence>
             <table className="min-w-full bg-white">
-                <thead className="bg-gradient-to-br from-indigo-200 to-indigo-600 text-gray-800 text-left">
+                <thead className="bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 text-left">
                     <tr>
                         <th className="p-3 text-sm md:text-base">Project</th>
                         <th className="p-3 text-sm md:text-base">Team</th>
@@ -1076,7 +1277,7 @@ function Project() {
                         <th className="p-3 text-sm md:text-base">Status</th>
                         <th className="p-3 text-sm md:text-base">Open Task</th>
                         <th className="p-3 text-sm md:text-base">Closed Task</th>
-                        {showSidebar &&<th className="p-3 text-sm md:text-base">Details</th>}
+                        <th className="p-3 text-sm md:text-base">Details</th>
                         {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
@@ -1118,25 +1319,27 @@ function Project() {
                                     </span>
                                 </td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Open_task}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Closed_task}</td>
-                                {showSidebar && (
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Closed_task}</td>          
+                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-4 md:h-4 transition" /> </motion.div></a></td>
+                            {showSidebar && (
                                 <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
-                                    <a href={proj.Details} target="_blank" rel="noopener noreferrer">
-                                        <motion.div whileHover={{ scale: 1.2 }}>
-                                            <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-8 md:h-8 transition" />
-                                        </motion.div>
-                                    </a>
-                                </td>
-                                )}
-                                {showSidebar && (
-                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
-                                    <motion.button whileHover={{ scale: 1.2 }}>
-                                        <FaTrashAlt className="text-red-500 text-lg w-6 h-6 md:w-8 md:h-8 transition" />
+                                    <motion.button
+                                        whileHover={{ scale: 1.2 }}
+                                        onClick={() => handleEditProject(index)}
+                                    >
+                                        <FiEdit className="text-indigo-600 text-lg w-3 h-3 md:w-4 md:h-4 transition" />
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.2 }}
+                                        onClick={() => handleDeleteProject(index)}
+                                        className="ml-2"
+                                    >
+                                        <FaTrashAlt className="text-red-500 text-lg w-3 h-3 md:w-4 md:h-4 transition" />
                                     </motion.button>
                                 </td>
-                                )}
+                            )}
                             </motion.tr>
-                        ))}
+                            ))}
                     </AnimatePresence>
                 </tbody>
             </table>
