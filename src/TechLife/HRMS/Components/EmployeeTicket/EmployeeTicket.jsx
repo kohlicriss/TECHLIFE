@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Ticket, CheckCircle2, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import { FaArrowLeft, FaArrowRight, FaBars } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -18,21 +18,27 @@ export default function EmployeeTicket() {
   const [toDate, setToDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // desktop collapse
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // mobile collapse
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('My Tickets');
+  const [loading, setLoading] = useState(false);
+ 
+       // current page for API
+ // true if more pages exist
+ const nextPage=useRef(0);
+ 
+  const [page, setPage] = useState(0);
+const [hasMore, setHasMore] = useState(true);
+const [isLoading, setIsLoading] = useState(false);
+const [totalCount, setTotalCount] = useState(0);
+ 
+// prevent multiple fetches
+ 
   const navigate = useNavigate();
   const { empID } = useParams();
   const { userData } = useContext(Context);
- 
   const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
-  let normalizedRole = "";
-  if (typeof role === "string") {
-    normalizedRole = role.toUpperCase().startsWith("ROLE_")
-      ? role.toUpperCase()
-      : "ROLE_" + role.toUpperCase();
-  }
- 
+  const normalizedRole = role.toUpperCase().startsWith("ROLE_") ? role.toUpperCase() : "ROLE_" + role.toUpperCase();
   const token = localStorage.getItem("accessToken");
  
   const sidebarItems = [
@@ -45,28 +51,29 @@ export default function EmployeeTicket() {
  
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
-
-  useEffect(() => {
-    if (!token || !empID || !userData) return;
-
-  
-
+ 
+ 
+const fetchTickets = async (pageNum = 0) => {
+  if (!token || !empID || !userData || isLoading || !hasMore) return;
+ 
   setIsLoading(true);
   try {
     let url;
     if (activeTab === "Assigned Tickets") {
-      // url = https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/role/${normalizedRole}/${empID}?page=${pageNum}&size=10`;
+      // url = ...
     } else {
       url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10`;
     }
-
-        const res = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
+ 
+    const res = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+ 
     const { content, totalElements } = res.data;
-
-    setTickets(prev => [...prev, ...content]);
+ 
+    setTickets(prev =>
+      pageNum === 0 ? content : [...prev, ...content]
+    );
     setTotalCount(totalElements);
     setPage(pageNum + 1);
     setHasMore(content.length > 0);
@@ -77,18 +84,19 @@ export default function EmployeeTicket() {
     setIsLoading(false);
   }
 };
-
-
-
-
+ 
+ 
+ 
+ 
+ 
 useEffect(() => {
   setTickets([]);
   setPage(0);
   setHasMore(true);
   fetchTickets(0);
 }, [activeTab, empID, normalizedRole, token, userData]);
-
-
+ 
+ 
  useEffect(() => {
   const handleScroll = () => {
     const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
@@ -96,22 +104,22 @@ useEffect(() => {
       fetchTickets(page);
     }
   };
-
+ 
   window.addEventListener('scroll', handleScroll);
   return () => window.removeEventListener('scroll', handleScroll);
 }, [page, hasMore, isLoading]);
-
+ 
 useEffect(() => {
   fetchTickets();
 }, [empID]);
-
-
-  
+ 
+ 
+ 
  const handleTabClick = (tab) => {
   setActiveTab(tab);
   setTickets([]);
   nextPage.current = 0;
-  setHasMore(true);   
+  setHasMore(true);  
   setSelectedTicket(null);
   setView("history");
   navigate(
@@ -120,49 +128,50 @@ useEffect(() => {
       : `/tickets/employee/${empID}`
   );
 };
-
-
-
+ 
+ 
+ 
  const handleFormSubmit = async (data) => {
   try {
     let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
     if (!roleToSend) return;
-
+ 
     roleToSend = roleToSend.toUpperCase().startsWith("ROLE_") ? roleToSend.toUpperCase() : "ROLE_" + roleToSend.toUpperCase();
-
+ 
     const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
-
+ 
     const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-
+ 
     if (!res.ok) throw new Error(`Failed to create ticket: ${res.status}`);
-
+ 
     // Instead of manually adding duplicate, re-fetch from backend
     setTickets([]);
     setPage(0);
     setHasMore(true);
     await fetchTickets(0);
-
+ 
     setView("history");
   } catch (err) {
     console.error(err);
     alert("Ticket creation failed.");
   }
 };
-
-
-
+ 
+ 
+ 
+  // ======================== HANDLE TICKET CLICK ========================
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setView('chat');
   };
  
+ 
   const applyFilters = () => {
     let filtered = [...tickets];
- 
     if (searchTerm.trim() !== '') {
       const s = searchTerm.toLowerCase();
       filtered = filtered.filter(t =>
@@ -171,19 +180,22 @@ useEffect(() => {
         (t.priority || "").toLowerCase().includes(s)
       );
     }
- 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(t => (t.status || "").toLowerCase() === statusFilter);
     }
- 
     filtered.sort((a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt));
     return filtered;
   };
  
-  const filteredTickets = applyFilters();
-  const total = filteredTickets.length;
-  const resolved = filteredTickets.filter(t => (t.status || "").toLowerCase() === "resolved").length;
-  const unsolved = total - resolved;
+ const filteredTickets = applyFilters();
+const normalizeStatus = (status) => (status || "").trim().toLowerCase();
+ 
+const total = totalCount;
+const resolved = filteredTickets.filter(t => normalizeStatus(t.status) === "resolved").length;
+const unsolved = total - resolved;
+ 
+ 
+ 
  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-100">
@@ -399,3 +411,4 @@ useEffect(() => {
     </div>
   );
 }
+ 
