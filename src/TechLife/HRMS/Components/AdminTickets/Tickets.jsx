@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useContext } from "react";
-import { CheckCircle2, LayoutDashboard, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 import Filters from "./Filters";
 import TicketCard from "./TicketCard";
 import TicketModal from "./TicketModal";
@@ -22,15 +22,21 @@ export default function TicketDashboard() {
   const [newStatus, setNewStatus] = useState("Pending");
   const [error, setError] = useState("");
   const [messages, setMessages] = useState([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  const [pageInfo, setPageInfo] = useState({
+    page: 0,
+    size: 9,
+    totalPages: 0,
+    totalElements: 0,
+  });
   const [currentPage, setCurrentPage] = useState(1);
-  const ticketsPerPage = 9;
 
   const wsRef = useRef(null);
   const repliedBy = "admin";
   const navigate = useNavigate();
 
-  // ✅ Normalize role
+  
   const rawRole = Array.isArray(userData?.roles)
     ? userData.roles[0]
     : userData?.roles || "";
@@ -41,19 +47,12 @@ export default function TicketDashboard() {
         : "ROLE_" + rawRole.toUpperCase()
       : "";
 
-  const statusIcons = {
-    all: <LayoutDashboard size={20} />,
-    resolved: <CheckCircle2 size={20} />,
-  };
-
   const statusLabels = {
     all: "All",
     resolved: "Resolved",
   };
 
-  const statuses = Object.keys(statusIcons);
-
-  // ✅ Fetch tickets
+  // ✅ Fetch tickets with backend pagination
   const fetchTickets = async () => {
     try {
       if (!normalizedRole || !empID) {
@@ -61,11 +60,20 @@ export default function TicketDashboard() {
       }
 
       const res = await ticketsApi.get(
-        `admin/tickets/role/${normalizedRole}/${empID}`
+        `admin/tickets/role/${normalizedRole}/${empID}?page=${
+          currentPage - 1
+        }&size=${pageInfo.size}`
       );
 
-      setTickets(res.data || []);
-      console.log("Fetched tickets:", res.data);
+      setTickets(res.data.content || []);
+      setPageInfo({
+        page: res.data.page,
+        size: res.data.size,
+        totalPages: res.data.totalPages,
+        totalElements: res.data.totalElements,
+      });
+
+      console.log("Fetched tickets:", res.data.content);
     } catch (err) {
       console.error("Error fetching tickets:", err);
       setError("Failed to load tickets");
@@ -92,14 +100,15 @@ export default function TicketDashboard() {
     wsRef.current = socket;
   };
 
-  // ✅ Update replies in UI
   const updateTicketReplies = (replyDTO) => {
     setTickets((prev) =>
       prev.map((ticket) =>
         ticket.ticketId === replyDTO.ticketId
           ? {
               ...ticket,
-              replies: [...(ticket.replies || []), replyDTO],
+              replies: Array.isArray(ticket.replies)
+                ? [...ticket.replies, replyDTO]
+                : [replyDTO],
               status: replyDTO.status || ticket.status,
             }
           : ticket
@@ -109,7 +118,9 @@ export default function TicketDashboard() {
     if (selectedTicket?.ticketId === replyDTO.ticketId) {
       setSelectedTicket((prev) => ({
         ...prev,
-        replies: [...(prev.replies || []), replyDTO],
+        replies: Array.isArray(prev?.replies)
+          ? [...prev.replies, replyDTO]
+          : [replyDTO],
         status: replyDTO.status || prev.status,
       }));
     }
@@ -132,7 +143,7 @@ export default function TicketDashboard() {
 
     try {
       await fetch(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -151,7 +162,6 @@ export default function TicketDashboard() {
       console.error("Reply failed", err);
     }
   };
-  
 
   const handleStatusChange = async (statusToUpdate) => {
     if (!selectedTicket) return;
@@ -168,7 +178,7 @@ export default function TicketDashboard() {
 
     try {
       await fetch(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${selectedTicket.ticketId}/reply`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -180,36 +190,13 @@ export default function TicketDashboard() {
     }
   };
 
-  const applyDateFilter = (ticket) => {
-    if (dateFilter === "All") return true;
-
-    const now = new Date();
-    const created = ticket.sentAt ? new Date(ticket.sentAt) : null;
-    if (!created || isNaN(created)) return false;
-
-    const daysDiff = (now - created) / (1000 * 60 * 60 * 24);
-
-    if (dateFilter === "Today") {
-      return (
-        created.getDate() === now.getDate() &&
-        created.getMonth() === now.getMonth() &&
-        created.getFullYear() === now.getFullYear()
-      );
-    }
-    if (dateFilter === "Last 7 days") return daysDiff <= 7;
-    if (dateFilter === "Last 30 days") return daysDiff <= 30;
-
-    return true;
-  };
-
+  // ✅ Filtered tickets (applied on current page only)
   const filtered = tickets
     .filter(
-  (t) =>
-    filterStatus === "all" ||
-    t.status?.toLowerCase() === filterStatus.toLowerCase()
-)
-
-    .filter(applyDateFilter)
+      (t) =>
+        filterStatus === "all" ||
+        t.status?.toLowerCase() === filterStatus.toLowerCase()
+    )
     .filter((t) => {
       const term = searchTerm.toLowerCase();
       if (!term) return true;
@@ -223,12 +210,6 @@ export default function TicketDashboard() {
     })
     .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
 
-  // ✅ Pagination Logic
-  const totalPages = Math.ceil(filtered.length / ticketsPerPage);
-  const indexOfLastTicket = currentPage * ticketsPerPage;
-  const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
-  const currentTickets = filtered.slice(indexOfFirstTicket, indexOfLastTicket);
-
   const sidebarItems = [{ tab: "My Tickets", icon: Ticket }];
 
   const handleTabClick = (tab) => {
@@ -237,10 +218,10 @@ export default function TicketDashboard() {
     }
   };
 
-  // ✅ Load tickets and connect WebSocket
+  
   useEffect(() => {
     fetchTickets();
-  }, [normalizedRole, empID]);
+  }, [normalizedRole, empID, currentPage]);
 
   useEffect(() => {
     connectWebSocket();
@@ -263,6 +244,26 @@ export default function TicketDashboard() {
             setSearchTerm={setSearchTerm}
           />
 
+          {/* ✅ All & Resolved Filter Buttons */}
+          <div className="flex space-x-2 my-3">
+            {["all", "resolved"].map((status) => (
+              <button
+                key={status}
+                className={`px-4 py-1 rounded-md font-medium border ${
+                  filterStatus === status
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-200"
+                }`}
+                onClick={() => {
+                  setFilterStatus(status);
+                  setCurrentPage(1);
+                }}
+              >
+                {statusLabels[status]}
+              </button>
+            ))}
+          </div>
+
           {error && (
             <div className="bg-red-100 text-red-700 p-2 border rounded mb-4">
               {error}
@@ -272,12 +273,16 @@ export default function TicketDashboard() {
           <TicketStats tickets={tickets} />
 
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentTickets.map((t) => (
+            {filtered.map((t) => (
               <TicketCard
                 key={t.ticketId}
                 {...t}
                 onClick={() => {
-                  setSelectedTicket(t);
+                  // ✅ Always pass replies as an array
+                  setSelectedTicket({
+                    ...t,
+                    replies: Array.isArray(t.replies) ? t.replies : [],
+                  });
                   setNewStatus(t.status);
                 }}
               />
@@ -294,24 +299,25 @@ export default function TicketDashboard() {
               Prev
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
-              <button
-                key={num}
-                onClick={() => setCurrentPage(num)}
-                className={`px-3 py-1 border rounded ${
-                  currentPage === num
-                    ? "bg-blue-600 text-white"
-                    : "bg-white"
-                }`}
-              >
-                {num}
-              </button>
-            ))}
-            
+            {Array.from({ length: pageInfo.totalPages }, (_, i) => i + 1).map(
+              (num) => (
+                <button
+                  key={num}
+                  onClick={() => setCurrentPage(num)}
+                  className={`px-3 py-1 border rounded ${
+                    currentPage === num ? "bg-blue-600 text-white" : "bg-white"
+                  }`}
+                >
+                  {num}
+                </button>
+              )
+            )}
 
             <button
-              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage((p) => Math.min(p + 1, pageInfo.totalPages))
+              }
+              disabled={currentPage === pageInfo.totalPages}
               className="px-3 py-1 border rounded disabled:opacity-50"
             >
               Next
@@ -345,64 +351,70 @@ export default function TicketDashboard() {
         )}
       </main>
 
-      {/* Sidebar on the Right */}
+      {/* ✅ Sidebar */}
       <aside
-        className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200 ${
-          isSidebarCollapsed ? "w-[60px]" : "w-[250px]"
-        } hidden sm:flex sm:sticky sm:top-0 h-screen`}
+        className={`hidden sm:flex flex-col h-screen bg-white border-l border-gray-200 transition-all duration-200 z-40
+        ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}`}
       >
-        {/* Collapse/Expand Button */}
-        <div className="flex justify-start p-1.5 items-center">
+        <div className="flex justify-start p-2 items-center">
           <motion.button
             onClick={toggleSidebar}
             className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
             transition={{ duration: 0.3 }}
           >
             {isSidebarCollapsed ? (
-              <FaArrowRight size={14} />
+              <FaArrowRight size={16} />
             ) : (
-              <FaArrowLeft size={14} />
+              <FaArrowLeft size={16} />
             )}
           </motion.button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1.5 px-1.5">
-          {statuses.map((status) => (
-            <motion.button
-              key={status}
-              className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
-                ${
-                  filterStatus === status
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-700 hover:bg-gray-200"
-                }
-                ${isSidebarCollapsed ? "justify-center" : ""}`}
-              onClick={() => {
-                setFilterStatus(status);
-                setCurrentPage(1);
-              }}
-              whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
-            >
-              {statusIcons[status]}
-              {!isSidebarCollapsed && (
-                <span className="ml-2 capitalize">{statusLabels[status]}</span>
-              )}
-            </motion.button>
-          ))}
+        {!isSidebarCollapsed && (
+          <nav className="flex-1 space-y-2 px-2 mt-2">
+            {sidebarItems.map(({ tab, icon: Icon }) => (
+              <motion.button
+                key={tab}
+                className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
+                onClick={() => handleTabClick(tab)}
+                whileHover={{ x: -3 }}
+              >
+                <Icon size={16} className="mr-2" />
+                <span>{tab}</span>
+              </motion.button>
+            ))}
+          </nav>
+        )}
+      </aside>
 
-          <hr className="my-3 border-gray-300" />
+      {/* Sidebar Drawer for Mobile */}
+      <aside
+        className={`sm:hidden fixed top-0 right-0 h-screen bg-white border-l border-gray-200 transition-transform duration-300 z-50
+        ${isSidebarCollapsed ? "translate-x-full" : "translate-x-0"} w-[250px]`}
+      >
+        <div className="flex justify-start p-2 items-center">
+          <motion.button
+            onClick={toggleSidebar}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
+            transition={{ duration: 0.3 }}
+          >
+            <FaArrowRight size={16} />
+          </motion.button>
+        </div>
 
+        <nav className="flex-1 space-y-2 px-2 mt-2">
           {sidebarItems.map(({ tab, icon: Icon }) => (
             <motion.button
               key={tab}
-              className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
-                ${isSidebarCollapsed ? "justify-center" : ""}`}
-              onClick={() => handleTabClick(tab)}
-              whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+              className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
+              onClick={() => {
+                handleTabClick(tab);
+                setIsSidebarCollapsed(true);
+              }}
+              whileHover={{ x: -3 }}
             >
-              <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
-              {!isSidebarCollapsed && <span>{tab}</span>}
+              <Icon size={16} className="mr-2" />
+              <span>{tab}</span>
             </motion.button>
           ))}
         </nav>
