@@ -88,26 +88,39 @@ export default function TicketModal({
     };
   }, [ticket?.ticketId]);
 
-  useEffect(() => {
-    const fetchReplies = async () => {
-      if (!ticket?.ticketId) return;
-      try {
-        const token = localStorage.getItem("accessToken");
-        const response = await axios.get(
-          `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setReplies(response.data);
-      } catch (error) {
-        console.error("❌ Failed to fetch previous replies", error);
-      }
-    };
-    fetchReplies();
-  }, [ticket?.ticketId, showChat]);
+ useEffect(() => {
+  const fetchReplies = async () => {
+    if (!ticket?.ticketId) return;
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.get(
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            page: 0,
+            size: 100, // fetch more messages if needed
+          },
+        }
+      );
+
+      const messagesArray = Array.isArray(response.data?.content)
+        ? response.data.content
+        : [];
+
+      setReplies(messagesArray);
+    } catch (error) {
+      console.error("❌ Failed to fetch previous replies", error);
+      setReplies([]); // fallback
+    }
+  };
+
+  fetchReplies();
+}, [ticket?.ticketId, showChat]);
+
 
   const handleReply = async () => {
     if (!replyText.trim() || !ticket?.ticketId) return;

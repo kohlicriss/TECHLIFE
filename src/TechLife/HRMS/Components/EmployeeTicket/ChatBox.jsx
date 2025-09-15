@@ -46,12 +46,12 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
     return acc;
   }, {});
 
-  const fetchInitialMessages = async () => {
+const fetchInitialMessages = async () => {
   const token = localStorage.getItem("accessToken");
 
   try {
     const res = await fetch(
-      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages?page=0&size=1000`, // fetch all for simplicity
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -59,17 +59,20 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
       }
     );
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    setMessages(Array.isArray(data) ? dedupeMessages(data) : []);
+
+    // Extract content array from paginated response
+    const messagesArray = Array.isArray(data?.content) ? data.content : [];
+
+    setMessages(dedupeMessages(messagesArray));
   } catch (err) {
     console.error("❌ Fetch error:", err);
     setMessages([]);
   }
 };
+
 
 
   const connectWebSocket = () => {
@@ -131,7 +134,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 };
 
 
-  // Auto-scroll when new messages arrive
+  
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
