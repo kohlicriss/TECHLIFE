@@ -4,6 +4,36 @@ import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
 import { useParams, useLocation } from "react-router-dom";
 
+// --- Reusable Modal Component ---
+const Modal = ({ children, onClose, title, type, theme }) => {
+    let titleClass = "";
+    let icon = null;
+
+    if (type === "success") {
+        titleClass = "text-green-600";
+        icon = <IoCheckmarkCircle className="h-6 w-6 text-green-500" />;
+    } else if (type === "error") {
+        titleClass = "text-red-600";
+        icon = <IoWarning className="h-6 w-6 text-red-500" />;
+    } else if (type === "confirm") {
+        titleClass = "text-yellow-600";
+        icon = <IoWarning className="h-6 w-6 text-yellow-500" />;
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[250]">
+            <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {icon && <span className="mr-3">{icon}</span>}
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+
 // Default Profile (Only static relations/identity)
 const defaultProfile = {
   relations: {
@@ -202,6 +232,10 @@ function Profile() {
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 6 });
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // State for popups
+  const [popup, setPopup] = useState({ show: false, message: '', type: '' });
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
+
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
@@ -251,7 +285,7 @@ function Profile() {
 
   const openEditSection = (section) => {
     if (isReadOnly) {
-      alert("You can only view this employee's profile. Editing is not allowed.");
+      setPopup({ show: true, message: "You can only view this employee's profile. Editing is not allowed.", type: 'error' });
       return;
     }
     setErrors({});
@@ -275,12 +309,14 @@ function Profile() {
     setEditingSection({ section });
   };
 
-  const handleDelete = async (sectionKey) => {
+  const handleDelete = (sectionKey) => {
+    setDeleteConfirmation({ show: true, sectionKey });
+  };
+  
+  const confirmDelete = async () => {
+    const { sectionKey } = deleteConfirmation;
     const sectionTitle = sectionConfig[sectionKey].title;
-    if (!window.confirm(`Are you sure you want to delete the ${sectionTitle} for employee ${profileEmployeeId}? This action cannot be undone.`)) {
-      return;
-    }
-
+    
     try {
       let url = '';
 
@@ -295,20 +331,20 @@ function Profile() {
           url = `employee/${profileEmployeeId}/address`;
           break;
         case 'education':
-          alert("Education deletion should be done per entry. This feature needs backend support for bulk deletion.");
+          setPopup({show: true, message: "Education deletion should be done per entry. This feature needs backend support for bulk deletion.", type: 'error'});
           return;
         case 'experience':
-          alert("Experience deletion should be done per entry. This feature needs backend support for bulk deletion.");
+          setPopup({show: true, message: "Experience deletion should be done per entry. This feature needs backend support for bulk deletion.", type: 'error'});
           return;
         case 'relations':
-          alert("Relations cannot be deleted as they are static data.");
+          setPopup({show: true, message: "Relations cannot be deleted as they are static data.", type: 'error'});
           return;
         default:
           throw new Error("Invalid section for deletion");
       }
 
       await publicinfoApi.delete(url);
-      alert(`${sectionTitle} deleted successfully.`);
+      setPopup({show: true, message: `${sectionTitle} deleted successfully.`, type: 'success'});
 
       switch (sectionKey) {
         case 'primaryDetails':
@@ -337,9 +373,12 @@ function Profile() {
 
     } catch (err) {
       console.error(`Failed to delete ${sectionTitle}:`, err);
-      alert(`Error deleting ${sectionTitle}. You may not have the required permissions.`);
+      setPopup({show: true, message: `Error deleting ${sectionTitle}. You may not have the required permissions.`, type: 'error'});
+    } finally {
+        setDeleteConfirmation({ show: false, sectionKey: null });
     }
   };
+
 
   const handleEditFieldChange = (field, value) => {
     setEditingData((prev) => ({
@@ -462,7 +501,7 @@ function Profile() {
 
   const handleUpdateRelations = () => {
     console.error("Backend endpoint for updating relations does not exist in your controller.");
-    alert("This section cannot be updated yet. A backend API endpoint is missing.");
+    setPopup({show: true, message: "This section cannot be updated yet. A backend API endpoint is missing.", type: 'error'});
     setEditingSection(null);
   };
 
@@ -500,6 +539,7 @@ function Profile() {
     if (success) {
       setEditingSection(null);
       setErrors({});
+      setPopup({ show: true, message: 'Profile section updated successfully!', type: 'success' });
     }
   };
   
@@ -1037,7 +1077,6 @@ function Profile() {
                 <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
               </Section>
 
-              {/* ✅ UPDATED: Education and Experience sections now use flat structure with React.Fragment */}
               <Section sectionKey="education" title="Education Details" data={eduData}>
                 {eduData?.map((edu, index) => (
                   <React.Fragment key={index}>
@@ -1077,6 +1116,52 @@ function Profile() {
           </div>
           
           {renderEditModal()}
+          
+          {popup.show && (
+            <Modal
+                onClose={() => setPopup({ show: false, message: '', type: '' })}
+                title={popup.type === 'success' ? 'Success' : 'Error'}
+                type={popup.type}
+                theme={theme}
+            >
+                <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+                <div className="flex justify-end">
+                    <button
+                        onClick={() => setPopup({ show: false, message: '', type: '' })}
+                        className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg transition-colors`}
+                    >
+                        OK
+                    </button>
+                </div>
+            </Modal>
+          )}
+
+          {deleteConfirmation.show && (
+            <Modal
+                onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+                title="Confirm Deletion"
+                type="confirm"
+                theme={theme}
+            >
+                <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-3">
+                    <button
+                        onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+                        className={`px-6 py-2 rounded-lg font-semibold transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={confirmDelete}
+                        className="px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </Modal>
+          )}
         </div>
       )}
       
