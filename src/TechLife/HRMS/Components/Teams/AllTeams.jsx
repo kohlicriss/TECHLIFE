@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { publicinfoApi } from '../../../../axiosInstance';
-import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye } from 'react-icons/fa';
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch } from 'react-icons/fa';
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
 import Select from 'react-select';
@@ -29,6 +29,7 @@ const AllTeams = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
+  const [searchTerm, setSearchTerm] = useState(''); // Search bar state
 
   // Form state
   const [teamName, setTeamName] = useState('');
@@ -42,13 +43,11 @@ const AllTeams = () => {
   const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
   const canCreateTeam = userRoles.includes('ADMIN') || userRoles.includes('HR');
 
-  // 🎯 URL parameters capture
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
 
-  // 🚀 Smart Employee ID selection
   const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : userData?.employeeId;
 
   console.log('🔍 URL Parameters:', { fromContextMenu, targetEmployeeId, employeeIdToFetch });
@@ -65,7 +64,6 @@ const AllTeams = () => {
 
   const isTeamExpanded = (teamId) => expandedTeams.has(teamId);
 
-  // 🎯 Fetch teams for specific employee
   const fetchTeams = async () => {
     try {
       setLoading(true);
@@ -77,7 +75,6 @@ const AllTeams = () => {
 
       console.log(`🚀 Fetching teams for employee: ${employeeIdToFetch}`);
       
-      // 🔥 Use the correct employee ID in API call
       const response = await publicinfoApi.get(`employee/team/${employeeIdToFetch}`);
       console.log('📊 Teams API Response:', response.data);
       
@@ -92,7 +89,6 @@ const AllTeams = () => {
     }
   };
 
-  // 🎯 Fetch all employees (for dropdowns - always uses current user context)
   const fetchEmployees = async () => {
     try {
       console.log('🚀 Fetching all employees for dropdowns');
@@ -108,16 +104,20 @@ const AllTeams = () => {
     }
   };
 
-  // 🔄 Effect with proper dependencies
   useEffect(() => {
     console.log('🔄 useEffect triggered:', { canCreateTeam, employeeIdToFetch });
     
-    fetchTeams(); // Always fetch teams based on employeeIdToFetch
+    fetchTeams();
     
     if (canCreateTeam) {
-      fetchEmployees(); // Only fetch employees if user can create teams
+      fetchEmployees();
     }
   }, [canCreateTeam, employeeIdToFetch]);
+  
+  // Filter teams based on search term
+  const filteredTeams = teams.filter(team =>
+    team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const validateForm = () => {
     const errors = {};
@@ -127,7 +127,6 @@ const AllTeams = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // 🎯 Create team (uses current user context)
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -148,7 +147,6 @@ const AllTeams = () => {
         const response = await publicinfoApi.post('employee/team', newTeamData);
         console.log('✅ Team created successfully:', response.data);
         
-        // Refresh teams after creation
         await fetchTeams();
 
         setIsCreateModalOpen(false);
@@ -170,7 +168,6 @@ const AllTeams = () => {
     setIsDeleteModalOpen(true);
   };
 
-  // 🎯 Delete team (uses current user context)
   const confirmDelete = async () => {
     if (!selectedTeam) return;
 
@@ -333,7 +330,6 @@ const AllTeams = () => {
 
   return (
     <div className={`p-6 md:p-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        {/* 🎯 Context Menu Banner */}
         {fromContextMenu && targetEmployeeId && (
             <div className={`mb-6 p-4 rounded-xl border-l-4 border-blue-500 shadow-md flex items-center space-x-3 ${theme === 'dark' ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
                 <FaEye />
@@ -343,19 +339,32 @@ const AllTeams = () => {
             </div>
         )}
 
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h1 className={`text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                 <FaUsers className="mr-3 text-blue-500" /> 
                 {fromContextMenu ? 'Employee Teams' : 'All Teams'}
             </h1>
-            {canCreateTeam && !fromContextMenu && (
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center shadow-md"
-                >
-                    <FaPlus className="mr-2" /> Create Team
-                </button>
-            )}
+            <div className="flex items-center gap-4 w-full md:w-auto">
+                 {/* Search Bar */}
+                <div className="relative w-full md:w-64">
+                    <input
+                        type="text"
+                        placeholder="Search by team name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={`w-full pl-10 pr-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'}`}
+                    />
+                    <FaSearch className={`absolute left-3 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                </div>
+                {canCreateTeam && !fromContextMenu && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center shadow-md"
+                    >
+                        <FaPlus className="mr-2" /> Create Team
+                    </button>
+                )}
+            </div>
         </div>
 
         {loading ? (
@@ -364,7 +373,7 @@ const AllTeams = () => {
             <ErrorDisplay message={error} />
         ) : (
             <>
-                {teams.length === 0 ? (
+                {filteredTeams.length === 0 ? (
                     <div className="text-center py-16">
                         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
                             theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
@@ -376,12 +385,14 @@ const AllTeams = () => {
                         <h2 className={`text-xl font-bold mb-2 ${
                             theme === 'dark' ? 'text-white' : 'text-gray-800'
                         }`}>
-                            {fromContextMenu ? 'No Teams Found' : 'No Teams Available'}
+                            {searchTerm ? 'No Teams Found' : (fromContextMenu ? 'No Teams Found' : 'No Teams Available')}
                         </h2>
                         <p className={`text-base mb-4 ${
                             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                         }`}>
-                            {fromContextMenu 
+                            {searchTerm 
+                                ? `Your search for "${searchTerm}" did not match any teams.`
+                                : fromContextMenu 
                                 ? `Employee ${targetEmployeeId} is not part of any teams yet.`
                                 : 'No teams have been created yet. Create your first team!'
                             }
@@ -389,7 +400,7 @@ const AllTeams = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {teams.map((team, index) => {
+                        {filteredTeams.map((team, index) => {
                             const teamId = team.teamId || index;
                             const isExpanded = isTeamExpanded(teamId);
                             const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);

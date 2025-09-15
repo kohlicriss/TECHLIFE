@@ -161,6 +161,8 @@ useEffect(() => {
 };
 
 
+
+  // ======================== HANDLE TICKET CLICK ========================
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setView('chat');

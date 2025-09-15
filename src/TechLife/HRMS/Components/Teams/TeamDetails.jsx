@@ -31,6 +31,9 @@ const TeamDetails = () => {
     const { theme, userData } = useContext(Context);
     const userRoles = userData?.roles || [];
     const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
+    
+    // 🎯 Get logged in user ID
+    const empID = userData?.employeeId;
 
     const fetchTeamDetails = async () => {
         try {
@@ -61,6 +64,13 @@ const TeamDetails = () => {
           setAllEmployees(formattedEmployees);
         } catch (err) {
           console.error("Error fetching employees:", err);
+        }
+    };
+
+    // 🚀 Handle user click navigation
+    const handleUserClick = (member) => {
+        if (empID && member.employeeId) {
+            navigate(`/employees/${empID}/public/${member.employeeId}`);
         }
     };
 
@@ -112,10 +122,24 @@ const TeamDetails = () => {
                             <div className="p-5">
                                 <ul className="space-y-4">
                                     {team.employees?.map(member => (
-                                        <li key={member.employeeId} className={`p-4 rounded-lg flex justify-between items-center transition-all ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                        <li 
+                                            key={member.employeeId} 
+                                            onClick={() => handleUserClick(member)}
+                                            className={`p-4 rounded-lg flex justify-between items-center transition-all cursor-pointer transform hover:scale-105 ${
+                                                theme === 'dark' 
+                                                ? 'bg-gray-700 hover:bg-gray-600 hover:shadow-lg' 
+                                                : 'bg-gray-100 hover:bg-gray-200 hover:shadow-md'
+                                            }`}
+                                            title={`Click to view ${member.displayName}'s profile`}
+                                        >
                                             <div>
                                                 <p className="font-semibold">{member.displayName}</p>
-                                                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{member.workEmail}</p>
+                                                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    {member.workEmail}
+                                                </p>
+                                                <p className={`text-xs font-mono ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                    ID: {member.employeeId}
+                                                </p>
                                             </div>
                                             {member.jobTitlePrimary && (
                                                 <div className={`text-xs font-bold px-3 py-1 rounded-full flex items-center ${

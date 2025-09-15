@@ -1,8 +1,38 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { publicinfoApi } from '../../../../../axiosInstance';
-import { FaTrophy, FaCalendarAlt, FaExternalLinkAlt, FaBuilding, FaIdBadge, FaPencilAlt, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaTrophy, FaCalendarAlt, FaExternalLinkAlt, FaBuilding, FaIdBadge, FaPencilAlt, FaTrash, FaPlus, FaTimes } from 'react-icons/fa';
+import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../../HrmsContext';
+
+// --- Reusable Modal Component ---
+const Modal = ({ children, onClose, title, type, theme }) => {
+    let titleClass = "";
+    let icon = null;
+
+    if (type === "success") {
+        titleClass = "text-green-600";
+        icon = <IoCheckmarkCircle className="h-6 w-6 text-green-500" />;
+    } else if (type === "error") {
+        titleClass = "text-red-600";
+        icon = <IoWarning className="h-6 w-6 text-red-500" />;
+    } else if (type === "confirm") {
+        titleClass = "text-yellow-600";
+        icon = <IoWarning className="h-6 w-6 text-yellow-500" />;
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[250]">
+            <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {icon && <span className="mr-3">{icon}</span>}
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
 
 const Achievements = () => {
   const [achievements, setAchievements] = useState([]);
@@ -16,12 +46,15 @@ const Achievements = () => {
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // State for popups
+  const [popup, setPopup] = useState({ show: false, message: '', type: '' });
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, certificateId: null });
+
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
   const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
   
-  // ✅ Updated permission logic: Allow editing for own profile or if user has management access
   const userRole = userData?.roles?.[0]?.toUpperCase();
   const hasManagementAccess = ["ADMIN", "MANAGER", "HR"].includes(userRole);
   const isOwnProfile = employeeIdToFetch === empID;
@@ -71,21 +104,22 @@ const Achievements = () => {
     setSelectedAchievement(null);
   };
 
-  const handleDelete = async (certificateId) => {
-    const confirmMessage = hasManagementAccess 
-      ? 'Are you sure you want to delete this achievement?' 
-      : 'Are you sure you want to delete your achievement?';
-      
-    if (window.confirm(confirmMessage)) {
+  const handleDelete = (certificateId) => {
+    setDeleteConfirmation({ show: true, certificateId: certificateId });
+  };
+
+  const confirmDelete = async () => {
+      const { certificateId } = deleteConfirmation;
       try {
         await publicinfoApi.delete(`/employee/${employeeIdToFetch}/${certificateId}/achievements`);
         setAchievements(achievements.filter(ach => ach.id !== certificateId));
-        alert('Achievement deleted successfully!');
+        setPopup({ show: true, message: 'Achievement deleted successfully!', type: 'success' });
       } catch (err) {
         console.error('Error deleting achievement:', err);
-        alert('Failed to delete achievement. Please try again.');
+        setPopup({ show: true, message: 'Failed to delete achievement. Please try again.', type: 'error' });
+      } finally {
+        setDeleteConfirmation({ show: false, certificateId: null });
       }
-    }
   };
 
   const handleSave = async (e) => {
@@ -99,26 +133,24 @@ const Achievements = () => {
     try {
         let response;
         if (isEditMode) {
-            // ✅ CORRECTED ENDPOINT for UPDATE
             const url = `/employee/${employeeIdToFetch}/${selectedAchievement.id}/achievements`;
             response = await publicinfoApi.put(url, submissionData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setAchievements(achievements.map(ach => ach.id === selectedAchievement.id ? response.data : ach));
-            alert('Achievement updated successfully!');
+            setPopup({ show: true, message: 'Achievement updated successfully!', type: 'success' });
         } else {
-            // ✅ CORRECTED ENDPOINT for CREATE
             const url = `/employee/achievements/${employeeIdToFetch}`;
             response = await publicinfoApi.post(url, submissionData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setAchievements([...achievements, response.data]);
-            alert('Achievement added successfully!');
+            setPopup({ show: true, message: 'Achievement added successfully!', type: 'success' });
         }
         handleCloseModal();
     } catch (err) {
         console.error('Error saving achievement:', err.response?.data || err.message);
-        alert('Failed to save achievement. Please check your input and try again.');
+        setPopup({ show: true, message: 'Failed to save achievement. Please check your input and try again.', type: 'error' });
     }
   };
 
@@ -633,6 +665,52 @@ const Achievements = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {popup.show && (
+            <Modal
+                onClose={() => setPopup({ show: false, message: '', type: '' })}
+                title={popup.type === 'success' ? 'Success' : 'Error'}
+                type={popup.type}
+                theme={theme}
+            >
+                <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+                <div className="flex justify-end">
+                    <button
+                        onClick={() => setPopup({ show: false, message: '', type: '' })}
+                        className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg transition-colors`}
+                    >
+                        OK
+                    </button>
+                </div>
+            </Modal>
+        )}
+
+        {deleteConfirmation.show && (
+            <Modal
+                onClose={() => setDeleteConfirmation({ show: false, certificateId: null })}
+                title="Confirm Deletion"
+                type="confirm"
+                theme={theme}
+            >
+                <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Are you sure you want to delete this achievement? This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-3">
+                    <button
+                        onClick={() => setDeleteConfirmation({ show: false, certificateId: null })}
+                        className={`px-6 py-2 rounded-lg font-semibold transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={confirmDelete}
+                        className="px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </Modal>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback,useContext} from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Context } from '../HrmsContext';
 import { Client } from '@stomp/stompjs';
@@ -10,6 +10,7 @@ import {
     FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive
 } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
+import MicRecorder from 'mic-recorder-to-mp3';
 import EmojiPicker from 'emoji-picker-react';
 import {
     chatApi,
@@ -236,7 +237,7 @@ const getAudioDuration = (audioBlob) =>
     });
 function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore }) {
     const location = useLocation();
-    const {theme}=useContext(Context);
+    const { theme } = useContext(Context);
     const navigate = useNavigate();
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
     const [searchTerm, setSearchTerm] = useState('');
@@ -273,6 +274,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [isFetchingMoreMessages, setIsFetchingMoreMessages] = useState(false);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const [newMessagesCount, setNewMessagesCount] = useState(0);
+    const [recorder, setRecorder] = useState(new MicRecorder({ bitRate: 128 }));
 
     const sidebarScrollRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -1075,97 +1077,74 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     const handleMicButtonClick = () => { if (isRecording) stopRecording(); else startRecording(); };
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            setIsRecording(true);
-            audioChunksRef.current = [];
-
-            const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-            recorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
-                }
-            };
-            recorder.onstop = async () => {
-                stream.getTracks().forEach(track => track.stop());
-
-                if (!selectedChat || audioChunksRef.current.length === 0) {
-                    return;
-                }
-
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                console.log("Local Audio Blob created:", audioBlob);
-                const debugUrl = URL.createObjectURL(audioBlob);
-                console.log("You can manually open this local URL to test:", debugUrl);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = debugUrl;
-                a.download = 'test-recording.webm';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                const audioFile = new File([audioBlob], `voice-message-${Date.now()}.webm`, { type: 'audio/webm' });
-
-                const audioDuration = await getAudioDuration(audioBlob);
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = async () => {
-                    const base64String = reader.result;
-                    const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-                    const localPreviewUrl = URL.createObjectURL(audioBlob);
-
-                    const optimisticMessage = {
-                        id: clientId, messageId: clientId, sender: currentUser.id,
-                        content: localPreviewUrl, timestamp: new Date().toISOString(),
-                        status: 'sending', type: 'audio', fileName: audioFile.name,
-                        fileSize: audioFile.size, fileUrl: localPreviewUrl, isEdited: false,
-                        duration: audioDuration,
-                    };
-
-                    updateLastMessage(selectedChat.chatId, optimisticMessage);
-                    setMessages(prev => ({ ...prev, [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage] }));
-
-                    const voiceData = {
-                        sender: currentUser.id,
-                        clientId: clientId,
-                        fileType: audioFile.type,
-                        fileName: audioFile.name,
-                        fileData: base64String,
-                        type: selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE',
-                        groupId: selectedChat.type === 'group' ? selectedChat.chatId : null,
-                        receiver: selectedChat.type === 'private' ? selectedChat.chatId : null,
-                        duration: audioDuration,
-                    };
-
-                    try {
-                        await uploadVoiceMessage(voiceData);
-                    } catch (error) {
-                        console.error("Voice message upload failed:", error);
-                        setMessages(prev => {
-                            const chatMessages = prev[selectedChat.chatId] || [];
-                            const newMessages = chatMessages.map(m => m.id === clientId ? { ...m, status: 'failed' } : m);
-                            return { ...prev, [selectedChat.chatId]: newMessages };
-                        });
-                    }
-                };
-            };
-
-            mediaRecorderRef.current = recorder;
-            mediaRecorderRef.current.start();
-
-        } catch (error) {
-            console.error("Mic error:", error);
-            setIsRecording(false);
-        }
+    const startRecording = () => {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(() => {
+                console.log('Permission granted, starting recorder...');
+                recorder.start().then(() => {
+                    setIsRecording(true);
+                }).catch((e) => console.error('Recorder start error:', e));
+            })
+            .catch((e) => {
+                console.error('Microphone permission denied:', e);
+                alert('Microphone permission is required for voice messages.');
+            });
     };
-
     const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-        }
+        console.log('Stopping recorder...');
+        setIsRecording(false); 
+        recorder.stop().getMp3().then(async ([buffer, blob]) => {
+            console.log('Recording stopped, got MP3 blob:', blob);
+
+            if (!selectedChat) return;
+
+            const audioFile = new File([blob], `voice-message-${Date.now()}.mp3`, {
+                type: 'audio/mp3',
+                lastModified: Date.now()
+            });
+
+            const localPreviewUrl = URL.createObjectURL(audioFile);
+            const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+
+            const optimisticMessage = {
+                id: clientId, messageId: clientId, sender: currentUser.id,
+                content: localPreviewUrl, timestamp: new Date().toISOString(),
+                status: 'sending', type: 'audio', fileName: audioFile.name,
+                fileSize: audioFile.size, fileUrl: localPreviewUrl, isEdited: false,
+                duration: 0
+            };
+
+            updateLastMessage(selectedChat.chatId, optimisticMessage);
+            setMessages(prev => ({ ...prev, [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage] }));
+
+            const formData = new FormData();
+            formData.append('file', audioFile);
+            formData.append('sender', currentUser.id);
+            formData.append('client_id', clientId);
+            formData.append('fileType', audioFile.type);
+            formData.append('fileName', audioFile.name);
+            formData.append('type', selectedChat.type === 'group' ? 'TEAM' : 'PRIVATE');
+
+            if (selectedChat.type === 'group') {
+                formData.append('groupId', selectedChat.chatId);
+            } else {
+                formData.append('receiver', selectedChat.chatId);
+            }
+
+            try {
+                await uploadVoiceMessage(formData);
+            } catch (error) {
+                console.error("Voice message upload failed:", error);
+                setMessages(prev => {
+                    const chatMessages = prev[selectedChat.chatId] || [];
+                    const newMessages = chatMessages.map(m => m.id === clientId ? { ...m, status: 'failed' } : m);
+                    return { ...prev, [selectedChat.chatId]: newMessages };
+                });
+            }
+        }).catch((e) => {
+            console.error('Stop recording error:', e);
+            alert('Could not record audio. Please try again.');
+        });
     };
 
     const handleConfirmClearChat = async () => {
