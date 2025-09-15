@@ -19,6 +19,21 @@ export default function TicketCard({
     Opened: "bg-blue-100 text-blue-700",
     Resolved: "bg-emerald-100 text-emerald-700",
   };
+   const formatToIST = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString + "Z"); 
+  return date.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+};
+
 
   return (
     <div
@@ -47,11 +62,9 @@ export default function TicketCard({
           {status}
         </span>
       <span className="text-xs text-gray-500">
-  📅 {
-    sentAt && !isNaN(new Date(sentAt).getTime())
-      ? new Date(sentAt).toLocaleString()
-      : "Date not available"
-  }
+  <p>📅
+  Created: {formatToIST(sentAt)}
+</p>
 
   
 </span>

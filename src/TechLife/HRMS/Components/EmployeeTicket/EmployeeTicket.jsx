@@ -56,6 +56,8 @@ const [totalCount, setTotalCount] = useState(0);
 const fetchTickets = async (pageNum = 0) => {
   if (!token || !empID || !userData || isLoading || !hasMore) return;
 
+  
+
   setIsLoading(true);
   try {
     let url;
@@ -86,8 +88,6 @@ const fetchTickets = async (pageNum = 0) => {
 
 
 
-
-
 useEffect(() => {
   setTickets([]);
   setPage(0);
@@ -114,44 +114,51 @@ useEffect(() => {
 
 
   
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    setTickets([]);
-    nextPage.current = 0;
-    hasMore.current = true;
-    setSelectedTicket(null);
-    setView("history");
-    navigate(tab === "Assigned Tickets"
+ const handleTabClick = (tab) => {
+  setActiveTab(tab);
+  setTickets([]);
+  nextPage.current = 0;
+  setHasMore(true);   
+  setSelectedTicket(null);
+  setView("history");
+  navigate(
+    tab === "Assigned Tickets"
       ? `/tickets/role/${normalizedRole}/${empID}`
-      : `/tickets/employee/${empID}`);
-  };
+      : `/tickets/employee/${empID}`
+  );
+};
 
 
-  const handleFormSubmit = async (data) => {
-    try {
-      let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
-      if (!roleToSend) return;
 
-      roleToSend = roleToSend.toUpperCase().startsWith("ROLE_") ? roleToSend.toUpperCase() : "ROLE_" + roleToSend.toUpperCase();
+ const handleFormSubmit = async (data) => {
+  try {
+    let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
+    if (!roleToSend) return;
 
-      const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
+    roleToSend = roleToSend.toUpperCase().startsWith("ROLE_") ? roleToSend.toUpperCase() : "ROLE_" + roleToSend.toUpperCase();
 
-      const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+    const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
 
-      if (!res.ok) throw new Error(`Failed to create ticket: ${res.status}`);
-      const savedTicket = await res.json();
-      setTickets(prev => [savedTicket, ...prev]);
-      setSelectedTicket(savedTicket);
-      setView("chat");
-    } catch (err) {
-      console.error(err);
-      alert("Ticket creation failed.");
-    }
-  };
+    const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error(`Failed to create ticket: ${res.status}`);
+
+    // Instead of manually adding duplicate, re-fetch from backend
+    setTickets([]);
+    setPage(0);
+    setHasMore(true);
+    await fetchTickets(0);
+
+    setView("history");
+  } catch (err) {
+    console.error(err);
+    alert("Ticket creation failed.");
+  }
+};
 
 
   const handleTicketClick = (ticket) => {

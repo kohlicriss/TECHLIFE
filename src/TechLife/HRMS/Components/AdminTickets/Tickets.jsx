@@ -5,7 +5,7 @@ import TicketCard from "./TicketCard";
 import TicketModal from "./TicketModal";
 import TicketStats from "./TicketStats";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight ,FaBars } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import { ticketsApi } from "../../../../axiosInstance";
@@ -23,6 +23,9 @@ export default function TicketDashboard() {
   const [error, setError] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  
+  
 
   const [pageInfo, setPageInfo] = useState({
     page: 0,
@@ -80,27 +83,38 @@ export default function TicketDashboard() {
     }
   };
 
-  // ✅ WebSocket connection
   const connectWebSocket = () => {
-    const socket = new WebSocket(
-      `wss://hrms.anasolconsultancyservices.com/api/ticket`
-    );
-    socket.onopen = () => console.log("✅ WebSocket connected");
+  const token = localStorage.getItem("accessToken");
+  if (!token) {
+    console.error("❌ No token found in localStorage");
+    return;
+  }
 
-    socket.onmessage = (event) => {
+  const socket = new WebSocket(
+    `wss://hrms.anasolconsultancyservices.com/api/ticket?token=${token}`
+  );
+
+  socket.onopen = () => console.log("✅ WebSocket connected");
+
+  socket.onmessage = (event) => {
+    try {
       const message = JSON.parse(event.data);
       updateTicketReplies(message);
-    };
-
-    socket.onclose = () => {
-      console.warn("⚠️ WS disconnected. Reconnecting...");
-      setTimeout(connectWebSocket, 3000);
-    };
-
-    socket.onerror = (e) => console.error("❌ WS error:", e);
-
-    wsRef.current = socket;
+    } catch (err) {
+      console.error("❌ Failed to parse WS message", err);
+    }
   };
+
+  socket.onclose = () => {
+    console.warn("⚠️ WS disconnected. Reconnecting in 3s...");
+    setTimeout(connectWebSocket, 3000);
+  };
+
+  socket.onerror = (e) => console.error("❌ WS error:", e);
+
+  wsRef.current = socket;
+};
+
 
   const updateTicketReplies = (replyDTO) => {
     setTickets((prev) =>
@@ -164,7 +178,7 @@ export default function TicketDashboard() {
       console.error("Reply failed", err);
     }
   };
-
+ 
   const handleStatusChange = async (statusToUpdate) => {
     if (!selectedTicket) return;
 
@@ -214,11 +228,13 @@ export default function TicketDashboard() {
 
   const sidebarItems = [{ tab: "My Tickets", icon: Ticket }];
 
-  const handleTabClick = (tab) => {
-    if (tab === "My Tickets") {
-      navigate(`/tickets/employee/${empID}`);
-    }
-  };
+const handleTabClick = (tab) => {
+  if (tab === "My Tickets") {
+    navigate(`/tickets/employee/${empID}`);
+  }
+  
+  setIsSidebarCollapsed(true);
+};
 
   // ✅ Effects
   useEffect(() => {
@@ -290,7 +306,7 @@ export default function TicketDashboard() {
             ))}
           </div>
 
-          {/* ✅ Pagination Controls */}
+        
           <div className="flex justify-center items-center space-x-2 my-6">
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -352,74 +368,91 @@ export default function TicketDashboard() {
         )}
       </main>
 
-      {/* ✅ Sidebar */}
-      <aside
-        className={`hidden sm:flex flex-col h-screen bg-white border-l border-gray-200 transition-all duration-200 z-40
-        ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}`}
+     
+<header className="sm:hidden relative bg-white px-4 py-3 shadow-md">
+ 
+  <button
+    onClick={toggleSidebar}
+    className="absolute top-2 right-4 p-2 rounded-md hover:bg-gray-200"
+  >
+    <FaBars size={18} />
+  </button>
+</header>
+
+
+
+<aside
+  className={`hidden sm:flex flex-col h-screen bg-white border-l border-gray-200 transition-all duration-200 z-40
+  ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}`}
+>
+  <div className="flex justify-start p-2 items-center">
+    <motion.button
+      onClick={toggleSidebar}
+      className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
+      transition={{ duration: 0.3 }}
+    >
+      {isSidebarCollapsed ? <FaArrowRight size={16} /> : <FaArrowLeft size={16} />}
+    </motion.button>
+  </div>
+
+  {!isSidebarCollapsed && (
+    <nav className="flex-1 space-y-2 px-2 mt-2">
+      {sidebarItems.map(({ tab, icon: Icon }) => (
+        <motion.button
+          key={tab}
+          className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
+          onClick={() => handleTabClick(tab)}
+          whileHover={{ x: -3 }}
+        >
+          <Icon size={16} className="mr-2" />
+          <span>{tab}</span>
+        </motion.button>
+      ))}
+    </nav>
+  )}
+</aside>
+
+{/* ✅ Sidebar Drawer for Mobile */}
+{!isSidebarCollapsed && (
+  <div
+    className="sm:hidden fixed inset-0 bg-black/40 z-40"
+    onClick={toggleSidebar}
+  />
+)}
+
+<aside
+  className={`sm:hidden fixed top-0 right-0 h-screen bg-white border-l border-gray-200 transition-transform duration-300 z-50
+  ${isSidebarCollapsed ? "translate-x-full" : "translate-x-0"} w-[250px]`}
+>
+  <div className="flex justify-between p-3 items-center border-b">
+    <h2 className="font-semibold text-gray-700">Menu</h2>
+    <motion.button
+      onClick={toggleSidebar}
+      className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
+      transition={{ duration: 0.3 }}
+    >
+      <FaArrowRight size={16} />
+    </motion.button>
+  </div>
+
+  <nav className="flex-1 space-y-2 px-2 mt-2">
+    {sidebarItems.map(({ tab, icon: Icon }) => (
+      <motion.button
+        key={tab}
+        className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
+        onClick={() => {
+          handleTabClick(tab);
+          setIsSidebarCollapsed(true);
+        }}
+        whileHover={{ x: -3 }}
       >
-        <div className="flex justify-start p-2 items-center">
-          <motion.button
-            onClick={toggleSidebar}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
-            transition={{ duration: 0.3 }}
-          >
-            {isSidebarCollapsed ? (
-              <FaArrowRight size={16} />
-            ) : (
-              <FaArrowLeft size={16} />
-            )}
-          </motion.button>
-        </div>
+        <Icon size={16} className="mr-2" />
+        <span>{tab}</span>
+      </motion.button>
+    ))}
+  </nav>
+</aside>
 
-        {!isSidebarCollapsed && (
-          <nav className="flex-1 space-y-2 px-2 mt-2">
-            {sidebarItems.map(({ tab, icon: Icon }) => (
-              <motion.button
-                key={tab}
-                className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
-                onClick={() => handleTabClick(tab)}
-                whileHover={{ x: -3 }}
-              >
-                <Icon size={16} className="mr-2" />
-                <span>{tab}</span>
-              </motion.button>
-            ))}
-          </nav>
-        )}
-      </aside>
-
-      {/* Sidebar Drawer for Mobile */}
-      <aside
-        className={`sm:hidden fixed top-0 right-0 h-screen bg-white border-l border-gray-200 transition-transform duration-300 z-50
-        ${isSidebarCollapsed ? "translate-x-full" : "translate-x-0"} w-[250px]`}
-      >
-        <div className="flex justify-start p-2 items-center">
-          <motion.button
-            onClick={toggleSidebar}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
-            transition={{ duration: 0.3 }}
-          >
-            <FaArrowRight size={16} />
-          </motion.button>
-        </div>
-
-        <nav className="flex-1 space-y-2 px-2 mt-2">
-          {sidebarItems.map(({ tab, icon: Icon }) => (
-            <motion.button
-              key={tab}
-              className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
-              onClick={() => {
-                handleTabClick(tab);
-                setIsSidebarCollapsed(true); // ✅ collapse after click
-              }}
-              whileHover={{ x: -3 }}
-            >
-              <Icon size={16} className="mr-2" />
-              <span>{tab}</span>
-            </motion.button>
-          ))}
-        </nav>
-      </aside>
     </div>
   );
 }
