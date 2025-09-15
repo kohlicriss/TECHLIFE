@@ -26,7 +26,7 @@ export default function EmployeeTicket() {
        // current page for API
  // true if more pages exist
  const nextPage=useRef(0);
-  const isFetching = useRef(false); 
+  
   const [page, setPage] = useState(0);
 const [hasMore, setHasMore] = useState(true);
 const [isLoading, setIsLoading] = useState(false);
@@ -56,13 +56,11 @@ const [totalCount, setTotalCount] = useState(0);
 const fetchTickets = async (pageNum = 0) => {
   if (!token || !empID || !userData || isLoading || !hasMore) return;
 
-  
-
   setIsLoading(true);
   try {
     let url;
     if (activeTab === "Assigned Tickets") {
-      // url = https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/role/${normalizedRole}/${empID}?page=${pageNum}&size=10`;
+      // url = ...
     } else {
       url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10`;
     }
@@ -73,7 +71,9 @@ const fetchTickets = async (pageNum = 0) => {
 
     const { content, totalElements } = res.data;
 
-    setTickets(prev => [...prev, ...content]);
+    setTickets(prev =>
+      pageNum === 0 ? content : [...prev, ...content] 
+    );
     setTotalCount(totalElements);
     setPage(pageNum + 1);
     setHasMore(content.length > 0);
@@ -84,6 +84,7 @@ const fetchTickets = async (pageNum = 0) => {
     setIsLoading(false);
   }
 };
+
 
 
 
