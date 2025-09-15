@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Ticket, CheckCircle2, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import { FaArrowLeft, FaArrowRight, FaBars } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -18,21 +18,27 @@ export default function EmployeeTicket() {
   const [toDate, setToDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // desktop collapse
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // mobile collapse
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('My Tickets');
+  const [loading, setLoading] = useState(false);
+
+       // current page for API
+ // true if more pages exist
+ const nextPage=useRef(0);
+  const isFetching = useRef(false); 
+  const [page, setPage] = useState(0);
+const [hasMore, setHasMore] = useState(true);
+const [isLoading, setIsLoading] = useState(false);
+const [totalCount, setTotalCount] = useState(0);
+
+// prevent multiple fetches
+
   const navigate = useNavigate();
   const { empID } = useParams();
   const { userData } = useContext(Context);
-
   const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
-  let normalizedRole = "";
-  if (typeof role === "string") {
-    normalizedRole = role.toUpperCase().startsWith("ROLE_")
-      ? role.toUpperCase()
-      : "ROLE_" + role.toUpperCase();
-  }
-
+  const normalizedRole = role.toUpperCase().startsWith("ROLE_") ? role.toUpperCase() : "ROLE_" + role.toUpperCase();
   const token = localStorage.getItem("accessToken");
 
   const sidebarItems = [
@@ -46,103 +52,116 @@ export default function EmployeeTicket() {
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
 
-  useEffect(() => {
-    if (!token || !empID || !userData) return;
 
-    const fetchTickets = async () => {
-      try {
-        let url;
-        if (activeTab === "Assigned Tickets") {
-          // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
-        } else {
-          url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}`;
-        }
+const fetchTickets = async (pageNum = 0) => {
+  if (!token || !empID || !userData || isLoading || !hasMore) return;
 
-        const res = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        let ticketsData = res.data;
-        if (!Array.isArray(ticketsData)) {
-          ticketsData = ticketsData?.tickets || [ticketsData];
-        }
-        setTickets(ticketsData);
-        console.log("Fetched tickets:", ticketsData);
-      } catch (err) {
-        console.error("Error fetching tickets:", err);
-        setTickets([]);
-      }
-    };
-
-    fetchTickets();
-  }, [activeTab, empID, normalizedRole, token, userData]);
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    setIsMobileSidebarOpen(false); // close mobile sidebar on tab click
-    if (tab === "Assigned Tickets" && normalizedRole) {
-      navigate(`/tickets/role/${normalizedRole}/${empID}`);
+  setIsLoading(true);
+  try {
+    let url;
+    if (activeTab === "Assigned Tickets") {
+      // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}?page=${pageNum}&size=10`;
     } else {
-      navigate(`/tickets/employee/${empID}`);
+      url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10`;
+    }
+
+    const res = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const { content, totalElements } = res.data;
+
+    setTickets(prev => [...prev, ...content]);
+    setTotalCount(totalElements);
+    setPage(pageNum + 1);
+    setHasMore(content.length > 0);
+  } catch (err) {
+    console.error("Error fetching tickets:", err);
+    setHasMore(false);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+
+
+
+
+useEffect(() => {
+  setTickets([]);
+  setPage(0);
+  setHasMore(true);
+  fetchTickets(0);
+}, [activeTab, empID, normalizedRole, token, userData]);
+
+
+ useEffect(() => {
+  const handleScroll = () => {
+    const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+    if (bottomReached && hasMore && !isLoading) {
+      fetchTickets(page);
     }
   };
+
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, [page, hasMore, isLoading]);
+
+useEffect(() => {
+  fetchTickets();
+}, [empID]);
+
+
+  // ======================== HANDLE TAB CLICK ========================
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    setTickets([]);
+    nextPage.current = 0;
+    hasMore.current = true;
+    setSelectedTicket(null);
+    setView("history");
+    navigate(tab === "Assigned Tickets"
+      ? `/tickets/role/${normalizedRole}/${empID}`
+      : `/tickets/employee/${empID}`);
+  };
+
 
   const handleFormSubmit = async (data) => {
     try {
       let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
-      if (!roleToSend) {
-        console.error("Role not provided!");
-        return;
-      }
+      if (!roleToSend) return;
 
-      roleToSend = roleToSend.toUpperCase().startsWith("ROLE_")
-        ? roleToSend.toUpperCase()
-        : "ROLE_" + roleToSend.toUpperCase();
+      roleToSend = roleToSend.toUpperCase().startsWith("ROLE_") ? roleToSend.toUpperCase() : "ROLE_" + roleToSend.toUpperCase();
 
-      const payload = {
-        title: data.title,
-        description: data.description,
-        status: "OPEN",
-        priority: data.priority,
-        employeeId: empID,
-        roles: roleToSend,
-      };
-
-      console.log("Payload being sent:", payload);
+      const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
 
       const res = await fetch("http://192.168.0.247:8088/api/ticket/employee/create", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to create ticket: ${res.status} - ${errorText}`);
-      }
-
+      if (!res.ok) throw new Error(`Failed to create ticket: ${res.status}`);
       const savedTicket = await res.json();
-      setTickets((prev) => [...prev, savedTicket]);
+      setTickets(prev => [savedTicket, ...prev]);
       setSelectedTicket(savedTicket);
       setView("chat");
-
     } catch (err) {
-      console.error("Error creating ticket:", err);
-      alert("Ticket creation failed. Check console for details.");
+      console.error(err);
+      alert("Ticket creation failed.");
     }
   };
 
+  // ======================== HANDLE TICKET CLICK ========================
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setView('chat');
   };
 
+ 
   const applyFilters = () => {
     let filtered = [...tickets];
-
     if (searchTerm.trim() !== '') {
       const s = searchTerm.toLowerCase();
       filtered = filtered.filter(t =>
@@ -151,19 +170,22 @@ export default function EmployeeTicket() {
         (t.priority || "").toLowerCase().includes(s)
       );
     }
-
     if (statusFilter !== 'all') {
       filtered = filtered.filter(t => (t.status || "").toLowerCase() === statusFilter);
     }
-
     filtered.sort((a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt));
     return filtered;
   };
 
-  const filteredTickets = applyFilters();
-  const total = filteredTickets.length;
-  const resolved = filteredTickets.filter(t => (t.status || "").toLowerCase() === "resolved").length;
-  const unsolved = total - resolved;
+ const filteredTickets = applyFilters();
+const normalizeStatus = (status) => (status || "").trim().toLowerCase();
+
+const total = totalCount;
+const resolved = filteredTickets.filter(t => normalizeStatus(t.status) === "resolved").length;
+const unsolved = total - resolved;
+
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-100">
@@ -378,4 +400,4 @@ export default function EmployeeTicket() {
       </div>
     </div>
   );
-}
+} 
