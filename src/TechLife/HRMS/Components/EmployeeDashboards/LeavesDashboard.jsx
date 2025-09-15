@@ -246,29 +246,34 @@ const LeaveType = () => {
     const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
     const { empID } = useParams();
     const { theme } = useContext(Context);
-    const [initialLeaveTypeData, setInitialLeaveTypeData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    //const [initialLeaveTypeData, setInitialLeaveTypeData] = useState([]);
+    //const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        axios
-            .get(
-                `http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`
-            )
-            .then((response) => {
-                const formatted = response.data.map((item) => ({
-                    name: item.leaveType,
-                    value: item.days,
-                }));
-                setInitialLeaveTypeData(formatted);
-            })
-            .catch((error) => {
-                console.error("Error fetching personal leave data:", error);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, [empID]);
-
+   // useEffect(() => {
+   //     axios
+   //         .get(
+   //             `http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`
+   //         )
+   //         .then((response) => {
+   //             const formatted = response.data.map((item) => ({
+   //                 name: item.leaveType,
+   //                 value: item.days,
+   //             }));
+   //             setInitialLeaveTypeData(formatted);
+   //         })
+   //         .catch((error) => {
+   //             console.error("Error fetching personal leave data:", error);
+   //         })
+   //         .finally(() => {
+   //             setIsLoading(false);
+   //         });
+   // }, [empID]);
+   const initialLeaveTypeData = [
+  { employee: "Rajesh", leaveType: "Sick Leave", days: 5 },
+  { employee: "Rajesh", leaveType: "Paid Leave", days: 2 },
+  { employee: "Rajesh", leaveType: "Unpaid Leave", days: 4 },
+  { employee: "Rajesh", leaveType: "Casual Leave", days: 3 },
+];
     const isMobile = useMediaQuery("(max-width:768px)");
     const renderCenterLabel = () => {
         return (
@@ -295,18 +300,8 @@ const LeaveType = () => {
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
                 Leave Type Breakdown
             </h2>
-            <Box
-                display="flex"
-                flexDirection={isMobile ? "column" : "row"}
-                justifyContent="center"
-                alignItems="center"
-                height="100%"
-                gap={2}
-                p={1}
-            >
-                {isLoading ? (
-                    <div className="text-gray-500 text-center w-full">Loading...</div>
-                ) : filteredData.length > 0 ? (
+            <Box display="flex" flexDirection={isMobile ? "column" : "row"} justifyContent="center" alignItems="center" height="100%" gap={2} p={1}>
+                {filteredData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                             <Pie
@@ -347,28 +342,36 @@ const WeeklyPattern = () => {
     const { empID } = useParams();
     const { theme } = useContext(Context);
     const [selectedDay, setSelectedDay] = useState("All");
-    const [rawData, setRawData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        axios
-            .get(
-                `http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`
-            )
-            .then((response) => {
-                const formatted = response.data.map((item) => ({
-                    Day: item.day,
-                    Rate: item.rate,
-                }));
-                setRawData(formatted);
-            })
-            .catch((error) => {
-                console.error("Error fetching leaves bar chart data:", error);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, [empID]);
+    //const [rawData, setRawData] = useState([]);
+   // const [isLoading, setIsLoading] = useState(true);
+    const rawData = [
+    { Day: "Mon", Rate: 5 },
+    { Day: "Tues", Rate: 10 },
+    { Day: "Wed", Rate: 10 },
+    { Day: "Thu", Rate: 5 },
+    { Day: "Fri", Rate: 5 },
+    { Day: "Sat", Rate: 0 },
+    { Day: "Sun", Rate: 0 },
+  ];
+    //useEffect(() => {
+    //    axios
+    //        .get(
+    //            `http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`
+    //        )
+    //        .then((response) => {
+    //            const formatted = response.data.map((item) => ({
+    //                Day: item.day,
+    //                Rate: item.rate,
+    //            }));
+    //            setRawData(formatted);
+    //        })
+    //        .catch((error) => {
+    //            console.error("Error fetching leaves bar chart data:", error);
+    //        })
+    //        .finally(() => {
+    //            setIsLoading(false);
+    //        });
+    //}, [empID]);
 
     const isMobile = useMediaQuery("(max-width:768px)");
     const filteredData =
@@ -410,9 +413,7 @@ const WeeklyPattern = () => {
                 gap={5}
                 p={isMobile ? 1 : 2}
             >
-                {isLoading ? (
-                    <div className="text-gray-500 text-center w-full">Loading...</div>
-                ) : filteredData.length > 0 ? (
+                {filteredData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={230}>
                         <BarChart
                             data={filteredData}
@@ -429,11 +430,11 @@ const WeeklyPattern = () => {
                             <Bar dataKey="Rate" fill="#4338CA" radius={[8, 8, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
-                ) : (
-                    <div className={` text-center w-full ${theme === 'dark' ? 'text-black' : 'text-gray-500'} italic`}>
+                
+                  ):(  <div className={` text-center w-full ${theme === 'dark' ? 'text-black' : 'text-gray-500'} italic`}>
                         No weekly leave pattern data available.
                     </div>
-                )}
+                  )}
             </Box>
         </motion.div>
     );
