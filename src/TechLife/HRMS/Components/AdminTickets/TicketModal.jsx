@@ -32,6 +32,22 @@ export default function TicketModal({
       year: "numeric",
     });
   };
+  // ✅ Convert backend UTC to IST correctly
+const formatToIST = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString + "Z"); // force UTC parsing
+  return date.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata", // IST
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+};
+
 
   const groupedReplies = useMemo(() => {
     const groups = {};
@@ -49,142 +65,129 @@ export default function TicketModal({
   }, [replies]);
 
   // WebSocket setup
-  useEffect(() => {
+useEffect(() => {
+  if (!ticket?.ticketId) return;
+
+  if (socketRef.current) {
+    socketRef.current.close();
+  }
+
+  const token = localStorage.getItem("accessToken");
+  const ws = new WebSocket(
+    `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}&token=${token}`
+  );
+  socketRef.current = ws;
+
+  ws.onopen = () => console.log("✅ WebSocket connected for", ticket.ticketId);
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      setReplies((prev) => [...prev, msg]);
+    } catch (e) {
+      console.error("Error parsing WebSocket message", e);
+    }
+  };
+
+  ws.onerror = (err) => console.error("❌ WebSocket error:", err);
+  ws.onclose = () => console.log("🔌 WebSocket disconnected");
+
+  return () => ws.close();
+}, [ticket?.ticketId]);
+
+
+ useEffect(() => {
+  const fetchReplies = async () => {
     if (!ticket?.ticketId) return;
 
-    if (socketRef.current) {
-      socketRef.current.close();
-    }
-
-    const ws = new WebSocket(
-      `ws://192.168.0.247:8088/ws-ticket?ticketId=${ticket.ticketId}`
-    );
-    socketRef.current = ws;
-
-    ws.onopen = () => console.log("✅ WebSocket connected for", ticket.ticketId);
-
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        setReplies((prev) => {
-          const exists = prev.some(
-            (r) =>
-              r.replyText === msg.replyText &&
-              r.repliedAt === msg.repliedAt &&
-              r.repliedBy === msg.repliedBy
-          );
-          return exists ? prev : [...prev, msg];
-        });
-      } catch (e) {
-        console.error("Error parsing WebSocket message", e);
-      }
-    };
-
-    ws.onerror = (err) => console.error("❌ WebSocket error:", err);
-    ws.onclose = () => console.log("🔌 WebSocket disconnected");
-
-    return () => {
-      ws.close();
-    };
-  }, [ticket?.ticketId]);
-
-  useEffect(() => {
-    const fetchReplies = async () => {
-      if (!ticket?.ticketId) return;
-      try {
-        const token = localStorage.getItem("accessToken");
-        const response = await axios.get(
-          `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setReplies(response.data);
-      } catch (error) {
-        console.error("❌ Failed to fetch previous replies", error);
-      }
-    };
-    fetchReplies();
-  }, [ticket?.ticketId, showChat]);
-
-  const handleReply = async () => {
-    if (!replyText.trim() || !ticket?.ticketId) return;
-
-    const token = localStorage.getItem("accessToken");
-
-    const payload = {
-      replyText: replyText.trim(),
-      repliedBy: "admin",
-      status: newStatus.toUpperCase(),
-      employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
-      roles:
-        roles && typeof roles === "string"
-          ? `ROLE_${roles.toUpperCase()}`
-          : "ROLE_HR",
-      repliedAt: new Date().toISOString(),
-    };
-
     try {
-      await axios.put(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
-        payload,
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.get(
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          params: {
+            page: 0,
+            size: 100, // fetch more messages if needed
+          },
         }
       );
 
-      setReplyText("");
-      setMessageSent(true);
-      setTimeout(() => setMessageSent(false), 2000);
+      const messagesArray = Array.isArray(response.data?.content)
+        ? response.data.content
+        : [];
+
+      setReplies(messagesArray);
     } catch (error) {
-      console.error("❌ Reply failed", error.response?.data || error.message);
+      console.error("❌ Failed to fetch previous replies", error);
+      setReplies([]); // fallback
     }
   };
+
+  fetchReplies();
+}, [ticket?.ticketId, showChat]);
+
+
+const handleReply = async () => {
+  if (!replyText.trim() || !ticket?.ticketId) return;
+
+  const token = localStorage.getItem("accessToken");
+  const payload = {
+    replyText: replyText.trim(),
+    repliedBy: "admin",
+    status: newStatus.toUpperCase(),
+    employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
+    roles: roles && typeof roles === "string" ? `ROLE_${roles.toUpperCase()}` : "ROLE_HR",
+    repliedAt: new Date().toISOString(),
+  };
+
+  try {
+    const res = await axios.put(
+      `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setReplies((prev) => [...prev, res.data]); // ✅ add immediately
+    setReplyText("");
+    setMessageSent(true);
+    setTimeout(() => setMessageSent(false), 2000);
+  } catch (error) {
+    console.error("❌ Reply failed", error.response?.data || error.message);
+  }
+};
 
   const handleStatusChange = async () => {
-    if (!ticket?.ticketId) return;
+  if (!ticket?.ticketId) return;
 
-    const token = localStorage.getItem("accessToken");
-
-    const payload = {
-      replyText: replyText.trim() || "Status updated",
-      repliedBy: "admin",
-      status: newStatus,
-      employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
-      roles:
-        roles && typeof roles === "string"
-          ? `ROLE_${roles.toUpperCase()}`
-          : "ROLE_HR",
-      repliedAt: new Date().toISOString(),
-    };
-
-    try {
-      const res = await axios.put(
-        `http://192.168.0.247:8088/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setReplies((prev) => [...prev, res.data]);
-      setNewStatus(res.data.status);
-
-      if (onStatusUpdate) {
-        onStatusUpdate(res.data);
-      }
-
-      onClose();
-    } catch (err) {
-      console.error("Error updating status:", err);
-    }
+  const token = localStorage.getItem("accessToken");
+  const payload = {
+    replyText: replyText.trim() || "Status updated",
+    repliedBy: "admin",
+    status: newStatus.toUpperCase(), // ✅ fix here
+    employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
+    roles: roles && typeof roles === "string" ? `ROLE_${roles.toUpperCase()}` : "ROLE_HR",
+    repliedAt: new Date().toISOString(),
   };
+
+  try {
+    const res = await axios.put(
+      `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setReplies((prev) => [...prev, res.data]);
+    setNewStatus(res.data.status);
+    ticket.status = res.data.status;
+    if (onStatusUpdate) onStatusUpdate(res.data);
+    onClose();
+  } catch (err) {
+    console.error("Error updating status:", err.response?.data || err.message);
+  }
+};
+
 
   const displayRole = (role) => role?.replace(/^ROLE_/, "");
 
@@ -222,12 +225,11 @@ export default function TicketModal({
                   <span className="font-semibold">⚠️ Priority:</span>{" "}
                   {ticket.priority}
                 </p>
-                <p className="md:col-span-2">
-                  <span className="font-semibold">📅 Created:</span>{" "}
-                  {ticket.sentAt
-                    ? new Date(ticket.sentAt).toLocaleString()
-                    : ""}
-                </p>
+               <p className="md:col-span-2">
+  <span className="font-semibold">📅 Created:</span>{" "}
+  {formatToIST(ticket.sentAt)}
+</p>
+
 
                 <div className="md:col-span-2">
                   <label className="block font-medium text-gray-900 mb-2">

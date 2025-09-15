@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Ticket, CheckCircle2, AlertTriangle, LayoutDashboard } from 'lucide-react';
 import { FaArrowLeft, FaArrowRight, FaBars } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import ChatBox from '../EmployeeTicket/ChatBox';
 import TicketHistory from '../EmployeeTicket/TicketHistory';
 import { Context } from '../HrmsContext';
 import axios from "axios";
-
+ 
 export default function EmployeeTicket() {
   const [view, setView] = useState('history');
   const [tickets, setTickets] = useState([]);
@@ -18,131 +18,160 @@ export default function EmployeeTicket() {
   const [toDate, setToDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // desktop collapse
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // mobile collapse
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('My Tickets');
+  const [loading, setLoading] = useState(false);
+ 
+       // current page for API
+ // true if more pages exist
+ const nextPage=useRef(0);
+ 
+  const [page, setPage] = useState(0);
+const [hasMore, setHasMore] = useState(true);
+const [isLoading, setIsLoading] = useState(false);
+const [totalCount, setTotalCount] = useState(0);
+ 
+// prevent multiple fetches
+ 
   const navigate = useNavigate();
   const { empID } = useParams();
   const { userData } = useContext(Context);
-
   const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
-  let normalizedRole = "";
-  if (typeof role === "string") {
-    normalizedRole = role.toUpperCase().startsWith("ROLE_")
-      ? role.toUpperCase()
-      : "ROLE_" + role.toUpperCase();
-  }
-
+  const normalizedRole = role.toUpperCase().startsWith("ROLE_") ? role.toUpperCase() : "ROLE_" + role.toUpperCase();
   const token = localStorage.getItem("accessToken");
-
+ 
   const sidebarItems = [
     { tab: "My Tickets", icon: Ticket },
     ...(normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
   ];
-
+ 
   const statusLabels = { all: "All", resolved: "Resolved" };
   const statusIcons = { all: <LayoutDashboard size={20} />, resolved: <CheckCircle2 size={20} /> };
-
+ 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
-
-  useEffect(() => {
-    if (!token || !empID || !userData) return;
-
-    const fetchTickets = async () => {
-      try {
-        let url;
-        if (activeTab === "Assigned Tickets") {
-          // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
-        } else {
-          url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}`;
-        }
-
-        const res = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        let ticketsData = res.data;
-        if (!Array.isArray(ticketsData)) {
-          ticketsData = ticketsData?.tickets || [ticketsData];
-        }
-        setTickets(ticketsData);
-        console.log("Fetched tickets:", ticketsData);
-      } catch (err) {
-        console.error("Error fetching tickets:", err);
-        setTickets([]);
-      }
-    };
-
-    fetchTickets();
-  }, [activeTab, empID, normalizedRole, token, userData]);
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    setIsMobileSidebarOpen(false); // close mobile sidebar on tab click
-    if (tab === "Assigned Tickets" && normalizedRole) {
-      navigate(`/tickets/role/${normalizedRole}/${empID}`);
+ 
+ 
+const fetchTickets = async (pageNum = 0) => {
+  if (!token || !empID || !userData || isLoading || !hasMore) return;
+ 
+  setIsLoading(true);
+  try {
+    let url;
+    if (activeTab === "Assigned Tickets") {
+      // url = ...
     } else {
-      navigate(`/tickets/employee/${empID}`);
+      url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10`;
+    }
+ 
+    const res = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+ 
+    const { content, totalElements } = res.data;
+ 
+    setTickets(prev =>
+      pageNum === 0 ? content : [...prev, ...content]
+    );
+    setTotalCount(totalElements);
+    setPage(pageNum + 1);
+    setHasMore(content.length > 0);
+  } catch (err) {
+    console.error("Error fetching tickets:", err);
+    setHasMore(false);
+  } finally {
+    setIsLoading(false);
+  }
+};
+ 
+ 
+ 
+ 
+ 
+useEffect(() => {
+  setTickets([]);
+  setPage(0);
+  setHasMore(true);
+  fetchTickets(0);
+}, [activeTab, empID, normalizedRole, token, userData]);
+ 
+ 
+ useEffect(() => {
+  const handleScroll = () => {
+    const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+    if (bottomReached && hasMore && !isLoading) {
+      fetchTickets(page);
     }
   };
-
-  const handleFormSubmit = async (data) => {
-    try {
-      let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
-      if (!roleToSend) {
-        console.error("Role not provided!");
-        return;
-      }
-
-      roleToSend = roleToSend.toUpperCase().startsWith("ROLE_")
-        ? roleToSend.toUpperCase()
-        : "ROLE_" + roleToSend.toUpperCase();
-
-      const payload = {
-        title: data.title,
-        description: data.description,
-        status: "OPEN",
-        priority: data.priority,
-        employeeId: empID,
-        roles: roleToSend,
-      };
-
-      console.log("Payload being sent:", payload);
-
-      const res = await fetch("http://192.168.0.247:8088/api/ticket/employee/create", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to create ticket: ${res.status} - ${errorText}`);
-      }
-
-      const savedTicket = await res.json();
-      setTickets((prev) => [...prev, savedTicket]);
-      setSelectedTicket(savedTicket);
-      setView("chat");
-
-    } catch (err) {
-      console.error("Error creating ticket:", err);
-      alert("Ticket creation failed. Check console for details.");
-    }
-  };
-
+ 
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, [page, hasMore, isLoading]);
+ 
+useEffect(() => {
+  fetchTickets();
+}, [empID]);
+ 
+ 
+ 
+ const handleTabClick = (tab) => {
+  setActiveTab(tab);
+  setTickets([]);
+  nextPage.current = 0;
+  setHasMore(true);  
+  setSelectedTicket(null);
+  setView("history");
+  navigate(
+    tab === "Assigned Tickets"
+      ? `/tickets/role/${normalizedRole}/${empID}`
+      : `/tickets/employee/${empID}`
+  );
+};
+ 
+ 
+ 
+ const handleFormSubmit = async (data) => {
+  try {
+    let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
+    if (!roleToSend) return;
+ 
+    roleToSend = roleToSend.toUpperCase().startsWith("ROLE_") ? roleToSend.toUpperCase() : "ROLE_" + roleToSend.toUpperCase();
+ 
+    const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
+ 
+    const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+ 
+    if (!res.ok) throw new Error(`Failed to create ticket: ${res.status}`);
+ 
+    // Instead of manually adding duplicate, re-fetch from backend
+    setTickets([]);
+    setPage(0);
+    setHasMore(true);
+    await fetchTickets(0);
+ 
+    setView("history");
+  } catch (err) {
+    console.error(err);
+    alert("Ticket creation failed.");
+  }
+};
+ 
+ 
+ 
+  // ======================== HANDLE TICKET CLICK ========================
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setView('chat');
   };
-
+ 
+ 
   const applyFilters = () => {
     let filtered = [...tickets];
-
     if (searchTerm.trim() !== '') {
       const s = searchTerm.toLowerCase();
       filtered = filtered.filter(t =>
@@ -151,24 +180,27 @@ export default function EmployeeTicket() {
         (t.priority || "").toLowerCase().includes(s)
       );
     }
-
     if (statusFilter !== 'all') {
       filtered = filtered.filter(t => (t.status || "").toLowerCase() === statusFilter);
     }
-
     filtered.sort((a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt));
     return filtered;
   };
-
-  const filteredTickets = applyFilters();
-  const total = filteredTickets.length;
-  const resolved = filteredTickets.filter(t => (t.status || "").toLowerCase() === "resolved").length;
-  const unsolved = total - resolved;
-
+ 
+ const filteredTickets = applyFilters();
+const normalizeStatus = (status) => (status || "").trim().toLowerCase();
+ 
+const total = totalCount;
+const resolved = filteredTickets.filter(t => normalizeStatus(t.status) === "resolved").length;
+const unsolved = total - resolved;
+ 
+ 
+ 
+ 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-100">
       <div className="flex flex-row-reverse max-w-7xl mx-auto px-4 py-8 gap-4">
-
+ 
         {/* Desktop Sidebar */}
         <aside className={`sm:flex flex-col bg-white border-l border-gray-200 transition-all duration-200 ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"} hidden sm:flex sm:sticky sm:top-0 h-full`}>
           <div className="flex justify-start p-1.5 items-center">
@@ -176,7 +208,7 @@ export default function EmployeeTicket() {
               {isSidebarCollapsed ? <FaArrowLeft size={14} /> : <FaArrowRight size={14} />}
             </motion.button>
           </div>
-
+ 
           <nav className="flex-1 space-y-1.5 px-1.5">
             {sidebarItems
               .filter(({ tab }) => normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets" ? false : true)
@@ -195,7 +227,7 @@ export default function EmployeeTicket() {
               ))}
           </nav>
         </aside>
-
+ 
         {/* Mobile Sidebar Toggle */}
         <div className="sm:hidden flex flex-col w-full">
           <div className="flex justify-start mb-2">
@@ -203,7 +235,7 @@ export default function EmployeeTicket() {
               <FaBars size={20} />
             </motion.button>
           </div>
-
+ 
           {isMobileSidebarOpen && (
             <div className="bg-white border rounded-lg shadow p-2 mb-4">
               {sidebarItems
@@ -223,10 +255,10 @@ export default function EmployeeTicket() {
             </div>
           )}
         </div>
-
+ 
         {/* Main Content */}
         <main className="flex-1 space-y-8">
-
+ 
           {/* Filters */}
           <div className="bg-white rounded-xl shadow p-6 border flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex flex-col lg:flex-row items-center gap-4 w-full flex-wrap">
@@ -251,7 +283,7 @@ export default function EmployeeTicket() {
                 placeholder="Title, status, priority..."
                 className="border border-gray-300 text-sm rounded-lg p-2.5 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-
+ 
               <label className="text-sm font-medium text-gray-700" htmlFor="from-date">From</label>
               <input
                 type="date"
@@ -260,7 +292,7 @@ export default function EmployeeTicket() {
                 onChange={(e) => setFromDate(e.target.value)}
                 className="border border-gray-300 text-sm rounded-lg p-2.5 w-44 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-
+ 
               <label className="text-sm font-medium text-gray-700" htmlFor="to-date">To</label>
               <input
                 type="date"
@@ -269,13 +301,13 @@ export default function EmployeeTicket() {
                 onChange={(e) => setToDate(e.target.value)}
                 className="border border-gray-300 text-sm rounded-lg p-2.5 w-44 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-
+ 
               {/* Status Filter Buttons */}
               <div className="flex gap-2 ml-4">
                 {Object.keys(statusIcons).map((status) => (
                   <motion.button
                     key={status}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors 
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                       ${statusFilter === status ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                     onClick={() => setStatusFilter(status)}
                     whileHover={{ scale: 1.05 }}
@@ -287,7 +319,7 @@ export default function EmployeeTicket() {
               </div>
             </div>
           </div>
-
+ 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="flex items-center gap-4 p-6 rounded-2xl shadow-lg border border-blue-200 bg-white">
@@ -297,7 +329,7 @@ export default function EmployeeTicket() {
                 <h3 className="text-4xl font-bold text-blue-700">{total}</h3>
               </div>
             </div>
-
+ 
             <div className="flex items-center gap-4 p-6 rounded-2xl shadow-lg border border-emerald-200 bg-white">
               <div className="bg-emerald-100 text-emerald-600 p-4 rounded-full"><CheckCircle2 size={32} /></div>
               <div>
@@ -305,7 +337,7 @@ export default function EmployeeTicket() {
                 <h3 className="text-4xl font-bold text-emerald-600">{resolved}</h3>
               </div>
             </div>
-
+ 
             <div className="flex items-center gap-4 p-6 rounded-2xl shadow-lg border border-red-200 bg-white">
               <div className="bg-red-100 text-red-600 p-4 rounded-full"><AlertTriangle size={32} /></div>
               <div>
@@ -314,7 +346,7 @@ export default function EmployeeTicket() {
               </div>
             </div>
           </div>
-
+ 
           {/* Conditional Views */}
           {view === 'history' && (
             <>
@@ -327,13 +359,13 @@ export default function EmployeeTicket() {
                   +
                 </button>
               </div>
-
+ 
               <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
                 <TicketHistory tickets={filteredTickets} onTicketClick={handleTicketClick} />
               </div>
             </>
           )}
-
+ 
           {view === 'form' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -350,7 +382,7 @@ export default function EmployeeTicket() {
               </div>
             </div>
           )}
-
+ 
           {view === 'chat' && selectedTicket && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -368,14 +400,15 @@ export default function EmployeeTicket() {
                 <ChatBox
                   userRole="employee"
                   ticketId={selectedTicket.ticketId}
-                  ticketStatus={selectedTicket.status} 
+                  ticketStatus={selectedTicket.status}
                 />
               </div>
             </div>
           )}
-
+ 
         </main>
       </div>
     </div>
   );
 }
+ 
