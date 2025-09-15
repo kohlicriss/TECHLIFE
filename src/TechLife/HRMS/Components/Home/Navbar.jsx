@@ -121,7 +121,7 @@ const Navbar = ({ setSidebarOpen }) => {
         </button>
         <div className="flex items-center space-x-2">
           <img src={logo} alt="Logo" className="h-8 w-auto" />
-          <h1 className="text-xl font-bold text-blue-600">Anasol</h1>
+          <h1 className="text-xl font-bold text-blue-600 name">Anasol</h1>
         </div>
         <div className="hidden md:flex flex-col ml-6">
           <span
