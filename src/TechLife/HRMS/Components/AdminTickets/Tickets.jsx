@@ -82,7 +82,7 @@ export default function TicketDashboard() {
 
   // ✅ WebSocket
   const connectWebSocket = () => {
-    const socket = new WebSocket(`ws://192.168.0.247:8088/ws-ticket`);
+    const socket = new WebSocket(`wss://hrms.anasolconsultancyservices.com/api/ticket`);
     socket.onopen = () => console.log("✅ WebSocket connected");
 
     socket.onmessage = (event) => {

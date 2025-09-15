@@ -56,14 +56,14 @@ const [totalCount, setTotalCount] = useState(0);
 const fetchTickets = async (pageNum = 0) => {
   if (!token || !empID || !userData || isLoading || !hasMore) return;
 
-  setIsLoading(true);
-  try {
-    let url;
-    if (activeTab === "Assigned Tickets") {
-      // url = `http://192.168.0.247:8088/api/ticket/admin/tickets/role/${normalizedRole}/${empID}?page=${pageNum}&size=10`;
-    } else {
-      url = `http://192.168.0.247:8088/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10`;
-    }
+    const fetchTickets = async () => {
+      try {
+        let url;
+        if (activeTab === "Assigned Tickets") {
+          // url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/role/${normalizedRole}/${empID}`;
+        } else {
+          url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}`;
+        }
 
     const res = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
@@ -136,7 +136,7 @@ useEffect(() => {
 
       const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
 
-      const res = await fetch("http://192.168.0.247:8088/api/ticket/employee/create", {
+      const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(payload)

@@ -57,7 +57,7 @@ export default function TicketModal({
     }
 
     const ws = new WebSocket(
-      `ws://192.168.0.247:8088/ws-ticket?ticketId=${ticket.ticketId}`
+      `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}`
     );
     socketRef.current = ws;
 
@@ -88,6 +88,7 @@ export default function TicketModal({
     };
   }, [ticket?.ticketId]);
 
+<<<<<<< HEAD
  useEffect(() => {
   const fetchReplies = async () => {
     if (!ticket?.ticketId) return;
@@ -121,6 +122,28 @@ export default function TicketModal({
   fetchReplies();
 }, [ticket?.ticketId, showChat]);
 
+=======
+  useEffect(() => {
+    const fetchReplies = async () => {
+      if (!ticket?.ticketId) return;
+      try {
+        const token = localStorage.getItem("accessToken");
+        const response = await axios.get(
+          `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setReplies(response.data);
+      } catch (error) {
+        console.error("❌ Failed to fetch previous replies", error);
+      }
+    };
+    fetchReplies();
+  }, [ticket?.ticketId, showChat]);
+>>>>>>> origin
 
   const handleReply = async () => {
     if (!replyText.trim() || !ticket?.ticketId) return;

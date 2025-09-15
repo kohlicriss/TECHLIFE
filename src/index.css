@@ -11,3 +11,10 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+.name {
+font-family: "Dancing Script", cursive;
+  font-weight: 700;
+  font-style: normal;
+}

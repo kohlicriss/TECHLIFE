@@ -51,7 +51,7 @@ const fetchInitialMessages = async () => {
 
   try {
     const res = await fetch(
-      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages?page=0&size=1000`, // fetch all for simplicity
+      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ const fetchInitialMessages = async () => {
 
   const connectWebSocket = () => {
     const ws = new WebSocket(
-      `ws://192.168.0.247:8088/ws-ticket?ticketId=${ticketId}`
+      `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticketId}`
     );
 
     ws.onopen = () => console.log("✅ WebSocket connected");
