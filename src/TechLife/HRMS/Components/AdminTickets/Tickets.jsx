@@ -36,7 +36,7 @@ export default function TicketDashboard() {
   const repliedBy = "admin";
   const navigate = useNavigate();
 
-  
+  // ✅ Normalize role
   const rawRole = Array.isArray(userData?.roles)
     ? userData.roles[0]
     : userData?.roles || "";
@@ -80,9 +80,11 @@ export default function TicketDashboard() {
     }
   };
 
-  // ✅ WebSocket
+  // ✅ WebSocket connection
   const connectWebSocket = () => {
-    const socket = new WebSocket(`wss://hrms.anasolconsultancyservices.com/api/ticket`);
+    const socket = new WebSocket(
+      `wss://hrms.anasolconsultancyservices.com/api/ticket`
+    );
     socket.onopen = () => console.log("✅ WebSocket connected");
 
     socket.onmessage = (event) => {
@@ -190,7 +192,7 @@ export default function TicketDashboard() {
     }
   };
 
-  // ✅ Filtered tickets (applied on current page only)
+  // ✅ Filter tickets
   const filtered = tickets
     .filter(
       (t) =>
@@ -218,7 +220,7 @@ export default function TicketDashboard() {
     }
   };
 
-  
+  // ✅ Effects
   useEffect(() => {
     fetchTickets();
   }, [normalizedRole, empID, currentPage]);
@@ -278,7 +280,6 @@ export default function TicketDashboard() {
                 key={t.ticketId}
                 {...t}
                 onClick={() => {
-                  // ✅ Always pass replies as an array
                   setSelectedTicket({
                     ...t,
                     replies: Array.isArray(t.replies) ? t.replies : [],
@@ -409,7 +410,7 @@ export default function TicketDashboard() {
               className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
               onClick={() => {
                 handleTabClick(tab);
-                setIsSidebarCollapsed(true);
+                setIsSidebarCollapsed(true); // ✅ collapse after click
               }}
               whileHover={{ x: -3 }}
             >
