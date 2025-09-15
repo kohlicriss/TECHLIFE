@@ -10,11 +10,11 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 
   const isResolved = ticketStatus?.toLowerCase() === "resolved";
 
-  // ✅ Helper: deduplicate + sort messages
+ 
   const dedupeMessages = (msgs) => {
     const seen = new Map();
     msgs.forEach((m) => {
-      // Use id if present, otherwise use repliedAt+replyText as fallback
+     
       const key = m.id ? String(m.id) : `${m.repliedAt}-${m.replyText}`;
       seen.set(key, m);
     });
@@ -51,7 +51,7 @@ const fetchInitialMessages = async () => {
 
   try {
     const res = await fetch(
-      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages?page=0&size=1000`, // fetch all for simplicity
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -76,30 +76,38 @@ const fetchInitialMessages = async () => {
 
 
   const connectWebSocket = () => {
-    const ws = new WebSocket(
-      `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticketId}`
-    );
+  const token = localStorage.getItem("accessToken");
 
-    ws.onopen = () => console.log("✅ WebSocket connected");
+  if (!ticketId || !token) {
+    console.error("❌ Missing ticketId or token, cannot open WebSocket");
+    return;
+  }
 
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        setMessages((prev) => dedupeMessages([...prev, payload]));
-      } catch (err) {
-        console.error("❌ Failed to parse WebSocket message:", err);
-      }
-    };
+  // Attach token in query params
+  const ws = new WebSocket(
+    `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticketId}&token=${token}`
+  );
 
-    ws.onclose = () => {
-      console.warn("⚠️ WebSocket closed. Reconnecting...");
-      reconnectTimeout.current = setTimeout(connectWebSocket, 5000);
-    };
+  ws.onopen = () => console.log("✅ WebSocket connected");
 
-    ws.onerror = (err) => console.error("❌ WebSocket error:", err);
-
-    socketRef.current = ws;
+  ws.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data);
+      setMessages((prev) => dedupeMessages([...prev, payload]));
+    } catch (err) {
+      console.error("❌ Failed to parse WebSocket message:", err);
+    }
   };
+
+  ws.onclose = () => {
+    console.warn("⚠️ WebSocket closed. Reconnecting...");
+    reconnectTimeout.current = setTimeout(connectWebSocket, 5000);
+  };
+
+  ws.onerror = (err) => console.error("❌ WebSocket error:", err);
+
+  socketRef.current = ws;
+};
 
   const sendMessage = async () => {
   if (!input.trim() || isResolved) return;

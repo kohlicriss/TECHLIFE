@@ -26,8 +26,40 @@ import {
     IoWarning,
     IoCheckmarkCircle,
     IoIdCardOutline,
-    IoPeopleOutline
+    IoPeopleOutline,
+    IoTrashOutline
 } from "react-icons/io5";
+
+// --- Reusable Modal Component ---
+const Modal = ({ children, onClose, title, type, theme }) => {
+    let titleClass = "";
+    let icon = null;
+
+    if (type === "success") {
+        titleClass = "text-green-600";
+        icon = <IoCheckmarkCircle className="h-6 w-6 text-green-500" />;
+    } else if (type === "error") {
+        titleClass = "text-red-600";
+        icon = <IoWarning className="h-6 w-6 text-red-500" />;
+    } else if (type === "confirm") {
+        titleClass = "text-yellow-600";
+        icon = <IoWarning className="h-6 w-6 text-yellow-500" />;
+    }
+
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[250]">
+            <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {icon && <span className="mr-3">{icon}</span>}
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
 
 const generateInitials = (name) => {
     if (!name) return "";
@@ -45,7 +77,6 @@ function EmployeeApp() {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('grid');
     const { userprofiledata, theme, userData } = useContext(Context);
-    console.log(userData)
     const { empID } = useParams();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedFilters, setSelectedFilters] = useState({});
@@ -102,6 +133,9 @@ function EmployeeApp() {
         departmentId: "",
     });
     const [errors, setErrors] = useState({});
+    // State for popups
+    const [popup, setPopup] = useState({ show: false, message: '', type: '' });
+    const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, employee: null });
 
     // New state for pagination, with sortBy and sortOrder set to default values
     const [pageNumber, setPageNumber] = useState(0);
@@ -147,7 +181,7 @@ function EmployeeApp() {
         });
     };
 
-    const handleChatClick = async (employee) => {
+  const handleChatClick = async (employee) => {
         if (employee) {
             // We are passing the employee's details in the navigation state
             // This helps the ChatApplication know who the new chat is with.
@@ -191,10 +225,31 @@ function EmployeeApp() {
 
     const handleAboutClick = (employee) => {
         if (employee) {
-            alert(`Viewing about details for ${employee.displayName || employee.name}...`);
+             navigate(`/profile/${empID}/about?fromContextMenu=true&targetEmployeeId=${employee.employeeId}`);
         }
         setContextMenu({ ...contextMenu, visible: false });
         setFlippedCard(null);
+    };
+
+    const handleDeleteClick = (employee) => {
+        setDeleteConfirmation({ show: true, employee: employee });
+    };
+
+    const confirmDelete = async () => {
+        const { employee } = deleteConfirmation;
+        if (!employee) return;
+    
+        try {
+            await publicinfoApi.delete(`/employee/${employee.employeeId}`);
+            setEmployeeData(prevData => prevData.filter(emp => emp.employeeId !== employee.employeeId));
+            setPopup({ show: true, message: `Employee ${employee.displayName} has been deleted.`, type: 'success' });
+        } catch (err) {
+            console.error('Error deleting employee:', err);
+            setPopup({ show: true, message: 'Failed to delete employee. Please try again.', type: 'error' });
+        } finally {
+            setDeleteConfirmation({ show: false, employee: null });
+            setFlippedCard(null); // Unflip the card after deletion
+        }
     };
 
     // Updated useEffect to use pagination state
@@ -238,9 +293,12 @@ function EmployeeApp() {
 
     const filteredEmployees = employeeData
         ? employeeData.filter((employee) => {
+            const lowercasedSearchTerm = searchTerm.toLowerCase();
             const matchesSearch =
-                (employee.displayName && employee.displayName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                (employee.workEmail && employee.workEmail.toLowerCase().includes(searchTerm.toLowerCase()));
+                (employee.displayName && employee.displayName.toLowerCase().includes(lowercasedSearchTerm)) ||
+                (employee.workEmail && employee.workEmail.toLowerCase().includes(lowercasedSearchTerm)) ||
+                (employee.employeeId && employee.employeeId.toLowerCase().includes(lowercasedSearchTerm));
+            
             const matchesFilters = Object.entries(selectedFilters).every(
                 ([filterName, value]) => {
                     if (!value || value.startsWith("All")) return true;
@@ -309,7 +367,7 @@ function EmployeeApp() {
         }
         try {
             await publicinfoApi.post('/employee', newEmployee);
-            alert('Employee created successfully!');
+            setPopup({ show: true, message: 'Employee created successfully!', type: 'success' });
             setIsFormOpen(false);
             // Optionally, refresh the employee list
             const response = await publicinfoApi.get(
@@ -331,6 +389,7 @@ function EmployeeApp() {
             console.error('Error creating employee:', error);
             const errorMessage = error.response?.data?.message || 'Failed to create employee. Please check the provided data.';
             setErrors({ general: errorMessage });
+            setPopup({ show: true, message: errorMessage, type: 'error' });
         } finally {
             setIsUpdating(false);
         }
@@ -611,7 +670,7 @@ function EmployeeApp() {
                                     ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
                                     : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
                                     }`}
-                                placeholder="Search by name or email..."
+                                placeholder="Search by Name, Email, or Employee ID..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -911,6 +970,20 @@ function EmployeeApp() {
                                                                     <IoPeopleOutline className="w-4 h-4" />
                                                                     <span className="font-medium">View Teams</span>
                                                                 </button>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteClick(employee);
+                                                                    }}
+                                                                    className={`w-full flex items-center space-x-2 px-3 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 text-sm ${
+                                                                        theme === 'dark'
+                                                                            ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg'
+                                                                            : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg'
+                                                                        }`}
+                                                                >
+                                                                    <IoTrashOutline className="w-4 h-4" />
+                                                                    <span className="font-medium">Delete Employee</span>
+                                                                </button>
                                                             </>
                                                         )}
                                                     </div>
@@ -1184,6 +1257,52 @@ function EmployeeApp() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {popup.show && (
+                <Modal
+                    onClose={() => setPopup({ show: false, message: '', type: '' })}
+                    title={popup.type === 'success' ? 'Success' : 'Error'}
+                    type={popup.type}
+                    theme={theme}
+                >
+                    <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setPopup({ show: false, message: '', type: '' })}
+                            className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg transition-colors`}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </Modal>
+            )}
+            
+            {deleteConfirmation.show && (
+                <Modal
+                    onClose={() => setDeleteConfirmation({ show: false, employee: null })}
+                    title="Confirm Deletion"
+                    type="confirm"
+                    theme={theme}
+                >
+                    <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Are you sure you want to delete employee "{deleteConfirmation.employee?.displayName}"? This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setDeleteConfirmation({ show: false, employee: null })}
+                            className={`px-6 py-2 rounded-lg font-semibold transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            className="px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </Modal>
+            )}
 
             {/* CSS FOR 3D FLIP EFFECT */}
             <style jsx>{`

@@ -4,6 +4,36 @@ import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
 import { useParams, useLocation } from "react-router-dom";
 
+// --- Reusable Modal Component ---
+const Modal = ({ children, onClose, title, type, theme }) => {
+    let titleClass = "";
+    let icon = null;
+
+    if (type === "success") {
+        titleClass = "text-green-600";
+        icon = <IoCheckmarkCircle className="h-6 w-6 text-green-500" />;
+    } else if (type === "error") {
+        titleClass = "text-red-600";
+        icon = <IoWarning className="h-6 w-6 text-red-500" />;
+    } else if (type === "confirm") {
+        titleClass = "text-yellow-600";
+        icon = <IoWarning className="h-6 w-6 text-yellow-500" />;
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[250]">
+            <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {icon && <span className="mr-3">{icon}</span>}
+                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+
 const identityFields = {
     aadhaar: [
         { label: "Aadhaar Number", name: "aadhaarNumber", type: "text", required: true, pattern: "^[2-9]{1}[0-9]{11}$", message: "Invalid Aadhaar number format" },
@@ -133,6 +163,11 @@ const Document = () => {
     const [searchFilter, setSearchFilter] = useState('');
     const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
     const [isUpdating, setIsUpdating] = useState(false);
+    
+    // State for popups
+    const [popup, setPopup] = useState({ show: false, message: '', type: '' });
+    const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
+
 
     const searchParams = new URLSearchParams(location.search);
     const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
@@ -342,7 +377,7 @@ const Document = () => {
 
     const openEditSection = (subSection) => {
         if (isReadOnly) {
-            alert("You can only view this employee's documents. Editing is not allowed.");
+            setPopup({ show: true, message: "You can only view this employee's documents. Editing is not allowed.", type: 'error' });
             return;
         }
         setErrors({});
@@ -447,53 +482,51 @@ const Document = () => {
                 setCompletionStats({ completed, total: 5 });
                 return newData;
             });
+            setPopup({ show: true, message: 'Document saved successfully!', type: 'success' });
 
         } catch (error) {
             console.error(`Update for ${subSection} failed:`, error);
-            if (error.response) {
-                const { status, data } = error.response;
-                if (status === 400) {
-                    if (data && typeof data === 'object' && !data.timestamp) {
-                        setErrors(data);
-                    } else {
-                        const message = (data && data.message) ? data.message : "Validation failed. Please check your input.";
-                        setErrors({ general: message });
-                    }
-                } else {
-                    setErrors({ general: "An unexpected error occurred. Please try again." });
-                }
+            const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please try again.';
+            setPopup({ show: true, message: errorMessage, type: 'error' });
+            if (error.response && error.response.status === 400 && typeof error.response.data === 'object' && !error.response.data.timestamp) {
+                setErrors(error.response.data);
             } else {
-                setErrors({ general: "Network error. Please check your internet connection." });
+                setErrors({ general: errorMessage });
             }
         } finally {
             setIsUpdating(false);
         }
     };
 
-    const handleDelete = async (subSectionKey) => {
-        const docTitle = documentConfig[subSectionKey].title;
-        if (!window.confirm(`Are you sure you want to delete the ${docTitle} for employee ${documentEmployeeId}? This action cannot be undone.`)) {
-            return;
-        }
+    const handleDelete = (subSectionKey) => {
+        setDeleteConfirmation({ show: true, sectionKey: subSectionKey });
+    };
+
+    const confirmDelete = async () => {
+        const { sectionKey } = deleteConfirmation;
+        const docTitle = documentConfig[sectionKey].title;
+        
         try {
-            let urlKey = subSectionKey;
-            if (subSectionKey === 'drivingLicense') {
+            let urlKey = sectionKey;
+            if (sectionKey === 'drivingLicense') {
                 urlKey = 'driving';
             }
             const url = `employee/${documentEmployeeId}/${urlKey}`;
             
             await publicinfoApi.delete(url);
 
-            alert(`${docTitle} deleted successfully.`);
+            setPopup({ show: true, message: `${docTitle} deleted successfully.`, type: 'success' });
             setIdentityData(prev => {
-                const updatedData = { ...prev, [subSectionKey]: null };
+                const updatedData = { ...prev, [sectionKey]: null };
                 const completed = Object.values(updatedData).filter(Boolean).length;
                 setCompletionStats({ completed, total: 5 });
                 return updatedData;
             });
         } catch (err) {
             console.error(`Failed to delete ${docTitle}:`, err);
-            alert(`Error deleting ${docTitle}. You may not have the required permissions.`);
+            setPopup({ show: true, message: `Error deleting ${docTitle}. You may not have the required permissions.`, type: 'error' });
+        } finally {
+            setDeleteConfirmation({ show: false, sectionKey: null });
         }
     };
 
@@ -1121,6 +1154,52 @@ const Document = () => {
                     </div>
 
                     {renderEditModal()}
+
+                    {popup.show && (
+                        <Modal
+                            onClose={() => setPopup({ show: false, message: '', type: '' })}
+                            title={popup.type === 'success' ? 'Success' : 'Error'}
+                            type={popup.type}
+                            theme={theme}
+                        >
+                            <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => setPopup({ show: false, message: '', type: '' })}
+                                    className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg transition-colors`}
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {deleteConfirmation.show && (
+                        <Modal
+                            onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+                            title="Confirm Deletion"
+                            type="confirm"
+                            theme={theme}
+                        >
+                            <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Are you sure you want to delete the {documentConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+                                    className={`px-6 py-2 rounded-lg font-semibold transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </Modal>
+                    )}
                 </div>
             )}
             
