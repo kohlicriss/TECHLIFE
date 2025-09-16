@@ -15,17 +15,17 @@ import {
   UserCircle,
   BadgePlus,
   TicketCheck,
-  ToolCase,
+  UserRoundCog, // <<-- కొత్తగా జోడించిన ఐకాన్
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { userData, setUserData, theme, setTheme } = useContext(Context);
+  const { userData, setUserData, theme } = useContext(Context);
   const empId = userData?.employeeId;
+  const userRole = userData?.roles?.[0]?.toUpperCase(); // <<-- యూజర్ రోల్ పొందడం
 
-  // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
       await fetch("https://hrms.anasolConsultancyservices.com/api/auth/logout", {
@@ -35,7 +35,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     } catch (error) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
-      // ✅ Remove only login-related keys, NOT theme
       const keysToRemove = [
         "accessToken", 
         "emppayload", 
@@ -43,15 +42,9 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         "logedemprole",
         "loggedInUserImage"
       ];
-      
-      // Remove specific keys only
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
       });
-
-      // ✅ DO NOT use localStorage.clear() - it removes theme too!
-      // localStorage.clear(); // ❌ This was the problem
-
       setUserData(null);
       if (onLogout) {
         onLogout();
@@ -70,6 +63,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
   ];
+
+  if (userRole === 'ADMIN') {
+    navItems.push({
+      name: "Permissions",
+      icon: <UserRoundCog size={18} />,
+      path: empId ? `/permissions/${empId}` : "/permissions"
+    });
+  }
 
   return (
     <>
