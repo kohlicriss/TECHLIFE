@@ -822,7 +822,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                     whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
-                                                    <p className={`text-sm  font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-300'}`}>Gross Time</p>
+                                                    <p className={`text-sm  font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Gross Time</p>
                                                     <p className={`text-xl font-semibold ${theme === 'dark'? 'text-white': 'text-purple-700 '}`}>{grossHoursFormatted}</p>
                                                 </motion.div>
                                                 {/* Effective Time Card */}

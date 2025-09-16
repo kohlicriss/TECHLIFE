@@ -177,7 +177,7 @@ const LeaveTypeCard = ({
             transition={{ duration: 0.5, ease: "easeOut" }}
             whileHover={{ scale: 1.05 }}
         >
-            <h1 className="text-xl font-bold mb-4 text-center text-gray-800">
+            <h1 className={`text-xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-yellow-100 to-yellow-400 bg-clip-text text-transparent border-gray-100':'text-gray-700'}`}>
                 {title}
             </h1>
             <Box
@@ -209,14 +209,14 @@ const LeaveTypeCard = ({
                             y="50%"
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            className={`text-lg font-semibold text-gray-700 ${theme==='dark' ? 'text-white':'text-gray-700'}`}
+                            className={`text-lg font-semibold ${theme==='dark' ? 'text-gray-200':'text-gray-700'}`}
                         >
                             {type.split(" ")[0]}
                         </text>
                         <Tooltip />
                     </PieChart>
                 </ResponsiveContainer>
-                <div className={`text-center mt-4 space-y-2 text-sm text-gray-700`}>
+                <div className={`text-center mt-4 space-y-2 text-sm ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                     <div>
                         <strong>Consumed:</strong>{" "}
                         <span className="font-semibold text-sm text-red-600">
@@ -297,9 +297,9 @@ const LeaveType = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
+             <h1 className={`text-2xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent border-gray-100':'text-gray-700 border-gray-200'} border-b pb-4`}>
                 Leave Type Breakdown
-            </h2>
+            </h1>
             <Box display="flex" flexDirection={isMobile ? "column" : "row"} justifyContent="center" alignItems="center" height="100%" gap={2} p={1}>
                 {isLoading ? (
                     <div className="text-gray-500 text-center w-full">Loading...</div>
@@ -384,20 +384,21 @@ const WeeklyPattern = () => {
 
     return (
         <motion.div
-            className={` shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
+            className={` shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
-            <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">
+            <h1 className={`text-2xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent border-gray-100':'text-gray-700 border-gray-200'} border-b pb-4`}>
                 Weekly Leave Pattern
             </h1>
             <div className="mb-4 text-center">
-                <label className="mr-2 font-semibold text-gray-700">Day:</label>
+                <label className={`mr-2 font-semibold  ${theme==='dark' ? 'text-white':'text-gray-700'}`}>Select
+                    Day:</label>
                 <select
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                    className={`p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'text-white':' text-gray-800 '}`}
                 >
                     {dayOptions.map((day) => (
                         <option key={day} value={day}>
@@ -516,7 +517,7 @@ const handleCloseModal = () => {
             </h2>
             <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="relative">
-                    <label className="text-base font-semibold mr-2 text-gray-700">
+                    <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         Leave Type:
                     </label>
                     <select
@@ -532,7 +533,7 @@ const handleCloseModal = () => {
                     </select>
                 </div>
                 <div>
-                    <label className="text-base font-semibold mr-2 text-gray-700">
+                    <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         Status:
                     </label>
                     <select
@@ -548,7 +549,7 @@ const handleCloseModal = () => {
                     </select>
                 </div>
                 <div className="relative">
-                    <label className={`text-base font-semibold mr-2 text-gray-700`}>
+                     <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         Sort by:
                     </label>
                     <select
@@ -591,35 +592,35 @@ const handleCloseModal = () => {
                                         exit={{ opacity: 0, y: -20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>  {row.Leave_type}</td>
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Leave_On}</td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {row.Leave_type}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}> {row.Leave_On}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500':''}`}>
                                             <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "Approve" ? "bg-green-500" : row.status === "Reject" ? "bg-red-500" : "bg-blue-500"}`}> {row.status}</span>
                                         </td>
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Request_By || "-"}</td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Granted_By || "-"}</td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme==='dark' ? ' bg-gray-500 text-gray-200 ':'text-gray-900'}`}> {row.Request_By || "-"}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme==='dark' ?  ' bg-gray-500 text-gray-200':'text-gray-900'}`}> {row.Granted_By || "-"}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ?    'bg-gray-500 text-gray-200 ':''}`}>
                                             <button
                                                  onClick={() => handleDetailsClick(row)}
                                                  className="text-indigo-600 hover:text-indigo-800 text-lg"
                                                  title="View Details"
                                                >
-                                                <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-4 md:h-4 transition" />
+                                                <FaFileAlt className={` ${theme==='dark'?'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition `} />
                                             </button>
                                         </td>
                                         <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             {row.Action_Date}
                                         </td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             {row.Rejection_Reason || "-"}
                                         </td>
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             <a
                                                 href={row.Action}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="text-gray-600 hover:text-gray-800 text-lg"
+                                                className={` ${theme==='dark'?'text-gray-200':'text-gray-600'} hover:text-gray-800 text-lg`}
                                             >
                                                 ⋯
                                             </a>
@@ -632,7 +633,7 @@ const handleCloseModal = () => {
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <td colSpan="12" className={`text-center py-4 text-gray-500 ${theme==='dark' ? ' bg-gray-300 text-white':''} italic`}>
+                                    <td colSpan="12" className={`text-center py-4 text-gray-500 ${theme==='dark' ? ' bg-gray-500 text-white':''} italic`}>
                                         {isLoading ? "Loading..." : "No matching records found."}
                                     </td>
                                 </motion.tr>
@@ -680,7 +681,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
                }, [userData]);
     return (
         <motion.div
-            className={`flex justify-between items-center p-6 bg-purple-100 via-pink-100 rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gradient-to-r from-gray-100 via-gray-400 to-gray-400 ' : 'bg-purple-100 via-pink-100 '}`}
+            className={`flex justify-between items-center p-6  rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gray-600 ' : 'bg-purple-100 via-pink-100 '}`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -692,26 +693,26 @@ const UserGreeting = ({ handleRequestLeave }) => {
                     transition={{ type: "spring", stiffness: 300, damping: 10 }}
                 >
                    {loggedInUserProfile.image ? (
-                                                            <img
-                                                              src={loggedInUserProfile.image}
-                                                              alt="Profile"
-                                                              className="w-full h-full object-cover"
-                                                            />
-                                                          ) : (
-                                                            <span
-                                                              className={`text-sm font-bold ${
-                                                                theme === "dark" ? "text-white" : "text-gray-600"
-                                                              }`}
-                                                            >
-                                                              {loggedInUserProfile.initials}
-                                                            </span>
-                                                          )}
+                        <img
+                          src={loggedInUserProfile.image}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span
+                          className={`text-sm font-bold ${
+                            theme === "dark" ? "text-white" : "text-gray-600"
+                          }`}
+                        >
+                          {loggedInUserProfile.initials}
+                        </span>
+                      )}
                 </motion.div>
                 <div>
-                    <h2 className="text-2xl font-bold flex items-center text-gray-900">
+                    <h2 className={`text-2xl font-bold flex items-center ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         Welcome, {userData?.fullName}
                     </h2>
-                    <p className="text-gray-500 mt-1">
+                    <p className={` mt-1 text-sm ${theme==='dark' ? 'text-white':'text-gray-600'}`}>
                         You have <span className="font-bold text-green-600">10</span> Approved &{" "}
                         <span className="font-bold text-red-600">2</span> Rejected leaves.
                     </p>
@@ -884,7 +885,7 @@ const LeavesDashboard = () => {
                 {showSidebar && sidebarOpen && (
                     <motion.div
                         key="sidebar"
-                        className="fixed inset-y-0 right-0 w-60 bg-white shadow-xl z-40 p-4 flex flex-col"
+                        className={`fixed inset-y-0 right-0 w-60 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
                         initial={{ x: '100%' }}
                         animate={{ x: '0%' }}
                         exit={{ x: '100%' }}
@@ -898,7 +899,7 @@ const LeavesDashboard = () => {
                             <ChevronRight />
                         </button>
                         <motion.h3
-                            className="text-lg font-bold text-gray-800 cursor-pointer mb-4 hover:bg-gray-100 p-2 rounded-md"
+                            className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-gray-100'} cursor-pointer mb-4  p-2 rounded-md`}
                             onClick={handleShowReports}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
