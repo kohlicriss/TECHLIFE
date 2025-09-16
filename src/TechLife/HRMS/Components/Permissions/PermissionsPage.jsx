@@ -52,7 +52,7 @@ const PermissionsPage = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         console.log("Saving Permissions:", permissions);
-        alert("Permissions saved! (Console లో చూడండి)");
+        alert("Permissions saved! ( seee in Console )");
     };
 
     const roles = ['employee', 'admin', 'hr', 'manager'];
