@@ -246,34 +246,34 @@ const LeaveType = () => {
     const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
     const { empID } = useParams();
     const { theme } = useContext(Context);
-    //const [initialLeaveTypeData, setInitialLeaveTypeData] = useState([]);
-    //const [isLoading, setIsLoading] = useState(true);
+    const [initialLeaveTypeData, setInitialLeaveTypeData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-   // useEffect(() => {
-   //     axios
-   //         .get(
-   //             `http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`
-   //         )
-   //         .then((response) => {
-   //             const formatted = response.data.map((item) => ({
-   //                 name: item.leaveType,
-   //                 value: item.days,
-   //             }));
-   //             setInitialLeaveTypeData(formatted);
-   //         })
-   //         .catch((error) => {
-   //             console.error("Error fetching personal leave data:", error);
-   //         })
-   //         .finally(() => {
-   //             setIsLoading(false);
-   //         });
-   // }, [empID]);
-   const initialLeaveTypeData = [
-  { employee: "Rajesh", leaveType: "Sick Leave", days: 5 },
-  { employee: "Rajesh", leaveType: "Paid Leave", days: 2 },
-  { employee: "Rajesh", leaveType: "Unpaid Leave", days: 4 },
-  { employee: "Rajesh", leaveType: "Casual Leave", days: 3 },
-];
+    useEffect(() => {
+        axios
+            .get(
+                `http://192.168.0.123:8081/api/attendance/employee/${empID}/personalLeavesData`
+            )
+            .then((response) => {
+                const formatted = response.data.map((item) => ({
+                    name: item.leaveType,
+                    value: item.days,
+                }));
+                setInitialLeaveTypeData(formatted);
+            })
+            .catch((error) => {
+                console.error("Error fetching personal leave data:", error);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [empID]);
+//   const initialLeaveTypeData = [
+//  { employee: "Rajesh", leaveType: "Sick Leave", days: 5 },
+//  { employee: "Rajesh", leaveType: "Paid Leave", days: 2 },
+//  { employee: "Rajesh", leaveType: "Unpaid Leave", days: 4 },
+//  { employee: "Rajesh", leaveType: "Casual Leave", days: 3 },
+//];
     const isMobile = useMediaQuery("(max-width:768px)");
     const renderCenterLabel = () => {
         return (
@@ -301,7 +301,9 @@ const LeaveType = () => {
                 Leave Type Breakdown
             </h2>
             <Box display="flex" flexDirection={isMobile ? "column" : "row"} justifyContent="center" alignItems="center" height="100%" gap={2} p={1}>
-                {filteredData.length > 0 ? (
+                {isLoading ? (
+                    <div className="text-gray-500 text-center w-full">Loading...</div>
+                ) :filteredData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
                             <Pie
@@ -342,36 +344,36 @@ const WeeklyPattern = () => {
     const { empID } = useParams();
     const { theme } = useContext(Context);
     const [selectedDay, setSelectedDay] = useState("All");
-    //const [rawData, setRawData] = useState([]);
-   // const [isLoading, setIsLoading] = useState(true);
-    const rawData = [
-    { Day: "Mon", Rate: 5 },
-    { Day: "Tues", Rate: 10 },
-    { Day: "Wed", Rate: 10 },
-    { Day: "Thu", Rate: 5 },
-    { Day: "Fri", Rate: 5 },
-    { Day: "Sat", Rate: 0 },
-    { Day: "Sun", Rate: 0 },
-  ];
-    //useEffect(() => {
-    //    axios
-    //        .get(
-    //            `http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`
-    //        )
-    //        .then((response) => {
-    //            const formatted = response.data.map((item) => ({
-    //                Day: item.day,
-    //                Rate: item.rate,
-    //            }));
-    //            setRawData(formatted);
-    //        })
-    //        .catch((error) => {
-    //            console.error("Error fetching leaves bar chart data:", error);
-    //        })
-    //        .finally(() => {
-    //            setIsLoading(false);
-    //        });
-    //}, [empID]);
+    const [rawData, setRawData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+  //const rawData = [
+  //  { Day: "Mon", Rate: 5 },
+  //  { Day: "Tues",Rate: 10 },
+  //  { Day: "Wed", Rate: 10 },
+  //  { Day: "Thu", Rate: 5 },
+  //  { Day: "Fri", Rate: 5 },
+  //  { Day: "Sat", Rate: 0 },
+  //  { Day: "Sun", Rate: 0 },
+  //];
+    useEffect(() => {
+        axios
+            .get(
+                `http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`
+            )
+            .then((response) => {
+                const formatted = response.data.map((item) => ({
+                    Day: item.day,
+                    Rate: item.rate,
+                }));
+                setRawData(formatted);
+            })
+            .catch((error) => {
+                console.error("Error fetching leaves bar chart data:", error);
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [empID]);
 
     const isMobile = useMediaQuery("(max-width:768px)");
     const filteredData =
@@ -413,7 +415,9 @@ const WeeklyPattern = () => {
                 gap={5}
                 p={isMobile ? 1 : 2}
             >
-                {filteredData.length > 0 ? (
+                {isLoading ? (
+                    <div className="text-gray-500 text-center w-full">Loading...</div>
+                ) :filteredData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={230}>
                         <BarChart
                             data={filteredData}
@@ -655,6 +659,25 @@ const handleCloseModal = () => {
 // UserGreeting component
 const UserGreeting = ({ handleRequestLeave }) => {
     const { userData,theme } = useContext(Context);
+     const [loggedInUserProfile, setLoggedInUserProfile] = useState({
+            image: null,
+            initials: "  "
+          });
+          useEffect(() => {
+                 const userPayload = JSON.parse(localStorage.getItem("emppayload"));
+                 const userImage = localStorage.getItem("loggedInUserImage");
+             
+                 const initials = (userPayload?.displayName || "  ")
+                   .split(" ")
+                   .map((word) => word[0])
+                   .join("")
+                   .substring(0, 2);
+             
+                 setLoggedInUserProfile({
+                   image: userImage,
+                   initials: initials,
+                 });
+               }, [userData]);
     return (
         <motion.div
             className={`flex justify-between items-center p-6 bg-purple-100 via-pink-100 rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gradient-to-r from-gray-100 via-gray-400 to-gray-400 ' : 'bg-purple-100 via-pink-100 '}`}
@@ -668,11 +691,21 @@ const UserGreeting = ({ handleRequestLeave }) => {
                     whileHover={{ scale: 1.2 }}
                     transition={{ type: "spring", stiffness: 300, damping: 10 }}
                 >
-                    <img
-                        src={userData?.avatar || "https://i.pravatar.cc/100"}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                    />
+                   {loggedInUserProfile.image ? (
+                                                            <img
+                                                              src={loggedInUserProfile.image}
+                                                              alt="Profile"
+                                                              className="w-full h-full object-cover"
+                                                            />
+                                                          ) : (
+                                                            <span
+                                                              className={`text-sm font-bold ${
+                                                                theme === "dark" ? "text-white" : "text-gray-600"
+                                                              }`}
+                                                            >
+                                                              {loggedInUserProfile.initials}
+                                                            </span>
+                                                          )}
                 </motion.div>
                 <div>
                     <h2 className="text-2xl font-bold flex items-center text-gray-900">
@@ -903,8 +936,8 @@ const LeavesDashboard = () => {
                             transition={{ duration: 0.3 }}
                         >
                             <header className="p-3 mb-6 text-left">
-                                <h1 className="text-4xl font-bold text-gray-900 mb-8">
-                                    Leaves Dashboard
+                                <h1 className={`text-4xl font-bold  mb-8 ${theme === 'dark' ? 'bg-gradient-to-br from-green-400 to-green-800 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                                    Leaves 
                                 </h1>
                                 <UserGreeting handleRequestLeave={handleRequestLeave} />
                             </header>

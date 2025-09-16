@@ -635,7 +635,7 @@ function LeavesReports({ onBack, leaveHistoryData,setLeaveHistoryData }) {
     const { theme } = useContext(Context);
     return (
         <motion.div
-            className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-900'}`}
+            className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-stone-100 text-gray-900'}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

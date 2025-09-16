@@ -28,6 +28,7 @@ import { useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
+import { publicinfoApi } from "../../../../axiosInstance";
 
 // --- Constants and Helper Functions ---
 const PIE_COLORS = ["#4F46E5", "#F97316"]; // Tailwind's indigo-600 and orange-500
@@ -415,6 +416,11 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [sortOption, setSortOption] = useState("Recently added");
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+    const [loggedInUserProfile, setLoggedInUserProfile] = useState({
+        image: null,
+        initials: "  "
+      });
+       
     const [rawTableData , setRawTableData] = useState(  [
     { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
     { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
@@ -430,6 +436,22 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const rowsPerPageOptions = [10, 25, 50, 100];
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
 
+    useEffect(() => {
+       const userPayload = JSON.parse(localStorage.getItem("emppayload"));
+       const userImage = localStorage.getItem("loggedInUserImage");
+   
+       const initials = (userPayload?.displayName || "  ")
+         .split(" ")
+         .map((word) => word[0])
+         .join("")
+         .substring(0, 2);
+   
+       setLoggedInUserProfile({
+         image: userImage,
+         initials: initials,
+       });
+     }, [userData]);
+  
     // Timer and Clock Effects
     useEffect(() => {
         let interval;
@@ -551,7 +573,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        {showAttendanceReports ? "Attendance Reports" : "Attendance Dashboard"}
+                        {showAttendanceReports ? "Attendance Reports" : "Attendance"}
                     </motion.h1>
                     <motion.button
                         onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack}
@@ -608,12 +630,24 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                         className={`w-20 h-20 rounded-full overflow-hidden border-4  shadow-lg cursor-pointer ${theme === 'dark'? 'border-gray-600': 'border-white'}`}
                                                         whileHover={{ scale: 1.1 }}
                                                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                                        
                                                     >
-                                                        <img
-                                                            src={userData?.avatar || "https://i.pravatar.cc/100"}
-                                                            alt="Profile"
-                                                            className="w-full h-full object-cover"
-                                                        />
+                                                        {loggedInUserProfile.image ? (
+                                                            <img
+                                                              src={loggedInUserProfile.image}
+                                                              alt="Profile"
+                                                              className="w-full h-full object-cover"
+                                                            />
+                                                          ) : (
+                                                            <span
+                                                              className={`text-sm font-bold ${
+                                                                theme === "dark" ? "text-white" : "text-gray-600"
+                                                              }`}
+                                                            >
+                                                              {loggedInUserProfile.initials}
+                                                            </span>
+                                                          )}
+                                                         
                                                     </motion.div>
                                                     {/* Status indicator */}
                                                     <motion.div
