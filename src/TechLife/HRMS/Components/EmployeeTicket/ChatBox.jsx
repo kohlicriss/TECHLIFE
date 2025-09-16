@@ -109,19 +109,24 @@ const fetchInitialMessages = async () => {
   socketRef.current = ws;
 };
 
-  const sendMessage = async () => {
+const sendMessage = async () => {
   if (!input.trim() || isResolved) return;
 
   const token = localStorage.getItem("accessToken");
 
-  const messagePayload = {
-    ticketId,
-    replyText: input,
-    repliedBy: userRole,
-  };
+const tempMessage = {
+  ticketId,
+  replyText: input,
+  repliedBy: userRole,
+  repliedAt: new Date().toISOString(), // temporary, will be replaced
+  temp: true,
+};
+
+
+  setMessages((prev) => dedupeMessages([...prev, tempMessage]));
 
   try {
-    await fetch(
+    const res = await fetch(
       `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         method: "POST",
@@ -129,11 +134,18 @@ const fetchInitialMessages = async () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(messagePayload),
+        body: JSON.stringify({ ticketId, replyText: input, repliedBy: userRole }),
       }
     );
 
-    console.log("📤 Message sent to backend, waiting for WebSocket...");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const savedMessage = await res.json(); 
+
+  
+    setMessages((prev) =>
+      dedupeMessages([...prev.filter((m) => !m.temp), savedMessage])
+    );
   } catch (err) {
     console.error("❌ Send failed:", err);
   } finally {
@@ -198,13 +210,14 @@ const fetchInitialMessages = async () => {
                 >
                   <p className="whitespace-pre-wrap">{msg.replyText}</p>
                   <div className="text-right text-xs mt-1 opacity-60">
-                    {msg.repliedAt
-                      ? new Date(msg.repliedAt).toLocaleTimeString("en-IN", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })
-                      : ""}
+                   {msg.repliedAt || msg.clientTime
+  ? new Date(msg.repliedAt || msg.clientTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+  : ""}
+
                   </div>
                 </div>
               </div>
