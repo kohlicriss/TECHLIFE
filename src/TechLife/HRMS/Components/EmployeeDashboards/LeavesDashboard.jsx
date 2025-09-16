@@ -171,7 +171,7 @@ const LeaveTypeCard = ({
     const { theme } = useContext(Context);
     return (
         <motion.div
-            className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
+            className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -209,7 +209,7 @@ const LeaveTypeCard = ({
                             y="50%"
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            className="text-lg font-semibold text-gray-700"
+                            className={`text-lg font-semibold text-gray-700 ${theme==='dark' ? 'text-white':'text-gray-700'}`}
                         >
                             {type.split(" ")[0]}
                         </text>
@@ -292,7 +292,7 @@ const LeaveType = () => {
 
     return (
         <motion.div
-            className={` rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
+            className={` rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -330,7 +330,7 @@ const LeaveType = () => {
                         </PieChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className={` text-center w-full ${theme === 'dark' ? 'text-black' : 'text-gray-500'} italic`}>
+                    <div className={` text-center w-full ${theme === 'dark' ? 'text-white' : 'text-gray-500'} italic`}>
                         No leave data available.
                     </div>
                 )}
@@ -435,7 +435,7 @@ const WeeklyPattern = () => {
                         </BarChart>
                     </ResponsiveContainer>
                 
-                  ):(  <div className={` text-center w-full ${theme === 'dark' ? 'text-black' : 'text-gray-500'} italic`}>
+                  ):(  <div className={` text-center w-full ${theme === 'dark' ? 'text-white' : 'text-gray-500'} italic`}>
                         No weekly leave pattern data available.
                     </div>
                   )}
@@ -506,7 +506,7 @@ const handleCloseModal = () => {
 
     return (
         <motion.div
-            className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
+            className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
