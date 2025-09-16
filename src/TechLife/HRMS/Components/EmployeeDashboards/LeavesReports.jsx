@@ -403,7 +403,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
 
     return (
         <motion.div
-                   className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gradient-to-br from-gray-100 to-gray-400' : 'bg-stone-100 text-gray-800'}`}
+                   className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
                    initial={{ opacity: 0, y: 50 }}
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ duration: 0.5, delay: 0.6 }}
@@ -413,7 +413,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                    </h2>
                    <div className="flex flex-wrap items-center gap-4 mb-6">
                        <div className="relative">
-                           <label className="text-base font-semibold mr-2 text-gray-700">
+                           <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                                Leave Type:
                            </label>
                            <select
@@ -429,7 +429,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                            </select>
                        </div>
                        <div>
-                           <label className="text-base font-semibold mr-2 text-gray-700">
+                           <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                                Status:
                            </label>
                            <select
@@ -445,7 +445,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                            </select>
                        </div>
                        <div className="relative">
-                           <label className={`text-base font-semibold mr-2 text-gray-700`}>
+                            <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                                Sort by:
                            </label>
                            <select
@@ -489,34 +489,34 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                                         exit={{ opacity: 0, y: -20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.EmployeeId}</td>
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>  {row.Leave_type}</td>
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Leave_On}</td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}> {row.EmployeeId}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {row.Leave_type}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}> {row.Leave_On}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500':''}`}>
                                             <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "Approve" ? "bg-green-500" : row.status === "Reject" ? "bg-red-500" : "bg-blue-500"}`}> {row.status}</span>
                                         </td>
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Request_By || "-"}</td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}> {row.Granted_By || "-"}</td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-800'}`}> {row.Request_By || "-"}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-800'}`}> {row.Granted_By || "-"}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ? ' bg-gray-500':''}`}>
                                             <button
                                                  onClick={() => handleDetailsClick(row)}
-                                                 className="text-indigo-600 hover:text-indigo-800 text-lg border border-gray-600 px-2 rounded"
+                                                 className="text-indigo-600 hover:text-indigo-800 text-lg  px-2 rounded"
                                                  title="View Details"
                                                >
-                                                <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-4 md:h-4 transition" />
+                                                <FaFileAlt className={` ${theme==='dark'?'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition `} />
                                             </button>
                                         </td>
                                         <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
-                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             {row.Action_Date}
                                         </td>
-                                       <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             {row.Rejection_Reason || "-"}
                                         </td>
-                                         <td className={`px-4 py-3 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? ' bg-gray-300':''}`}>
+                                         <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                            <button
                                              onClick={() => setActionLeave(row)}
-                                             className="text-gray-600 hover:text-gray-800 text-lg"
+                                             className={`${theme==='dark'?'text-gray-200':'text-gray-600'} hover:text-gray-800 text-lg`}
                                              title="Take Action"
                                            >
                                              ⋯

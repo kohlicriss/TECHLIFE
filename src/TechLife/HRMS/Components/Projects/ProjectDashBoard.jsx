@@ -3,7 +3,7 @@ import { CircleUserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip } from 'react-icons/fa';
+import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip, FaUsers } from 'react-icons/fa';
 import axios from 'axios';
 import { Context } from '../HrmsContext';
 import classNames from 'classnames';
@@ -201,14 +201,14 @@ const ProjectCard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Highlights */}
                 <motion.div
-                    className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-sm border border-gray-100"
+                    className={`p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-purple-50 to-purple-100 '}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Highlights</h3>
-                    <ul className="space-y-3 text-gray-700">
+                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}> Highlights</h3>
+                    <ul className={`space-y-3  ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         {currentProject.highlights.map((highlight, index) => (
                             <motion.li
                                 key={index}
@@ -226,14 +226,14 @@ const ProjectCard = () => {
 
                 {/* Characteristics */}
                 <motion.div
-                    className="bg-gradient-to-br from-pink-50 to-pink-100 p-6 rounded-lg shadow-sm border border-gray-100"
+                    className={` p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-pink-50 to-pink-100'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.5, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Characteristics</h3>
-                    <ul className="space-y-3 text-gray-700">
+                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}> Characteristics</h3>
+                    <ul className={`space-y-3 text-gray-700 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         {currentProject.characteristics.map((char, index) => (
                             <motion.li
                                 key={index}
@@ -251,13 +251,13 @@ const ProjectCard = () => {
 
                 {/* Team */}
                 <motion.div
-                    className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-lg shadow-sm border border-gray-100"
+                    className={` p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-indigo-100'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Team</h3>
+                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>Team</h3>
                     <div className="space-y-4">
                         {currentProject.team.map((teamMember, index) => (
                             <motion.div
@@ -267,7 +267,7 @@ const ProjectCard = () => {
                                 animate={{ x: 0, opacity: 1 }}
                                 transition={{ delay: 0.7 + index * 0.1 }}
                             >
-                                <p className="font-medium text-gray-800 text-base sm:text-lg mb-2">
+                                <p className={`font-medium  text-base sm:text-lg mb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>
                                     <div className="flex flex-wrap gap-2">
                                         {teamMember.role}: {teamMember.avatars}
                                     </div>
@@ -425,41 +425,41 @@ const MyTeam = () => {
                 )}
             </AnimatePresence>
             <div className="overflow-x-auto">
-                <table className={`min-w-full border-collapse border-orange-200  ${theme==='dark' ? 'bg-gray-300':''}`}>
-                    <thead>
-                        <tr className="bg-gradient-to-br from-blue-100 to-blue-400 text-black text-left  w-full text-sm md:text-base">
-                            <th className="py-2 px-4">Profile</th>
-                            <th className="py-2 px-4">Emp ID</th>
-                            <th className="py-2 px-4">Name</th>
-                            <th className="py-2 px-4">Date</th>
-                            <th className="py-2 px-4">Role</th>
-                            <th className="py-2 px-4">Status</th>
-                            {showSidebar && <th className="py-2 px-4">Edit</th>}
-                            {showSidebar && <th className="py-2 px-4">Delete</th>}
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className={`w-full ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-blue-100 to-blue-400 text-black'}`}>
+                        <tr> 
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}><FaUsers className={`w-6 h-6 ${theme==='dark'?'text-white':'text-gray-800'}text-white`} /></th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Emp ID</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Name</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Date</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Role</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
+                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
+                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
                         </tr>
                     </thead>
-                    <tbody>
-                        <AnimatePresence>
+                    <tbody  className="bg-white divide-y divide-gray-500">
+                        <AnimatePresence mode ="wait">
                             {employeeData.map((emp, index) => {
                                 const [maybeImage, ...nameParts] = emp.name.split(" ");
                                 const hasImage = maybeImage.startsWith("http");
                                 const imageUrl = hasImage ? maybeImage : "";
                                 const name = hasImage ? nameParts.join(" ") : emp.name;
                                 const status = emp.login_time
-                                    ? { label: "Available", color: "text-green-600" }
-                                    : { label: "Absent", color: "text-red-600" };
+                                    ? { label: "Available", color: (`${theme==='dark'?'text-green-300':'text-green-600'}`) }
+                                    : { label: "Absent", color: (`${theme==='dark'?'text-red-300':'text-red-600'}`) };
                                 return (
                                     <motion.tr
                                         key={emp.employee_id}
-                                        className="border-t border-gray-100 hover:bg-gray-50 text-sm"
+                                        className=" border-t border-gray-200 hover:bg-gray-50 "
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className={`py-2 px-4 flex items-center ${theme==='dark' ? 'bg-gray-300 ':''}`}>
+                                        <td className={`px-3 py-2 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             <motion.div
-                                                className={`cursor-pointer hover:opacity-80 transition-opacity  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}
+                                                className={`cursor-pointer hover:opacity-80 transition-opacity  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
                                                 onClick={() => {/* handle profile click if needed */}}
                                                 title={`View ${name}'s Performance`}
                                                 whileHover={{ scale: 1.1 }}
@@ -468,29 +468,29 @@ const MyTeam = () => {
                                                     <img
                                                         src={imageUrl}
                                                         alt={name}
-                                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}
+                                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
                                                     />
                                                 ) : (
-                                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full  flex items-center justify-center text-gray-500 font-bold  ${theme==='dark' ? 'bg-gray-300':'bg-gray-200'}`}>
+                                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full  flex items-center justify-center text-gray-500 font-bold  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}>
                                                         {name.charAt(0)}
                                                     </div>
                                                 )}
                                             </motion.div>
                                         </td>
-                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.employee_id}</td>
-                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{name}</td>
-                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.date}</td>
-                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 text-text-gray-800':''}`}>{emp.role}</td>
-                                        <td className={`py-2 px-4  ${status.color} ${theme==='dark' ? 'bg-gray-300 ':''} `}>{status.label}</td>
-                                       <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 ':''}`}>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{emp.employee_id}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{name}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm  ${theme==='dark' ?  'bg-gray-500 text-gray-200':' text-gray-900'}`}>{emp.date}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{emp.role}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm  ${status.color} ${theme==='dark' ? 'bg-gray-500 ':''} `}>{status.label}</td>
+                                       <td className={`px-4  py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             
                                             {showSidebar && (
-                                                <button className="text-indigo-600 hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
+                                                <button className={ `${theme==='dark'?'text-indigo-200':'text-indigo-600'}  hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}`}><FiEdit className='w-5 h-5'/></button>
                                             )}
                                         </td>
-                                        <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 ':''}`}>
+                                        <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             {showSidebar && (
-                                                <button className="text-red-600 hover:text-red-800 font-bold" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
+                                                <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-bold" onClick={() => handleDelete(index)}`}><FiDelete className='w-5 h-5'/></button>
                                             )}
                                         </td>
                                     </motion.tr>
@@ -619,9 +619,9 @@ function ProjectStatus() {
             
     {/* Table container with responsive overflow */}
     <div className="overflow-x-auto">
-        <table className={`min-w-full  border-collapse ${theme==='dark' ? 'bg-gray-300':''}`}>
+        <table className={`min-w-full  divide-y divide-gray-200  `}>
             <thead>
-                <tr className="text-left bg-gradient-to-br from-green-100 to-green-400 w-full text-sm md:text-base">
+                <tr className={`text-left  w-full text-sm  uppercase tracking-wider ${theme==='dark'?'bg-gray-500 text-white  ':'bg-gradient-to-br from-green-100 to-green-400 '}`}>
                     <th className="py-2 px-4 font-semibold">Project ID</th>
                     <th className="py-2 px-4 font-semibold">Project Name</th>
                     <th className="py-2 px-4 font-semibold">Duration</th>
@@ -630,8 +630,8 @@ function ProjectStatus() {
                     {showSidebar && <th className="py-2 px-4 ">Delete</th>}
                 </tr>
             </thead>
-            <tbody>
-                <AnimatePresence>
+            <tbody className="bg-white divide-y divide-gray-500">
+                <AnimatePresence mode="wait">
                     {teamData.map((project, index) => (
                         <motion.tr
                             key={project.Project_id}
@@ -641,10 +641,10 @@ function ProjectStatus() {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                         >
-                            <td className={`py-2 px-4 text-sm ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{project.Project_id}</td>
-                           <td className={`py-2 px-4 text-sm ${theme==='dark' ? 'bg-gray-300  text-gray-800':''}`}>{project.Project_name}</td>
-                            <td className={`py-2 px-4 text-sm ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{project.Duration}</td>
-                            <td className={`py-2 px-4 w-32 flex items-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
+                            <td className={`py-2 px-4  whitespace-nowrap text-sm ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{project.Project_id}</td>
+                           <td className={`py-2 px-4   whitespace-nowrap text-sm ${theme==='dark' ?  'bg-gray-500  text-gray-200':''}`}>{project.Project_name}</td>
+                            <td className={`py-2 px-4 whitespace-nowrap  text-sm ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{project.Duration}</td>
+                            <td className={`py-2 px-4  whitespace-nowrap  w-32 flex items-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                 <ResponsiveContainer width="75%" height={25}>
                                     <BarChart
                                         layout="vertical"
@@ -659,16 +659,16 @@ function ProjectStatus() {
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
-                                <span className="text-xs text-gray-600 ml-2">{project.Status}%</span>
+                                <span className={`text-xs  ml-2 ${theme==='dark' ? 'text-gray-200':'text-gray-600'}`}>{project.Status}%</span>
                             </td>
                             {showSidebar && (
-                                <td className={`py-2 px-4 ${theme==='dark' ? 'bg-gray-300 ':''}`}>
-                                    <button className="text-indigo-600 hover:text-indigo-800 font-small" onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
+                                <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
+                                    <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small" onClick={() => handleEdit(index)}`}><FiEdit className='w-5 h-5'/></button>
                                 </td>
                             )}
                             {showSidebar && (
-                                <td className={`py-2 px-4  ${theme==='dark' ? 'bg-gray-300 ':''}`}>
-                                    <button className="text-red-600 hover:text-red-800 font-small" onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
+                                <td className={`py-2 px-4  whitespace-nowrap  ${theme==='dark' ? 'bg-gray-500 ':''}`}>
+                                    <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small" onClick={() => handleDelete(index)}`}><FiDelete className='w-5 h-5'/></button>
                                 </td>
                             )}
                         </motion.tr>
@@ -688,137 +688,16 @@ function Project() {
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
 
     const [projectTableData, setProjectTableData] = useState([
-        {
-            project_id: "P_01",
-            project_name: "HRMS Project",
-            status: "Ongoing",
-            start_date: "2025-05-01",
-            end_date: "2025-09-30",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "High",
-            Open_task: 30,
-            Closed_task: 25,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_02",
-            project_name: "Employee Self-Service App",
-            status: "Upcoming",
-            start_date: "2025-10-15",
-            end_date: "2025-12-15",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "Medium",
-            Open_task: 20,
-            Closed_task: 10,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_03",
-            project_name: "Payroll Automation",
-            status: "Completed",
-            start_date: "2024-10-01",
-            end_date: "2025-02-15",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "High",
-            Open_task: 12,
-            Closed_task: 10,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_04",
-            project_name: "Attendance System Upgrade",
-            status: "Ongoing",
-            start_date: "2025-05-10",
-            end_date: "2025-08-10",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "Low",
-            Open_task: 40,
-            Closed_task: 25,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_05",
-            project_name: "AI-Based Recruitment Tool",
-            status: "Upcoming",
-            start_date: "2025-12-01",
-            end_date: "2026-02-28",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "Medium",
-            Open_task: 20,
-            Closed_task: 15,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P06",
-            project_name: "Internal Chatbot System",
-            status: "Completed",
-            start_date: "2024-05-01",
-            end_date: "2024-11-30",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "High",
-            Open_task: 30,
-            Closed_task: 25,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        }
-    ]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ], Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
     const getPriorityColor = (priority) => {
-        switch (priority) {
-            case "High":
-                return "bg-green-100 text-green-800";
-            case "Medium":
-                return "bg-orange-100 text-orange-800";
-            case "Low":
-                return "bg-red-100 text-red-800";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
-
+        switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
     const getStatusColor = (status) => {
-        switch (status) {
-            case "In Progress":
-                return "bg-green-100 text-green-800";
-            case "Ongoing":
-                return "bg-blue-100 text-blue-800";
-            case "Upcoming":
-                return "bg-yellow-100 text-yellow-800";
-            case "Completed":
-                return "bg-purple-100 text-purple-800";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
-
+        switch (status) {case "In Progress":    return "bg-green-100 text-green-800";case "Ongoing": return "bg-blue-100 text-blue-800";case "Upcoming": return "bg-yellow-100 text-yellow-800";case "Completed": return "bg-purple-100 text-purple-800";default: return "bg-gray-100 text-gray-800";} };
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newProject, setNewProject] = useState({
         project_id: "",
@@ -1267,7 +1146,7 @@ const handleUpdateProject = (e) => {
     )}
 </AnimatePresence>
             <table className="min-w-full bg-white">
-                <thead className="bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 text-left">
+                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800'}`}>
                     <tr>
                         <th className="p-3 text-sm md:text-base">Project</th>
                         <th className="p-3 text-sm md:text-base">Team</th>
@@ -1281,7 +1160,7 @@ const handleUpdateProject = (e) => {
                         {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody  className="bg-white divide-y divide-gray-500">
                     <AnimatePresence>
                         {projectTableData.map((proj, index) => (
                             <motion.tr
@@ -1292,49 +1171,39 @@ const handleUpdateProject = (e) => {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3, delay: index * 0.05 }}
                             >
-                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}> {proj.project_name}</td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
+                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <div className="flex -space-x-2 ">
                                         {proj.Employee_team.map((img, index) => (
-                                            <motion.img
-                                                key={index}
-                                                src={img}
-                                                alt="team member"
-                                                className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm"
-                                                whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
-                                            />
+                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
                                         ))}
                                     </div>
                                 </td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
-                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)} `}>
-                                        {proj.Priority}
-                                    </span>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)} `}>{proj.Priority}</span>
                                 </td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.start_date}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.end_date}</td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
-                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)} `}>
-                                        {proj.status}
-                                    </span>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)} `}>{proj.status}</span>
                                 </td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Open_task}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>{proj.Closed_task}</td>          
-                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-4 md:h-4 transition" /> </motion.div></a></td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
+                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
                             {showSidebar && (
-                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-300 text-gray-800':''}`}>
+                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}
                                         onClick={() => handleEditProject(index)}
                                     >
-                                        <FiEdit className="text-indigo-600 text-lg w-3 h-3 md:w-4 md:h-4 transition" />
+                                        <FiEdit className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
                                     </motion.button>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}
                                         onClick={() => handleDeleteProject(index)}
                                         className="ml-2"
                                     >
-                                        <FaTrashAlt className="text-red-500 text-lg w-3 h-3 md:w-4 md:h-4 transition" />
+                                        <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
                                     </motion.button>
                                 </td>
                             )}
@@ -1358,7 +1227,7 @@ const ProjectDashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                Project Dashboard
+                Projects
             </motion.h1>
             {/* Project Profile Section */}
             <div className="mb-8">
