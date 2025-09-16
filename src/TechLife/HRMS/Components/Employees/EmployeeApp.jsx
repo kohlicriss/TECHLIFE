@@ -94,42 +94,12 @@ function EmployeeApp() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [newEmployee, setNewEmployee] = useState({
-        employeeId: "",
         firstName: "",
         middleName: "",
         lastName: "",
         displayName: "",
         maritalStatus: "",
-        bloodGroup: "",
-        physicallyHandicapped: "",
-        nationality: "",
-        gender: "",
-        dateOfBirth: "",
-        employeeImage: "",
-        workEmail: "",
-        personalEmail: "",
-        mobileNumber: "",
-        workNumber: "",
-        street: "",
-        city: "",
-        state: "",
-        zip: "",
-        country: "",
-        district: "",
-        dateOfJoining: "",
-        dateOfLeaving: "",
-        jobTitlePrimary: "",
-        jobTitleSecondary: "",
-        inProbation: "",
-        probationStartDate: "",
-        probationEndDate: "",
-        probationPolicy: "",
-        workingType: "",
-        timeType: "",
-        contractStatus: "",
-        contractStartDate: "",
-        location: "",
-        Skills: [],
+        employeeId: "",
         departmentId: "",
     });
     const [errors, setErrors] = useState({});
@@ -238,7 +208,7 @@ function EmployeeApp() {
     const confirmDelete = async () => {
         const { employee } = deleteConfirmation;
         if (!employee) return;
-    
+
         try {
             await publicinfoApi.delete(`/employee/${employee.employeeId}`);
             setEmployeeData(prevData => prevData.filter(emp => emp.employeeId !== employee.employeeId));
@@ -298,7 +268,7 @@ function EmployeeApp() {
                 (employee.displayName && employee.displayName.toLowerCase().includes(lowercasedSearchTerm)) ||
                 (employee.workEmail && employee.workEmail.toLowerCase().includes(lowercasedSearchTerm)) ||
                 (employee.employeeId && employee.employeeId.toLowerCase().includes(lowercasedSearchTerm));
-            
+
             const matchesFilters = Object.entries(selectedFilters).every(
                 ([filterName, value]) => {
                     if (!value || value.startsWith("All")) return true;
@@ -350,9 +320,6 @@ function EmployeeApp() {
         if (!data.firstName) {
             errors.firstName = "First name is required.";
         }
-        if (data.workEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.workEmail)) {
-            errors.workEmail = "Invalid work email format.";
-        }
         return errors;
     };
 
@@ -375,15 +342,13 @@ function EmployeeApp() {
             );
             setEmployeeData(response.data);
             setNewEmployee({
-                employeeId: "", firstName: "", middleName: "", lastName: "",
-                displayName: "", maritalStatus: "", bloodGroup: "", physicallyHandicapped: "",
-                nationality: "", gender: "", dateOfBirth: "", employeeImage: "",
-                workEmail: "", personalEmail: "", mobileNumber: "", workNumber: "",
-                street: "", city: "", state: "", zip: "", country: "", district: "",
-                dateOfJoining: "", dateOfLeaving: "", jobTitlePrimary: "", jobTitleSecondary: "",
-                inProbation: "", probationStartDate: "", probationEndDate: "", probationPolicy: "",
-                workingType: "", timeType: "", contractStatus: "", contractStartDate: "",
-                location: "", Skills: [], departmentId: "",
+                firstName: "",
+                middleName: "",
+                lastName: "",
+                displayName: "",
+                maritalStatus: "",
+                employeeId: "",
+                departmentId: "",
             });
         } catch (error) {
             console.error('Error creating employee:', error);
@@ -527,36 +492,6 @@ function EmployeeApp() {
                                 {renderField("Last Name", "lastName", "text")}
                                 {renderField("Display Name", "displayName", "text")}
                                 {renderField("Marital Status", "maritalStatus", "select", false, ["Single", "Married", "Divorced", "Widowed"])}
-                                {renderField("Blood Group", "bloodGroup", "select", false, ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])}
-                                {renderField("Physically Handicapped", "physicallyHandicapped", "select", false, ["Yes", "No"])}
-                                {renderField("Nationality", "nationality", "text")}
-                                {renderField("Gender", "gender", "select", false, ["Male", "Female", "Other", "Prefer not to say"])}
-                                {renderField("Date of Birth", "dateOfBirth", "date")}
-                                {renderField("Employee Image URL", "employeeImage", "text")}
-                                {renderField("Work Email", "workEmail", "email")}
-                                {renderField("Personal Email", "personalEmail", "email")}
-                                {renderField("Mobile Number", "mobileNumber", "text")}
-                                {renderField("Work Number", "workNumber", "text")}
-                                {renderField("Street", "street", "text")}
-                                {renderField("City", "city", "text")}
-                                {renderField("State", "state", "text")}
-                                {renderField("Zip", "zip", "text")}
-                                {renderField("Country", "country", "text")}
-                                {renderField("District", "district", "text")}
-                                {renderField("Date of Joining", "dateOfJoining", "date")}
-                                {renderField("Date of Leaving", "dateOfLeaving", "date")}
-                                {renderField("Primary Job Title", "jobTitlePrimary", "text")}
-                                {renderField("Secondary Job Title", "jobTitleSecondary", "text")}
-                                {renderField("In Probation", "inProbation", "text")}
-                                {renderField("Probation Start Date", "probationStartDate", "date")}
-                                {renderField("Probation End Date", "probationEndDate", "date")}
-                                {renderField("Probation Policy", "probationPolicy", "text")}
-                                {renderField("Working Type", "workingType", "select", false, ["Full-time", "Part-time", "Contractor", "Intern"])}
-                                {renderField("Time Type", "timeType", "select", false, ["Day shift", "Night shift", "Flexible hours"])}
-                                {renderField("Contract Status", "contractStatus", "select", false, ["Active", "Expired", "Terminated"])}
-                                {renderField("Contract Start Date", "contractStartDate", "date")}
-                                {renderField("Location", "location", "text")}
-                                {renderField("Skills (comma-separated)", "Skills", "text")}
                                 {renderField("Department ID", "departmentId", "text")}
                             </div>
                             {errors.general && (
@@ -1276,7 +1211,7 @@ function EmployeeApp() {
                     </div>
                 </Modal>
             )}
-            
+
             {deleteConfirmation.show && (
                 <Modal
                     onClose={() => setDeleteConfirmation({ show: false, employee: null })}
