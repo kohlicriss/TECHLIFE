@@ -39,7 +39,6 @@ const PermissionsPage = () => {
         },
     });
 
-    // చెక్‌బాక్స్‌ను హ్యాండిల్ చేయడానికి ఫంక్షన్
     const handleCheckboxChange = (role, permission) => {
         setPermissions(prev => ({
             ...prev,
@@ -50,10 +49,8 @@ const PermissionsPage = () => {
         }));
     };
 
-    // ఫార్మ్ సబ్మిట్ హ్యాండ్లర్
     const handleSubmit = (e) => {
         e.preventDefault();
-        // దశ 4 లో, ఈ డేటాను API ద్వారా బ్యాకెండ్‌కు పంపుతాం
         console.log("Saving Permissions:", permissions);
         alert("Permissions saved! (Console లో చూడండి)");
     };
