@@ -305,7 +305,7 @@ const ProjectCard = () => {
 const MyTeam = () => {
     const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
-    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
 
     const initialEmployeeData = [
         { name: "https://randomuser.me/api/portraits/men/32.jpg Rajesh", employee_id: "E_01", date: "2025-06-30",role:"Full stack Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
@@ -485,12 +485,12 @@ const MyTeam = () => {
                                        <td className={`px-4  py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             
                                             {showSidebar && (
-                                                <button className={ `${theme==='dark'?'text-indigo-200':'text-indigo-600'}  hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}`}><FiEdit className='w-5 h-5'/></button>
+                                                <button className={ `${theme==='dark'?'text-indigo-200':'text-indigo-600'}  hover:text-indigo-800 font-bold`} onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                             )}
                                         </td>
                                         <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             {showSidebar && (
-                                                <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-bold" onClick={() => handleDelete(index)}`}><FiDelete className='w-5 h-5'/></button>
+                                                <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-bold`} onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                             )}
                                         </td>
                                     </motion.tr>
@@ -508,7 +508,7 @@ const MyTeam = () => {
 function ProjectStatus() {
     const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
-    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
 
     const projectstatusData = [
@@ -663,12 +663,12 @@ function ProjectStatus() {
                             </td>
                             {showSidebar && (
                                 <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                    <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small" onClick={() => handleEdit(index)}`}><FiEdit className='w-5 h-5'/></button>
+                                    <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small`}  onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                 </td>
                             )}
                             {showSidebar && (
                                 <td className={`py-2 px-4  whitespace-nowrap  ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                    <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small" onClick={() => handleDelete(index)}`}><FiDelete className='w-5 h-5'/></button>
+                                    <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small`}   onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                 </td>
                             )}
                         </motion.tr>
@@ -685,15 +685,15 @@ function ProjectStatus() {
 function Project() {
     const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
-    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
 
     const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ], Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",Lead_Img: "https://i.pravatar.cc/40?img=19", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ],more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",Lead_Img:"https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
     const getPriorityColor = (priority) => {
         switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
     const getStatusColor = (status) => {
@@ -705,6 +705,7 @@ function Project() {
         status: "Ongoing",
         start_date: "",
         end_date: "",
+        Team_Lead:"",
         Employee_team: [],
         Priority: "Medium",
         Open_task: 0,
@@ -729,6 +730,7 @@ function Project() {
             status: "Ongoing",
             start_date: "",
             end_date: "",
+            Team_lead:"",
             Employee_team: [],
             Priority: "Medium",
             Open_task: 0,
@@ -790,7 +792,11 @@ const handleUpdateProject = (e) => {
     setEditProjectIndex(null);
     setEditProjectData(null);
 };
-
+ const [statusFilter, setStatusFilter] = useState("All");
+   const navigate = useNavigate();
+const handleRowClick = (proj) => {
+    navigate(`/project-details/${proj.project_id}`, { state: { project: proj } });
+};
     return (
         <motion.div
             className={`p-6  rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
@@ -801,6 +807,19 @@ const handleUpdateProject = (e) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
                     Project Overview</h2>
+                    <div className=" absolute right-52 gap-2">
+                    <select
+                       value={statusFilter}
+                       onChange={(e) => setStatusFilter(e.target.value)}
+                       className={`bg-gradient-to-br from-orange-100 to-orange-400  text-gray-800 font-medium rounded px-4 py-2 text-sm shadow hover:bg-orange-500  shadow transition`}
+                    >
+                     <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select Status</option>
+                     <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
+                     <option value="Upcoming" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Upcoming</option>
+                     <option value="Completed"className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Completed</option>
+                   </select>
+         
+            </div>
                 {showSidebar && (
                     <motion.button
                         className="flex items-center bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
@@ -821,6 +840,7 @@ const handleUpdateProject = (e) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     >
+                         <motion.div className="relative w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
                         <motion.form
                             className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
                             onSubmit={handleCreateProject}
@@ -840,6 +860,18 @@ const handleUpdateProject = (e) => {
                                 <input
                                     type="text"
                                     placeholder="Project Name"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.project_name}
+                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
+                                    required
+                                />
+                                </div>
+                                 <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Team Lead</label>
+                                 
+                                <input
+                                    type="text"
+                                    placeholder="Team Lead + Profile image URl"
                                     className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
@@ -1039,6 +1071,7 @@ const handleUpdateProject = (e) => {
                             </div>
                             </div>
                         </motion.form>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -1149,10 +1182,11 @@ const handleUpdateProject = (e) => {
                 <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800'}`}>
                     <tr>
                         <th className="p-3 text-sm md:text-base">Project</th>
+                        <th className="p-3 text-sm md:text-base">Team_Lead</th>
                         <th className="p-3 text-sm md:text-base">Team</th>
-                        <th className="p-3 text-sm md:text-base">Priority</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
+                        <th className="p-3 text-sm md:text-base">Priority</th>
                         <th className="p-3 text-sm md:text-base">Status</th>
                         <th className="p-3 text-sm md:text-base">Open Task</th>
                         <th className="p-3 text-sm md:text-base">Closed Task</th>
@@ -1162,7 +1196,8 @@ const handleUpdateProject = (e) => {
                 </thead>
                 <tbody  className="bg-white divide-y divide-gray-500">
                     <AnimatePresence>
-                        {projectTableData.map((proj, index) => (
+                        {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
+                        .map((proj, index) => (
                             <motion.tr
                                 key={proj.project_id}
                                 className="border-t border-gray-100 hover:bg-gray-50"
@@ -1170,22 +1205,50 @@ const handleUpdateProject = (e) => {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3, delay: index * 0.05 }}
+                                 onClick={() => handleRowClick(proj)}
                             >
                                 <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
+                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> 
+                                    <motion.img key={index} src={proj.Lead_Img} alt={proj.Team_Lead} className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />{proj.Team_Lead}
+                                    
+                                </td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <div className="flex -space-x-2 ">
                                         {proj.Employee_team.map((img, index) => (
-                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
+                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
                                         ))}
                                     </div>
-                                </td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)} `}>{proj.Priority}</span>
+                                    <motion.span className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}>{proj.more}</motion.span>
                                 </td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)} `}>{proj.status}</span>
+                                    <select value={proj.Priority} onChange={(e) => (proj.Priority = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                          proj.Priority === "High"
+                                            ? "bg-red-100 text-red-700"
+                                            : proj.Priority === "Medium"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-green-100 text-green-700"
+                                        }`}
+                                    >
+                                     <option value="High" className="text-red-600 ">🔴 High </option>
+                                     <option value="Medium" className="text-yellow-600">🟡 Medium </option>
+                                     <option value="Low" className="text-green-600"> 🟢 Low </option>
+                                 </select>
+                                </td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <select value={proj.status} onChange={(e) => (proj.status = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                          proj.status === "Ongoing"
+                                            ? "bg-blue-100 text-blue-700"
+                                            : proj.status === "Upcoming"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-purple-100 text-purple-700"
+                                        }`}
+                                    >
+                                     <option value="Ongoing" className="text-blue-600 ">🔵 Ongoing</option>
+                                     <option value="Upcoming" className="text-yellow-600">🟡 Upcoming</option>
+                                     <option value="Completed" className="text-blue-600">🟣 Completed</option>
+                                 </select>
                                 </td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
@@ -1194,13 +1257,13 @@ const handleUpdateProject = (e) => {
                                 <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}
-                                        onClick={() => handleEditProject(index)}
+                                        onClick={e => { e.stopPropagation(); handleEditProject(index); }}
                                     >
                                         <FiEdit className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
                                     </motion.button>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}
-                                        onClick={() => handleDeleteProject(index)}
+                                       onClick={e => { e.stopPropagation(); handleDeleteProject(index); }}
                                         className="ml-2"
                                     >
                                         <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />

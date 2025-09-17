@@ -12,6 +12,7 @@ import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
+import ProjectDetails from "./Projects/ProjectDetails";
 
 
 // Lazy loading components
@@ -137,7 +138,7 @@ const HrmsApp = () => {
                                     />
                                 }
                             >
-                                 <Route path="/admin-dashboard/empId/*" element={<ProtectedRoute><CombinedDashBoard /></ProtectedRoute>} />
+                                 <Route path="/combined-dashboard/:empId/*" element={<ProtectedRoute><CombinedDashBoard /></ProtectedRoute>} />
                                 <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
                                 <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
@@ -159,6 +160,7 @@ const HrmsApp = () => {
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
                                 
                                 <Route path="/permissions/:empID/*" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
+                                <Route path="/project-details/:project_id/*" element={<ProtectedRoute><ProjectDetails /></ProtectedRoute>} />
 
                                 <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                             </Route>

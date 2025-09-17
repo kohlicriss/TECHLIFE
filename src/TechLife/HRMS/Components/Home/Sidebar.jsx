@@ -18,6 +18,7 @@ import {
   UserRoundCog, // <<-- కొత్తగా జోడించిన ఐకాన్
 } from "lucide-react";
 import { Context } from "../HrmsContext";
+import { FaUsers } from "react-icons/fa";
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -70,6 +71,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       icon: <UserRoundCog size={18} />,
       path: empId ? `/permissions/${empId}` : "/permissions"
     });
+    navItems.push({
+       name: "ADMIN",
+       icon: <FaUsers size={18} />,
+       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
+    })
   }
 
   return (
