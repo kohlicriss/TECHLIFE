@@ -11,28 +11,27 @@ const Modal = ({ children, onClose, title, type, theme }) => {
 
     if (type === "success") {
         titleClass = "text-green-600";
-        icon = <IoCheckmarkCircle className="h-6 w-6 text-green-500" />;
+        icon = <IoCheckmarkCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />;
     } else if (type === "error") {
         titleClass = "text-red-600";
-        icon = <IoWarning className="h-6 w-6 text-red-500" />;
+        icon = <IoWarning className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />;
     } else if (type === "confirm") {
         titleClass = "text-yellow-600";
-        icon = <IoWarning className="h-6 w-6 text-yellow-500" />;
+        icon = <IoWarning className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />;
     }
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[250]">
-            <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="flex items-center mb-4">
                     {icon && <span className="mr-3">{icon}</span>}
-                    <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                    <h3 className={`text-lg sm:text-xl font-bold ${titleClass}`}>{title}</h3>
                 </div>
                 {children}
             </div>
         </div>
     );
 };
-
 
 // Default Profile (Only static relations/identity)
 const defaultProfile = {
@@ -379,7 +378,6 @@ function Profile() {
     }
   };
 
-
   const handleEditFieldChange = (field, value) => {
     setEditingData((prev) => ({
       ...prev,
@@ -550,13 +548,13 @@ function Profile() {
     if (type === "file") {
       return (
         <div className="group relative" key={name}>
-          <label className={`block text-sm font-semibold mb-3 flex items-center ${
+          <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
             theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
           }`}>
             {label}
-            {required && <span className="text-red-500 ml-1 text-base">*</span>}
+            {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
           </label>
-          <div className={`relative border-2 border-dashed rounded-xl transition-all duration-300 
+          <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 
               ${isError 
                   ? 'border-red-300 bg-red-50' 
                   : theme === 'dark'
@@ -570,11 +568,11 @@ function Profile() {
               accept=".jpg,.jpeg,.png,.pdf"
               required={required}
             />
-            <div className="px-6 py-8 text-center">
-              <IoCloudUpload className={`mx-auto h-12 w-12 mb-4 ${
+            <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
+              <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
               }`} />
-              <p className={`text-sm font-medium mb-1 ${
+              <p className={`text-xs sm:text-sm font-medium mb-1 ${
                 theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Drop your file here, or <span className="text-blue-600">browse</span>
@@ -583,7 +581,7 @@ function Profile() {
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
               }`}>PNG, JPG, PDF up to 10MB</p>
               {selectedFile && (
-                  <p className={`mt-2 text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+                  <p className={`mt-2 text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
                       Selected: {selectedFile.name}
                   </p>
               )}
@@ -595,11 +593,11 @@ function Profile() {
     
     return (
       <div className="group relative" key={name}>
-        <label className={`block text-sm font-semibold mb-3 flex items-center ${
+        <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
           theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
         }`}>
           {label}
-          {required && <span className="text-red-500 ml-1 text-base">*</span>}
+          {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
         </label>
         
         {type === "select" ? (
@@ -607,7 +605,7 @@ function Profile() {
             <select 
               value={fieldValue} 
               onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-              className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none 
+              className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none text-sm
                 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                 ${isError 
                   ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
@@ -619,18 +617,18 @@ function Profile() {
               <option value="">Choose {label}</option>
               {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
             </select>
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-              <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
           </div>
         ) : type === "date" ? (
           <input 
-            type="date" 
+            type="date"
             value={fieldValue} 
             onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError 
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
@@ -644,7 +642,7 @@ function Profile() {
             type={type} 
             value={fieldValue} 
             onChange={(e) => handleEditFieldChange(name, e.target.value)} 
-            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300
+            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError 
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
@@ -658,9 +656,9 @@ function Profile() {
         )}
         
         {isError && (
-          <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+          <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
             <IoWarning className="w-4 h-4 flex-shrink-0" />
-            <p className="text-sm font-medium">{isError}</p>
+            <p className="text-xs sm:text-sm font-medium">{isError}</p>
           </div>
         )}
       </div>
@@ -675,54 +673,54 @@ function Profile() {
     const IconComponent = config.icon;
     
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
-        <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4 animate-fadeIn">
+        <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
           theme === 'dark' ? 'bg-gray-800' : 'bg-white'
         }`}>
-          <div className={`px-8 py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
+          <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <IconComponent className="w-8 h-8" />
+              <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                <div className="p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl flex-shrink-0">
+                  <IconComponent className="w-6 h-6 sm:w-8 sm:h-8" />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold break-words">
                     Edit {config.title}
                   </h2>
-                  <p className="text-white/90 text-sm">{config.description}</p>
+                  <p className="text-white/90 text-xs sm:text-sm break-words">{config.description}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setEditingSection(null)} 
-                className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" 
+                className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0" 
                 aria-label="Close"
               >
-                <IoClose className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+                <IoClose className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-200" />
               </button>
             </div>
           </div>
           
           <div className="overflow-y-auto flex-grow">
-            <form className="p-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(section); }}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <form className="p-4 sm:p-6 md:p-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(section); }}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options))}
               </div>
               
               {errors.general && (
-                <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
+                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
                   theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
                 }`}>
                   <div className="flex items-center">
-                    <IoWarning className="w-6 h-6 text-red-400 mr-3" />
-                    <p className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
+                    <IoWarning className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 mr-3 flex-shrink-0" />
+                    <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
                   </div>
                 </div>
               )}
             </form>
           </div>
           
-          <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
+          <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 ${
             theme === 'dark' 
               ? 'bg-gray-700 border-gray-600' 
               : 'bg-gray-50 border-gray-200'
@@ -730,7 +728,7 @@ function Profile() {
             <button 
               type="button" 
               onClick={() => setEditingSection(null)} 
-              className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+              className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm ${
                 theme === 'dark'
                   ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
                   : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
@@ -742,19 +740,19 @@ function Profile() {
               type="button" 
               onClick={() => handleSubmit(section)}
               disabled={isUpdating}
-              className={`px-10 py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-xl
+              className={`w-full sm:w-auto px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl
                           hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                          focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2
+                          focus:ring-4 focus:ring-blue-500/30 flex items-center justify-center space-x-2 text-sm
                           ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
             >
               {isUpdating ? (
                 <>
-                  <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
                   <span>Updating...</span>
                 </>
               ) : (
                 <>
-                  <IoCheckmarkCircle className="w-5 h-5" />
+                  <IoCheckmarkCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Update Information</span>
                 </>
               )}
@@ -766,19 +764,19 @@ function Profile() {
   };
   
   const DetailItem = ({ label, value }) => (
-    <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
+    <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-300 hover:scale-105 ${
       theme === 'dark'
         ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
         : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
     }`}>
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <span className={`text-xs font-bold uppercase tracking-wider block mb-2 ${
+        <div className="flex-1 min-w-0">
+          <span className={`text-xs font-bold uppercase tracking-wider block mb-1 sm:mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
           }`}>
             {label}
           </span>
-          <p className={`text-sm font-semibold leading-relaxed ${
+          <p className={`text-xs sm:text-sm font-semibold leading-relaxed break-words ${
             theme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}>
             {value || (
@@ -796,67 +794,67 @@ function Profile() {
     const hasData = Array.isArray(data) ? data.length > 0 : !!data;
     
     return (
-      <div className={`border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                       overflow-hidden group hover:scale-[1.02] mb-8 ${
+      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
+                       overflow-hidden group hover:scale-[1.02] mb-6 sm:mb-8 ${
         theme === 'dark'
           ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
           : `bg-white ${config.borderColor}`
       }`}>
-        <div className={`px-8 py-6 border-b-2 relative overflow-hidden ${
+        <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b-2 relative overflow-hidden ${
           theme === 'dark'
             ? `${config.darkBgColor} ${config.darkBorderColor}`
             : `${config.bgColor} ${config.borderColor}`
         }`}>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 ${
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+              <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ${
                 theme === 'dark' ? 'bg-gray-700' : 'bg-white'
               }`}>
-                <IconComponent className={`w-8 h-8 ${
+                <IconComponent className={`w-6 h-6 sm:w-8 sm:h-8 ${
                   theme === 'dark' ? config.darkTextColor : config.textColor
                 }`} />
               </div>
-              <div>
-                <h4 className={`text-xl font-bold flex items-center space-x-2 ${
+              <div className="min-w-0 flex-1">
+                <h4 className={`text-lg sm:text-xl font-bold flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 ${
                   theme === 'dark' ? config.darkTextColor : config.textColor
                 }`}>
-                  <span>{title}</span>
+                  <span className="break-words">{title}</span>
                   {hasData && (
                     <div className="flex items-center space-x-1">
-                      <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                      <IoCheckmarkCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
                         Complete
                       </span>
                     </div>
                   )}
                 </h4>
-                <p className={`text-sm mt-1 ${
+                <p className={`text-xs sm:text-sm mt-1 break-words ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                 }`}>{config.description}</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
               {fromContextMenu && isAdmin && hasData && !['education', 'experience', 'relations'].includes(sectionKey) && (
                 <button
                   onClick={() => handleDelete(sectionKey)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg ${
+                  className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-sm ${
                     theme === 'dark'
                       ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
                       : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
                   }`}
                 >
-                  <IoTrashOutline className="w-4 h-4" />
-                  <span>Delete</span>
+                  <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
               )}
 
               {(!isReadOnly || isAdmin) && (
                 <button 
                   onClick={() => openEditSection(sectionKey)} 
-                  className={`flex items-center space-x-2 px-6 py-3 cursor-pointer rounded-xl font-semibold transition-all duration-300 
-                              transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg
+                  className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 cursor-pointer rounded-lg sm:rounded-xl font-semibold transition-all duration-300 
+                              transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-sm
                               ${hasData 
                                 ? theme === 'dark'
                                   ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
@@ -866,13 +864,15 @@ function Profile() {
                 >
                   {hasData ? (
                     <>
-                      <IconComponent className="w-4 h-4" />
-                      <span>Edit Details</span>
+                      <IconComponent className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Edit Details</span>
+                      <span className="sm:hidden">Edit</span>
                     </>
                   ) : (
                     <>
-                      <IoAdd className="w-4 h-4" />
-                      <span>Add Information</span>
+                      <IoAdd className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Add Information</span>
+                      <span className="sm:hidden">Add</span>
                     </>
                   )}
                 </button>
@@ -880,37 +880,36 @@ function Profile() {
             </div>
             
             {isReadOnly && !isAdmin && (
-              <div className={`px-6 py-3 rounded-xl font-semibold ${
+              <div className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm ${
                 theme === 'dark' 
                   ? 'bg-gray-700 text-gray-400 border-2 border-gray-600' 
                   : 'bg-gray-100 text-gray-500 border-2 border-gray-300'
               }`}>
-                <IoEye className="w-4 h-4 inline mr-2" />
+                <IoEye className="w-3 h-3 sm:w-4 sm:h-4 inline mr-2" />
                 <span>View Only</span>
               </div>
             )}
           </div>
         </div>
         
-        <div className="p-8">
+        <div className="p-4 sm:p-6 md:p-8">
           {hasData ? (
-             // ✅ FIX: Changed grid-cols-2 to grid-cols-3 for better alignment
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {children}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+            <div className="text-center py-8 sm:py-12">
+              <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 ${
                 theme === 'dark' ? config.darkBgColor : config.bgColor
               }`}>
-                <IconComponent className={`w-10 h-10 opacity-50 ${
+                <IconComponent className={`w-8 h-8 sm:w-10 sm:h-10 opacity-50 ${
                   theme === 'dark' ? config.darkTextColor : config.textColor
                 }`} />
               </div>
-              <h3 className={`text-lg font-semibold mb-2 ${
+              <h3 className={`text-base sm:text-lg font-semibold mb-2 ${
                 theme === 'dark' ? 'text-white' : 'text-gray-800'
               }`}>No {title} Added</h3>
-              <p className={`text-sm mb-6 max-w-sm mx-auto ${
+              <p className={`text-sm mb-4 sm:mb-6 max-w-sm mx-auto px-4 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
               }`}>
                 {isReadOnly 
@@ -921,9 +920,9 @@ function Profile() {
               {!isReadOnly && (
                 <button 
                   onClick={() => openEditSection(sectionKey)}
-                  className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
-                               text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 
-                               transform hover:scale-105 transition-all duration-300 shadow-lg"
+                  className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
+                               text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 
+                               transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
                 >
                   <IoAdd className="w-4 h-4" />
                   <span>Add {title}</span>
@@ -949,13 +948,13 @@ function Profile() {
     const percentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
     
     return (
-      <div className={`rounded-2xl p-6 shadow-lg border ${
+      <div className={`rounded-none sm:rounded-2xl p-4 sm:p-6 shadow-lg border ${
         theme === 'dark' 
           ? 'bg-gray-800 border-gray-700' 
           : 'bg-white border-gray-200'
       }`}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-lg font-bold ${
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className={`text-base sm:text-lg font-bold ${
             theme === 'dark' ? 'text-white' : 'text-gray-800'
           }`}>
             {isReadOnly ? 'Profile Status' : 'Profile Completion'}
@@ -966,11 +965,11 @@ function Profile() {
             {completedCount}/{totalCount} Sections
           </span>
         </div>
-        <div className={`w-full rounded-full h-3 mb-4 overflow-hidden ${
+        <div className={`w-full rounded-full h-2 sm:h-3 mb-3 sm:mb-4 overflow-hidden ${
           theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
         }`}>
           <div 
-            className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-700 ease-out"
+            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full transition-all duration-700 ease-out"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
@@ -994,18 +993,18 @@ function Profile() {
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
       {loading ? (
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center px-4">
           <div className="text-center">
             <div className="relative">
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+              <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <IoPersonOutline className="w-8 h-8 text-blue-500" />
+                <IoPersonOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
               </div>
             </div>
-            <h2 className={`text-2xl font-bold mb-2 ${
+            <h2 className={`text-xl sm:text-2xl font-bold mb-2 ${
               theme === 'dark' ? 'text-white' : 'text-gray-800'
             }`}>Loading Profile</h2>
-            <p className={`${
+            <p className={`text-sm sm:text-base ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
             }`}>Fetching profile information...</p>
             <div className="flex justify-center space-x-2 mt-4">
@@ -1017,18 +1016,18 @@ function Profile() {
           </div>
         </div>
       ) : (
-        <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+        <div className="max-w-8xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 md:py-12">
           {fromContextMenu && (
-            <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+            <div className={`mb-4 sm:mb-6 p-3 sm:p-4 mx-4 sm:mx-0 rounded-none sm:rounded-2xl border-l-4 border-blue-500 shadow-lg ${
               theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
             }`}>
               <div className="flex items-center space-x-3">
-                <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                <div>
-                  <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+                <IoEye className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                <div className="min-w-0 flex-1">
+                  <p className={`font-semibold text-sm sm:text-base ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
                     Viewing Employee Profile
                   </p>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                  <p className={`text-xs sm:text-sm break-words ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
                     Employee ID: {targetEmployeeId} 
                     {isReadOnly && " • Read-only access"}
                   </p>
@@ -1037,11 +1036,11 @@ function Profile() {
             </div>
           )}
 
-          <div className="mb-12">
+          <div className="mb-8 sm:mb-12 mx-4 sm:mx-0">
             <ProgressIndicator />
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <>
               <Section sectionKey="primaryDetails" title="Primary Details" data={primarydata}>
                 <DetailItem label="First Name" value={primarydata?.firstName} />
@@ -1086,14 +1085,14 @@ function Profile() {
                     <DetailItem label="Years" value={`${edu.startYear} - ${edu.endYear}`} />
                     <DetailItem label="CGPA/Percentage" value={edu.cgpaOrPercentage} />
                     {edu.addFiles && (
-                       <div className="md:col-span-1">
-                         <a href={edu.addFiles} target="_blank" rel="noopener noreferrer" className={`p-4 rounded-xl border flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 ${
+                       <div className="sm:col-span-2 lg:col-span-1">
+                         <a href={edu.addFiles} target="_blank" rel="noopener noreferrer" className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 ${
                            theme === 'dark' 
                              ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20' 
                              : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
                          }`}>
-                           <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
-                           <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>View Certificate</span>
+                           <IoCheckmarkCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                           <span className={`font-semibold text-xs sm:text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>View Certificate</span>
                          </a>
                        </div>
                      )}
@@ -1124,11 +1123,11 @@ function Profile() {
                 type={popup.type}
                 theme={theme}
             >
-                <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+                <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
                 <div className="flex justify-end">
                     <button
                         onClick={() => setPopup({ show: false, message: '', type: '' })}
-                        className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg transition-colors`}
+                        className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
                     >
                         OK
                     </button>
@@ -1143,19 +1142,19 @@ function Profile() {
                 type="confirm"
                 theme={theme}
             >
-                <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                     Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
                 </p>
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                     <button
                         onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-                        className={`px-6 py-2 rounded-lg font-semibold transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                        className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={confirmDelete}
-                        className="px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                        className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
                     >
                         Delete
                     </button>

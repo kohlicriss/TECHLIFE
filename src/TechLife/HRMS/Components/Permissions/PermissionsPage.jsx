@@ -18,11 +18,10 @@ const PermissionsPage = () => {
     { value: 'viewProfile', label: 'View Profile' },
   ];
 
-  // role keys mapped only to role names (no id)
   const roleMeta = [
     { key: "hr", roleName: "HR" },
     { key: "manager", roleName: "MANAGER" },
-    { key: "team_lead", roleName: "TEAMLEAD" },
+    { key: "team_lead", roleName: "TEAM_LEAD" },
     { key: "employee", roleName: "EMPLOYEE" },
     { key: "admin", roleName: "ADMIN" },
   ];

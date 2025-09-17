@@ -15,7 +15,7 @@ import {
   UserCircle,
   BadgePlus,
   TicketCheck,
-  UserRoundCog, // <<-- కొత్తగా జోడించిన ఐకాన్
+  UserRoundCog, 
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
@@ -24,7 +24,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const location = useLocation();
   const { userData, setUserData, theme } = useContext(Context);
   const empId = userData?.employeeId;
-  const userRole = userData?.roles?.[0]?.toUpperCase(); // <<-- యూజర్ రోల్ పొందడం
+  const userRole = userData?.roles?.[0]?.toUpperCase(); 
 
   const handleLogoutClick = async () => {
     try {
@@ -124,7 +124,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                 key={item.name}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center ${
+                className={`flex items-center cursor-pointer ${ // Added cursor-pointer class
                   collapsed ? "justify-center" : "justify-start"
                 } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
                   isActive
