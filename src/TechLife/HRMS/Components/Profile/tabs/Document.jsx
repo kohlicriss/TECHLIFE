@@ -1017,7 +1017,7 @@ const Document = () => {
             ? `${config.darkBgColor} ${config.darkBorderColor}`
             : `${config.bgColor} ${config.borderColor}`
         }`}>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30 z-[0]"></div>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
               <div className="text-2xl sm:text-3xl md:text-4xl transform group-hover:scale-110 transition-transform duration-300">
