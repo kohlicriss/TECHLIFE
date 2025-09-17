@@ -9,7 +9,6 @@ const PermissionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Define all available permissions for the dropdown
   const allPermissionOptions = [
     { value: 'createTask', label: 'Create Task' },
     { value: 'viewTeams', label: 'View Teams' },
@@ -19,6 +18,15 @@ const PermissionsPage = () => {
     { value: 'viewProfile', label: 'View Profile' },
   ];
 
+  // role keys mapped only to role names (no id)
+  const roleMeta = [
+    { key: "hr", roleName: "HR" },
+    { key: "manager", roleName: "MANAGER" },
+    { key: "team_lead", roleName: "TEAMLEAD" },
+    { key: "employee", roleName: "EMPLOYEE" },
+    { key: "admin", roleName: "ADMIN" },
+  ];
+
   useEffect(() => {
     const fetchPermissions = async () => {
       setLoading(true);
@@ -26,8 +34,7 @@ const PermissionsPage = () => {
         const response = await publicinfoApi.get('/permissions/all');
         setPermissions(response.data);
       } catch (error) {
-        console.error("Failed to fetch permissions, using default.", error);
-        // Set all roles to empty arrays initially
+        console.error("Failed to fetch permissions, using default empty.", error);
         setPermissions({
           employee: [],
           team_lead: [],
@@ -42,7 +49,6 @@ const PermissionsPage = () => {
     fetchPermissions();
   }, []);
 
-  // Directly store selected permission names for each role in permissions state
   const handleSelectionChange = (selectedOptions, role) => {
     const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
     setPermissions(prev => ({
@@ -54,8 +60,23 @@ const PermissionsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("Submitting permissions:", permissions);
-    
+
+    const transformedPermissions = roleMeta.map(({ key, roleName }) => ({
+      roleName,
+      permissions: permissions[key] || [],
+    }));
+
+    console.log("Submitting permissions:", transformedPermissions);
+
+    try {
+      await publicinfoApi.post('/permissions/update', transformedPermissions);
+      alert("Permissions updated successfully!");
+    } catch (error) {
+      console.error("Failed to save permissions:", error);
+      alert("Error: Could not save permissions. Please check the console.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const customSelectStyles = {
@@ -108,7 +129,6 @@ const PermissionsPage = () => {
       <h1 className="text-3xl font-bold mb-6">Permissions Form</h1>
       <form onSubmit={handleSubmit} className="space-y-8">
         {roles.map(role => {
-          // selected permissions (array of strings) → filter all options to get objects for react-select value
           const selectedPermissionsForRole = allPermissionOptions.filter(
             option => permissions[role] && permissions[role].includes(option.value)
           );
