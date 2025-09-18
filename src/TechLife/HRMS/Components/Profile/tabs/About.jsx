@@ -31,6 +31,7 @@ const About = () => {
   }, [responses]);
 
   const handleEdit = (field) => {
+    if (isReadOnly) return;
     setResponses((prev) => ({
       ...prev,
       [field]: { ...prev[field], isEditing: true },
@@ -58,22 +59,27 @@ const About = () => {
       return (
         <button
           onClick={() => handleEdit(field)}
-          className={`border rounded-md px-4 py-2 transition-colors duration-200 ${
-            theme === 'dark'
+          disabled={isReadOnly}
+          className={`w-full sm:w-auto border rounded-lg px-3 sm:px-4 py-2 transition-colors duration-200 text-sm sm:text-base ${
+            isReadOnly
+              ? theme === 'dark'
+                ? 'text-gray-500 border-gray-600 cursor-not-allowed'
+                : 'text-gray-400 border-gray-300 cursor-not-allowed'
+              : theme === 'dark'
               ? 'text-purple-400 border-purple-400 hover:bg-purple-900/20'
               : 'text-purple-600 border-purple-600 hover:bg-purple-50'
           }`}
         >
-          Add your response
+          {isReadOnly ? 'No response added' : 'Add your response'}
         </button>
       );
     }
 
     if (isEditing) {
       return (
-        <div className="space-y-2">
+        <div className="space-y-2 sm:space-y-3">
           <textarea
-            className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition-colors duration-200 ${
+            className={`w-full p-2 sm:p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 transition-colors duration-200 text-sm sm:text-base ${
               theme === 'dark'
                 ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                 : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -83,10 +89,10 @@ const About = () => {
             id={`${field}-textarea`}
             placeholder="Type your response here..."
           />
-          <div className="flex justify-end space-x-2">
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
             <button
               onClick={() => handleCancel(field)}
-              className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+              className={`w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg transition-colors duration-200 text-sm ${
                 theme === 'dark'
                   ? 'text-gray-300 hover:bg-gray-700'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -101,7 +107,7 @@ const About = () => {
                   document.getElementById(`${field}-textarea`).value
                 )
               }
-              className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+              className={`w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg transition-colors duration-200 text-sm ${
                 theme === 'dark'
                   ? 'bg-purple-600 text-white hover:bg-purple-700'
                   : 'bg-purple-600 text-white hover:bg-purple-700'
@@ -115,45 +121,47 @@ const About = () => {
     }
 
     return (
-      <div className={`p-4 rounded-md relative group transition-colors duration-200 ${
+      <div className={`p-3 sm:p-4 rounded-lg relative group transition-colors duration-200 ${
         theme === 'dark'
           ? 'bg-gray-800 border border-gray-700'
           : 'bg-gray-50 border border-gray-200'
       }`}>
-        <p className={`whitespace-pre-wrap ${
+        <p className={`whitespace-pre-wrap text-sm sm:text-base break-words ${
           theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
         }`}>{text}</p>
-        <button
-          onClick={() => handleEdit(field)}
-          className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200
-            px-3 py-1 border rounded-md shadow-sm ${
-            theme === 'dark'
-              ? 'bg-gray-700 border-gray-600 text-gray-300 hover:text-gray-100 hover:border-gray-500'
-              : 'bg-white border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300'
-          }`}
-        >
-          Edit
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={() => handleEdit(field)}
+            className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200
+              px-2 sm:px-3 py-1 border rounded-lg shadow-sm text-xs sm:text-sm ${
+              theme === 'dark'
+                ? 'bg-gray-700 border-gray-600 text-gray-300 hover:text-gray-100 hover:border-gray-500'
+                : 'bg-white border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300'
+            }`}
+          >
+            Edit
+          </button>
+        )}
       </div>
     );
   };
 
   return (
-    <div className={`p-6 transition-colors duration-200 ${
+    <div className={`px-0 sm:px-4 md:px-6 py-4 sm:py-6 transition-colors duration-200 min-h-screen ${
       theme === 'dark' ? 'bg-gray-900' : 'bg-white'
     }`}>
 
       {fromContextMenu && (
-        <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 mx-4 sm:mx-0 rounded-none sm:rounded-2xl border-l-4 border-blue-500 shadow-lg ${
           theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
         }`}>
           <div className="flex items-center space-x-3">
-            <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-            <div>
-              <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+            <IoEye className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+            <div className="min-w-0 flex-1">
+              <p className={`font-semibold text-sm sm:text-base ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
                 Viewing Employee About Details
               </p>
-              <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+              <p className={`text-xs sm:text-sm break-words ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
                 Employee ID: {targetEmployeeId}
                 {isReadOnly && " • Read-only access"}
               </p>
@@ -162,17 +170,17 @@ const About = () => {
         </div>
       )}
 
-      <div className="space-y-6">
-        <h2 className={`text-xl font-semibold ${
+      <div className="space-y-4 sm:space-y-6 mx-4 sm:mx-0">
+        <h2 className={`text-lg sm:text-xl md:text-2xl font-semibold ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
         }`}>About</h2>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {renderResponseSection("about", "About")}
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <h3 className={`text-lg font-medium mb-4 ${
+              <h3 className={`text-base sm:text-lg font-medium mb-3 sm:mb-4 break-words ${
                 theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
               }`}>
                 What I love about my job?
@@ -181,7 +189,7 @@ const About = () => {
             </div>
 
             <div>
-              <h3 className={`text-lg font-medium mb-4 ${
+              <h3 className={`text-base sm:text-lg font-medium mb-3 sm:mb-4 break-words ${
                 theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
               }`}>
                 My interests and hobbies

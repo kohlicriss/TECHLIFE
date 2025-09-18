@@ -30,7 +30,7 @@ const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
 const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
 const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
-const Permissions = lazy(() => import("./Permissions/PermissionsPage"));
+const Permissions = lazy(() => import("./Permissions/PermissionsPage")); 
 
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
@@ -155,7 +155,7 @@ const HrmsApp = () => {
                                 <Route path="/my-teams/:empID" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
                                 <Route path="/teams/:teamId" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
                                 
-                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                                <Route path="/tickets/:empID/*" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'TEAM_LEAD']}><Tickets /></ProtectedRoute>} />
                                 <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
                                 

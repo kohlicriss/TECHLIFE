@@ -241,13 +241,9 @@ export const clearChatHistory = async (userId, chatId) => {
   }
 };
 
-export const uploadVoiceMessage = async (formData) => {
+export const uploadVoiceMessage = async (voiceData) => {
   try {
-    const response = await chatApi.post('/chat/voice/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await chatApi.post('/chat/voice/upload', voiceData);
     console.log('Response:', response);
     return response.data;
   } catch (error) {
