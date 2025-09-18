@@ -17,7 +17,14 @@ export default function TicketModal({
   const socketRef = useRef(null);
   const [newStatus, setNewStatus] = useState(ticket?.status || "");
 
-  // ✅ Format date
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const chatContainerRef = useRef(null);
+
+const prevScrollHeight = useRef(0);
+const [loadingOlder, setLoadingOlder] = useState(false);
+
+  
   const formatDate = (date) => {
     const d = new Date(date);
     const today = new Date();
@@ -32,26 +39,41 @@ export default function TicketModal({
       year: "numeric",
     });
   };
-  // ✅ Convert backend UTC to IST correctly
-const formatToIST = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString + "Z"); // force UTC parsing
-  return date.toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata", // IST
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-};
 
+  
+  const formatToIST = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString.endsWith("Z") ? dateString : dateString + "Z");
+    return date.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour12: true,
+    });
+  };
 
+  
+  const formatChatTimeIST = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString.endsWith("Z") ? dateString : dateString + "Z");
+    return date.toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+ 
   const groupedReplies = useMemo(() => {
     const groups = {};
-    replies.forEach((msg) => {
+    const sortedReplies = [...replies].sort(
+      (a, b) => new Date(a.repliedAt) - new Date(b.repliedAt)
+    );
+    sortedReplies.forEach((msg) => {
       const dateLabel = formatDate(msg.repliedAt);
       if (!groups[dateLabel]) groups[dateLabel] = [];
       groups[dateLabel].push(msg);
@@ -59,32 +81,44 @@ const formatToIST = (dateString) => {
     return groups;
   }, [replies]);
 
-  // Scroll to bottom on new message
+  
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [replies]);
 
-  // WebSocket setup
-useEffect(() => {
+ 
+ useEffect(() => {
   if (!ticket?.ticketId) return;
 
   if (socketRef.current) {
     socketRef.current.close();
   }
-
   const token = localStorage.getItem("accessToken");
+
   const ws = new WebSocket(
     `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}&token=${token}`
   );
   socketRef.current = ws;
 
   ws.onopen = () => console.log("✅ WebSocket connected for", ticket.ticketId);
+
   ws.onmessage = (event) => {
     try {
       const msg = JSON.parse(event.data);
-      setReplies((prev) => [...prev, msg]);
+      console.log("📩 Incoming WS message:", msg);
+
+      if (msg && msg.replyText) {
+        setReplies((prev) => {
+          const exists = prev.some(
+            (m) =>
+              (m.id && msg.id && m.id === msg.id) ||
+              (m.replyText === msg.replyText && m.repliedAt === msg.repliedAt)
+          );
+          return exists ? prev : [...prev, msg];
+        });
+      }
     } catch (e) {
-      console.error("Error parsing WebSocket message", e);
+      console.error("❌ Error parsing WebSocket message", e, event.data);
     }
   };
 
@@ -95,38 +129,86 @@ useEffect(() => {
 }, [ticket?.ticketId]);
 
 
- useEffect(() => {
-  const fetchReplies = async () => {
-    if (!ticket?.ticketId) return;
+const fetchReplies = async (pageNum = 0) => {
+  if (!ticket?.ticketId || loading || !hasMore) return;
+  setLoading(true);
 
-    try {
-      const token = localStorage.getItem("accessToken");
-      const response = await axios.get(
-        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            page: 0,
-            size: 100, // fetch more messages if needed
-          },
-        }
-      );
+  try {
+    const container = chatContainerRef.current;
+    if (pageNum > 0 && container) {
+      prevScrollHeight.current = container.scrollHeight;
+      setLoadingOlder(true);
+    }
 
-      const messagesArray = Array.isArray(response.data?.content)
-        ? response.data.content
-        : [];
+    const token = localStorage.getItem("accessToken");
+    const response = await axios.get(
+      `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { page: pageNum, size: 20 },
+      }
+    );
 
-      setReplies(messagesArray);
-    } catch (error) {
-      console.error("❌ Failed to fetch previous replies", error);
-      setReplies([]); // fallback
+    const messagesArray = Array.isArray(response.data?.content)
+      ? response.data.content
+      : [];
+
+    if (messagesArray.length === 0) {
+      setHasMore(false);
+    } else {
+      if (pageNum === 0) {
+        setReplies(messagesArray);
+      } else {
+        setReplies((prev) => [...messagesArray, ...prev]); 
+      }
+      setPage(pageNum);
+    }
+  } catch (error) {
+    console.error("Failed to fetch replies", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => {
+  if (messageSent && messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+}, [messageSent]);
+
+
+useEffect(() => {
+  if (loadingOlder && chatContainerRef.current) {
+    const container = chatContainerRef.current;
+    const newScrollHeight = container.scrollHeight;
+    container.scrollTop = newScrollHeight - prevScrollHeight.current;
+    setLoadingOlder(false);
+  }
+}, [replies]);
+
+
+
+
+  useEffect(() => {
+    if (showChat) fetchReplies(0);
+  }, [ticket?.ticketId, showChat]);
+
+useEffect(() => {
+  const container = chatContainerRef.current;
+  if (!container) return;
+
+  const handleScroll = () => {
+    if (container.scrollTop === 0 && hasMore && !loading) {
+      fetchReplies(page + 1);
     }
   };
 
-  fetchReplies();
-}, [ticket?.ticketId, showChat]);
+  container.addEventListener("scroll", handleScroll);
+  return () => container.removeEventListener("scroll", handleScroll);
+}, [page, hasMore, loading]);
+
+
 
 
 const handleReply = async () => {
@@ -136,7 +218,7 @@ const handleReply = async () => {
   const payload = {
     replyText: replyText.trim(),
     repliedBy: "admin",
-    status: newStatus.toUpperCase(),
+    status: newStatus,
     employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
     roles: roles && typeof roles === "string" ? `ROLE_${roles.toUpperCase()}` : "ROLE_HR",
     repliedAt: new Date().toISOString(),
@@ -149,45 +231,48 @@ const handleReply = async () => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    setReplies((prev) => [...prev, res.data]); // ✅ add immediately
+   
+    setReplies((prev) => [...prev, res.data || payload]);
+
     setReplyText("");
     setMessageSent(true);
     setTimeout(() => setMessageSent(false), 2000);
   } catch (error) {
-    console.error("❌ Reply failed", error.response?.data || error.message);
+    console.error(" Reply failed", error.response?.data || error.message);
   }
 };
 
+ 
+ 
   const handleStatusChange = async () => {
-  if (!ticket?.ticketId) return;
+    if (!ticket?.ticketId) return;
 
-  const token = localStorage.getItem("accessToken");
-  const payload = {
-    replyText: replyText.trim() || "Status updated",
-    repliedBy: "admin",
-    status: newStatus.toUpperCase(), // ✅ fix here
-    employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
-    roles: roles && typeof roles === "string" ? `ROLE_${roles.toUpperCase()}` : "ROLE_HR",
-    repliedAt: new Date().toISOString(),
+    const token = localStorage.getItem("accessToken");
+    const payload = {
+      replyText: replyText.trim() || "Status updated",
+      repliedBy: "admin",
+      status: newStatus,
+      employeeId: ticket.employeeId || "DEFAULT_EMPLOYEE",
+      roles: roles && typeof roles === "string" ? `ROLE_${roles.toUpperCase()}` : "ROLE_HR",
+      repliedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await axios.put(
+        `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setReplies((prev) => [...prev, res.data]);
+      setNewStatus(res.data.status);
+      ticket.status = res.data.status;
+      if (onStatusUpdate) onStatusUpdate(res.data);
+      onClose();
+    } catch (err) {
+      console.error("Error updating status:", err.response?.data || err.message);
+    }
   };
-
-  try {
-    const res = await axios.put(
-      `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/${ticket.ticketId}/reply`,
-      payload,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    setReplies((prev) => [...prev, res.data]);
-    setNewStatus(res.data.status);
-    ticket.status = res.data.status;
-    if (onStatusUpdate) onStatusUpdate(res.data);
-    onClose();
-  } catch (err) {
-    console.error("Error updating status:", err.response?.data || err.message);
-  }
-};
-
 
   const displayRole = (role) => role?.replace(/^ROLE_/, "");
 
@@ -277,7 +362,7 @@ const handleReply = async () => {
             <>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-blue-700">
-                  💬 Chat with {ticket.employeeName}
+                  💬 Chat with {ticket.employeeId}
                 </h2>
                 <button
                   onClick={() => setShowChat(false)}
@@ -287,15 +372,14 @@ const handleReply = async () => {
                 </button>
               </div>
 
-              <div className="max-h-72 overflow-y-auto space-y-3 p-4 bg-gray-50 rounded-xl border mb-4 shadow-inner">
+               <div
+                ref={chatContainerRef}
+                className="max-h-72 overflow-y-auto space-y-3 p-4 bg-gray-50 rounded-xl border mb-4 shadow-inner"
+              >
                 <div className="bg-white text-gray-900 border rounded-bl-none px-4 py-2 max-w-[75%] text-sm rounded-2xl shadow">
                   <p>{ticket.title}</p>
                   <div className="text-[10px] mt-1 text-left text-gray-500">
-                    {ticket.sentAt &&
-                      new Date(ticket.sentAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    {formatChatTimeIST(ticket.sentAt)}
                   </div>
                 </div>
 
@@ -331,10 +415,7 @@ const handleReply = async () => {
                                 : "text-gray-500 text-left"
                             }`}
                           >
-                            {new Date(msg.repliedAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}{" "}
+                            {formatChatTimeIST(msg.repliedAt)}{" "}
                             {msg.repliedBy === "admin" && "✓✓"}
                           </div>
                         </div>
@@ -347,7 +428,7 @@ const handleReply = async () => {
 
               {ticket.status === "Resolved" ? (
                 <div className="text-center text-red-600 font-medium py-4 border-t border-gray-200">
-                  🚫 This ticket is Resolved. No further replies are allowed.
+                  This ticket is Resolved. No further replies are allowed.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -367,6 +448,7 @@ const handleReply = async () => {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 resize-none text-sm shadow"
                     placeholder="Type your reply..."
                   />
+
                   <button
                     onClick={handleReply}
                     className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"

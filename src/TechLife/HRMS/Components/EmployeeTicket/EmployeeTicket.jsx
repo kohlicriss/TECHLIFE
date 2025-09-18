@@ -36,6 +36,8 @@ const [totalCount, setTotalCount] = useState(0);
  
   const navigate = useNavigate();
   const { empID } = useParams();
+ 
+
   const { userData } = useContext(Context);
   const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
   const normalizedRole = role.toUpperCase().startsWith("ROLE_") ? role.toUpperCase() : "ROLE_" + role.toUpperCase();
@@ -51,6 +53,7 @@ const [totalCount, setTotalCount] = useState(0);
  
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  
  
  
 const fetchTickets = async (pageNum = 0) => {
@@ -116,6 +119,11 @@ useEffect(() => {
  
  
  const handleTabClick = (tab) => {
+
+   if (!empID) {
+    console.error("❌ empID is undefined, cannot navigate");
+    return;
+  }
   setActiveTab(tab);
   setTickets([]);
   nextPage.current = 0;
@@ -131,39 +139,52 @@ useEffect(() => {
  
  
  
- const handleFormSubmit = async (data) => {
+const handleFormSubmit = async (data) => {
   try {
     let roleToSend = Array.isArray(data.roles) ? data.roles[0] : data.roles || "";
     if (!roleToSend) return;
- 
-    roleToSend = roleToSend.toUpperCase().startsWith("ROLE_") ? roleToSend.toUpperCase() : "ROLE_" + roleToSend.toUpperCase();
- 
-    const payload = { ...data, status: "OPEN", employeeId: empID, roles: roleToSend };
- 
-    const res = await fetch("https://hrms.anasolconsultancyservices.com/api/ticket/employee/create", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
- 
+
+    roleToSend = roleToSend.toUpperCase().startsWith("ROLE_")
+      ? roleToSend.toUpperCase()
+      : "ROLE_" + roleToSend.toUpperCase();
+
+    const payload = {
+      ...data,
+      status: "OPEN",
+      employeeId: empID,
+      roles: roleToSend,
+    };
+
+    const res = await fetch(
+      "https://hrms.anasolconsultancyservices.com/api/ticket/employee/create",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
     if (!res.ok) throw new Error(`Failed to create ticket: ${res.status}`);
- 
-    // Instead of manually adding duplicate, re-fetch from backend
-    setTickets([]);
-    setPage(0);
-    setHasMore(true);
-    await fetchTickets(0);
- 
+
+    const newTicket = await res.json(); 
+
+
+    setTickets((prev) => [newTicket, ...prev]);
+    setTotalCount((prev) => prev + 1);
+
     setView("history");
   } catch (err) {
     console.error(err);
     alert("Ticket creation failed.");
   }
 };
+
  
  
  
-  // ======================== HANDLE TICKET CLICK ========================
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setView('chat');

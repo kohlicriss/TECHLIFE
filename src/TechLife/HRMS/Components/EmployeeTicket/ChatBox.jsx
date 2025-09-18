@@ -7,6 +7,10 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
   const messageEndRef = useRef(null);
   const reconnectTimeout = useRef(null);
   const containerRef = useRef(null);
+  const [page, setPage] = useState(0);
+const [hasMore, setHasMore] = useState(true);
+const [loading, setLoading] = useState(false);
+
 
   const isResolved = ticketStatus?.toLowerCase() === "resolved";
 
@@ -22,6 +26,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
       (a, b) => new Date(a.repliedAt) - new Date(b.repliedAt)
     );
   };
+  
 
   const formatDate = (date) => {
     const msgDate = new Date(date);
@@ -38,7 +43,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
     });
   };
 
-  // Group messages by date
+  
   const groupedMessages = messages.reduce((acc, msg) => {
     const dateKey = formatDate(msg.repliedAt);
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -46,44 +51,55 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
     return acc;
   }, {});
 
-const fetchInitialMessages = async () => {
+
+const fetchMessages = async (pageToFetch) => {
   const token = localStorage.getItem("accessToken");
+  if (!ticketId || !token) return;
 
   try {
+    setLoading(true);
     const res = await fetch(
-      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages?page=0&size=1000`, // fetch all for simplicity
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages?page=${pageToFetch}&size=20`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
     const data = await res.json();
-
-    // Extract content array from paginated response
     const messagesArray = Array.isArray(data?.content) ? data.content : [];
 
-    setMessages(dedupeMessages(messagesArray));
+    if (messagesArray.length === 0) {
+      setHasMore(false);
+    } else {
+      setMessages((prev) =>
+        dedupeMessages([...messagesArray, ...prev]) 
+      );
+    }
   } catch (err) {
     console.error("❌ Fetch error:", err);
-    setMessages([]);
+  } finally {
+    setLoading(false);
   }
 };
 
+const formatChatTimeIST = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString.endsWith("Z") ? dateString : dateString + "Z");
+  return date.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, 
+  });
+};
 
 
-  const connectWebSocket = () => {
-  const token = localStorage.getItem("accessToken");
-
-  if (!ticketId || !token) {
-    console.error("❌ Missing ticketId or token, cannot open WebSocket");
+ const connectWebSocket = () => {
+  if (!ticketId) {
+    console.error("❌ Missing ticketId, cannot open WebSocket");
     return;
   }
+  const token = localStorage.getItem("accessToken");
 
-  // Attach token in query params
   const ws = new WebSocket(
     `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticketId}&token=${token}`
   );
@@ -93,40 +109,41 @@ const fetchInitialMessages = async () => {
   ws.onmessage = (event) => {
     try {
       const payload = JSON.parse(event.data);
-      setMessages((prev) => dedupeMessages([...prev, payload]));
+      console.log("📩 Incoming WS message:", payload);
+
+      if (payload && payload.replyText) {
+        setMessages((prev) => dedupeMessages([...prev, payload]));
+      }
     } catch (err) {
-      console.error("❌ Failed to parse WebSocket message:", err);
+      console.error("❌ WS parse error:", err, event.data);
     }
   };
 
-  ws.onclose = () => {
-    console.warn("⚠️ WebSocket closed. Reconnecting...");
-    reconnectTimeout.current = setTimeout(connectWebSocket, 5000);
-  };
+ws.onclose = () => {
+  console.warn("WebSocket closed, reconnecting in 5s...");
+  setTimeout(connectWebSocket, 5000);
+};
+
 
   ws.onerror = (err) => console.error("❌ WebSocket error:", err);
 
   socketRef.current = ws;
 };
 
+
 const sendMessage = async () => {
   if (!input.trim() || isResolved) return;
 
   const token = localStorage.getItem("accessToken");
-
-const tempMessage = {
-  ticketId,
-  replyText: input,
-  repliedBy: userRole,
-  repliedAt: new Date().toISOString(), // temporary, will be replaced
-  temp: true,
-};
-
-
-  setMessages((prev) => dedupeMessages([...prev, tempMessage]));
+  const messageToSend = {
+    ticketId,
+    replyText: input,
+    repliedBy: userRole,
+    repliedAt: new Date().toISOString(),
+  };
 
   try {
-    const res = await fetch(
+    await fetch(
       `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         method: "POST",
@@ -134,18 +151,11 @@ const tempMessage = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ticketId, replyText: input, repliedBy: userRole }),
+        body: JSON.stringify(messageToSend),
       }
     );
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const savedMessage = await res.json(); 
-
-  
-    setMessages((prev) =>
-      dedupeMessages([...prev.filter((m) => !m.temp), savedMessage])
-    );
+    //setMessages(prev => dedupeMessages([...prev, messageToSend]));
   } catch (err) {
     console.error("❌ Send failed:", err);
   } finally {
@@ -153,8 +163,6 @@ const tempMessage = {
   }
 };
 
-
-  
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -171,17 +179,50 @@ const tempMessage = {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    fetchInitialMessages();
-    connectWebSocket();
+ useEffect(() => {
+  setPage(0);
+  setMessages([]);
+  setHasMore(true);
+  fetchMessages(0);
+  connectWebSocket();
+  return () => {
+    if (socketRef.current) socketRef.current.close();
+    clearTimeout(reconnectTimeout.current);
+  };
+}, [ticketId]);
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-      clearTimeout(reconnectTimeout.current);
-    };
-  }, [ticketId]);
+useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const handleScroll = () => {
+    if (container.scrollTop === 0 && hasMore && !loading) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchMessages(nextPage);
+    }
+  };
+
+  container.addEventListener("scroll", handleScroll);
+  return () => container.removeEventListener("scroll", handleScroll);
+}, [page, hasMore, loading]);
+const prevScrollHeightRef = useRef(0);
+
+useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  if (loading) {
+    prevScrollHeightRef.current = container.scrollHeight;
+  } else {
+    const diff = container.scrollHeight - prevScrollHeightRef.current;
+    if (diff > 0) {
+      container.scrollTop = diff; 
+    }
+  }
+}, [messages, loading]);
+
+
 
   return (
     <div className="flex flex-col h-[500px] bg-white rounded-xl border shadow">
@@ -210,12 +251,8 @@ const tempMessage = {
                 >
                   <p className="whitespace-pre-wrap">{msg.replyText}</p>
                   <div className="text-right text-xs mt-1 opacity-60">
-                   {msg.repliedAt || msg.clientTime
-  ? new Date(msg.repliedAt || msg.clientTime).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
+                 {msg.repliedAt || msg.clientTime
+  ? formatChatTimeIST(msg.repliedAt || msg.clientTime)
   : ""}
 
                   </div>

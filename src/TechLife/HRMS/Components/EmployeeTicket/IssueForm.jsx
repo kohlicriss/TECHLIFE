@@ -94,7 +94,7 @@ export default function IssueForm({ onSubmit }) {
           <option value="ROLE_ADMIN">Admin</option>
           <option value="ROLE_HR">HR</option>
           <option value="ROLE_MANAGER">Manager</option>
-          <option value="ROLE_TEAM_LEAD">Team Lead</option>
+         
         </select>
 
         <textarea

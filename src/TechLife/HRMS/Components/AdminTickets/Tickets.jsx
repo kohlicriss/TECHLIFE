@@ -55,7 +55,7 @@ export default function TicketDashboard() {
     resolved: "Resolved",
   };
 
-  // ✅ Fetch tickets with backend pagination
+ 
   const fetchTickets = async () => {
     try {
       if (!normalizedRole || !empID) {
@@ -91,7 +91,7 @@ export default function TicketDashboard() {
   }
 
   const socket = new WebSocket(
-    `wss://hrms.anasolconsultancyservices.com/api/ticket?token=${token}`
+    `wss://hrms.anasolconsultancyservices.com/api/ticket&token=${token}`
   );
 
   socket.onopen = () => console.log("✅ WebSocket connected");
@@ -206,7 +206,7 @@ export default function TicketDashboard() {
     }
   };
 
-  // ✅ Filter tickets
+ 
   const filtered = tickets
     .filter(
       (t) =>
@@ -236,7 +236,6 @@ const handleTabClick = (tab) => {
   setIsSidebarCollapsed(true);
 };
 
-  // ✅ Effects
   useEffect(() => {
     fetchTickets();
   }, [normalizedRole, empID, currentPage]);
@@ -248,7 +247,8 @@ const handleTabClick = (tab) => {
 
   return (
     <div className="flex flex-row min-h-screen bg-gray-50">
-      {/* Main Content Left */}
+    
+
       <main className="flex-1 relative">
         <div className="absolute inset-0 bg-[url('/your-image.jpg')] bg-cover bg-center">
           <div className="w-full h-full bg-gradient-to-b from-white/20 via-white/80 to-white"></div>
@@ -262,7 +262,7 @@ const handleTabClick = (tab) => {
             setSearchTerm={setSearchTerm}
           />
 
-          {/* ✅ All & Resolved Filter Buttons */}
+      
           <div className="flex space-x-2 my-3">
             {["all", "resolved"].map((status) => (
               <button
@@ -412,7 +412,7 @@ const handleTabClick = (tab) => {
   )}
 </aside>
 
-{/* ✅ Sidebar Drawer for Mobile */}
+
 {!isSidebarCollapsed && (
   <div
     className="sm:hidden fixed inset-0 bg-black/40 z-40"
