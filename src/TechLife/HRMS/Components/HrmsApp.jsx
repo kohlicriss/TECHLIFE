@@ -161,6 +161,8 @@ const HrmsApp = () => {
                                 
                                 <Route path="/permissions/:empID/*" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
                                 <Route path="/project-details/:project_id/*" element={<ProtectedRoute><ProjectDetails /></ProtectedRoute>} />
+                                <Route path="/projects/:project_id/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
+
 
                                 <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                             </Route>

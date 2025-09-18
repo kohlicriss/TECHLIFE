@@ -400,7 +400,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showAttendanceReports, setShowAttendanceReports] = useState(false);
-    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [selectedDate, setSelectedDate] = useState("All");
     const isMobile = useMediaQuery('(max-width:768px)');

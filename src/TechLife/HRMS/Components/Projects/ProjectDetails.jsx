@@ -33,7 +33,7 @@ const ProjectDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const project = location.state?.project;
-  const { userData } = useContext(Context);
+  const { userData,theme } = useContext(Context);
 
   // Project and team data
   const projectInfo = {
@@ -55,8 +55,8 @@ const ProjectDetails = () => {
     ],
     tags: ["Admin Panel", "High Tech"],
     description: "The Tech life Management System (EPMS) project aims to modernize and streamline the Human management processes within. By integrating advanced technologies and optimizing existing workflows, the project seeks to improve tickets Processing and resolving the user queries, enhance operational efficiency, and ensure compliance with regulatory standards.",
-    hoursSpent: 65,
-    totalHours: 120
+    daysSpent: 65,
+    totaldays: 120
   };
 
   // State Management
@@ -116,7 +116,7 @@ const ProjectDetails = () => {
     projectDetails: {
       client: "ABC Enterprises",
       totalCost: "$1400",
-      hoursOfWork: "150 hrs",
+      DaysToWork: "120 days",
       createdOn: "14 Nov 2024",
       startedOn: "15 Jan 2025",
       dueDate: "15 Nov 2025",
@@ -152,11 +152,11 @@ const ProjectDetails = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen relative font-sans">
+    <div className={` ${theme==='dark'?'bg-gray-800':'bg-stone-100'}  min-h-screen relative font-sans`}>
       {/* Project Header - Fixed to top for full-width coverage */}
-      <div className="fixed top-16  z-50 p-6 md:p-10 bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between">
+      <div className={`fixed top-16  z-50 p-6 md:p-10 ${theme==='dark'?'bg-gray-600':'bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
         <div className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-md">
+          <div className={`w-16 h-16 ${theme==='dark'?'bg-gray-800':'bg-white'} rounded-2xl flex items-center justify-center shadow-md`}>
             <span className="text-3xl font-bold text-indigo-600"><FaRegFolderOpen /></span>
           </div>
           <div>
@@ -165,7 +165,7 @@ const ProjectDetails = () => {
           </div>
         </div>
         <button
-          className="px-6 py-2 mr-56 bg-white text-indigo-600 rounded-lg font-medium shadow-md hover:bg-gray-100 transition"
+          className="flex items-center px-4 py-2 mr-52 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
           onClick={() => navigate(`/projects/${userData?.employeeId}`)}
         >
           ← Back to Projects
@@ -179,19 +179,19 @@ const ProjectDetails = () => {
           {/* Overview Section */}
           <section ref={overviewRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 scroll-mt-16">
             {/* Main Overview Card */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 space-y-6 col-span-1 lg:col-span-2">
+            <div className={` ${theme==='dark'?'bg-gray-600':'bg-stone-100'} rounded-2xl shadow-lg border border-gray-200 p-4 space-y-6 col-span-1 lg:col-span-2`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold">{projectInfo.title}</h2>
-                  <p className="text-sm mt-1 text-gray-500">
-                    Project ID: <span className="text-red-500 font-semibold">{projectInfo.projectId}</span>
+                  <h2 className={`text-2xl ${theme==='dark'?'text-white':'text-gray-800'} font-bold`}>{projectInfo.title}</h2>
+                  <p className={`text-sm mt-1 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
+                    Project ID: <span className="text-red-500 font-semibold">{project.project_id}</span>
                   </p>
                 </div>
                 <div className="relative">
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="appearance-none px-4 py-2 pr-12 rounded-md border border-gray-300 bg-white text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className={`appearance-none px-4 py-2 pr-12 rounded-md border border-gray-300 ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-gray-800'} text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
                   >
                     <option value="Pending">Pending</option>
                     <option value="InProgress">InProgress</option>
@@ -205,15 +205,15 @@ const ProjectDetails = () => {
 
               {/* Team Members */}
               <div>
-                <h3 className="text-gray-700 font-semibold mb-2">Team</h3>
+                <h3 className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-semibold mb-2`}>Team</h3>
                 <div className="flex flex-wrap gap-3">
                   {projectInfo.team.map((member, index) => (
-                    <span key={index} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition">
+                    <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition`}>
                       <img src={member.avatar} alt={member.name} className="w-8 h-8 rounded-full border" />
                       <span className="text-sm font-medium">{member.name}</span>
                     </span>
                   ))}
-                  <button className="text-gray-600 text-sm border border-dashed border-gray-400 rounded-lg px-3 py-2 hover:bg-gray-100 transition">
+                  <button className={`text-sm border border-dashed border-gray-400 rounded-lg px-3 py-2 hover:bg-gray-100 transition`}>
                     + Add New
                   </button>
                 </div>
@@ -222,10 +222,10 @@ const ProjectDetails = () => {
               {/* Team Lead & Project Manager */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-gray-700 font-semibold mb-2">Team Lead</h3>
+                  <h3 className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-semibold mb-2`}>Team Lead</h3>
                   <div className="flex flex-wrap gap-3">
                     {projectInfo.teamLead.map((lead, index) => (
-                      <span key={index} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                      <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm`}>
                         <img src={lead.avatar} alt={lead.name} className="w-8 h-8 rounded-full border" />
                         <span className="text-sm font-medium">{lead.name}</span>
                       </span>
@@ -233,10 +233,10 @@ const ProjectDetails = () => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-gray-700 font-semibold mb-2">Project Manager</h3>
+                  <h3 className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-semibold mb-2`}>Project Manager</h3>
                   <div className="flex flex-wrap gap-3">
                     {projectInfo.projectManager.map((pm, index) => (
-                      <span key={index} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                      <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm`}>
                         <img src={pm.avatar} alt={pm.name} className="w-8 h-8 rounded-full border" />
                         <span className="text-sm font-medium">{pm.name}</span>
                       </span>
@@ -247,18 +247,18 @@ const ProjectDetails = () => {
 
               {/* Description & Hours Spent */}
               <div>
-                <h3 className="font-semibold mb-2 text-gray-700">Description</h3>
-                <p className="text-gray-600 text-base leading-relaxed">{projectInfo.description}</p>
+                  <h3 className={`font-semibold mb-2 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>Description</h3>
+                <p className={`${theme==='dark'?'text-gray-200':'text-gray-700'} text-base leading-relaxed`}>{projectInfo.description}</p>
               </div>
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl px-6 py-4 text-right font-semibold text-blue-700 shadow-sm">
-                {projectInfo.hoursSpent}/{projectInfo.totalHours} Hrs
+                {projectInfo.daysSpent}/{projectInfo.totaldays} days
               </div>
             </div>
 
             {/* Right Column Details */}
             <div className="space-y-6 col-span-1">
               {/* Project Details */}
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <div className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6`}>
                 <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Details</h2>
                 <dl className="divide-y divide-gray-200">
                   {Object.entries(projectData.projectDetails).map(([key, value]) => {
@@ -266,11 +266,11 @@ const ProjectDetails = () => {
                     if (key === 'createdBy') {
                       return (
                         <div key={key} className="flex items-center justify-between py-3">
-                          <dt className="text-gray-500 text-base">Reported by</dt>
+                          <dt className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-base`}>Reported by</dt>
                           <dd className="text-right">
                             <span className="inline-flex items-center gap-2 justify-end">
                               <img src={value.avatar} alt={value.name} className="w-8 h-8 rounded-full" />
-                              <span className="text-gray-900 font-medium">{value.name}</span>
+                              <span className={` ${theme==='dark'?'text-gray-200':'text-gray-900'} font-medium`}>{value.name}</span>
                             </span>
                           </dd>
                         </div>
@@ -279,8 +279,8 @@ const ProjectDetails = () => {
                     if (key === 'dueAlert') return null; // Hide dueAlert from this list
                     return (
                       <div key={key} className="flex items-center justify-between py-3">
-                        <dt className="text-gray-500 text-base">{label}</dt>
-                        <dd className="text-right text-gray-900 font-medium">
+                        <dt className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-base`}>{label}</dt>
+                        <dd className={`text-right ${theme==='dark'?'text-gray-200':'text-gray-900'} font-medium`}>
                           {key === 'dueDate' ? (
                             <span className="inline-flex items-center gap-2">
                               {value}
@@ -301,17 +301,17 @@ const ProjectDetails = () => {
               </div>
 
               {/* Tasks Details */}
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 h-auto">
+              <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6 h-auto`}>
                 <h2 className="text-xl font-bold mb-4 border-b pb-2">Tasks Details</h2>
                 <div>
-                  <p className="text-gray-500 text-sm">Tasks Done</p>
+                  <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'} text-sm`}>Tasks Done</p>
                   <p className="text-3xl font-bold mt-1">
                     {projectData.tasksDetails.tasksDone} / {projectData.tasksDetails.totalTasks}
                   </p>
-                  <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div className={`mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden`}>
                     <div className="h-2 bg-blue-600 rounded-full" style={{ width: `${projectData.tasksDetails.percentageCompleted}%` }}></div>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">{projectData.tasksDetails.percentageCompleted}% Completed</p>
+                  <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-600'} mt-2`}>{projectData.tasksDetails.percentageCompleted}% Completed</p>
                 </div>
               </div>
             </div>
@@ -320,31 +320,31 @@ const ProjectDetails = () => {
           {/* Team Section */}
           <section ref={teamRef} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 scroll-mt-24">
             {/* Team Members List */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-6">Team Members</h2>
               <div className="space-y-4">
                 {projectInfo.team.map((member, index) => (
                   <div
                     key={index}
                     onClick={() => setSelectedMember(member)}
-                    className={`cursor-pointer bg-white p-4 rounded-xl shadow-md flex items-center justify-between hover:bg-gray-50 transition ${selectedMember === member ? 'border-2 border-indigo-500' : ''}`}
+                    className={`cursor-pointer ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800  hover:bg-gray-50 '}  p-4 rounded-xl shadow-md flex items-center justify-between transition ${selectedMember === member ? 'border-2 border-indigo-500' : ''}`}
                   >
                     <div className="flex items-center gap-4">
                       <img src={member.avatar} alt={member.name} className="w-12 h-12 rounded-full border" />
                       <div>
                         <h3 className="text-lg font-semibold">{member.name}</h3>
-                        <p className="text-gray-500 text-sm">{member.role}</p>
+                        <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-sm`}>{member.role}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="text-center">
-                        <p className="text-gray-500 text-xs">Performance %</p>
+                        <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-xs`}>Performance %</p>
                         <p className={`font-semibold text-base ${index === 0 ? "text-green-500" : "text-orange-500"}`}>
                           {index === 0 ? "85%" : "47%"}
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-gray-500 text-xs">Status</p>
+                        <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-xs`}>Status</p>
                         <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full border ${index === 0 ? "border-green-500 text-green-500" : "border-orange-500 text-orange-500"}`}>
                           {index === 0 ? "5/5" : "2/5"}
                         </span>
@@ -356,10 +356,10 @@ const ProjectDetails = () => {
             </div>
 
             {/* Selected Member Details */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-6">Member Details</h2>
               {selectedMember ? (
-                <div className="bg-gray-50 p-6 rounded-xl space-y-4">
+                <div className={`${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl space-y-4`}>
                   <div className="flex items-center gap-4">
                     <img src={selectedMember.avatar} alt={selectedMember.name} className="w-20 h-20 rounded-full border-2 border-indigo-400" />
                     <div>
@@ -367,14 +367,14 @@ const ProjectDetails = () => {
                       <p className="text-indigo-600 font-medium">{selectedMember.role} Developer</p>
                     </div>
                   </div>
-                  <div className="space-y-2 text-gray-700">
+                  <div className={`space-y-2 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
                     <p className="flex items-center gap-2 text-sm"><MdEmail /> {selectedMember.email}</p>
                     <p className="flex items-center gap-2 text-sm"><FaPhoneFlip /> Contact: N/A</p>
                   </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">{selectedMember.description}</p>
+                  <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm leading-relaxed`}>{selectedMember.description}</p>
                 </div>
               ) : (
-                <div className="text-gray-500 text-center mt-12 py-10 rounded-xl border border-dashed border-gray-300">
+              <div className={`${theme==='dark'?'text-gray-200':'text-gray-500'} text-center mt-12 py-10 rounded-xl border border-dashed border-gray-300`}>
                   Click a team member to view details
                 </div>
               )}
@@ -384,7 +384,7 @@ const ProjectDetails = () => {
           {/* Tasks Section */}
           <section ref={Tasks} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10 scroll-mt-24">
             {/* Task List */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold">Project Tasks</h2>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -395,9 +395,6 @@ const ProjectDetails = () => {
                     placeholder="Enter new task..."
                     className="flex-grow border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                   />
-                  <button onClick={addTask} className="bg-orange-500 text-white px-4 py-2 rounded-lg shadow hover:bg-orange-600 transition">
-                    + Add
-                  </button>
                 </div>
               </div>
               <ul className="space-y-4">
@@ -405,8 +402,8 @@ const ProjectDetails = () => {
                   <li key={task.id} className="border-b last:border-b-0 pb-4">
                     <div onClick={() => setSelectedTask(selectedTask === task.id ? null : task.id)} className="flex justify-between items-center cursor-pointer">
                       <div className="flex items-center gap-4">
-                        <span className="text-gray-500"><LuListCollapse size={20} /></span>
-                        <span className="text-lg font-medium text-gray-800">{task.title}</span>
+                        <span className={`${theme==='dark'?'text-gray-200':'text-gray-500'}`}><LuListCollapse size={20} /></span>
+                        <span className={`text-lg font-medium ${theme==='dark'?'text-gray-200':'text-gray-600'}`}>{task.title}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className={`${task.statusColor} px-3 py-1 rounded-md text-sm font-semibold`}>
@@ -418,7 +415,7 @@ const ProjectDetails = () => {
                       </div>
                     </div>
                     {selectedTask === task.id && (
-                      <p className="mt-3 ml-8 text-gray-600 text-sm">{task.description}</p>
+                      <p className={`mt-3 ml-8 ${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm`}>{task.description}</p>
                     )}
                   </li>
                 ))}
@@ -426,15 +423,15 @@ const ProjectDetails = () => {
             </div>
 
             {/* Task Progress Timeline */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-2">Task Progress</h2>
-              <p className="text-sm text-gray-500 mb-6">This month <span className="text-green-600 font-semibold">+20%</span></p>
-              <ul className="relative border-l border-gray-300 ml-4 pl-6 space-y-6">
+              <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'} mb-6`}>This month <span className="text-green-600 font-semibold">+20%</span></p>
+              <ul className="relative border-l border-gray-200 ml-4 pl-6 space-y-6">
                 {progress.map((order) => (
                   <li key={order.id} className="relative">
                     <div className={`absolute w-3 h-3 ${order.color} rounded-full -left-9 top-0.5`}></div>
-                    <p className="font-medium text-gray-700">{order.title}</p>
-                    <p className="text-sm text-gray-500">{order.date}</p>
+                    <p className={`font-medium ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>{order.title}</p>
+                    <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-600'}`}>{order.date}</p>
                   </li>
                 ))}
               </ul>
@@ -447,7 +444,7 @@ const ProjectDetails = () => {
 
           {/* Reports Section */}
           <section ref={reportsRef} className="mt-10 mb-20 scroll-mt-24">
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Department Progress</h2>
                 <select
@@ -461,13 +458,13 @@ const ProjectDetails = () => {
                   ))}
                 </select>
               </div>
-              <div className="p-4 rounded-lg" style={{ background: "linear-gradient(90deg, #1e3a8a, #3b82f6, #60a5fa)" }}>
+              <div className={`p-4 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-blue-800 via-blue-600 to-blue-300 '}  rounded-lg`}>
                 {isMounted && ( // Conditional rendering based on isMounted state
                   <ResponsiveContainer width="100%" height={350}>
                     <BarChart data={departmentData[selectedMonth]} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                      <XAxis dataKey="department" stroke="#fff" />
+                      <XAxis dataKey="department" stroke="#fff"  />
                       <YAxis domain={[0, 100]} stroke="#fff" />
-                      <Tooltip formatter={(value) => `${value}%`} />
+                      <Tooltip className={`  ${theme==='dark'?'bg-gray-600':'bg-gray-200'}`}formatter={(value) => `${value}%`} />
                       <Legend wrapperStyle={{ color: "#fff" }} />
                       <Bar dataKey="progress" fill="#ffffff" barSize={40} radius={[5, 5, 0, 0]} barCategoryGap="20%" />
                     </BarChart>
@@ -480,28 +477,28 @@ const ProjectDetails = () => {
       </div>
 
       {/* Right Sidebar */}
-      <div className={`fixed top-[210px]  right-0 bottom-0 bg-white shadow-lg border-l transition-all duration-300 z-50 ${open ? "w-42" : "w-16"}`}>
+      <div className={`fixed top-[210px]  right-0 bottom-0 ${theme==='dark'?'bg-gray-800 text-gray-200 ':'bg-stone-100 text-gray-800'} shadow-lg border-l transition-all duration-300 z-50 ${open ? "w-42" : "w-16"}`}>
         {/* Toggle Button */}
-        <button onClick={() => setOpen(!open)} className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-white border shadow flex items-center justify-center">
+        <button onClick={() => setOpen(!open)} className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-blue-300 border shadow flex items-center justify-center">
           {open ? <FiChevronRight /> : <FiChevronLeft />}
         </button>
         {/* Menu Items */}
         <div className="mt-5 flex flex-col space-y-6 items-center">
-          <button onClick={() => scrollToSection(overviewRef)} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-blue-100 w-full justify-center">
-            <FaHome className="text-xl text-gray-600" />
-            {open && <span className="text-gray-700 font-medium">Overview</span>}
+          <button onClick={() => scrollToSection(overviewRef)} className={`flex items-center gap-3 px-3 py-2 rounded-md ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+            <FaHome className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
+            {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Overview</span>}
           </button>
-          <button onClick={() => scrollToSection(teamRef)} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-blue-100 w-full justify-center">
-            <FaUsers className="text-xl text-gray-600" />
-            {open && <span className="text-gray-700 font-medium">Team</span>}
+          <button onClick={() => scrollToSection(teamRef)} className={`flex items-center gap-3 px-3 py-2 rounded-md  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+            <FaUsers className={ `text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
+            {open && <span className={`t${theme==='dark'?'text-gray-200':'text-gray-`00'} font-medium`}>Team</span>}
           </button>
-          <button onClick={() => scrollToSection(Tasks)} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-blue-100 w-full justify-center">
-            <FaTasks className="text-xl text-gray-600" />
-            {open && <span className="text-gray-700 font-medium">Tasks</span>}
+          <button onClick={() => scrollToSection(Tasks)} className={`flex items-center gap-3 px-3 py-2 rounded-md  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+            <FaTasks className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
+            {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Tasks</span>}
           </button>
-          <button onClick={() => scrollToSection(reportsRef)} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-blue-100 w-full justify-center">
-            <FaChartBar className="text-xl text-gray-600" />
-            {open && <span className="text-gray-700 font-medium">Reports</span>}
+          <button onClick={() => scrollToSection(reportsRef)} className={`flex items-center gap-3 px-3 py-2 rounded-md  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+            <FaChartBar className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
+            {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Reports</span>}
           </button>
         </div>
       </div>

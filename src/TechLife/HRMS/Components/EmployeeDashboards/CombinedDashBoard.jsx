@@ -1,1100 +1,1266 @@
-import { Calendar as CalendarDays, BriefcaseMedical,PackageSearch,MessageSquareCode,CircleUserRound,UserRoundCog } from 'lucide-react';
-import React, { Fragment,useState } from 'react';
-import Calendar from './Calender'; // Assuming Calendar component exists
-import { PieChart, Pie, Cell,Tooltip , ResponsiveContainer } from 'recharts';
-import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import { FaCalendarAlt, FaTrashAlt, FaFileAlt } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import AttendancesDashboard from '../EmployeeDashboards/AttendancesDashboard';
-import AttendanceReports from './AttendanceReports';
-import LeavesReports from './LeavesReports';
+import { Calendar as CalendarDays, BriefcaseMedical, PackageSearch, MessageSquareCode, CircleUserRound, UserRoundCog } from 'lucide-react';
+import React, { Fragment, useContext, useEffect, useState } from 'react';
+import Calendar from './Calender';
+import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus } from 'react-icons/fa';
+import { useNavigate, useParams } from 'react-router-dom';
 import EmployeeDetails from './EmployeeDetails';
 import Applicants from './Applicants';
 import JobsList from './JobsList';
+import { Context } from '../HrmsContext';
+import { motion, AnimatePresence } from "framer-motion";
+import { FaPaperclip } from 'react-icons/fa6';
+import { FiEdit } from 'react-icons/fi';
+
+
 const Header = () => {
-  const [showFromCalendar, setShowFromCalendar] = useState(false);
-  const [fromDate, setFromDate] = useState(new Date());
-  return (
-    <div className="flex justify-between items-center p-4">
-      <div className="flex items-center  space-x-2 text-gray-700">
-        <span className='text-5xl text-bold'>Admin Dashboard</span>
-      </div>
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <label className="block text-sm font-medium text-gray-700">Today</label>
-          <button className="flex items-center space-x-2 border px-3 py-1 rounded-md text-sm text-gray-700">
-            <input
-              type="text"
-              readOnly
-              value={fromDate ? fromDate.toLocaleDateString('en-GB') : 'dd-mm-yyyy'}
-              onClick={() => setShowFromCalendar(!showFromCalendar)}
-              className="focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer"
-            />
-            {showFromCalendar && (
-              <Calendar
-                selectedDate={fromDate}
-                onSelectDate={(date) => {
-                  setFromDate(date);
-                  setShowFromCalendar(false);
-                }}
-                onClose={() => setShowFromCalendar(false)}
-              />
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    const [showFromCalendar, setShowFromCalendar] = useState(false);
+    const [fromDate, setFromDate] = useState(new Date());
+    const {theme}=useContext(Context);
+
+    return (
+        <motion.div
+            className="flex justify-between items-center p-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+        >
+            
+            <div className="relative flex items-start space-x-4">
+                <label className={`block text-sm font-medium ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Today:</label>
+                <motion.button
+                    className="relative flex items-center space-x-2 border px-3 py-1 rounded-md text-sm text-gray-700 bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
+                    onClick={() => setShowFromCalendar(!showFromCalendar)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    <input
+                        type="text"
+                        readOnly
+                        value={fromDate ? fromDate.toLocaleDateString('en-GB') : 'dd-mm-yyyy'}
+                        className="focus:outline-none cursor-pointer bg-transparent"
+                    />
+                    <AnimatePresence>
+                        {showFromCalendar && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute top-full right-0 mt-2 z-50"
+                            >
+                                <Calendar
+                                    selectedDate={fromDate}
+                                    onSelectDate={(date) => {
+                                        setFromDate(date);
+                                        setShowFromCalendar(false);
+                                    }}
+                                    onClose={() => setShowFromCalendar(false)}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.button>
+            </div>
+        </motion.div>
+    );
 };
-const UserGreeting = () => (
-  <div className="flex justify-between items-center p-6 bg-white rounded-lg shadow-md mt-4">
-    <div className="flex items-center space-x-4">
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="rounded-full h-16 w-16" />
-      <div>
-        <h2 className="text-2xl font-semibold flex items-center">
-          Welcome, Rohit
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 ml-2 text-gray-500"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-4.604 4.549l2.828 2.829-5.46 5.46a1 1 0 01-.453.298l-3.268.817a1 1 0 01-1.218-1.218l.817-3.268a1 1 0 01.298-.453l5.46-5.46z" />
-          </svg>
-        </h2>
-        <p className="text-gray-500 mt-1">
-          You have <span className="font-bold text-red-500">21</span> Pending Approvals &{' '}
-          <span className="font-bold text-red-500">14</span> Leave Requests
-        </p>
-      </div>
-    </div>
-  </div>
-);
-const StatCard = ({ title, value, total, icon, onViewAll }) => (
-  <div className="flex flex-col p-4 bg-white rounded-lg shadow-md">
-    <div className="flex items-center justify-between">
-      <div
-        className={`p-2 rounded-full  bg-opacity-20`}
-      >
-        {icon}
-      </div>
-    </div>
-    <h3 className="mt-4 text-lg text-gray-500">{title}</h3>
-    <p className="text-2xl font-bold mt-1">
-      {value}
-      {total && <span className="text-base text-gray-500 font-normal">/{total}</span>}
-    </p>
-    <button
-      onClick={onViewAll}
-      className="text-blue-500 text-lg mt-4 text-left hover:underline"
+
+const UserGreeting = () => {
+    const { userData, theme } = useContext(Context);
+    const [loggedInUserProfile, setLoggedInUserProfile] = useState({
+        image: null,
+        initials: ""
+    });
+
+    useEffect(() => {
+        const userPayload = JSON.parse(localStorage.getItem("emppayload"));
+        const userImage = localStorage.getItem("loggedInUserImage");
+
+        const initials = (userPayload?.displayName || "")
+            .split(" ")
+            .map((word) => word[0])
+            .join("")
+            .substring(0, 2);
+
+        setLoggedInUserProfile({
+            image: userImage,
+            initials: initials,
+        });
+    }, [userData]);
+
+    return (
+        <motion.div
+            className={`flex justify-between items-center p-6 rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-purple-100 text-gray-800'}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+        >
+            <div className="flex items-center space-x-4">
+                <motion.div
+                    className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center font-bold text-2xl"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                >
+                    {loggedInUserProfile.image ? (
+                        <img
+                            src={loggedInUserProfile.image}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <span className="text-gray-600">
+                            {loggedInUserProfile.initials}
+                        </span>
+                    )}
+                </motion.div>
+                <div>
+                    <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                        Welcome, {userData?.fullName}
+                    </h2>
+                    <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                        You have <span className="font-bold text-green-600">10</span> Approved &{" "}
+                        <span className="font-bold text-red-600">2</span> Rejected leaves.
+                    </p>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+const StatCard = ({ title, value,color, total, titlecolor, icon, onViewAll }) => {
+  const {theme}=useContext(Context)
+  return(
+    <motion.div
+        className={`flex flex-col p-4 ${theme==='dark'?'bg-gray-500':'bg-stone-100'}  rounded-lg shadow-md border border-gray-200 cursor-pointer`}
+        whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
+        whileTap={{ scale: 0.98 }}
     >
-      View All
-    </button>
-  </div>
-);
+        <div className="flex items-center justify-between">
+            <div className={`p-2 rounded-full bg-opacity-20 ${color}`}>
+                {React.cloneElement(icon, { className: 'h-8 w-8' })}
+            </div>
+        </div>
+        <h3 className={`mt-4 text-lg  ${titlecolor}`}>{title}</h3>
+        <p className="text-2xl font-bold mt-1">
+            {value}
+            {total && <span className={`text-base ${theme==='dark'?'text-gray-200':'text-gray-500'}  font-normal`}>/{total}</span>}
+        </p>
+        <motion.button
+            onClick={onViewAll}
+            className={`${theme==='dark'?'text-blue-300':'text-blue-500'}  text-lg mt-4 text-left hover:underline`}
+            whileHover={{ x: 5 }}
+        >
+            View All
+        </motion.button>
+    </motion.div>
+)};
 
 const EmployeeChart = () => {
-  const [timeframe, setTimeframe] = useState('This Week');
+    const [timeframe, setTimeframe] = useState('This Week');
+    const employeeData = [
+        { Role: 'UI/UX', Employees: 20 },
+        { Role: 'Development', Employees: 50 },
+        { Role: 'Management', Employees: 15 },
+        { Role: 'HR', Employees: 10 },
+        { Role: 'Testing', Employees: 5 },
+        { Role: 'Marketing', Employees: 8 },
+    ];
+    const totalEmployees = employeeData.reduce((sum, dept) => sum + dept.Employees, 0);
+    const {theme}=useContext(Context)
 
-  const employeeData = [
-    { Role: 'UI/UX', Employees: 20 },
-    { Role: 'Development', Employees: 50 },
-    { Role: 'Management', Employees: 15 },
-    { Role: 'HR', Employees: 10 },
-    { Role: 'Testing', Employees: 5 },
-    { Role: 'Marketing', Employees: 8 },
-  ];
-
-  const totalEmployees = employeeData.reduce((sum, dept) => sum + dept.Employees, 0);
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md h-full">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800">Employees By Department</h2>
-        <div className="relative inline-block text-left">
-          <select
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 pr-2 py-2 text-sm text-gray-700 bg-white border cursor-pointer"
-          >
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>Last Week</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {employeeData.map((department) => (
-          <div key={department.Role}>
-            <p className="text-sm font-medium text-gray-600 mb-1">{department.Role}</p>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-orange-500 h-4 rounded-full"
-                style={{ width: `${(department.Employees / totalEmployees) * 100}%` }}
-              ></div>
+    return (
+        <motion.div
+            className={` ${theme==='dark'?'bg-gray-500':'bg-stone-100'}  p-6 rounded-lg shadow-md h-full border border-gray-200`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
+            <div className="flex justify-between items-center mb-6">
+                <h2 className={`text-xl font-bold ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Employees By Department</h2>
+                <div className="relative inline-block text-left">
+                    <select
+                        value={timeframe}
+                        onChange={(e) => setTimeframe(e.target.value)}
+                        className={`block w-full ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100'} rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 pr-2 py-2 text-sm   border cursor-pointer`}
+                    >
+                        <option>This Week</option>
+                        <option>This Month</option>
+                        <option>Last Week</option>
+                    </select>
+                </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+            <div className="space-y-4">
+                <AnimatePresence>
+                    {employeeData.map((department, index) => (
+                        <motion.div
+                            key={department.Role}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                        >
+                            <p className={`text-sm font-medium ${theme==='dark'?'text-gray-200':'text-gray-800'}  mb-1`}>{department.Role}</p>
+                            <div className="w-full bg-gray-200 rounded-full h-4">
+                                <motion.div
+                                    className="bg-orange-500 h-4 rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(department.Employees / totalEmployees) * 100}%` }}
+                                    transition={{ duration: 0.8, delay: index * 0.1 }}
+                                ></motion.div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+        </motion.div>
+    );
 };
+
 const EmployeeStatus = [
-  { FullTime: 40 },
-  { Interns: 51 },
-  { Probation: 13 },
-  { WFH: 4 },
-]
-
+    { FullTime: 40 },
+    { Interns: 51 },
+    { Probation: 13 },
+    { WFH: 4 },
+];
 const totalEmployees = EmployeeStatus.reduce((acc, curr) => {
-  const value = Object.values(curr)[0]
-  return acc + parseInt(value, 10)
-}, 0)
-
+    const value = Object.values(curr)[0]
+    return acc + parseInt(value, 10)
+}, 0);
 const calculatePercentage = (count) =>
-  ((count / totalEmployees) * 100).toFixed(0)
+    ((count / totalEmployees) * 100).toFixed(0);
 
 const statusData = {
-  FullTime: {
-    count: EmployeeStatus.find((item) => item.FullTime)?.FullTime || 0,
-    color: 'bg-orange-500',
-    label: 'Fulltime',
-  },
-  Interns: {
-    count: EmployeeStatus.find((item) => item.Interns)?.Interns || 0,
-    color: 'bg-purple-500',
-    label: 'Interns',
-  },
-  Probation: {
-    count: EmployeeStatus.find((item) => item.Probation)?.Probation || 0,
-    color: 'bg-indigo-500',
-    label: 'Probation',
-  },
-  WFH: {
-    count: EmployeeStatus.find((item) => item.WFH)?.WFH || 0,
-    color: 'bg-red-500',
-    label: 'WFH',
-  },
-}
-
-const EmployeeStatusDashboard = ({onViewAll}) => {
-  const [selectedTimeframe, setSelectedTimeframe] = useState('This Week')
-
-  return (
-    <div className="max-w-4xl mx-auto p-2 bg-white rounded-lg shadow-lg">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-2xl font-bold text-gray-800">Employee Status</h2>
-        <div className="relative inline-block text-left">
-          <select
-            value={selectedTimeframe}
-            onChange={(e) => setSelectedTimeframe(e.target.value)}
-            className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
-          >
-            <option>Today</option>
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>Last Month</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Total Employee and Chart */}
-      <div className="mb-2">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600">Total Employee</span>
-          <span className="text-3xl font-bold text-gray-900">
-            {totalEmployees}
-          </span>
-        </div>
-        <div className="flex h-2 rounded-full overflow-hidden">
-          {Object.entries(statusData).map(([key, data]) => (
-            <div
-              key={key}
-              style={{ width: `${calculatePercentage(data.count)}%` }}
-              className={`${data.color}`}
-            ></div>
-          ))}
-        </div>
-      </div>
-
-      {/* Status Cards Grid */}
-      <div className="grid grid-cols-2 gap-2 mb-2">
-        {Object.entries(statusData).map(([key, data]) => (
-          <div
-            key={key}
-            className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-          >
-            <div className="flex items-center mb-2">
-              <span className={`w-3 h-3 ${data.color} rounded-sm mr-2`}></span>
-              <span className="text-gray-600 text-sm font-medium">
-                {data.label} ({calculatePercentage(data.count)}%)
-              </span>
-            </div>
-            <p className="text-4xl font-bold text-gray-900">{data.count}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Top Performer */}
-      <div className="p-2 bg-white rounded-lg border border-gray-200 shadow-md">
-        <h3 className="text-lg font-bold mb-4 text-gray-800">Top Performer</h3>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="relative">
-              <span className="absolute top-0 left-0 -mt-2 -ml-2 p-1 rounded-full bg-orange-400 text-white">
-                🥇
-              </span>
-              <img
-                className="w-12 h-12 rounded-full mr-4 object-cover"
-                src="https://randomuser.me/api/portraits/women/65.jpg"
-                alt="Daniel Esbella"
-              />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Daniel Esbella</p>
-              <p className="text-sm text-gray-500">IOS Developer</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-sm text-gray-500">Performance</span>
-            <p className="text-xl font-bold text-green-500">99%</p>
-          </div>
-        </div>
-      </div>
-
-      {/* View All Employees Button */}
-      <div className="mt-2 text-center">
-        <button
-        onClick={onViewAll}
-         className="w-full py-2 px-4 bg-gray-100 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-200">
-          View All Employees
-        </button>
-      </div>
-    </div>
-  );
-};
-const Attendance = ({onViewAll}) => {
-  const navigate= useNavigate()
-  const [selectedPeriod, setSelectedPeriod] = useState('Today');
-  const totalAttendance = 104; 
-  const data = [
-    { name: 'Present', value: 60, color: '#10b981' }, 
-    { name: 'Late', value: 20, color: '#1e3a8a' }, 
-    { name: 'Permission', value: 20, color: '#facc15' },
-    { name: 'Absent', value: 4, color: '#ef4444' }, 
-  ];
-  const totalPercentage = data.reduce((sum, item) => sum + item.value, 0);
-  const fillerValue = 100 - totalPercentage;
-  const chartData = [...data, ]; 
-  return (
-    <div className="bg-white p-5 rounded-lg shadow-md max-w-2xl mx-auto">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold text-gray-800">Attendance Overview</h2>
-        <div className="relative inline-block text-left">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
-          >
-            <option>Today</option>
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>Last Month</option>
-          </select>
-        </div>
-      </div>
-      <div className="relative h-38">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="100%" // Position the center at the bottom
-              startAngle={180}
-              endAngle={0}
-              innerRadius={80}
-              outerRadius={140}
-              paddingAngle={2}
-              dataKey="value"
-              cornerRadius={5} // Rounds the corners of the slices
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip/>
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-16">
-          <p className="text-gray-500 text-sm">Total Attendance</p>
-          <p className="text-4xl font-bold text-gray-900">{totalAttendance}</p>
-        </div>
-      </div>
-      <hr className="my-8 border-gray-200" />
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Status</h3>
-          <ul className="space-y-1">
-            {data.map((item) => (
-              <li key={item.name} className="flex items-center text-gray-700">
-                <span
-                  className="inline-block h-3 w-3 rounded-full mr-2"
-                  style={{ backgroundColor: item.color }}
-                ></span>
-                {item.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="text-right">
-          <ul className="space-y-1 mt-8">
-            {data.map((item) => (
-              <li key={item.name} className="text-gray-700 font-medium">
-                {item.value}%
-              </li>
-            ))}
-          </ul>
-          </div>
-      </div>
-      <div className="mt-6 border-t pt-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <span className="font-semibold text-gray-800 mr-2">Total Absentees</span>
-            <div className="flex -space-x-2 overflow-hidden">
-              <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white" src="https://randomuser.me/api/portraits/men/32.jpg" alt="" />
-              <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white" src="https://randomuser.me/api/portraits/women/65.jpg" alt="" />
-              <img className="inline-block h-8 w-8 rounded-full ring-2 ring-white" src="https://randomuser.me/api/portraits/men/76.jpg" alt="" />
-              <div className="inline-flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-white bg-gray-200 text-xs font-semibold text-gray-600">
-                +1
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={onViewAll}
-            className="text-blue-500 text-sm mt-4 text-left hover:underline"
-            >
-           View All
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-const employees = [
-  {
-    name: 'John Doe',
-    title: 'UI/UX Designer',
-    department: 'UI/UX',
-    status: 'Clocked In',
-    time: '09:15',
-    profilePic: '	https://randomuser.me/api/portraits/men/30.jpg',
-  },
-  {
-    name: 'Raju',
-    title: 'Project Manager',
-    department: 'Management',
-    status: 'Clocked In',
-    time: '09:36',
-    profilePic: 'https://randomuser.me/api/portraits/men/57.jpg',
-  },
-  {
-    name: 'Srilekha',
-    title: 'PHP Developer',
-    department: 'Development',
-    status: 'Clocked In',
-    time: '09:15',
-    profilePic: '	https://randomuser.me/api/portraits/women/57.jpg',
-    details: {
-      clockIn: '10:30 AM',
-      clockOut: '09:45 AM',
-      production: '09:21 Hrs',
+    FullTime: {
+        count: EmployeeStatus.find((item) => item.FullTime)?.FullTime || 0,
+        color: 'bg-orange-500',
+        label: 'Fulltime',
     },
-  },
-];
-
-const lateEmployee = {
-  name: 'Anita',
-  title: 'Marketing Head',
-  department: 'Marketing',
-  status: 'Late',
-  lateTime: '30 Min',
-  time: '08:35',
-  profilePic: '	https://randomuser.me/api/portraits/women/87.jpg',
-};
-const departments = ['All Departments', 'UI/UX', 'Development', 'Management', 'HR', 'Marketing'];
-const timeframes = ['Today', 'This week', 'This month', 'Last Month'];
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ');
-}
-const ClockInOut = ({onViewAll}) => {
-  const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('Today');
-  return (
-    <div className="bg-white rounded-lg shadow-md mr-0 w-full max-w-lg font-sans">
-      <div className="p-5  flex items-center justify-between border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-800">Clock-In/Out</h2>
-        <div className="flex items-center space-x-2">
-          {/* Department Dropdown */}
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <MenuButton className="inline-flex justify-center w-full rounded-md text-sm border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-small text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {selectedDepartment}
-                <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
-              </MenuButton>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <MenuItems className="origin-top-right absolute right-0 mt-2 w-56 text-sm rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
-                <div className="py-1">
-                  {departments.map((department) => (
-                    <MenuItem key={department}>
-                      {({ active }) => (
-                        <a
-                          href="#"
-                          onClick={() => setSelectedDepartment(department)}
-                          className={classNames(
-                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                            'block px-4 py-2 text-sm'
-                          )}
-                        >
-                          {department}
-                        </a>
-                      )}
-                    </MenuItem>
-                  ))}
-                </div>
-              </MenuItems>
-            </Transition>
-          </Menu>
-
-          {/* Timeframe Dropdown */}
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <MenuButton className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-small text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {selectedTimeframe}
-                <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
-              </MenuButton>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <MenuItems className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
-                <div className="py-1">
-                  {timeframes.map((timeframe) => (
-                    <MenuItem key={timeframe}>
-                      {({ active }) => (
-                        <a
-                          href="#"
-                          onClick={() => setSelectedTimeframe(timeframe)}
-                          className={classNames(
-                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                            'block px-4 py-2 text-sm'
-                          )}
-                        >
-                          {timeframe}
-                        </a>
-                      )}
-                    </MenuItem>
-                  ))}
-                </div>
-              </MenuItems>
-            </Transition>
-          </Menu>
-        </div>
-      </div>
-      <div className="p-4 space-y-4">
-        {employees.map((employee, index) => (
-          <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center">
-              <img
-                className="w-10 h-10 rounded-full mr-3"
-                src={employee.profilePic}
-                alt={employee.name}
-              />
-              <div>
-                <p className="font-semibold text-gray-800">{employee.name}</p>
-                <p className="text-sm text-gray-500">{employee.title}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400 text-sm">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </span>
-              <div className="flex items-center justify-center w-16 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                {employee.time}
-              </div>
-            </div>
-          </div>
-        ))}
-        {/* Late Employee Section */}
-        <div className="mt-6 border-t pt-4">
-          <p className="text-gray-500 font-medium mb-3">Late</p>
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center">
-              <img
-                className="w-10 h-10 rounded-full mr-3"
-                src={lateEmployee.profilePic}
-                alt={lateEmployee.name}
-              />
-              <div>
-                <p className="font-semibold text-gray-800">{lateEmployee.name}</p>
-                <p className="text-sm text-gray-500">{lateEmployee.title}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-                {lateEmployee.lateTime}
-              </span>
-              <span className="text-gray-400 text-sm">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </span>
-              <div className="flex items-center justify-center w-16 h-8 rounded-full bg-red-100 text-red-700 text-sm font-medium">
-                {lateEmployee.time}
-              </div>
-            </div>
-          </div>
-        </div>
-        <button className="w-full text-center py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        onClick={onViewAll}>
-          
-          View All Attendance
-        </button>
-      </div>
-    </div>
-  );
-}
-const ChartsLayout = ({onViewAll}) => {
-  const [activeTab, setActiveTab] = useState('applicants');
-
-  const applicants = [
-    {
-      name: 'John Doe',
-      exp: '5+',
-      location: 'Hydrebad',
-      job: 'Senior DevOps Engineer',
-      image: 'https://randomuser.me/api/portraits/men/74.jpg',
-      color: 'bg-teal-500',
+    Interns: {
+        count: EmployeeStatus.find((item) => item.Interns)?.Interns || 0,
+        color: 'bg-purple-500',
+        label: 'Interns',
     },
-    {
-      name: 'Ramesh',
-      exp: '4+',
-      location: 'Bangalore',
-      job: 'UI/UX Designer',
-      image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D',
-      color: 'bg-blue-500',
+    Probation: {
+        count: EmployeeStatus.find((item) => item.Probation)?.Probation || 0,
+        color: 'bg-indigo-500',
+        label: 'Probation',
     },
-    {
-      name: 'Raghunadh',
-      exp: '6+',
-      location: 'Chennai',
-      job: 'Full Stack Developer',
-      image: 'https://randomuser.me/api/portraits/men/9.jpg',
-      color: 'bg-pink-500',
+    WFH: {
+        count: EmployeeStatus.find((item) => item.WFH)?.WFH || 0,
+        color: 'bg-red-500',
+        label: 'WFH',
     },
-    {
-      name: 'Anita',
-      exp: '2+',
-      location: 'Hyderabad',
-      job: 'Junior React Developer',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D',
-      color: 'bg-purple-500',
-    },
-    {
-      name: 'SriLekha',
-      exp: '2+',
-      location: 'Mumbai',
-      job: 'Data Scientist',
-      image: '	https://randomuser.me/api/portraits/women/63.jpg',
-      color: 'bg-yellow-500',
-    },
-  ];
-
-  const openings = [
-    { title: 'Senior DevOps Engineer', openings: 10, logo: '🛠️', Category: "DevOps", Location: "Hyderabad,India", Salary: "$8,00,000 - $12,00,000 per Annum", Date: "2023-10-01" },
-    { title: 'Data Scientist', openings: 20, logo: '🐘', Category: "Data Science", Location: "Bangalore,India", Salary: "$7,00,000 - $10,00,000 per Annum", Date: "2023-10-05" },
-    { title: 'Junior React Developer', openings: 30, logo: '⚛️', Category: "Software", Location: "Chennai,India", Salary: "$4,00,000 - $6,00,000 per Annum", Date: "2023-10-10" },
-    { title: 'UI/UX Designer', openings: 40, logo: '⚙️', Category: "Design", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-20", },
-    { title: 'Full Stack Developer', openings: 15, logo: '💻', Category: "Software", Location: "Delhi,India", Salary: "$5,00,000 - $7,00,000 per Annum", Date: "2023-10-25" },
-  ];
-
-  const renderContent = () => {
-    if (activeTab === 'applicants') {
-      return (
-        <ul>
-          {applicants.map((applicant, index) => (
-            <li key={index} className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
-              <div className="flex items-center">
-                <img src={applicant.image} alt={applicant.name} className="w-10 h-10 rounded-full mr-4 object-cover" />
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{applicant.name}</h3>
-                  <p className="text-sm text-gray-500">Exp: {applicant.exp} Years •{applicant.location}</p>
-                </div>
-              </div>
-              <span className={`text-white text-xs font-semibold px-3 py-1 rounded-full ${applicant.color}`}>{applicant.job}</span>
-            </li>
-          ))}
-        </ul>
-      );
-    } else {
-      return (
-        <ul>
-          {openings.map((opening, index) => (
-            <li key={index} className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
-              <div className="flex items-center">
-                <span className="text-xl mr-4">{opening.logo}</span>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">{opening.title}</h3>
-                  <p className="text-sm text-gray-500">No of Openings : {opening.openings}</p>
-                </div>
-              </div>
-              <button onClick={()=>alert('View Application')} className="text-gray-500 hover:text-gray-900" >✏️</button>
-            </li>
-          ))}
-        </ul>
-      );
-    }
-  };
-
-  return (
-    <div className="p-0 flex flex-col items-center bg-gray-100  font-sans">
-      <div className="bg-white rounded-lg shadow-md  p-2 w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Jobs Applicants</h2>
-          <button className="text-blue-600 hover:underline" onClick={onViewAll}>View All</button>
-        </div>
-        <div className="flex space-x-2 border-b-2 border-gray-200 mb-4">
-          <button
-            onClick={() => setActiveTab('openings')}
-            className={`py-2 px-1 rounded-t-lg font-medium ${activeTab === 'openings' ? 'bg-orange-500 text-white' : 'text-gray-600'}`}
-          >
-            Openings
-          </button>
-          <button
-            onClick={() => setActiveTab('applicants')}
-            className={`py-3 px-4 rounded-t-lg font-medium ${activeTab === 'applicants' ? 'bg-orange-500 text-white' : 'text-gray-600'}`}
-          >
-            Applicants
-          </button>
-        </div>
-        {renderContent()}
-      </div>
-    </div>
-  );
-};
-const TaskStatistics = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('Today');
-  const tasks = [
-    { label: 'Ongoing', percentage: 24 }, 
-    { label: 'On Hold', percentage: 10 }, 
-    { label: 'Overdue', percentage: 16 },
-    { label: 'Completed', percentage: 40 }, 
-  ];
-  const getlabelColor = (label) => {
-    switch (label) {
-        case "Ongoing":
-            return " text-yellow-400";
-        case "On Hold":
-            return " text-blue-500";
-        case "Overdue":
-            return "text-red-500";
-        case "Completed":
-            return " text-green-800";    
-        default:
-            return  " text-black-800";
-    }
 };
 
-  const totalTasks = 60;
-  const totalTasksPossible = 80; // Example total tasks possibl
-  const spentHours = 42;
-  const totalHours = 50;
+const EmployeeStatusDashboard = ({ onViewAll }) => {
+    const [selectedTimeframe, setSelectedTimeframe] = useState('This Week');
+    const {theme}=useContext(Context)
 
-  return (
-    <div className="p-1 flex flex-col items-center bg-gray-100  font-sans">
-      <div className="bg-white rounded-lg shadow-md  p-2 w-full max-w-2xl">
-         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Tasks Statistics</h2>
-          <div className="relative inline-block text-left">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
-          >
-            <option>Today</option>
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>Last Month</option>
-          </select>
-        </div>
-
-        </div>
-
-        <div className="relative flex justify-center items-center h-48">
-          <div className="absolute top-0 w-full h-full">
-            <svg className="w-full h-full" viewBox="0 0 100 50">
-              <defs>
-                <linearGradient id="ongoing-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: '#facc15' }} />
-                  <stop offset="100%" style={{ stopColor: '#facc15' }} />
-                </linearGradient>
-                <linearGradient id="onhold-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: '#3b82f6' }} />
-                  <stop offset="100%" style={{ stopColor: '#3b82f6' }} />
-                </linearGradient>
-                <linearGradient id="overdue-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: '#ef4444' }} />
-                  <stop offset="100%" style={{ stopColor: '#ef4444' }} />
-                </linearGradient>
-                <linearGradient id="second-ongoing-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: '#22c55e' }} />
-                  <stop offset="100%" style={{ stopColor: '#22c55e' }} />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
-                fill="none"
-                stroke="url(#ongoing-gradient)"
-                strokeWidth="5"
-                strokeDasharray={`${(24 / 100) * 150.8} ${150.8 - (24 / 100) * 150.8}`}
-                strokeDashoffset="0"
-                className="transition-all duration-1000 ease-out"
-              />
-              <path
-                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
-                fill="none"
-                stroke="url(#onhold-gradient)"
-                strokeWidth="5"
-                strokeDasharray={`${(10 / 100) * 150.8} ${150.8 - (10 / 100) * 150.8}`}
-                strokeDashoffset={`-${(24 / 100) * 150.8}`}
-                className="transition-all duration-1000 ease-out"
-              />
-              <path
-                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
-                fill="none"
-                stroke="url(#overdue-gradient)"
-                strokeWidth="5"
-                strokeDasharray={`${(16 / 100) * 150.8} ${150.8 - (16 / 100) * 150.8}`}
-                strokeDashoffset={`-${((24 + 10) / 100) * 150.8}`}
-                className="transition-all duration-1000 ease-out"
-              />
-              <path
-                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
-                fill="none"
-                stroke="url(#second-ongoing-gradient)"
-                strokeWidth="5"
-                strokeDasharray={`${(40 / 100) * 150.8} ${150.8 - (40 / 100) * 150.8}`}
-                strokeDashoffset={`-${((24 + 10 + 16) / 100) * 150.8}`}
-                className="transition-all duration-1000 ease-out"
-              />
-            </svg>
-          </div>
-          <div className="absolute top-1/2 -translate-y-1/2 text-center">
-            <div className="text-sm text-gray-500">Total Tasks</div>
-            <div className="text-3xl font-bold text-gray-800">{totalTasks}/{totalTasksPossible}</div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap justify-center space-x-4 my-6">
-          {tasks.map((task, index) => (
-            <div key={index} className="flex items-center space-x-1">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.color }}></div>
-              <span className={`text-sm text-gray-600 ${getlabelColor(task.label)}`}>{task.label}</span>
-              <span className="text-sm font-semibold">{task.percentage}%</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-gray-900 text-white rounded-lg p-4 flex justify-between items-center">
-          <div>
-            <div className="text-xl text-green-400 font-bold">{spentHours}/{totalHours} hrs</div>
-            <div className="text-sm text-gray-400">Spent on Overall Tasks This Week</div>
-          </div>
-          <button className="bg-white text-gray-900 font-semibold px-4 py-2 rounded-md hover:bg-gray-200">
-            View All
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-const projectTableData = [
-    {
-        project_id: "P_01",
-        project_name: "HRMS Project",
-        status: "Ongoing",
-        start_date: "2025-05-01",
-        end_date: "2025-09-30",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "High",
-        Open_task: 30,
-        Closed_task: 25,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_02",
-        project_name: "Employee Self-Service App",
-        status: "In Progress", 
-        start_date: "2025-10-15",
-        end_date: "2025-12-15",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "Medium",
-        Open_task: 20,
-        Closed_task: 10,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_03",
-        project_name: "Payroll Automation",
-        status: "Planned",
-        start_date: "2024-10-01",
-        end_date: "2025-02-15",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "High",
-        Open_task: 12,
-        Closed_task: 10,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_04",
-        project_name: "Attendance System Upgrade",
-        status: "Ongoing",
-        start_date: "2025-05-10",
-        end_date: "2025-08-10",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "Low", // Changed from "Small" to "Low" for consistency
-        Open_task: 40,
-        Closed_task: 25,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P_05",
-        project_name: "AI-Based Recruitment Tool",
-        status: "Planned",
-        start_date: "2025-12-01",
-        end_date: "2026-02-28",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "Medium",
-        Open_task: 20,
-        Closed_task: 15,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    },
-    {
-        project_id: "P06",
-        project_name: "Internal Chatbot System",
-        status: "Planned",
-        start_date: "2024-05-01",
-        end_date: "2024-11-30",
-        Employee_team: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        Priority: "High",
-        Open_task: 30,
-        Closed_task: 25,
-        Details: "https://www.flaticon.com/free-icon/document_16702688",
-        Action: "https://icons8.com/icon/102350/delete"
-    }
-];
-const getPriorityColor = (priority) => {
-    switch (priority) {
-        case "High":
-            return "bg-green-100 text-green-800";
-        case "Medium":
-            return "bg-orange-100 text-orange-800";
-        case "Low":
-            return "bg-red-100 text-red-800";
-        default:
-            return "bg-gray-100 text-gray-800";
-    }
-};
-
-const getStatusColor = (status) => {
-    switch (status) {
-        case "In Progress":
-            return "bg-green-100 text-green-800";
-        case "Ongoing":
-            return "bg-blue-100 text-blue-800";
-        case "Planned":
-            return "bg-yellow-100 text-yellow-800"; // Changed from red to yellow for upcoming
-        default:
-            return "bg-gray-100 text-gray-800";
-    }
-};
-
-function Project() {
     return (
-        <div className="p-6 bg-white rounded-lg shadow-md border  border-gray-200 overflow-x-auto">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Project Overview</h2>
-            <table className="min-w-full divide-y divide-gray-200 bg-white">
-                <thead className="bg-gray-100 text-gray-800 text-left">
-                    <tr>
-                        <th className="p-3 text-sm md:text-base">Project</th>
-                        <th className="p-3 text-sm md:text-base">Team</th>
-                        <th className="p-3 text-sm md:text-base">Priority</th>
-                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
-                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
-                        <th className="p-3 text-sm md:text-base">Status</th>
-                        <th className="p-3 text-sm md:text-base">Details</th>
-                        <th className="p-3 text-sm md:text-base">Delete</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {projectTableData.map((proj) => (
-                        <tr key={proj.project_id} className="border-t border-gray-100 hover:bg-gray-50">
-                            <td className="p-3 text-sm md:text-base font-semibold">{proj.project_name}</td>
-                            <td className="p-3">
-                                <div className="flex -space-x-2 ">
-                                    {proj.Employee_team.map((img, index) => (
-                                        <img
-                                            key={index}
-                                            src={img}
-                                            alt="team member"
-                                            className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm"
-                                        />
-                                    ))}
-                                </div>
-                            </td>
-                            <td className="p-3">
-                                <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)}`}>
-                                    {proj.Priority}
+        <motion.div
+            className={`p-4 ${theme==='dark'?'bg-gray-500':'bg-stone-100'}  rounded-lg shadow-lg border border-gray-200 h-full`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+        >
+            <div className="flex justify-between items-center mb-4">
+                <h2 className={`text-xl font-bold  ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Employee Status</h2>
+                <div className="relative inline-block text-left">
+                    <select
+                        value={selectedTimeframe}
+                        onChange={(e) => setSelectedTimeframe(e.target.value)}
+                        className={`inline-flex ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100'} justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 text-sm font-medium  focus:outline-none`}
+                    >
+                        <option>Today</option>
+                        <option>This Week</option>
+                        <option>This Month</option>
+                        <option>Last Month</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                    <span className={`${theme==='dark'?'text-gray-200':'text-gray-600'}`}>Total Employee</span>
+                    <span className={`text-3xl font-bold ${theme==='dark'?'text-gray-200':'text-gray-900'}`}>{totalEmployees}</span>
+                </div>
+                <div className="flex h-2 rounded-full overflow-hidden">
+                    <AnimatePresence>
+                        {Object.entries(statusData).map(([key, data], index) => (
+                            <motion.div
+                                key={key}
+                                style={{ width: `${calculatePercentage(data.count)}%` }}
+                                className={`${data.color}`}
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.8, delay: index * 0.1, originX: 0 }}
+                            ></motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-4">
+                <AnimatePresence>
+                    {Object.entries(statusData).map(([key, data], index) => (
+                        <motion.div
+                            key={key}
+                            className={`p-4 ${theme==='dark'?'bg-gray-900':'bg-gray-300'} rounded-lg border border-gray-200`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
+                        >
+                            <div className="flex items-center mb-2">
+                                <span className={`w-3 h-3 ${data.color} rounded-sm mr-2`}></span>
+                                <span className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm font-medium`}>
+                                    {data.label} ({calculatePercentage(data.count)}%)
                                 </span>
-                            </td>
-                            <td className="p-3 text-sm md:text-base">{proj.start_date}</td>
-                            <td className="p-3 text-sm md:text-base">{proj.end_date}</td>
-                            <td className="p-3 ">
-                                <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)}`}>
-                                    {proj.status}
-                                </span>
-                            </td>
-                            <td className="p-3 text-center">
-                                <a href={proj.Details} target="_blank" rel="noopener noreferrer">
-                                    <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-8 md:h-8 hover:scale-110 transition" />
-                                </a>
-                            </td>
-                            <td className="p-3 text-center">
-                                <button>
-                                    <FaTrashAlt className="text-red-500 text-lg w-6 h-6 md:w-8 md:h-8 hover:scale-110 transition" />
-                                </button>
-                            </td>
-                        </tr>
+                            </div>
+                            <p className={`text-4xl font-extrabold ${theme==='dark'?'text-gray-200':'text-gray-600'}`}>{data.count}</p>
+                        </motion.div>
                     ))}
-                </tbody>
-            </table>
+                </AnimatePresence>
+            </div>
+            <div className="mt-4 text-center">
+                <motion.button
+                    onClick={onViewAll}
+                    className={`w-full py-2 px-4 ${theme==='dark'?'text-gray-200 bg-gray-800 hover:bg-gray-900':'text-gray-700 bg-gray-100 hover:bg-gray-50'} border border-gray-300 rounded-md font-medium  `}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                >
+                    View All Employees
+                </motion.button>
+            </div>
+        </motion.div>
+    );
+};
+
+const ChartsLayout = ({ onViewAll }) => {
+    const [activeTab, setActiveTab] = useState('applicants');
+    const {theme}=useContext(Context)
+
+    const applicants = [
+        { name: 'John Doe', exp: '5+', location: 'Hydrebad', job: 'Senior DevOps Engineer', image: 'https://randomuser.me/api/portraits/men/74.jpg', color: 'bg-teal-500' },
+        { name: 'Ramesh', exp: '4+', location: 'Bangalore', job: 'UI/UX Designer', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D', color: 'bg-blue-500' },
+        { name: 'Raghunadh', exp: '6+', location: 'Chennai', job: 'Full Stack Developer', image: 'https://randomuser.me/api/portraits/men/9.jpg', color: 'bg-pink-500' },
+        { name: 'Anita', exp: '2+', location: 'Hyderabad', job: 'Junior React Developer', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D', color: 'bg-purple-500' },
+        { name: 'SriLekha', exp: '2+', location: 'Mumbai', job: 'Data Scientist', image: 'https://randomuser.me/api/portraits/women/63.jpg', color: 'bg-yellow-500' },
+    ];
+    const openings = [
+        { title: 'Senior DevOps Engineer', openings: 10, logo: '🛠️', Category: "DevOps", Location: "Hyderabad,India", Salary: "$8,00,000 - $12,00,000 per Annum", Date: "2023-10-01" },
+        { title: 'Data Scientist', openings: 20, logo: '🐘', Category: "Data Science", Location: "Bangalore,India", Salary: "$7,00,000 - $10,00,000 per Annum", Date: "2023-10-05" },
+        { title: 'Junior React Developer', openings: 30, logo: '⚛️', Category: "Software", Location: "Chennai,India", Salary: "$4,00,000 - $6,00,000 per Annum", Date: "2023-10-10" },
+        { title: 'UI/UX Designer', openings: 40, logo: '⚙️', Category: "Design", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-20", },
+        { title: 'Full Stack Developer', openings: 15, logo: '💻', Category: "Software", Location: "Delhi,India", Salary: "$5,00,000 - $7,00,000 per Annum", Date: "2023-10-25" },
+    ];
+    const renderContent = () => {
+        if (activeTab === 'applicants') {
+            return (
+                <motion.ul
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    {applicants.map((applicant, index) => (
+                        <motion.li
+                            key={index}
+                            className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                        >
+                            <div className="flex items-center">
+                                <img src={applicant.image} alt={applicant.name} className="w-10 h-10 rounded-full mr-4 object-cover" />
+                                <div>
+                                    <h3 className={`text-lg font-medium ${theme==='dark'?'text-gray-200':'text-gray-900'}`}>{applicant.name}</h3>
+                                    <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'}`}>Exp: {applicant.exp} Years • {applicant.location}</p>
+                                </div>
+                            </div>
+                            <span className={`text-white text-xs font-semibold px-3 py-1 rounded-full ${applicant.color}`}>{applicant.job}</span>
+                        </motion.li>
+                    ))}
+                </motion.ul>
+            );
+        } else {
+            return (
+                <motion.ul
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    {openings.map((opening, index) => (
+                        <motion.li
+                            key={index}
+                            className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                        >
+                            <div className="flex items-center">
+                                <span className="text-xl mr-4">{opening.logo}</span>
+                                <div>
+                                    <h3 className={`text-sm font-medium ${theme==='dark'?'text-gray-200':'text-gray-900'}`}>{opening.title}</h3>
+                                    <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'}`}>No of Openings : {opening.openings}</p>
+                                </div>
+                            </div>
+                            <motion.button
+                                onClick={() => alert('View Application')}
+                                className="text-gray-500 hover:text-gray-900"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                            >
+                                ✏️
+                            </motion.button>
+                        </motion.li>
+                    ))}
+                </motion.ul>
+            );
+        }
+    };
+
+    return (
+        <motion.div
+            className={`p-4 flex flex-col items-center ${theme==='dark'?'bg-gray-500':'bg-stone-100'}  rounded-lg shadow-md border border-gray-200`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+        >
+            <div className="w-full max-w-2xl">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className={`text-xl font-semibold ${theme==='dark'?'text-gray-200':'text-gray-900'} `}>Jobs Applicants</h2>
+                    <motion.button
+                        className={`${theme==='dark'?'text-blue-200':'text-blue-600'} hover:underline`}
+                        onClick={onViewAll}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        View All
+                    </motion.button>
+                </div>
+                <div className="flex space-x-2 border-b-2 border-gray-200 mb-4">
+                    <motion.button
+                        onClick={() => setActiveTab('openings')}
+                        className={`py-2 px-1 rounded-t-lg font-medium transition-colors duration-200 ${activeTab === 'openings' ? 'bg-orange-500 text-white' : 'text-gray-900'}`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        Openings
+                    </motion.button>
+                    <motion.button
+                        onClick={() => setActiveTab('applicants')}
+                        className={`py-3 px-4 rounded-t-lg font-medium transition-colors duration-200 ${activeTab === 'applicants' ? 'bg-orange-500 text-white' : 'text-gray-900'}`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        Applicants
+                    </motion.button>
+                </div>
+                <AnimatePresence mode="wait">
+                    {renderContent()}
+                </AnimatePresence>
+            </div>
+        </motion.div>
+    );
+};
+
+const TaskStatistics = ({onViewAll}) => {
+    const [selectedPeriod, setSelectedPeriod] = useState('Today');
+    const tasks = [
+        { label: 'Ongoing', percentage: 24 },
+        { label: 'On Hold', percentage: 10 },
+        { label: 'Overdue', percentage: 16 },
+        { label: 'Completed', percentage: 40 },
+    ];
+    const getlabelColor = (label) => {
+        switch (label) {
+            case "Ongoing":
+                return " text-yellow-400";
+            case "On Hold":
+                return " text-blue-500";
+            case "Overdue":
+                return "text-red-500";
+            case "Completed":
+                return " text-green-800";
+            default:
+                return " text-black-800";
+        }
+    };
+
+    const totalTasks = 60;
+    const totalTasksPossible = 80;
+    const spentHours = 42;
+    const totalHours = 50;
+    const {theme}=useContext(Context);
+
+    return (
+        <div className="p-1 flex flex-col items-center   font-sans">
+            <div className={`${theme==='dark'?'bg-gray-500':'bg-stone-100'} rounded-lg shadow-md  p-2 w-full max-w-2xl`}>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className={`text-xl font-semibold ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Tasks Statistics</h2>
+                    <div className="relative inline-block text-left">
+                        <select
+                            value={selectedPeriod}
+                            onChange={(e) => setSelectedPeriod(e.target.value)}
+                            className={`inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2  text-sm font-medium ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100'} focus:outline-none`}
+                        >
+                            <option>Today</option>
+                            <option>This Week</option>
+                            <option>This Month</option>
+                            <option>Last Month</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="relative flex justify-center items-center h-48">
+                    <div className="absolute top-0 w-full h-full">
+                        <svg className="w-full h-full" viewBox="0 0 100 50">
+                            <defs>
+                                <linearGradient id="ongoing-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style={{ stopColor: '#facc15' }} />
+                                    <stop offset="100%" style={{ stopColor: '#facc15' }} />
+                                </linearGradient>
+                                <linearGradient id="onhold-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style={{ stopColor: '#3b82f6' }} />
+                                    <stop offset="100%" style={{ stopColor: '#3b82f6' }} />
+                                </linearGradient>
+                                <linearGradient id="overdue-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style={{ stopColor: '#ef4444' }} />
+                                    <stop offset="100%" style={{ stopColor: '#ef4444' }} />
+                                </linearGradient>
+                                <linearGradient id="second-ongoing-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style={{ stopColor: '#22c55e' }} />
+                                    <stop offset="100%" style={{ stopColor: '#22c55e' }} />
+                                </linearGradient>
+                            </defs>
+                            
+                            <path
+                                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
+                                fill="none"
+                                stroke="url(#ongoing-gradient)"
+                                strokeWidth="5"
+                                strokeDasharray={`${(24 / 100) * 150.8} ${150.8 - (24 / 100) * 150.8}`}
+                                strokeDashoffset="0"
+                                className="transition-all duration-1000 ease-out"
+                            />
+                            <path
+                                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
+                                fill="none"
+                                stroke="url(#onhold-gradient)"
+                                strokeWidth="5"
+                                strokeDasharray={`${(10 / 100) * 150.8} ${150.8 - (10 / 100) * 150.8}`}
+                                strokeDashoffset={`-${(24 / 100) * 150.8}`}
+                                className="transition-all duration-1000 ease-out"
+                            />
+                            <path
+                                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
+                                fill="none"
+                                stroke="url(#overdue-gradient)"
+                                strokeWidth="5"
+                                strokeDasharray={`${(16 / 100) * 150.8} ${150.8 - (16 / 100) * 150.8}`}
+                                strokeDashoffset={`-${((24 + 10) / 100) * 150.8}`}
+                                className="transition-all duration-1000 ease-out"
+                            />
+                            <path
+                                d="M 2.5 50 A 47.5 47.5 0 0 1 97.5 50"
+                                fill="none"
+                                stroke="url(#second-ongoing-gradient)"
+                                strokeWidth="5"
+                                strokeDasharray={`${(40 / 100) * 150.8} ${150.8 - (40 / 100) * 150.8}`}
+                                strokeDashoffset={`-${((24 + 10 + 16) / 100) * 150.8}`}
+                                className="transition-all duration-1000 ease-out"
+                            />
+                            
+                        </svg>
+                    </div>
+                    <div className="absolute top-1/2 -translate-y-1/2 text-center">
+                        <div className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'}`}>Total Tasks</div>
+                        <div className={`text-3xl font-bold ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>{totalTasks}/{totalTasksPossible}</div>
+                    </div>
+                </div>
+                <div className="flex flex-wrap justify-center space-x-4 my-6">
+                    {tasks.map((task, index) => (
+                        <div key={index} className="flex items-center space-x-1">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: task.color }}></div>
+                            <span className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-600'} ${getlabelColor(task.label)}`}>{task.label}</span>
+                            <span className="text-sm font-semibold">{task.percentage}%</span>
+                        </div>
+                    ))}
+                </div>
+                <div className="bg-gray-900 text-white rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                        <div className="text-xl text-green-400 font-bold">{spentHours}/{totalHours} hrs</div>
+                        <div className="text-sm text-gray-400">Spent on Overall Tasks This Week</div>
+                    </div>
+                    <button onClick={onViewAll} className={`${theme==='dark'?'bg-gray-500 text-gray-200':' bg-stone-100 text-gray-800'}  font-semibold px-4 py-2 rounded-md`}>
+                        View All
+                    </button>
+                </div>
+            </div>
         </div>
     );
+};
+function Project() {
+    const { userData,theme } = useContext(Context);
+    const role = (userData?.roles?.[0] || "").toUpperCase();
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
+
+    const [projectTableData, setProjectTableData] = useState([
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",Lead_Img: "https://i.pravatar.cc/40?img=19", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ],more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",Lead_Img:"https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
+    const getPriorityColor = (priority) => {
+        switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
+    const getStatusColor = (status) => {
+        switch (status) {case "In Progress":    return "bg-green-100 text-green-800";case "Ongoing": return "bg-blue-100 text-blue-800";case "Upcoming": return "bg-yellow-100 text-yellow-800";case "Completed": return "bg-purple-100 text-purple-800";default: return "bg-gray-100 text-gray-800";} };
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [newProject, setNewProject] = useState({
+        project_id: "",
+        project_name: "",
+        status: "Ongoing",
+        start_date: "",
+        end_date: "",
+        Team_Lead:"",
+        Employee_team: [],
+        Priority: "Medium",
+        Open_task: 0,
+        Closed_task: 0,
+        rating: "",
+        remark: "",
+        completionNote: "",
+        relatedLinks: [""],
+        attachedFileLinks: [],
+    });
+    const [files, setFiles] = useState([]);
+    const handleCreateProject = (e) => {
+        e.preventDefault();
+        setProjectTableData(prev => [
+            ...prev,
+            { ...newProject, project_id: `P_${prev.length + 1}`, attachedFileLinks: files }
+        ]);
+        setShowCreateForm(false);
+        setNewProject({
+            project_id: "",
+            project_name: "",
+            status: "Ongoing",
+            start_date: "",
+            end_date: "",
+            Team_lead:"",
+            Employee_team: [],
+            Priority: "Medium",
+            Open_task: 0,
+            Closed_task: 0,
+            rating: "",
+            remark: "",
+            completionNote: "",
+            relatedLinks: [""],
+            attachedFileLinks: [],
+        });
+        setFiles([]);
+    };
+
+    const handleFileChange = (e) => {
+        setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+    };
+
+    const removeFile = (index) => {
+        setFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRelatedLinkChange = (index, value) => {
+        const newLinks = [...newProject.relatedLinks];
+        newLinks[index] = value;
+        setNewProject(prev => ({ ...prev, relatedLinks: newLinks }));
+    };
+
+    const addRelatedLink = () => {
+        setNewProject(prev => ({ ...prev, relatedLinks: [...prev.relatedLinks, ""] }));
+    };
+
+    const removeRelatedLink = (index) => {
+        setNewProject(prev => ({
+            ...prev,
+            relatedLinks: prev.relatedLinks.filter((_, i) => i !== index)
+        }));
+    };
+    const [editProjectIndex, setEditProjectIndex] = useState(null);
+const [editProjectData, setEditProjectData] = useState(null);
+
+const handleEditProject = (idx) => {
+    setEditProjectIndex(idx);
+    setEditProjectData(projectTableData[idx]);
+    setShowEditForm(true);
+};
+
+const handleDeleteProject = (idx) => {
+    setProjectTableData(prev => prev.filter((_, i) => i !== idx));
+};
+
+const [showEditForm, setShowEditForm] = useState(false);
+
+const handleUpdateProject = (e) => {
+    e.preventDefault();
+    setProjectTableData(prev =>
+        prev.map((proj, idx) => idx === editProjectIndex ? editProjectData : proj)
+    );
+    setShowEditForm(false);
+    setEditProjectIndex(null);
+    setEditProjectData(null);
+};
+ const [statusFilter, setStatusFilter] = useState("All");
+   const navigate = useNavigate();
+const handleRowClick = (proj) => {
+    navigate(`/projects/${proj.project_id}`, { state: { project: proj } });
+};
+    return (
+        <motion.div
+            className={`p-6  rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+        >
+            <div className="flex justify-between items-center mb-4">
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
+                    Project Overview</h2>
+                    <div className=" absolute right-52 gap-2">
+                    <select
+                       value={statusFilter}
+                       onChange={(e) => setStatusFilter(e.target.value)}
+                       className={`bg-gradient-to-br from-orange-100 to-orange-400  text-gray-800 font-medium rounded px-4 py-2 text-sm shadow hover:bg-orange-500  shadow transition`}
+                    >
+                     <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select Status</option>
+                     <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
+                     <option value="Upcoming" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Upcoming</option>
+                     <option value="Completed"className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Completed</option>
+                   </select>
+         
+            </div>
+                {showSidebar && (
+                    <motion.button
+                        className="flex items-center bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
+                        onClick={() => setShowCreateForm(true)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <FaPlus className="mr-2" /> Create Project
+                    </motion.button>
+                )}
+            </div>
+            {/* Full-page overlay for the form */}
+            <AnimatePresence>
+                {showCreateForm && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                         <motion.div className="relative w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
+                        <motion.form
+                            className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
+                            onSubmit={handleCreateProject}
+                            initial={{ scale: 0.9, y: 50 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 50 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
+                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6   border-lg pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Create New Project</h3>
+                            </div>
+                            <div className="space-y-4 p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Project Name</label>
+                                 
+                                <input
+                                    type="text"
+                                    placeholder="Project Name"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.project_name}
+                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
+                                    required
+                                />
+                                </div>
+                                 <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Team Lead</label>
+                                 
+                                <input
+                                    type="text"
+                                    placeholder="Team Lead + Profile image URl"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.project_name}
+                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
+                                    required
+                                />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
+                                 
+                                <select
+                                    className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                                    value={newProject.status}
+                                    onChange={e => setNewProject({ ...newProject, status: e.target.value })}
+                                >
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                    <option value="Ongoing"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
+                                    <option value="Upcoming"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
+                                    <option value="Completed"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
+                                </select>
+                                </div>
+                                <div className="relative mt-1">
+                                    <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
+                                <input
+                                    type="date"
+                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.start_date}
+                                    onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
+                                    required
+                                />
+                                </div>
+                                <div className="relative mt-1">
+                                    <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
+                                <input
+                                    type="date"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.end_date}
+                                    onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
+                                    required
+                                />
+                                </div>
+                                   <div className="relative mt-1">
+                                <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
+                             
+                                <select
+                                   className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                                    value={newProject.Priority}
+                                    onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
+                                >
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                    <option value="High"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
+                                    <option value="Medium"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
+                                    <option value="Low"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
+                                </select>
+                                </div>
+                                 <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Open Tasks</label>
+                               
+                                <input
+                                    type="number"
+                                    placeholder="Open Tasks"
+                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.Open_task}
+                                    onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
+                                />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Closed Tasks</label>
+                                <input
+                                    type="number"
+                                    placeholder="Closed Tasks"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    value={newProject.Closed_task}
+                                    onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
+                                />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Rating</label>
+                                <input
+                                    type="number"
+                                    placeholder="Rating (1-5)"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    min="1"
+                                    max="5"
+                                    value={newProject.rating}
+                                    onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
+                                />
+                                </div>
+                                <div className="mt-2">
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
+                                    <textarea
+                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        value={newProject.Employee_team}
+                                        onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
+                                    />
+                                </div>
+                                <div className="mt-2">
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
+                                    <textarea
+                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        value={newProject.remark}
+                                        onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
+                                    />
+                                </div>
+                                <div className="mt-2">
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
+                                    <textarea
+                                        className={`border p-2 rounded shadow-sm w-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        value={newProject.completionNote}
+                                        onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
+                                    />
+                                </div>
+                                <div className="mt-2">
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                                        Related Links</label>
+                                    {newProject.relatedLinks.map((link, index) => (
+                                        <div key={index} className="flex gap-2 mb-0">
+                                            <input
+                                                type="url"
+                                                value={link}
+                                                onChange={e => handleRelatedLinkChange(index, e.target.value)}
+                                                className={`flex-1 px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                                placeholder="Enter related link URL"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeRelatedLink(index)}
+                                                className="px-3 py-2 text-red-600 hover:text-red-800"
+                                                disabled={newProject.relatedLinks.length === 1}
+                                            >
+                                                <FaTrashAlt />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={addRelatedLink}
+                                        className="flex items-center text-indigo-600 hover:text-indigo-800"
+                                    >
+                                        <FaPlus className="mr-1" />
+                                        Add Related Link
+                                    </button>
+                                </div>
+                                <div className="mt-2">
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                                        Attach Files</label>
+                                    <div className="flex items-center">
+                                        <label className="flex items-center cursor-pointer">
+                                            <FaPaperclip className="mr-2" />
+                                            <span className={`text-sm  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Attach</span>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                            />
+                                        </label>
+                                    </div>
+                                    {files.length > 0 && (
+                                        <div className="mt-2">
+                                            <ul className="space-y-2">
+                                                {files.map((file, index) => (
+                                                    <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                                                        <span className="text-sm text-gray-800 truncate" title={file.name}>{file.name}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFile(index)}
+                                                            className="text-red-500 hover:text-red-700 ml-4"
+                                                            aria-label={`Remove ${file.name}`}
+                                                        >
+                                                            <FaTrashAlt />
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex mt-2 gap-4 justify-center">
+                                <motion.button
+                                    type="submit"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Add Project
+                                </motion.button>
+                                <motion.button
+                                    type="button"
+                                    className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
+                                    onClick={() => setShowCreateForm(false)}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Cancel
+                                </motion.button>
+                            </div>
+                            </div>
+                        </motion.form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+    {showEditForm && (
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+        >
+            <motion.form
+                className={`w-full max-w-3xl rounded-lg shadow-2xl relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
+                onSubmit={handleUpdateProject}
+                initial={{ scale: 0.9, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 50 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
+                    <h3 className={`text-2xl font-bold pt-6 pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Edit Project</h3>
+                </div>
+                <div className="space-y-4 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                            type="text"
+                            placeholder="Project Name"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.project_name || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
+                            required
+                        />
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.status || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
+                        >
+                            <option value="">Select Status</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Upcoming">Upcoming</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <input
+                            type="date"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.start_date || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
+                            required
+                        />
+                        <input
+                            type="date"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.end_date || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
+                            required
+                        />
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Priority || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
+                        >
+                            <option value="">Select Priority</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <input
+                            type="number"
+                            placeholder="Open Tasks"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Open_task || 0}
+                            onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
+                        />
+                        <input
+                            type="number"
+                            placeholder="Closed Tasks"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Closed_task || 0}
+                            onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
+                        />
+                    </div>
+                    {/* Add more fields as needed */}
+                    <div className="flex mt-2 gap-4 justify-center">
+                        <motion.button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Update Project
+                        </motion.button>
+                        <motion.button
+                            type="button"
+                            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
+                            onClick={() => setShowEditForm(false)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Cancel
+                        </motion.button>
+                    </div>
+                </div>
+            </motion.form>
+        </motion.div>
+    )}
+</AnimatePresence>
+            <table className="min-w-full bg-white">
+                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800'}`}>
+                    <tr>
+                        <th className="p-3 text-sm md:text-base">Project</th>
+                        <th className="p-3 text-sm md:text-base">Team_Lead</th>
+                        <th className="p-3 text-sm md:text-base">Team</th>
+                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
+                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
+                        <th className="p-3 text-sm md:text-base">Priority</th>
+                        <th className="p-3 text-sm md:text-base">Status</th>
+                        <th className="p-3 text-sm md:text-base">Open Task</th>
+                        <th className="p-3 text-sm md:text-base">Closed Task</th>
+                        <th className="p-3 text-sm md:text-base">Details</th>
+                        {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
+                    </tr>
+                </thead>
+                <tbody  className="bg-white divide-y divide-gray-500">
+                    <AnimatePresence>
+                        {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
+                        .map((proj, index) => (
+                            <motion.tr
+                                key={proj.project_id}
+                                className="border-t border-gray-100 hover:bg-gray-50"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                 onClick={() => handleRowClick(proj)}
+                            >
+                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
+                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> 
+                                    <motion.img key={index} src={proj.Lead_Img} alt={proj.Team_Lead} className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />{proj.Team_Lead}
+                                    
+                                </td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <div className="flex -space-x-2 ">
+                                        {proj.Employee_team.map((img, index) => (
+                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
+                                        ))}
+                                    </div>
+                                    <motion.span className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}>{proj.more}</motion.span>
+                                </td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <select value={proj.Priority} onChange={(e) => (proj.Priority = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                          proj.Priority === "High"
+                                            ? "bg-red-100 text-red-700"
+                                            : proj.Priority === "Medium"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-green-100 text-green-700"
+                                        }`}
+                                    >
+                                     <option value="High" className="text-red-600 ">🔴 High </option>
+                                     <option value="Medium" className="text-yellow-600">🟡 Medium </option>
+                                     <option value="Low" className="text-green-600"> 🟢 Low </option>
+                                 </select>
+                                </td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <select value={proj.status} onChange={(e) => (proj.status = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                          proj.status === "Ongoing"
+                                            ? "bg-blue-100 text-blue-700"
+                                            : proj.status === "Upcoming"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-purple-100 text-purple-700"
+                                        }`}
+                                    >
+                                     <option value="Ongoing" className="text-blue-600 ">🔵 Ongoing</option>
+                                     <option value="Upcoming" className="text-yellow-600">🟡 Upcoming</option>
+                                     <option value="Completed" className="text-blue-600">🟣 Completed</option>
+                                 </select>
+                                </td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
+                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
+                            {showSidebar && (
+                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <motion.button
+                                        whileHover={{ scale: 1.2 }}
+                                        onClick={e => { e.stopPropagation(); handleEditProject(index); }}
+                                    >
+                                        <FiEdit className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.2 }}
+                                       onClick={e => { e.stopPropagation(); handleDeleteProject(index); }}
+                                        className="ml-2"
+                                    >
+                                        <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
+                                    </motion.button>
+                                </td>
+                            )}
+                            </motion.tr>
+                            ))}
+                    </AnimatePresence>
+                </tbody>
+            </table>
+        </motion.div>
+    );
 }
+
+
 const CombinedDashboard = () => {
-  const [showAttendanceReport, setShowAttendanceReport] = useState(false);
-  const [showLeavesReport, setShowLeavesReport] = useState(false);
-  const [showEmployeeDetails, setShowEmployeeDetails] = useState(false);
-  const [showApplicants, setShowApplicants]=useState(false);
-  const [showJobsList, setShowJobsList]=useState(false);
-  const [showchartLayout, setShowchartLayout]=useState(false);
-  const [showAttendanceDashBoard,setShowAttendanceDashBoard]=useState(false);
-    
-     const handleViewchartLayout = () => {
+    const [showEmployeeDetails, setShowEmployeeDetails] = useState(false);
+    const [showApplicants, setShowApplicants] = useState(false);
+    const [showJobsList, setShowJobsList] = useState(false);
+    const [showchartLayout, setShowchartLayout] = useState(false);
+    const { userData,theme } = useContext(Context);
+    const navigate=useNavigate()
+    const { empID } = useParams();
+     const [flippedCard, setFlippedCard] = useState(null);
+        const [contextMenu, setContextMenu] = useState({
+            visible: false,
+            x: 0,
+            y: 0,
+            employee: null,
+        });
+
+    const handleProjectClick= async(employee)=>{
+       if (employee) {
+            navigate(`/projects/${userData.employeeId}?fromContextMenu=true&targetEmployeeId=${userData.employeeId}`);
+        }
+        setContextMenu({ ...contextMenu, visible: false });
+        setFlippedCard(null);
+    }
+    const handleTaskClick= async(employee)=>{
+      if (employee) {
+            navigate(`/tasks/${empID}?fromContextMenu=true&targetEmployeeId=${employee.employeeId}`);
+        }
+        setContextMenu({ ...contextMenu, visible: false });
+        setFlippedCard(null);
+    }
+    const handleEmployeeClick= async(employee)=>{
+      if (employee) {
+            navigate(`/employees/${empID}?fromContextMenu=true&targetEmployeeId=${employee.employeeId}`);
+        }
+        setContextMenu({ ...contextMenu, visible: false });
+        setFlippedCard(null);
+    }
+    const handleTasksClick= async(employee)=>{
+      if (employee) {
+            navigate(`/tasks/${empID}?fromContextMenu=true&targetEmployeeId=${employee.employeeId}`);
+        }
+        setContextMenu({ ...contextMenu, visible: false });
+        setFlippedCard(null);
+    }
+    const handleViewchartLayout = () => {
         setShowchartLayout(true);
-
-    };
-    const handleViewAttendance = () => {
-        setShowAttendanceReport(true);
-
-    };
-     const handleViewLeaves = () => {
-        setShowLeavesReport(true);
     };
     const handleViewEmployee = () => {
         setShowEmployeeDetails(true);
     };
-     const handleViewApplicants = () => {
+    const handleViewApplicants = () => {
         setShowApplicants(true);
     };
     const handleViewJobs = () => {
         setShowJobsList(true);
     };
-     const handleViewAtteandances = () => {
-        setShowAttendanceDashBoard(true);
-    };
-   const handleBackToDashboard = () => {
-        setShowAttendanceReport(false);
-        setShowLeavesReport(false);
+
+    const handleBackToDashboard = () => {
         setShowEmployeeDetails(false);
         setShowApplicants(false);
         setShowJobsList(false);
         setShowchartLayout(false);
-        setShowAttendanceDashBoard(false);
     };
-    if (showAttendanceDashBoard) {
-        return <AttendancesDashboard onBack={handleBackToDashboard} />;
-    }
+
     if (showchartLayout) {
         return <JobsList onBack={handleBackToDashboard} />;
     }
@@ -1107,139 +1273,90 @@ const CombinedDashboard = () => {
     if (showEmployeeDetails) {
         return <EmployeeDetails onBack={handleBackToDashboard} />;
     }
-    if (showAttendanceReport) {
-        return <AttendanceReports onBack={handleBackToDashboard} />;
-    }
-    if (showLeavesReport) {
-        return <LeavesReports onBack={handleBackToDashboard} />;
-    }
-    const StatsOverview=[
-    {
-        title: 'Attendance Overview',
-        value: '104',
-        total: '108',
-    },
-    {
-        title: 'Total No of Projects',
-        value: '5',
-        total: '10',
-    },
-    {
-        title: 'Total No of Tasks',
-        value: '60',
-        total: '80',
-    },
-    {
-        title: 'Job Applicants',
-        value: '20',
-    },
-    {
-        title: 'New Hire',
-        value: '30',
-        total: '20',
-    },
-    {
-        title: 'Total No of Clients',
-        value: '2',
-        total: '5',
-    }
-]
-  return (
-    <div className="min-h-screen bg-gray-100 p-4 font-sans">
-      <Header />
-      <div className="container mx-auto">
-        <UserGreeting />
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-           {StatsOverview.map((Stats, index) => {
-    let icon, titlecolor, onViewAllHandler;
 
-    switch (Stats.title) {
-        case "Attendance Overview":
-            icon = <CalendarDays className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-orange-600 mr-2" />
-            titlecolor = "text-orange-500";
-            onViewAllHandler = handleViewAtteandances;
-            break;
-        case "Total No of Projects":
-            icon = < BriefcaseMedical className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" />
-            titlecolor = "text-blue-500";
-            onViewAllHandler = handleViewAtteandances; 
-            break;
-        case "Total No of Tasks":
-            icon = <PackageSearch className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-pink-600 mr-2" />
-            titlecolor = "text-pink-500";
-            onViewAllHandler = handleViewJobs; 
-        case "Job Applicants":
-            icon = <MessageSquareCode className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-yellow-600 mr-2" />
-            titlecolor = "text-yellow-500";
-            onViewAllHandler = handleViewJobs;
-            break;
-        case "New Hire": 
-            icon = <CircleUserRound className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-purple-600 mr-2" />
-            titlecolor = "text-purple-500";
-            onViewAllHandler = handleViewApplicants;
-            break;
-        case "Total No of Clients":
-            icon = <UserRoundCog className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-indigo-600 mr-2" />
-            titlecolor = "text-indigo-500";
-            onViewAllHandler =handleViewApplicants; 
-            break;
-        default:
-            onViewAllHandler = () => console.log('No handler defined');
-    }
-        
-              return (
-                <StatCard
-                  key={index}
-                  icon={icon}
-                  title={Stats.title}
-                  titlecolor={titlecolor}
-                  value={Stats.value}
-                  total={Stats.total}
-                  onViewAll={onViewAllHandler}
-                 />
-                
-              );
-            })}
-          </div>
-          <div className="lg:col-span-2">
-            <EmployeeChart/>
-          </div>
-          <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-             <div class="w-full">
-                 <EmployeeStatusDashboard onViewAll={handleViewEmployee}/>
-             </div>
-             <div class="w-full">
-                 <Attendance onViewAll={handleViewLeaves}/>
-             </div> 
-         </div>      
-            <div class="lg:col-span-2">
-              <div class="w-full">
-                  <ClockInOut onViewAll={handleViewAttendance}/>
-                  </div>
-             </div>
-             <div class="lg:col-span-3">
-              <div class="w-full">
-                  <ChartsLayout onViewAll={handleViewchartLayout} />
-                  </div>
-             </div>
-             <div class="lg:col-span-2">
-              <div class="w-full">
-                  <TaskStatistics />
-                  </div>
-             </div>
-            <div class="lg:col-span-6">
-              <div class="w-full">
-                  <Project />
-                  </div>
-                  </div>  
-                   
+    const StatsOverview = [
+        {
+            title: 'Total No of Projects',
+            value: '5',
+            total: '10',
+
+        },
+        {
+            title: 'Total No of Tasks',
+            value: '60',
+            total: '80',
+
+        },
+        {
+            title: 'Job Applicants',
+            value: '20',
+
+        },
+        {
+            title: 'New Hire',
+            value: '30',
+            total: '20',
+
+        },
+    ];
+
+    return (
+        <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-stone-100 text-gray-900'} p-4 font-sans`}>
+            <Header />
+            <div className="container mx-auto">
+                <UserGreeting />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                    {StatsOverview.map((Stats, index) => {
+                        let icon, titlecolor, onViewAllHandler,color;
+                        switch (Stats.title) {
+                            case "Total No of Projects":
+                                icon = < BriefcaseMedical className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" />
+                                titlecolor = "text-blue-500";
+                                color="text-blue-500";
+                                onViewAllHandler = handleProjectClick;
+                                break;
+                            case "Total No of Tasks":
+                                icon = <PackageSearch className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-pink-600 mr-2" />
+                                titlecolor = "text-pink-500";
+                                color="text-pink-500";
+                                onViewAllHandler = handleTaskClick;
+                                break;
+                            case "Job Applicants":
+                                icon = <MessageSquareCode className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-yellow-600 mr-2" />
+                                titlecolor = "text-yellow-500";
+                                color= "text-yellow-500";
+                                onViewAllHandler = handleViewJobs;
+                                break;
+                            case "New Hire":
+                                icon = <CircleUserRound className="h-6 w-6 sm:w-7 sm:h-7 inline-block text-purple-600 mr-2" />
+                                titlecolor = "text-purple-500";
+                                color="text-purple-500";
+                                onViewAllHandler = handleViewApplicants;
+                                break
+                            default:
+                                onViewAllHandler = () => console.log('No handler defined');
+                        }
+
+                        return (
+                            <StatCard key={index} icon={icon} color={color} title={Stats.title} titlecolor={titlecolor} value={Stats.value} total={Stats.total} onViewAll={onViewAllHandler} />
+                        );
+                    })}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+                    <EmployeeStatusDashboard onViewAll={ handleEmployeeClick} />
+                    <EmployeeChart />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+                    <ChartsLayout onViewAll={handleViewchartLayout} />
+                    <TaskStatistics onViewAll={handleTasksClick} />
+                </div>
+                <div className="mt-6">
+                    <Project />
+                </div>
+            </div>
         </div>
-      </div>
-    </div>  
-  );
+    );
 };
+
 export default CombinedDashboard;
-
- 
-

@@ -739,7 +739,7 @@ const LeavesDashboard = () => {
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
-    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
         {
             EmployeeId: "ACS00000001",
