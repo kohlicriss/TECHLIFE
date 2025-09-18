@@ -35,7 +35,7 @@ const NavbarSkeleton = ({ theme }) => (
   </header>
 );
 
-const Navbar = ({ setSidebarOpen }) => {
+const Navbar = ({ setSidebarOpen, onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { unreadCount, userData, theme, setTheme, setUserData } =
@@ -85,6 +85,36 @@ const Navbar = ({ setSidebarOpen }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleLogoutClick = async () => {
+    setDropdownOpen(false);
+    try {
+      await fetch(
+        "https://hrms.anasolConsultancyservices.com/api/auth/logout",
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+       const keysToRemove = [
+        "accessToken",
+        "emppayload",
+        "logedempid",
+        "logedemprole",
+        "loggedInUserImage"
+      ];
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      setUserData(null);
+      if (onLogout) {
+        onLogout();
+      }
+    }
+  };
   
   const isNotificationsActive = location.pathname.startsWith(
     `/notifications/${userData?.employeeId}`
@@ -264,23 +294,7 @@ const Navbar = ({ setSidebarOpen }) => {
                         ? "text-red-400 hover:bg-gray-700"
                         : "text-red-600 hover:bg-gray-100"
                     }`}
-                    onClick={async () => {
-                      setDropdownOpen(false);
-                      try {
-                        await fetch(
-                          "https://hrms.anasolConsultancyservices.com/api/auth/logout",
-                          {
-                            method: "POST",
-                            credentials: "include",
-                          }
-                        );
-                      } catch (error) {
-                        console.error(error);
-                      } finally {
-                        localStorage.clear();
-                        setUserData(null);
-                      }
-                    }}
+                    onClick={handleLogoutClick}
                   >
                     <FiLogOut className="mr-3" size={16} />
                     Logout

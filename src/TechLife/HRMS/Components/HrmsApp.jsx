@@ -29,7 +29,7 @@ const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
 const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
 const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
-const Permissions = lazy(() => import("./Permissions/PermissionsPage")); 
+const Permissions = lazy(() => import("./Permissions/PermissionsPage"));
 
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
@@ -66,6 +66,7 @@ const MainLayout = ({
         <Navbar
             setSidebarOpen={setSidebarOpen}
             currentUser={currentUser}
+            onLogout={onLogout}
         />
         <div className="flex flex-1 overflow-hidden pt-16">
             <Sidebar

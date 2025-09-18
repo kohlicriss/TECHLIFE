@@ -173,16 +173,7 @@ const Profiles = () => {
   const renderMobile = () => (
     <div className="lg:hidden">
       {/* Card with edit button */}
-      <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl bg-[#B7D4FF] flex items-center space-x-4`}>
-        {/* {!isReadOnly && (
-          <button
-            onClick={handleEditClick}
-            className="absolute top-4 right-4 bg-white/80 dark:bg-gray-800/90 dark:text-white rounded p-1 z-10"
-            aria-label="Edit Profile"
-          >
-            <HiPencil className="w-5 h-5" />
-          </button>
-        )} */}
+      <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'} flex items-center space-x-4`}>
         <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
           {display?.employeeImage || profileImagePreview ? (
             <img
@@ -196,20 +187,25 @@ const Profiles = () => {
             </div>
           )}
         </div>
-        <div className="flex-1 grid grid-cols-2 text-xs gap-y-1 text-black">
-          <div>
-            <div className="font-semibold">{display?.employeeId}</div>
-            <div className="font-semibold">{display?.jobTitlePrimary}</div>
+        <div className={`flex-1 grid grid-cols-1 text-xs gap-y-1 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+          <div className="font-bold text-base">{display?.displayName}</div>
+          <div className="flex items-center space-x-2">
+            <HiIdentification />
+            <span>{display?.employeeId}</span>
           </div>
-          <div>
-            <div>{display?.jobTitleSecondary}</div>
-            <div>{display?.workEmail}</div>
+          <div className="flex items-center space-x-2">
+            <MdWork />
+            <span>{display?.jobTitlePrimary}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <MdEmail />
+            <span>{display?.workEmail}</span>
           </div>
         </div>
       </div>
       
       {/* Horizontal Tabs - Made Sticky with Equal Spacing */}
-      <div className="sticky top-0 z-[1] grid grid-cols-5 gap-1 w-full max-w-md mx-auto border-t border-black bg-[#B7D4FF] px-1">
+      <div className={`sticky top-0 z-[1] grid grid-cols-5 gap-1 w-full max-w-md mx-auto border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-black bg-[#B7D4FF]'} px-1`}>
         {tabs.map(tab => {
           const active = location.pathname.endsWith(tab.path);
           return (
@@ -217,7 +213,7 @@ const Profiles = () => {
               key={tab.name}
               onClick={() => handleTabClick(tab.path)}
               className={`py-2 px-1 text-xs text-center rounded ${
-                active ? "text-black border-b-2 border-black font-semibold" : "text-black opacity-50"
+                active ? `${theme === 'dark' ? 'text-white border-b-2 border-white' : 'text-black border-b-2 border-black'} font-semibold` : `${theme === 'dark' ? 'text-gray-400' : 'text-black opacity-50'}`
               }`}
             >
               {tab.name}
@@ -274,11 +270,13 @@ const Profiles = () => {
               </div>
             )}
           </div>
-          <div className={`ml-8 text-black`}>
+          <div className={`ml-8 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
             <h1 className="text-3xl font-bold">{display?.displayName}</h1>
-            <div className="grid grid-cols-2 gap-x-10 gap-y-2 text-black">
-              <div>{display?.employeeId}<br />{display?.jobTitlePrimary}</div>
-              <div>{display?.jobTitleSecondary}<br />{display?.workEmail}</div>
+            <div className={`grid grid-cols-2 gap-x-10 gap-y-2 mt-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+              <div className="flex items-center space-x-2"><HiIdentification /> <span>{display?.employeeId}</span></div>
+              <div className="flex items-center space-x-2"><MdWork /> <span>{display?.jobTitlePrimary}</span></div>
+              <div className="flex items-center space-x-2"><MdWork /> <span>{display?.jobTitleSecondary}</span></div>
+              <div className="flex items-center space-x-2"><MdEmail /> <span>{display?.workEmail}</span></div>
             </div>
           </div>
         </div>
