@@ -219,6 +219,11 @@ const Navbar = ({ setSidebarOpen }) => {
               }`}
             >
               <div className="py-1">
+                {/* Profile Info in Dropdown */}
+                <div className={`px-4 py-2 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <p className={`font-bold text-sm truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{userData?.fullName}</p>
+                  <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{userData?.roles?.[0]}</p>
+                </div>
                 {/* Profile Option */}
                 <Link
                   to={`/profile/${userData?.employeeId}`}

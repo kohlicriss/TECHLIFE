@@ -113,6 +113,27 @@ function EmployeeApp() {
   const userRole = userData?.roles?.[0]?.toUpperCase();
   const hasManagementAccess = ['ADMIN', 'MANAGER', 'HR'].includes(userRole);
 
+  // Load form data from localStorage when component mounts
+  useEffect(() => {
+    const savedFormData = localStorage.getItem("employeeFormData");
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        setNewEmployee(parsedData);
+        console.log("Loaded form data from localStorage:", parsedData);
+      } catch (error) {
+        console.error("Error parsing saved form data:", error);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (isFormOpen) {
+      localStorage.setItem("employeeFormData", JSON.stringify(newEmployee));
+    }
+  }, [newEmployee, isFormOpen]);
+
   useEffect(() => {
     const handleOutsideClick = () => {
       if (contextMenu.visible) {
@@ -299,6 +320,10 @@ function EmployeeApp() {
       setPopup({ show: true, message: 'Employee created successfully!', type: 'success' });
       setIsFormOpen(false);
       
+      // Clear localStorage after successful submission
+      localStorage.removeItem("employeeFormData");
+      console.log("Cleared form data from localStorage after successful submission");
+      
       // Refresh employee list
       const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
       setEmployeeData(response.data);
@@ -331,6 +356,11 @@ function EmployeeApp() {
         return newErrors;
       });
     }
+  };
+
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    // Don't clear localStorage when closing the form, so data persists
   };
 
   const renderField = (label, name, type = 'text', required = false, options = []) => {
@@ -422,7 +452,7 @@ function EmployeeApp() {
                 </div>
               </div>
               <button 
-                onClick={() => setIsFormOpen(false)} 
+                onClick={handleFormClose} 
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
               >
                 <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
@@ -461,7 +491,7 @@ function EmployeeApp() {
           }`}>
             <button 
               type="button" 
-              onClick={() => setIsFormOpen(false)}
+              onClick={handleFormClose}
               className={`w-full sm:w-auto px-4 sm:px-6 py-2 border-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
                 theme === 'dark' 
                   ? 'border-gray-600 text-gray-300 hover:bg-gray-600' 
@@ -992,7 +1022,7 @@ function EmployeeApp() {
                               theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                             }`}>
                               <IoIdCardOutline className={`w-3 h-3 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                              <span className="truncate font-mono text-xs">{employee.employeeId}</span>
+                              <span className="truncate font-mongo text-xs">{employee.employeeId}</span>
                             </div>
 
                             <div className={`flex items-center space-x-1 p-1 sm:p-2 rounded-md ${
@@ -1070,6 +1100,7 @@ function EmployeeApp() {
                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            disabled={filteredEmployees.length < pageSize}
           >
             <span>Next</span>
             <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />

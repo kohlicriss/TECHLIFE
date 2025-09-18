@@ -245,6 +245,13 @@ function Profile() {
 
   const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
 
+  // Save editing data to localStorage
+  useEffect(() => {
+    if (editingSection) {
+      localStorage.setItem(`profile-editing-${editingSection.section}`, JSON.stringify(editingData));
+    }
+  }, [editingData, editingSection]);
+
   useEffect(() => {
     if (fromContextMenu && targetEmployeeId) {
       console.log("Viewing profile from context menu for employee:", targetEmployeeId);
@@ -288,22 +295,29 @@ function Profile() {
       return;
     }
     setErrors({});
-    let dataToEdit = {};
-    if (section === "primaryDetails") {
-      dataToEdit = primarydata;
-    } else if (section === "contactDetails") {
-      dataToEdit = contactdetails;
-    } else if (section === "address") {
-      dataToEdit = addressData;
-    } else if (section === "relations") {
-      dataToEdit = defaultProfile.relations;
-    } else if (section === "education") {
-      dataToEdit = eduData && eduData.length > 0 ? eduData[0] : {};
-    } else if (section === "experience") {
-      dataToEdit = experience && experience.length > 0 ? experience[0] : {};
+    
+    // Load from localStorage if available
+    const savedData = localStorage.getItem(`profile-editing-${section}`);
+    if (savedData) {
+      setEditingData(JSON.parse(savedData));
+    } else {
+      let dataToEdit = {};
+      if (section === "primaryDetails") {
+        dataToEdit = primarydata;
+      } else if (section === "contactDetails") {
+        dataToEdit = contactdetails;
+      } else if (section === "address") {
+        dataToEdit = addressData;
+      } else if (section === "relations") {
+        dataToEdit = defaultProfile.relations;
+      } else if (section === "education") {
+        dataToEdit = eduData && eduData.length > 0 ? eduData[0] : {};
+      } else if (section === "experience") {
+        dataToEdit = experience && experience.length > 0 ? experience[0] : {};
+      }
+      setEditingData(dataToEdit || {});
     }
 
-    setEditingData(dataToEdit || {});
     setSelectedFile(null);
     setEditingSection({ section });
   };
@@ -537,8 +551,16 @@ function Profile() {
     if (success) {
       setEditingSection(null);
       setErrors({});
+      localStorage.removeItem(`profile-editing-${section}`); // Clear localStorage on successful submission
       setPopup({ show: true, message: 'Profile section updated successfully!', type: 'success' });
     }
+  };
+
+  const handleCancelEdit = () => {
+    if (editingSection) {
+      localStorage.removeItem(`profile-editing-${editingSection.section}`);
+    }
+    setEditingSection(null);
   };
   
   const renderField = (label, name, type = "text", required = false, options = []) => {
@@ -692,7 +714,7 @@ function Profile() {
                 </div>
               </div>
               <button 
-                onClick={() => setEditingSection(null)} 
+                onClick={handleCancelEdit} 
                 className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0" 
                 aria-label="Close"
               >
@@ -727,7 +749,7 @@ function Profile() {
           }`}>
             <button 
               type="button" 
-              onClick={() => setEditingSection(null)} 
+              onClick={handleCancelEdit} 
               className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm ${
                 theme === 'dark'
                   ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
