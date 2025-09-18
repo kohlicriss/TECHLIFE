@@ -3,10 +3,11 @@ import { CircleUserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip } from 'react-icons/fa';
+import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip, FaUsers } from 'react-icons/fa';
 import axios from 'axios';
 import { Context } from '../HrmsContext';
 import classNames from 'classnames';
+import { FiDelete, FiEdit } from "react-icons/fi";
 
 // --- ProjectCard Data and Component ---
 const projects = [
@@ -137,6 +138,7 @@ const projectIconMap = {
     "Internal Chatbot System": { icon: "💬", color: "text-teal-500" },
 };
 const ProjectCard = () => {
+    const {theme}=useContext(Context);
     const [currentIndex, setCurrentIndex] = useState(0);
     const currentProject = projects[currentIndex];
     const { icon, color } = projectIconMap[currentProject.name] || { icon: null, color: "" };
@@ -150,7 +152,7 @@ const ProjectCard = () => {
 
     return (
         <motion.div
-            className="relative p-6 bg-stone-100 rounded-lg shadow-xl mx-auto border border-gray-200"
+            className={`relative p-6  rounded-lg shadow-xl mx-auto border border-gray-200  ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
             key={currentIndex} // Key is important for Framer Motion to re-animate on state change
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -188,7 +190,7 @@ const ProjectCard = () => {
 
             {/* Description */}
             <motion.p
-                className="text-gray-700 text-base sm:text-lg mb-8 leading-relaxed"
+                className={`text-gray-700 text-base sm:text-lg mb-8 leading-relaxed ${theme==='dark' ? 'text-white':''}`}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
@@ -199,14 +201,14 @@ const ProjectCard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Highlights */}
                 <motion.div
-                    className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-sm border border-gray-100"
+                    className={`p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-purple-50 to-purple-100 '}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Highlights</h3>
-                    <ul className="space-y-3 text-gray-700">
+                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}> Highlights</h3>
+                    <ul className={`space-y-3  ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         {currentProject.highlights.map((highlight, index) => (
                             <motion.li
                                 key={index}
@@ -224,14 +226,14 @@ const ProjectCard = () => {
 
                 {/* Characteristics */}
                 <motion.div
-                    className="bg-gradient-to-br from-pink-50 to-pink-100 p-6 rounded-lg shadow-sm border border-gray-100"
+                    className={` p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-pink-50 to-pink-100'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.5, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Characteristics</h3>
-                    <ul className="space-y-3 text-gray-700">
+                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}> Characteristics</h3>
+                    <ul className={`space-y-3 text-gray-700 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
                         {currentProject.characteristics.map((char, index) => (
                             <motion.li
                                 key={index}
@@ -249,13 +251,13 @@ const ProjectCard = () => {
 
                 {/* Team */}
                 <motion.div
-                    className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-lg shadow-sm border border-gray-100"
+                    className={` p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-indigo-100'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Team</h3>
+                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>Team</h3>
                     <div className="space-y-4">
                         {currentProject.team.map((teamMember, index) => (
                             <motion.div
@@ -265,7 +267,7 @@ const ProjectCard = () => {
                                 animate={{ x: 0, opacity: 1 }}
                                 transition={{ delay: 0.7 + index * 0.1 }}
                             >
-                                <p className="font-medium text-gray-800 text-base sm:text-lg mb-2">
+                                <p className={`font-medium  text-base sm:text-lg mb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>
                                     <div className="flex flex-wrap gap-2">
                                         {teamMember.role}: {teamMember.avatars}
                                     </div>
@@ -301,65 +303,164 @@ const ProjectCard = () => {
 
 // --- MyTeam Data and Component ---
 const MyTeam = () => {
+    const { userData,theme } = useContext(Context);
+    const role = (userData?.roles?.[0] || "").toUpperCase();
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+
     const initialEmployeeData = [
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Rajesh", employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Ramesh", employee_id: "E_02", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Ramya", employee_id: "E_05", date: "2025-06-30", login_time: null, logout_time: null },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Swetha", employee_id: "E_07", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Rohit", employee_id: "E_09", date: "2025-06-30", login_time: null, logout_time: null },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Deepika", employee_id: "E_11", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/men/32.jpg Rajesh", employee_id: "E_01", date: "2025-06-30",role:"Full stack Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/men/32.jpg Ramesh", employee_id: "E_02", date: "2025-06-30",role:"Backend Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/women/65.jpg Ramya", employee_id: "E_05", date: "2025-06-30",role:"Devops Engineer", login_time: null, logout_time: null },
+        { name: "https://randomuser.me/api/portraits/women/65.jpg Swetha", employee_id: "E_07", date: "2025-06-30",role:"Tester", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "https://randomuser.me/api/portraits/men/32.jpg Rohit", employee_id: "E_09", date: "2025-06-30",role:"Tester", login_time: null, logout_time: null },
+        { name: "https://randomuser.me/api/portraits/women/65.jpg Deepika", employee_id: "E_11", date: "2025-06-30",role:"Designer", login_time: "10:00 AM", logout_time: "07:00 PM" },
     ];
 
-    const [employeeData] = useState(initialEmployeeData);
+    const [employeeData, setEmployeeData] = useState(initialEmployeeData);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" });
+    const [editIndex, setEditIndex] = useState(null);
 
-    const handleProfileClick = (employeeId) => {
-        console.log(`Navigating to performance dashboard for employee ID: ${employeeId}`);
+    const handleAddOrEdit = (e) => {
+        e.preventDefault();
+        if (editIndex !== null) {
+            // Edit existing
+            setEmployeeData(prev =>
+                prev.map((emp, idx) => idx === editIndex ? formData : emp)
+            );
+        } else {
+            // Add new
+            setEmployeeData(prev => [...prev, formData]);
+        }
+        setShowForm(false);
+        setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" });
+        setEditIndex(null);
+    };
+
+    const handleEdit = (idx) => {
+        setFormData(employeeData[idx]);
+        setEditIndex(idx);
+        setShowForm(true);
+    };
+
+    const handleDelete = (idx) => {
+        setEmployeeData(prev => prev.filter((_, i) => i !== idx));
     };
 
     return (
         <motion.div
-            className="bg-stone-100 shadow-xl rounded-lg p-6 border border-gray-200 h-full overflow-hidden"
+            className={` shadow-xl rounded-lg p-6 border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">My Team</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-400 bg-clip-text text-transparent ':''}`}>
+                    My Team</h2>
+                {showSidebar && (
+                    <motion.button
+                        className="flex items-center bg-gradient-to-br from-blue-200 to-blue-500 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
+                        onClick={() => { setShowForm(true); setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" }); setEditIndex(null); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                       <FaPlus className="mr-2" /> Add Team
+                    </motion.button>
+                )}
+            </div>
+            {/* Add/Edit Form */}
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                    <motion.form
+                            className={`w-full max-w-3xl rounded-lg shadow-2xl  relative ${theme==='dark' ? 'bg-gray-800 text-white':'bg-white text-black'}`}
+                            onSubmit={handleAddOrEdit}
+                            initial={{ scale: 0.9, y: 50 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 50 }}
+                            transition={{ duration: 0.3 }}
+                     >    
+                        <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-400">
+                        <h3 className="text-2xl font-bold  border-gray-200   pt-6  text-gray-600 border-lg pb-8">{editIndex !== null ? "Edit Team Member" : "Add Team Member"}</h3>  
+                        </div>
+                        <div className="space-y-4 p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm  font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Profile Image & Name</label>
+                            <input type="text" placeholder="Profile Image URL + Name" className="border p-2 w-full rounded" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee ID</label>
+                            <input type="text" placeholder="Employee ID" className="border p-2 w-full rounded" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Date</label>
+                            <input type="date" className="border p-2 w-full rounded" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Role</label>
+                            <input type="text" placeholder="Role" className="border p-2 w-full rounded" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Login Time</label>
+                            <input type="text" placeholder="Login Time" className="border p-2 w-full rounded" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
+                            </div>
+                            <div className='relative mb-2'>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Logout Time</label>
+                            <input type="text" placeholder="Logout Time" className="border p-2 w-full rounded" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
+                            <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
+                        </div>
+                        </div>
+                    </motion.form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
-                    <thead>
-                        <tr className="bg-gradient-to-br from-blue-200 to-blue-600 text-black text-left text-sm md:text-base">
-                            <th className="py-2 px-4">Profile</th>
-                            <th className="py-2 px-4">Emp ID</th>
-                            <th className="py-2 px-4">Name</th>
-                            <th className="py-2 px-4">Date</th>
-                            <th className="py-2 px-4">Login</th>
-                            <th className="py-2 px-4">Logout</th>
-                            <th className="py-2 px-4">Status</th>
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className={`w-full ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-blue-100 to-blue-400 text-black'}`}>
+                        <tr> 
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}><FaUsers className={`w-6 h-6 ${theme==='dark'?'text-white':'text-gray-800'}text-white`} /></th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Emp ID</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Name</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Date</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Role</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
+                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
+                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
                         </tr>
                     </thead>
-                    <tbody>
-                        <AnimatePresence>
+                    <tbody  className="bg-white divide-y divide-gray-500">
+                        <AnimatePresence mode ="wait">
                             {employeeData.map((emp, index) => {
                                 const [maybeImage, ...nameParts] = emp.name.split(" ");
                                 const hasImage = maybeImage.startsWith("http");
                                 const imageUrl = hasImage ? maybeImage : "";
                                 const name = hasImage ? nameParts.join(" ") : emp.name;
                                 const status = emp.login_time
-                                    ? { label: "Available", color: "text-green-600" }
-                                    : { label: "Absent", color: "text-red-600" };
+                                    ? { label: "Available", color: (`${theme==='dark'?'text-green-300':'text-green-600'}`) }
+                                    : { label: "Absent", color: (`${theme==='dark'?'text-red-300':'text-red-600'}`) };
                                 return (
                                     <motion.tr
                                         key={emp.employee_id}
-                                        className="border-t border-gray-100 hover:bg-gray-50 text-sm md:text-base"
+                                        className=" border-t border-gray-200 hover:bg-gray-50 "
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className="py-2 px-4">
+                                        <td className={`px-3 py-2 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             <motion.div
-                                                className="cursor-pointer hover:opacity-80 transition-opacity"
-                                                onClick={() => handleProfileClick(emp.employee_id)}
+                                                className={`cursor-pointer hover:opacity-80 transition-opacity  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
+                                                onClick={() => {/* handle profile click if needed */}}
                                                 title={`View ${name}'s Performance`}
                                                 whileHover={{ scale: 1.1 }}
                                             >
@@ -367,28 +468,34 @@ const MyTeam = () => {
                                                     <img
                                                         src={imageUrl}
                                                         alt={name}
-                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover"
+                                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
                                                     />
                                                 ) : (
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full  flex items-center justify-center text-gray-500 font-bold  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}>
                                                         {name.charAt(0)}
                                                     </div>
                                                 )}
                                             </motion.div>
                                         </td>
-                                        <td className="py-2 px-4">{emp.employee_id}</td>
-                                        <td className="py-2 px-4 font-medium">{name}</td>
-                                        <td className="py-2 px-4">{emp.date}</td>
-                                        <td className="py-2 px-4">{emp.login_time || "-"}</td>
-                                        <td className="py-2 px-4">{emp.logout_time || "-"}</td>
-                                        <td
-                                            className={`py-2 px-4 font-semibold ${status.color}`}
-                                        >
-                                            {status.label}
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{emp.employee_id}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{name}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm  ${theme==='dark' ?  'bg-gray-500 text-gray-200':' text-gray-900'}`}>{emp.date}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{emp.role}</td>
+                                        <td className={`px-4 py-2 whitespace-nowrap text-sm  ${status.color} ${theme==='dark' ? 'bg-gray-500 ':''} `}>{status.label}</td>
+                                       <td className={`px-4  py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 ':''}`}>
+                                            
+                                            {showSidebar && (
+                                                <button className={ `${theme==='dark'?'text-indigo-200':'text-indigo-600'}  hover:text-indigo-800 font-bold" onClick={() => handleEdit(index)}`}><FiEdit className='w-5 h-5'/></button>
+                                            )}
+                                        </td>
+                                        <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
+                                            {showSidebar && (
+                                                <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-bold" onClick={() => handleDelete(index)}`}><FiDelete className='w-5 h-5'/></button>
+                                            )}
                                         </td>
                                     </motion.tr>
-                                
-                            )})};
+                                );
+                            })}
                         </AnimatePresence>
                     </tbody>
                 </table>
@@ -398,213 +505,199 @@ const MyTeam = () => {
 };
 
 // --- ProjectStatus Data and Component ---
-const projectStatusData = [
-    { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
-    { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
-    { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
-    { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
-    { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
-    { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
-];
-
-const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
-
 function ProjectStatus() {
-    return (
+    const { userData,theme } = useContext(Context);
+    const role = (userData?.roles?.[0] || "").toUpperCase();
+    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
+    const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
+
+    const projectstatusData = [
+        { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
+        { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
+        { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
+        { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
+        { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
+        { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
+    ];
+
+    const [teamData, setTeamData] = useState(projectstatusData);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ Project_id: "", Project_name: "", Status: "", Duration: "" });
+    const [editIndex, setEditIndex] = useState(null);
+
+    const handleAddOrEdit = (e) => {
+        e.preventDefault();
+        if (editIndex !== null) {
+            setTeamData(prev =>
+                prev.map((item, idx) => idx === editIndex ? formData : item)
+            );
+        } else {
+            setTeamData(prev => [...prev, formData]);
+        }
+        setShowForm(false);
+        setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" });
+        setEditIndex(null);
+    };
+
+    const handleEdit = (idx) => {
+        setFormData(teamData[idx]);
+        setEditIndex(idx);
+        setShowForm(true);
+    };
+
+    const handleDelete = (idx) => {
+        setTeamData(prev => prev.filter((_, i) => i !== idx));
+    };
+
+     return (
         <motion.div
-            className="p-6 bg-stone-100 rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden"
+            className={`p-6  rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'} `}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Project Status Overview</h2>
-            <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
-                    <thead>
-                        <tr className="text-left bg-gradient-to-br from-green-200 to-green-600 text-sm md:text-base">
-                            <th className="p-2 font-semibold">Project Name</th>
-                            <th className="p-2 font-semibold">Duration</th>
-                            <th className="p-2 font-semibold">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <AnimatePresence>
-                            {projectStatusData.map((project, index) => (
-                                <motion.tr
-                                    key={project.Project_id}
-                                    className="border-t border-gray-100 hover:bg-gray-50"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                >
-                                    <td className="p-2 text-sm md:text-base">{project.Project_name}</td>
-                                    <td className="p-2 text-sm md:text-base">{project.Duration}</td>
-                                    <td className="p-2 w-24">
-                                        <ResponsiveContainer width="100%" height={25}>
-                                            <BarChart
-                                                layout="vertical"
-                                                data={[{ name: project.Project_name, value: project.Status }]}
-                                                margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
-                                            >
-                                                <XAxis type="number" domain={[0, 100]} hide />
-                                                <YAxis type="category" dataKey="name" hide />
-                                                <Tooltip formatter={(value) => `${value}%`} />
-                                                <Bar dataKey="value" radius={[5, 5, 5, 5]}>
-                                                    <Cell fill={COLORS[index % COLORS.length]} />
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                        <span className="text-xs text-gray-600 ml-2">{project.Status}%</span>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </AnimatePresence>
-                    </tbody>
-                </table>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
+                {showSidebar && (
+                    <motion.button
+                        className="flex items-center bg-gradient-to-br from-green-200 to-green-600 text-black font-bold py-2 px-4 rounded shadow transition"
+                        onClick={() => { setShowForm(true); setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" }); setEditIndex(null); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <FaPlus className="mr-2" /> Update Status
+                    </motion.button>
+                )}
             </div>
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.form
+                            className={`w-full max-w-md  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
+                            onSubmit={handleAddOrEdit}
+                            initial={{ scale: 0.9, y: 50 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 50 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-green-100 to-green-400">
+                            <h3 className={`text-2xl font-bold  border-gray-200   pt-6   border-lg pb-8 ${theme==='dark' ? 'text-gray-600 ':'text-gray-800'}`}>{editIndex !== null ? "Edit Project Status" : "Update Project Status"}</h3>
+                            </div>
+                             <div className="space-y-4 p-4">
+                            <div className="grid grid-cols-1 gap-2">
+                                <div className='relative mb-2'>
+                                 <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project ID</label>   
+                                <input type="text" placeholder="Project ID" className="border p-2 w-full rounded" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
+                                </div>
+                                <div className='relative mb-2'>
+                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project Name</label>   
+                                <input type="text" placeholder="Project Name" className="border p-2 w-full rounded" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
+                                </div>
+                                <div className='relative mb-2'>
+                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Status (%)</label>
+                                <input type="number" placeholder="Status (%)" className="border p-2 w-full rounded" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
+                                </div>
+                                <div className='relative mb-2'>
+                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Duration</label>
+                                <input type="text" placeholder="Duration" className="border p-2 w-full rounded" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
+                                </div>
+                            </div>
+                            <div className="flex gap-2 mt-2 justify-center">
+                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
+                                <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
+                            </div>
+                            </div>
+                        </motion.form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+    {/* Table container with responsive overflow */}
+    <div className="overflow-x-auto">
+        <table className={`min-w-full  divide-y divide-gray-200  `}>
+            <thead>
+                <tr className={`text-left  w-full text-sm  uppercase tracking-wider ${theme==='dark'?'bg-gray-500 text-white  ':'bg-gradient-to-br from-green-100 to-green-400 '}`}>
+                    <th className="py-2 px-4 font-semibold">Project ID</th>
+                    <th className="py-2 px-4 font-semibold">Project Name</th>
+                    <th className="py-2 px-4 font-semibold">Duration</th>
+                    <th className="py-2 px-4 font-semibold">Status</th>
+                    {showSidebar && <th className="py-2 px-4 ">Edit</th>}
+                    {showSidebar && <th className="py-2 px-4 ">Delete</th>}
+                </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-500">
+                <AnimatePresence mode="wait">
+                    {teamData.map((project, index) => (
+                        <motion.tr
+                            key={project.Project_id}
+                            className="border-t border-gray-100 hover:bg-gray-50"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                        >
+                            <td className={`py-2 px-4  whitespace-nowrap text-sm ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{project.Project_id}</td>
+                           <td className={`py-2 px-4   whitespace-nowrap text-sm ${theme==='dark' ?  'bg-gray-500  text-gray-200':''}`}>{project.Project_name}</td>
+                            <td className={`py-2 px-4 whitespace-nowrap  text-sm ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{project.Duration}</td>
+                            <td className={`py-2 px-4  whitespace-nowrap  w-32 flex items-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                <ResponsiveContainer width="75%" height={25}>
+                                    <BarChart
+                                        layout="vertical"
+                                        data={[{ name: project.Project_name, value: Number(project.Status) }]}
+                                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                                    >
+                                        <XAxis type="number" domain={[0, 100]} hide />
+                                        <YAxis type="category" dataKey="name" hide />
+                                        <Tooltip formatter={(value) => `${value}%`} />
+                                        <Bar dataKey="value" radius={[5, 5, 5, 5]}>
+                                            <Cell fill={COLORS[index % COLORS.length]} />
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                                <span className={`text-xs  ml-2 ${theme==='dark' ? 'text-gray-200':'text-gray-600'}`}>{project.Status}%</span>
+                            </td>
+                            {showSidebar && (
+                                <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
+                                    <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small" onClick={() => handleEdit(index)}`}><FiEdit className='w-5 h-5'/></button>
+                                </td>
+                            )}
+                            {showSidebar && (
+                                <td className={`py-2 px-4  whitespace-nowrap  ${theme==='dark' ? 'bg-gray-500 ':''}`}>
+                                    <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small" onClick={() => handleDelete(index)}`}><FiDelete className='w-5 h-5'/></button>
+                                </td>
+                            )}
+                        </motion.tr>
+                    ))}
+                </AnimatePresence>
+            </tbody>
+        </table>
+    </div>
         </motion.div>
     );
 }
 
 // ...existing code...
 function Project() {
-    const { userData } = useContext(Context);
+    const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER"].includes(role);
 
     const [projectTableData, setProjectTableData] = useState([
-        {
-            project_id: "P_01",
-            project_name: "HRMS Project",
-            status: "Ongoing",
-            start_date: "2025-05-01",
-            end_date: "2025-09-30",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "High",
-            Open_task: 30,
-            Closed_task: 25,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_02",
-            project_name: "Employee Self-Service App",
-            status: "Upcoming",
-            start_date: "2025-10-15",
-            end_date: "2025-12-15",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "Medium",
-            Open_task: 20,
-            Closed_task: 10,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_03",
-            project_name: "Payroll Automation",
-            status: "Completed",
-            start_date: "2024-10-01",
-            end_date: "2025-02-15",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "High",
-            Open_task: 12,
-            Closed_task: 10,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_04",
-            project_name: "Attendance System Upgrade",
-            status: "Ongoing",
-            start_date: "2025-05-10",
-            end_date: "2025-08-10",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "Low",
-            Open_task: 40,
-            Closed_task: 25,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P_05",
-            project_name: "AI-Based Recruitment Tool",
-            status: "Upcoming",
-            start_date: "2025-12-01",
-            end_date: "2026-02-28",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "Medium",
-            Open_task: 20,
-            Closed_task: 15,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        },
-        {
-            project_id: "P06",
-            project_name: "Internal Chatbot System",
-            status: "Completed",
-            start_date: "2024-05-01",
-            end_date: "2024-11-30",
-            Employee_team: [
-                "https://randomuser.me/api/portraits/men/32.jpg",
-                "https://randomuser.me/api/portraits/women/65.jpg",
-                "https://randomuser.me/api/portraits/men/76.jpg"
-            ],
-            Priority: "High",
-            Open_task: 30,
-            Closed_task: 25,
-            Details: "https://www.flaticon.com/free-icon/document_16702688",
-            Action: "https://icons8.com/icon/102350/delete"
-        }
-    ]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ], Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
     const getPriorityColor = (priority) => {
-        switch (priority) {
-            case "High":
-                return "bg-green-100 text-green-800";
-            case "Medium":
-                return "bg-orange-100 text-orange-800";
-            case "Low":
-                return "bg-red-100 text-red-800";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
-
+        switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
     const getStatusColor = (status) => {
-        switch (status) {
-            case "In Progress":
-                return "bg-green-100 text-green-800";
-            case "Ongoing":
-                return "bg-blue-100 text-blue-800";
-            case "Upcoming":
-                return "bg-yellow-100 text-yellow-800";
-            case "Completed":
-                return "bg-purple-100 text-purple-800";
-            default:
-                return "bg-gray-100 text-gray-800";
-        }
-    };
-
+        switch (status) {case "In Progress":    return "bg-green-100 text-green-800";case "Ongoing": return "bg-blue-100 text-blue-800";case "Upcoming": return "bg-yellow-100 text-yellow-800";case "Completed": return "bg-purple-100 text-purple-800";default: return "bg-gray-100 text-gray-800";} };
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newProject, setNewProject] = useState({
         project_id: "",
@@ -623,7 +716,6 @@ function Project() {
         attachedFileLinks: [],
     });
     const [files, setFiles] = useState([]);
-
     const handleCreateProject = (e) => {
         e.preventDefault();
         setProjectTableData(prev => [
@@ -674,19 +766,44 @@ function Project() {
             relatedLinks: prev.relatedLinks.filter((_, i) => i !== index)
         }));
     };
+    const [editProjectIndex, setEditProjectIndex] = useState(null);
+const [editProjectData, setEditProjectData] = useState(null);
+
+const handleEditProject = (idx) => {
+    setEditProjectIndex(idx);
+    setEditProjectData(projectTableData[idx]);
+    setShowEditForm(true);
+};
+
+const handleDeleteProject = (idx) => {
+    setProjectTableData(prev => prev.filter((_, i) => i !== idx));
+};
+
+const [showEditForm, setShowEditForm] = useState(false);
+
+const handleUpdateProject = (e) => {
+    e.preventDefault();
+    setProjectTableData(prev =>
+        prev.map((proj, idx) => idx === editProjectIndex ? editProjectData : proj)
+    );
+    setShowEditForm(false);
+    setEditProjectIndex(null);
+    setEditProjectData(null);
+};
 
     return (
         <motion.div
-            className="p-6 bg-stone-100 rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative"
+            className={`p-6  rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Project Overview</h2>
+                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
+                    Project Overview</h2>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition"
+                        className="flex items-center bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
                         onClick={() => setShowCreateForm(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -705,111 +822,145 @@ function Project() {
                         exit={{ opacity: 0 }}
                     >
                         <motion.form
-                            className="w-full max-w-3xl bg-white rounded-lg shadow-2xl p-4 relative"
+                            className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
                             onSubmit={handleCreateProject}
                             initial={{ scale: 0.9, y: 50 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 50 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <h3 className="text-2xl font-bold mb-2 bg-green-100 text-gray-800 text-center">Create New Project</h3>
+                            <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
+                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6   border-lg pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Create New Project</h3>
+                            </div>
+                            <div className="space-y-4 p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Project Name</label>
+                                 
                                 <input
                                     type="text"
                                     placeholder="Project Name"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
                                     required
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
+                                 
                                 <select
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.status}
                                     onChange={e => setNewProject({ ...newProject, status: e.target.value })}
                                 >
-                                    <option value="Ongoing">Ongoing</option>
-                                    <option value="Upcoming">Upcoming</option>
-                                    <option value="Completed">Completed</option>
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                    <option value="Ongoing"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
+                                    <option value="Upcoming"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
+                                    <option value="Completed"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
                                 </select>
+                                </div>
+                                <div className="relative mt-1">
+                                    <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
                                 <input
                                     type="date"
-                                    className="border p-2 rounded"
+                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.start_date}
                                     onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
                                     required
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                    <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
                                 <input
                                     type="date"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.end_date}
                                     onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
                                     required
                                 />
+                                </div>
+                                   <div className="relative mt-1">
+                                <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
+                             
                                 <select
-                                    className="border p-2 rounded"
+                                   className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.Priority}
                                     onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
                                 >
-                                    <option value="High">High</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Low">Low</option>
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
+                                    <option value="High"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
+                                    <option value="Medium"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
+                                    <option value="Low"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
                                 </select>
+                                </div>
+                                 <div className="relative mt-1">
+                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Open Tasks</label>
+                               
                                 <input
                                     type="number"
                                     placeholder="Open Tasks"
-                                    className="border p-2 rounded"
+                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Open_task}
                                     onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Closed Tasks</label>
                                 <input
                                     type="number"
                                     placeholder="Closed Tasks"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Closed_task}
                                     onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
                                 />
+                                </div>
+                                <div className="relative mt-1">
+                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Rating</label>
                                 <input
                                     type="number"
                                     placeholder="Rating (1-5)"
-                                    className="border p-2 rounded"
+                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     min="1"
                                     max="5"
                                     value={newProject.rating}
                                     onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
                                 />
+                                </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Employee_team</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
                                     <textarea
-                                        className="border p-2 rounded w-full"
+                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.Employee_team}
                                         onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Remark</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
                                     <textarea
-                                        className="border p-2 rounded w-full"
+                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.remark}
                                         onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Completion Note</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
                                     <textarea
-                                        className="border p-2 rounded w-full"
+                                        className={`border p-2 rounded shadow-sm w-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.completionNote}
                                         onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Related Links</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                                        Related Links</label>
                                     {newProject.relatedLinks.map((link, index) => (
                                         <div key={index} className="flex gap-2 mb-0">
                                             <input
                                                 type="url"
                                                 value={link}
                                                 onChange={e => handleRelatedLinkChange(index, e.target.value)}
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                                                className={`flex-1 px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                                 placeholder="Enter related link URL"
                                             />
                                             <button
@@ -832,11 +983,12 @@ function Project() {
                                     </button>
                                 </div>
                                 <div className="mt-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-0">Attach Files</label>
+                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                                        Attach Files</label>
                                     <div className="flex items-center">
                                         <label className="flex items-center cursor-pointer">
                                             <FaPaperclip className="mr-2" />
-                                            <span className="text-sm text-gray-700">Attach</span>
+                                            <span className={`text-sm  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Attach</span>
                                             <input
                                                 type="file"
                                                 multiple
@@ -885,12 +1037,116 @@ function Project() {
                                     Cancel
                                 </motion.button>
                             </div>
+                            </div>
                         </motion.form>
                     </motion.div>
                 )}
             </AnimatePresence>
+            <AnimatePresence>
+    {showEditForm && (
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+        >
+            <motion.form
+                className={`w-full max-w-3xl rounded-lg shadow-2xl relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
+                onSubmit={handleUpdateProject}
+                initial={{ scale: 0.9, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 50 }}
+                transition={{ duration: 0.3 }}
+            >
+                <div className="mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
+                    <h3 className={`text-2xl font-bold pt-6 pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Edit Project</h3>
+                </div>
+                <div className="space-y-4 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                            type="text"
+                            placeholder="Project Name"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.project_name || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
+                            required
+                        />
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.status || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
+                        >
+                            <option value="">Select Status</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Upcoming">Upcoming</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <input
+                            type="date"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.start_date || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
+                            required
+                        />
+                        <input
+                            type="date"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.end_date || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
+                            required
+                        />
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Priority || ""}
+                            onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
+                        >
+                            <option value="">Select Priority</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <input
+                            type="number"
+                            placeholder="Open Tasks"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Open_task || 0}
+                            onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
+                        />
+                        <input
+                            type="number"
+                            placeholder="Closed Tasks"
+                            className="border p-2 rounded w-full"
+                            value={editProjectData?.Closed_task || 0}
+                            onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
+                        />
+                    </div>
+                    {/* Add more fields as needed */}
+                    <div className="flex mt-2 gap-4 justify-center">
+                        <motion.button
+                            type="submit"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Update Project
+                        </motion.button>
+                        <motion.button
+                            type="button"
+                            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
+                            onClick={() => setShowEditForm(false)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Cancel
+                        </motion.button>
+                    </div>
+                </div>
+            </motion.form>
+        </motion.div>
+    )}
+</AnimatePresence>
             <table className="min-w-full bg-white">
-                <thead className="bg-gradient-to-br from-indigo-200 to-indigo-600 text-gray-800 text-left">
+                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800'}`}>
                     <tr>
                         <th className="p-3 text-sm md:text-base">Project</th>
                         <th className="p-3 text-sm md:text-base">Team</th>
@@ -898,11 +1154,13 @@ function Project() {
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
                         <th className="p-3 text-sm md:text-base">Status</th>
+                        <th className="p-3 text-sm md:text-base">Open Task</th>
+                        <th className="p-3 text-sm md:text-base">Closed Task</th>
                         <th className="p-3 text-sm md:text-base">Details</th>
-                        <th className="p-3 text-sm md:text-base">Delete</th>
+                        {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody  className="bg-white divide-y divide-gray-500">
                     <AnimatePresence>
                         {projectTableData.map((proj, index) => (
                             <motion.tr
@@ -913,46 +1171,44 @@ function Project() {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3, delay: index * 0.05 }}
                             >
-                                <td className="p-3 text-sm md:text-base font-semibold">{proj.project_name}</td>
-                                <td className="p-3">
+                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <div className="flex -space-x-2 ">
                                         {proj.Employee_team.map((img, index) => (
-                                            <motion.img
-                                                key={index}
-                                                src={img}
-                                                alt="team member"
-                                                className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm"
-                                                whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
-                                            />
+                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
                                         ))}
                                     </div>
                                 </td>
-                                <td className="p-3">
-                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)}`}>
-                                        {proj.Priority}
-                                    </span>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <span className={`px-2 py-1 text-xs md:text-sm rounded-full ${getPriorityColor(proj.Priority)} `}>{proj.Priority}</span>
                                 </td>
-                                <td className="p-3 text-sm md:text-base">{proj.start_date}</td>
-                                <td className="p-3 text-sm md:text-base">{proj.end_date}</td>
-                                <td className="p-3 ">
-                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)}`}>
-                                        {proj.status}
-                                    </span>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
+                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <span className={`px-2 py-1 rounded-full text-xs md:text-sm ${getStatusColor(proj.status)} `}>{proj.status}</span>
                                 </td>
-                                <td className="p-3 text-center">
-                                    <a href={proj.Details} target="_blank" rel="noopener noreferrer">
-                                        <motion.div whileHover={{ scale: 1.2 }}>
-                                            <FaFileAlt className="text-blue-600 text-lg inline w-6 h-6 md:w-8 md:h-8 transition" />
-                                        </motion.div>
-                                    </a>
-                                </td>
-                                <td className="p-3 text-center">
-                                    <motion.button whileHover={{ scale: 1.2 }}>
-                                        <FaTrashAlt className="text-red-500 text-lg w-6 h-6 md:w-8 md:h-8 transition" />
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
+                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
+                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
+                            {showSidebar && (
+                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
+                                    <motion.button
+                                        whileHover={{ scale: 1.2 }}
+                                        onClick={() => handleEditProject(index)}
+                                    >
+                                        <FiEdit className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.2 }}
+                                        onClick={() => handleDeleteProject(index)}
+                                        className="ml-2"
+                                    >
+                                        <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
                                     </motion.button>
                                 </td>
+                            )}
                             </motion.tr>
-                        ))}
+                            ))}
                     </AnimatePresence>
                 </tbody>
             </table>
@@ -962,15 +1218,16 @@ function Project() {
 
 // --- Combined HRMS Dashboard Component ---
 const ProjectDashboard = () => {
+    const { userData,theme } = useContext(Context);
     return (
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+        <div className={`min-h-screen bg-gray-50 p-4 sm:p-8 ${theme==="dark"?"bg-gray-900":"bg-gray-50 "}`}>
             <motion.h1
-                className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 sm:mb-8 text-left drop-shadow-sm"
+                className={`text-3xl sm:text-4xl font-bold  mb-6 sm:mb-8 text-left drop-shadow-sm ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-400 to-indigo-800 bg-clip-text text-transparent ' : 'text-gray-800 '} `}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                Project Dashboard
+                Projects
             </motion.h1>
             {/* Project Profile Section */}
             <div className="mb-8">

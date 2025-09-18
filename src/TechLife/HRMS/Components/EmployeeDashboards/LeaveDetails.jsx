@@ -33,7 +33,7 @@ const LeaveDetails = ({ leave, onClose }) => {
             <div><strong>Request By:</strong> {leave.Request_By}</div>
             <div><strong>Action Date:</strong> {leave.Action_Date}</div>
             <div><strong>Rejection Reason:</strong> {leave.Rejection_Reason || "-"}</div>
-            <div><strong>Details:</strong> <a href={leave.Details} target="_blank" rel="noreferrer" className="text-indigo-600 underline">Document</a></div>
+            <div><strong>Reason:</strong>{leave.Reason || "-"} </div>
             <div><strong>Action:</strong> <a href={leave.Action} target="_blank" rel="noreferrer" className="text-gray-600 underline">⋯</a></div>
           </div>
         </motion.div>

@@ -14,7 +14,6 @@ import {
   IoEye
 } from 'react-icons/io5';
 
-
 // Static data for other sections
 const employeeTime = [
   { label: "SHIFT", value: "10 AM - 8 PM" },
@@ -30,14 +29,12 @@ const employeeTime = [
   { label: "OVERTIME", value: "-Not Set-" },
 ];
 
-
 const otherPolicies = [
   { label: "EXPENSE POLICY", value: "-" },
   { label: "TIMESHEET POLICY", value: "-" },
   { label: "LOAN POLICY", value: "-" },
   { label: "AIR TICKET POLICY", value: "-" },
 ];
-
 
 const organizationDetails = [
   { label: "BUSINESS UNIT", value: "-" },
@@ -49,7 +46,6 @@ const organizationDetails = [
   { label: "MANAGER OF MANAGER (L2 MANAGER)", value: "-" },
   { label: "DIRECT REPORTS", value: "0 Employees" },
 ];
-
 
 // Section configurations with icons and colors
 const sectionConfig = {
@@ -103,30 +99,29 @@ const sectionConfig = {
   },
 };
 
-
 const DetailItem = ({ label, value, note, status, theme }) => (
-  <div className={`group p-4 rounded-xl border transition-all duration-300 hover:scale-105 ${
+  <div className={`group p-3 sm:p-4 rounded-none sm:rounded-lg md:rounded-xl border transition-all duration-300 hover:scale-105 ${
     theme === 'dark'
       ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
       : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
   }`}>
     <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <span className={`text-xs font-bold uppercase tracking-wider block mb-2 ${
+      <div className="flex-1 min-w-0">
+        <span className={`text-xs font-bold uppercase tracking-wider block mb-1 sm:mb-2 ${
           theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
         }`}>
           {label}
         </span>
         {status === "active" ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className={`text-sm font-semibold ${
+              <span className={`text-sm font-semibold break-words ${
                 theme === 'dark' ? 'text-white' : 'text-gray-900'
               }`}>{value}</span>
             </div>
             {note && (
-              <span className={`text-xs px-2 py-1 rounded-full ${
+              <span className={`text-xs px-2 py-1 rounded-full break-words ${
                 theme === 'dark' ? 'text-gray-400 bg-gray-700' : 'text-gray-500 bg-gray-100'
               }`}>
                 {note}
@@ -135,7 +130,7 @@ const DetailItem = ({ label, value, note, status, theme }) => (
           </div>
         ) : (
           <div>
-            <p className={`text-sm font-semibold leading-relaxed ${
+            <p className={`text-sm font-semibold leading-relaxed break-words ${
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             }`}>
               {value || (
@@ -143,7 +138,7 @@ const DetailItem = ({ label, value, note, status, theme }) => (
               )}
             </p>
             {note && (
-              <p className={`text-xs mt-1 px-2 py-1 rounded-md inline-block ${
+              <p className={`text-xs mt-1 px-2 py-1 rounded-md inline-block break-words ${
                 theme === 'dark' ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-700'
               }`}>
                 {note}
@@ -156,49 +151,48 @@ const DetailItem = ({ label, value, note, status, theme }) => (
   </div>
 );
 
-
 const Section = ({ sectionKey, title, data, children, theme }) => {
   const config = sectionConfig[sectionKey];
   const IconComponent = config.icon;
   const hasData = data && data.length > 0;
   
   return (
-    <div className={`border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                   overflow-hidden group hover:scale-[1.02] mb-8 ${
+    <div className={`border-2 rounded-none sm:rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
+                   overflow-hidden group hover:scale-[1.02] mb-4 sm:mb-6 md:mb-8 ${
       theme === 'dark'
         ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
         : `bg-white ${config.borderColor}`
     }`}>
-      <div className={`px-8 py-6 border-b-2 relative overflow-hidden ${
+      <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b-2 relative overflow-hidden ${
         theme === 'dark'
           ? `${config.darkBgColor} ${config.darkBorderColor}`
           : `${config.bgColor} ${config.borderColor}`
       }`}>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
         <div className="relative flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className={`p-3 rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 ${
+          <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+            <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 ${
               theme === 'dark' ? 'bg-gray-700' : 'bg-white'
             }`}>
-              <IconComponent className={`w-8 h-8 ${
+              <IconComponent className={`w-6 h-6 sm:w-8 sm:h-8 ${
                 theme === 'dark' ? config.darkTextColor : config.textColor
               }`} />
             </div>
-            <div>
-              <h4 className={`text-xl font-bold flex items-center space-x-2 ${
+            <div className="min-w-0 flex-1">
+              <h4 className={`text-lg sm:text-xl font-bold flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 ${
                 theme === 'dark' ? config.darkTextColor : config.textColor
               }`}>
-                <span>{title}</span>
+                <span className="break-words">{title}</span>
                 {hasData && (
                   <div className="flex items-center space-x-1">
-                    <IoCheckmarkCircle className="w-5 h-5 text-green-500" />
+                    <IoCheckmarkCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
                       Active
                     </span>
                   </div>
                 )}
               </h4>
-              <p className={`text-sm mt-1 ${
+              <p className={`text-xs sm:text-sm mt-1 break-words ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
               }`}>{config.description}</p>
             </div>
@@ -206,9 +200,9 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
         </div>
       </div>
       
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {hasData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
             {data.map((item, index) => (
               <DetailItem 
                 key={index} 
@@ -222,18 +216,18 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
             {children}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+          <div className="text-center py-8 sm:py-12">
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 ${
               theme === 'dark' ? config.darkBgColor : config.bgColor
             }`}>
-              <IconComponent className={`w-10 h-10 opacity-50 ${
+              <IconComponent className={`w-8 h-8 sm:w-10 sm:h-10 opacity-50 ${
                 theme === 'dark' ? config.darkTextColor : config.textColor
               }`} />
             </div>
-            <h3 className={`text-lg font-semibold mb-2 ${
+            <h3 className={`text-base sm:text-lg font-semibold mb-2 ${
               theme === 'dark' ? 'text-white' : 'text-gray-800'
             }`}>No {title} Available</h3>
-            <p className={`text-sm mb-6 max-w-sm mx-auto ${
+            <p className={`text-sm mb-4 sm:mb-6 max-w-sm mx-auto px-4 ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
             }`}>
               {title} information is not currently available or configured.
@@ -245,18 +239,17 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
   );
 };
 
-
 const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
   const percentage = (completedSections / totalSections) * 100;
   
   return (
-    <div className={`rounded-2xl p-6 shadow-lg border ${
+    <div className={`rounded-none sm:rounded-xl md:rounded-2xl p-4 sm:p-6 shadow-lg border ${
       theme === 'dark' 
         ? 'bg-gray-800 border-gray-700' 
         : 'bg-white border-gray-200'
     }`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-lg font-bold ${
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className={`text-base sm:text-lg font-bold ${
           theme === 'dark' ? 'text-white' : 'text-gray-800'
         }`}>Job Information</h3>
         <span className={`text-sm font-medium ${
@@ -265,11 +258,11 @@ const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
           {completedSections}/{totalSections} Sections
         </span>
       </div>
-      <div className={`w-full rounded-full h-3 mb-4 overflow-hidden ${
+      <div className={`w-full rounded-full h-2 sm:h-3 mb-3 sm:mb-4 overflow-hidden ${
         theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
       }`}>
         <div 
-          className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-700 ease-out"
+          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full transition-all duration-700 ease-out"
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
@@ -286,42 +279,41 @@ const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
   );
 };
 
-
 const SkeletonCard = ({ theme }) => (
-  <div className={`border rounded-2xl shadow-sm overflow-hidden animate-pulse ${
+  <div className={`border rounded-none sm:rounded-xl md:rounded-2xl shadow-sm overflow-hidden animate-pulse ${
     theme === 'dark' 
       ? 'bg-gray-800 border-gray-700' 
       : 'bg-white border-gray-200'
   }`}>
-    <div className={`p-6 border-b ${
+    <div className={`p-4 sm:p-6 border-b ${
       theme === 'dark' 
         ? 'bg-gray-700 border-gray-600' 
         : 'bg-gray-100 border-gray-200'
     }`}>
-      <div className="flex items-center space-x-4">
-        <div className={`w-12 h-12 rounded-xl ${
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl ${
           theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
         }`}></div>
-        <div>
-          <div className={`h-5 rounded w-32 mb-2 ${
+        <div className="flex-1 min-w-0">
+          <div className={`h-4 sm:h-5 rounded w-24 sm:w-32 mb-2 ${
             theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
           }`}></div>
-          <div className={`h-3 rounded w-48 ${
+          <div className={`h-3 rounded w-32 sm:w-48 ${
             theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
           }`}></div>
         </div>
       </div>
     </div>
-    <div className="p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="p-4 sm:p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className={`p-4 rounded-xl ${
+          <div key={i} className={`p-3 sm:p-4 rounded-none sm:rounded-lg md:rounded-xl ${
             theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
           }`}>
-            <div className={`h-3 rounded w-20 mb-2 ${
+            <div className={`h-3 rounded w-16 sm:w-20 mb-2 ${
               theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
             }`}></div>
-            <div className={`h-4 rounded w-32 ${
+            <div className={`h-4 rounded w-24 sm:w-32 ${
               theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
             }`}></div>
           </div>
@@ -331,37 +323,36 @@ const SkeletonCard = ({ theme }) => (
   </div>
 );
 
-
 const AttendanceToggle = ({ theme }) => {
   const [isDisabled, setIsDisabled] = useState(false);
   
   return (
-    <div className={`col-span-2 p-6 rounded-xl border ${
+    <div className={`col-span-1 lg:col-span-2 p-4 sm:p-6 rounded-none sm:rounded-lg md:rounded-xl border ${
       theme === 'dark'
         ? 'bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border-indigo-700'
         : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200'
     }`}>
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
+        <div className="min-w-0 flex-1">
           <h4 className={`text-sm font-semibold mb-1 ${
             theme === 'dark' ? 'text-white' : 'text-gray-800'
           }`}>Attendance Tracking</h4>
-          <p className={`text-xs ${
+          <p className={`text-xs break-words ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>Control automated attendance monitoring</p>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer group">
+        <label className="relative inline-flex items-center cursor-pointer group flex-shrink-0">
           <input 
             type="checkbox" 
             className="sr-only peer" 
             checked={isDisabled}
             onChange={(e) => setIsDisabled(e.target.checked)}
           />
-          <div className={`w-14 h-8 rounded-full peer transition-all duration-300 
-                         peer-checked:after:translate-x-6 peer-checked:after:border-white 
+          <div className={`w-12 h-7 sm:w-14 sm:h-8 rounded-full peer transition-all duration-300 
+                         peer-checked:after:translate-x-5 sm:peer-checked:after:translate-x-6 peer-checked:after:border-white 
                          after:content-[''] after:absolute after:top-1 after:left-1 
                          after:bg-white after:border after:rounded-full 
-                         after:h-6 after:w-6 after:transition-all after:shadow-md
+                         after:h-5 after:w-5 sm:after:h-6 sm:after:w-6 after:transition-all after:shadow-md
                          peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-indigo-600
                          group-hover:shadow-lg ${
             theme === 'dark' 
@@ -383,8 +374,8 @@ const AttendanceToggle = ({ theme }) => {
             : 'bg-yellow-50 border-yellow-200'
         }`}>
           <div className="flex items-center space-x-2">
-            <IoWarning className="w-4 h-4 text-yellow-600" />
-            <p className={`text-xs ${
+            <IoWarning className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+            <p className={`text-xs break-words ${
               theme === 'dark' ? 'text-yellow-300' : 'text-yellow-700'
             }`}>
               Attendance tracking is currently disabled for this employee
@@ -395,7 +386,6 @@ const AttendanceToggle = ({ theme }) => {
     </div>
   );
 };
-
 
 const Job = () => {
   const { empID } = useParams();
@@ -428,7 +418,6 @@ const Job = () => {
     jobDetailsFetch();
   }, [jobEmployeeId]);
 
-
   useEffect(() => {
     if (jobdetails) {
       const formattedData = [
@@ -459,7 +448,6 @@ const Job = () => {
     }
   }, [jobdetails]);
 
-
   if (isLoading) {
     return (
       <div className={`min-h-screen ${
@@ -467,18 +455,18 @@ const Job = () => {
           ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
           : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
       }`}>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center px-4">
           <div className="text-center">
             <div className="relative">
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+              <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <IoBriefcaseOutline className="w-8 h-8 text-blue-500" />
+                <IoBriefcaseOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
               </div>
             </div>
-            <h2 className={`text-2xl font-bold mb-2 ${
+            <h2 className={`text-xl sm:text-2xl font-bold mb-2 ${
               theme === 'dark' ? 'text-white' : 'text-gray-800'
             }`}>Loading Job Information</h2>
-            <p className={`${
+            <p className={`text-sm sm:text-base ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
             }`}>Fetching employment details and policies...</p>
           </div>
@@ -487,7 +475,6 @@ const Job = () => {
     );
   }
 
-
   if (!displayJobDetails) {
     return (
       <div className={`min-h-screen ${
@@ -495,17 +482,17 @@ const Job = () => {
           ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
           : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
       }`}>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center px-4">
           <div className="text-center">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 ${
               theme === 'dark' ? 'bg-red-900/30' : 'bg-red-100'
             }`}>
-              <IoWarning className="w-10 h-10 text-red-500" />
+              <IoWarning className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" />
             </div>
-            <h2 className={`text-2xl font-bold mb-2 ${
+            <h2 className={`text-xl sm:text-2xl font-bold mb-2 ${
               theme === 'dark' ? 'text-white' : 'text-gray-800'
             }`}>Unable to Load Job Details</h2>
-            <p className={`${
+            <p className={`text-sm sm:text-base ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
             }`}>Job information is not available for this employee.</p>
           </div>
@@ -514,25 +501,24 @@ const Job = () => {
     );
   }
 
-
   return (
     <div className={`min-h-screen ${
       theme === 'dark' 
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
-      <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+      <div className="max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-12">
         {fromContextMenu && (
-          <div className={`mb-6 p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg ${
+          <div className={`mb-4 sm:mb-6 p-3 sm:p-4 mx-4 sm:mx-0 rounded-none sm:rounded-xl md:rounded-2xl border-l-4 border-blue-500 shadow-lg ${
             theme === 'dark' ? 'bg-blue-900/20 border-blue-400' : 'bg-blue-50 border-blue-500'
           }`}>
             <div className="flex items-center space-x-3">
-              <IoEye className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-              <div>
-                <p className={`font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
+              <IoEye className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+              <div className="min-w-0 flex-1">
+                <p className={`font-semibold text-sm sm:text-base ${theme === 'dark' ? 'text-blue-400' : 'text-blue-800'}`}>
                   Viewing Employee Job Details
                 </p>
-                <p className={`text-sm ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                <p className={`text-xs sm:text-sm break-words ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
                   Employee ID: {targetEmployeeId} 
                   {isReadOnly && " • Read-only access"}
                 </p>
@@ -541,7 +527,7 @@ const Job = () => {
           </div>
         )}
 
-        <div className="mb-12">
+        <div className="mb-6 sm:mb-8 md:mb-12 mx-4 sm:mx-0">
           <ProgressIndicator 
             completedSections={completionStats.completed} 
             totalSections={completionStats.total} 
@@ -549,20 +535,17 @@ const Job = () => {
           />
         </div>
 
-        <div className="space-y-8">
-            <>
-              <Section sectionKey="jobDetails" title="Job Details" data={displayJobDetails} theme={theme} />
-              <Section sectionKey="employeeTime" title="Employee Time" data={employeeTime} theme={theme}>
-                <AttendanceToggle theme={theme} />
-              </Section>
-              <Section sectionKey="otherPolicies" title="Other Policies" data={otherPolicies} theme={theme} />
-              <Section sectionKey="organizationDetails" title="Organization Details" data={organizationDetails} theme={theme} />
-            </>
+        <div className="space-y-4 sm:space-y-6 md:space-y-8">
+          <Section sectionKey="jobDetails" title="Job Details" data={displayJobDetails} theme={theme} />
+          <Section sectionKey="employeeTime" title="Employee Time" data={employeeTime} theme={theme}>
+            <AttendanceToggle theme={theme} />
+          </Section>
+          <Section sectionKey="otherPolicies" title="Other Policies" data={otherPolicies} theme={theme} />
+          <Section sectionKey="organizationDetails" title="Organization Details" data={organizationDetails} theme={theme} />
         </div>
       </div>
     </div>
   );
 };
-
 
 export default Job;

@@ -3,7 +3,7 @@ import { CircleUserRound, TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { FaRegUser, FaUserEdit, FaUsers } from 'react-icons/fa';
+import { FaFileAlt, FaRegUser, FaUserEdit, FaUsers } from 'react-icons/fa';
 import { FiUser } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import LeaveDetails from "./LeaveDetails";
@@ -23,21 +23,23 @@ const Attendance = () => {
         { name: 'Absent', value: 4, color: '#ef4444' },
     ];
     const chartData = [...data];
+    const {theme} = useContext(Context);
 
     return (
         <motion.div
-            className="bg-stone-100 p-6 rounded-xl shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full"
+            className={` p-6 rounded-xl shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Attendance Overview</h2>
-                <div className="relative inline-block text-left">
+                <h2 className={`text-xl font-bold ${theme==='dark' ? 'bg-gradient-to-br from-orange-100 to-orange-400 bg-clip-text text-transparent border-gray-100':'text-gray-800 '}`}>
+                    Attendance Overview</h2>
+                <div className="relative inline-block text-left mt-1">
                     <select
                         value={selectedPeriod}
                         onChange={(e) => setSelectedPeriod(e.target.value)}
-                        className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`inline-flex justify-center w-full rounded-md border border-gray-200 shadow-sm px-4 py-2  text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-500':'bg-white text-gray-700'}`}
                     >
                         <option>Today</option>
                         <option>This Week</option>
@@ -69,20 +71,20 @@ const Attendance = () => {
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-12">
-                    <p className="text-gray-500 text-sm">Total Attendance</p>
-                    <p className="text-4xl font-bold text-gray-900">{totalAttendance}</p>
+                    <p className={`text-sm font-medium ${theme==='dark' ? 'text-white ':'text-gray-500 '}`}> Total Attendance</p>
+                    <p className={`text-4xl font-bold ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{totalAttendance}</p>
                 </div>
             </div>
             <hr className="my-6 border-gray-200" />
             <div className="flex justify-between items-start">
                 <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Status</h3>
+                    <h3 className={`text-lg font-semibold mb-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>Status</h3>
                     <ul className="space-y-2">
                         <AnimatePresence>
                             {data.map((item, index) => (
                                 <motion.li
                                     key={item.name}
-                                    className="flex items-center text-gray-700 font-medium"
+                                    className={`flex items-center  font-medium ${theme==='dark' ? 'text-white ':'text-gray-700 '}`}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
@@ -98,13 +100,14 @@ const Attendance = () => {
                     </ul>
                 </div>
                 <div className="text-right">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Percentage</h3>
+                    <h3 className={`text-lg font-semibold  mb-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>
+                        Percentage</h3>
                     <ul className="space-y-2">
                         <AnimatePresence>
                             {data.map((item, index) => (
                                 <motion.li
                                     key={item.name}
-                                    className="text-gray-700 font-bold"
+                                    className={`  font-bold ${theme==='dark' ? 'text-white ':'text-gray-700 '}`}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
@@ -153,9 +156,10 @@ const Data = [
 
 const ChartCard = ({ title, titlecolor, value, icon, color, trends, trendPercentage, trendPeriod }) => {
     const isUp = trends === 'up';
+    const {theme} = useContext(Context);
     return (
         <motion.div
-            className="bg-stone-100 rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center"
+            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
@@ -166,7 +170,7 @@ const ChartCard = ({ title, titlecolor, value, icon, color, trends, trendPercent
             </div>
             <div>
                 <h3 className={`text-xl font-semibold ${titlecolor}`}>{title}</h3>
-                <p className="text-3xl font-bold mt-2 text-gray-900">{value}</p>
+                <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{value}</p>
             </div>
             <div className="flex items-center mt-auto">
                 {isUp ? <TrendingUpIcon className="w-5 h-5 text-green-500" /> : <TrendingDownIcon className="w-5 h-5 text-red-500" />}
@@ -181,7 +185,7 @@ const ChartCard = ({ title, titlecolor, value, icon, color, trends, trendPercent
 const LeaveCharts = () => {
     return (
         <motion.div
-            className="p-6 rounded-xl bg-gray-50 border border-gray-200 h-full flex flex-col justify-between"
+            className="p-6 h-full flex flex-col justify-between"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -395,104 +399,85 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
     };
 
     const filteredAndSortedData = filterAndSortData();
+    const {theme} = useContext(Context);
 
     return (
         <motion.div
-            className="bg-stone-100 shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-        >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                Leave Requests History
-            </h2>
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-                <div className="relative">
-                    <label className="text-base font-semibold mr-2 text-gray-700">
-                        Leave Type:
-                    </label>
-                    <select
-                        value={leaveTypeFilter}
-                        onChange={(e) => setLeaveTypeFilter(e.target.value)}
-                        className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
-                    >
-                        {leaveTypes.map((type) => (
-                            <option key={type} value={type}>
-                                {type}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <label className="text-base font-semibold mr-2 text-gray-700">
-                        Status:
-                    </label>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
-                    >
-                        {statuses.map((status) => (
-                            <option key={status} value={status}>
-                                {status}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="relative">
-                    <label className="text-base font-semibold mr-2 text-gray-700">
-                        Sort by:
-                    </label>
-                    <select
-                        value={sortOption}
-                        onChange={(e) => setSortOption(e.target.value)}
-                        className="border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
-                    >
-                        {sortOptions.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
+                   className={`shadow-lg rounded-xl p-6 col-span-full border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
+                   initial={{ opacity: 0, y: 50 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ duration: 0.5, delay: 0.6 }}
+               >
+                   <h2 className={`text-2xl font-bold mb-4 text-left border-b pb-4 ${theme === 'dark' ? 'bg-gradient-to-br from-green-400 to-green-800 bg-clip-text text-transparent border-gray-100' : 'text-gray-800 border-gray-200'} `}>
+                       Leave Requests History
+                   </h2>
+                   <div className="flex flex-wrap items-center gap-4 mb-6">
+                       <div className="relative">
+                           <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
+                               Leave Type:
+                           </label>
+                           <select
+                               value={leaveTypeFilter}
+                               onChange={(e) => setLeaveTypeFilter(e.target.value)}
+                               className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme==='dark' ? 'border-black  bg-gray-500 text-white':'border-gray-300'}`}
+                           >
+                               {leaveTypes.map((type) => (
+                                   <option key={type} value={type}>
+                                       {type}
+                                   </option>
+                               ))}
+                           </select>
+                       </div>
+                       <div>
+                           <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
+                               Status:
+                           </label>
+                           <select
+                               value={statusFilter}
+                               onChange={(e) => setStatusFilter(e.target.value)}
+                               className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme==='dark' ? 'border-black bg-gray-500 text-white':'border-gray-300'}`}
+                           >
+                               {statuses.map((status) => (
+                                   <option key={status} value={status}>
+                                       {status}
+                                   </option>
+                               ))}
+                           </select>
+                       </div>
+                       <div className="relative">
+                            <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
+                               Sort by:
+                           </label>
+                           <select
+                               value={sortOption}
+                               onChange={(e) => setSortOption(e.target.value)}
+                               className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 ${theme==='dark' ? 'border-black  bg-gray-500 text-white':'border-gray-300'} border`}
+                           >
+                               {sortOptions.map((option) => (
+                                   <option key={option} value={option}>
+                                       {option}
+                                   </option>
+                               ))}
+                           </select>
+                       </div>
+                   </div>
             <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-white">
+                <table className="min-w-full divide-y divide-gray-200 border border-blue-500">
+                    <thead className={`bg-gray-50  ${theme==='dark' ? ' bg-gray-500 text-white':''}`}>
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Employee ID
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Leave Type
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Leave On
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Request By
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Granted By
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Details
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Action Date
-                            </th>
-                            <th className="px-4 py-3 whitespace-pre-wrap text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Rejection Reason
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                                Action
-                            </th>
+                            <th className={`w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Employee_ID </th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Leave Type</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Leave On</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Status</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Request By</th>
+                           <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Granted By</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Details</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Action Date</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Rejection Reason</th>
+                           <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Action</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-500">
                         <AnimatePresence mode="wait">
                             {filteredAndSortedData.length > 0 ? (
                                 filteredAndSortedData.map((row, index) => (
@@ -504,48 +489,34 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                                         exit={{ opacity: 0, y: -20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {empID || row.EmployeeId}
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}> {row.EmployeeId}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {row.Leave_type}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}> {row.Leave_On}</td>
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500':''}`}>
+                                            <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "Approve" ? "bg-green-500" : row.status === "Reject" ? "bg-red-500" : "bg-blue-500"}`}> {row.status}</span>
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {row.Leave_type}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {row.Leave_On}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                            <span
-                                                className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "Approve" ? "bg-green-500" : row.status === "Reject" ? "bg-red-500" : "bg-blue-500"}`}
-                                            >
-                                                {row.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {row.Request_By || "-"}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            {row.Granted_By || "-"}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                                           <button
-                                              onClick={() => handleDetailsClick(row)}
-                                              className="text-indigo-600 hover:text-indigo-800 text-lg"
-                                              title="View Details"
-                                            >
-                                              📄
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-800'}`}> {row.Request_By || "-"}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-800'}`}> {row.Granted_By || "-"}</td>
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ? ' bg-gray-500':''}`}>
+                                            <button
+                                                 onClick={() => handleDetailsClick(row)}
+                                                 className="text-indigo-600 hover:text-indigo-800 text-lg  px-2 rounded"
+                                                 title="View Details"
+                                               >
+                                                <FaFileAlt className={` ${theme==='dark'?'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition `} />
                                             </button>
                                         </td>
                                         <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             {row.Action_Date}
                                         </td>
-                                        <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-900">
+                                       <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                             {row.Rejection_Reason || "-"}
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                                         <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
                                            <button
                                              onClick={() => setActionLeave(row)}
-                                             className="text-gray-600 hover:text-gray-800 text-lg"
+                                             className={`${theme==='dark'?'text-gray-200':'text-gray-600'} hover:text-gray-800 text-lg`}
                                              title="Take Action"
                                            >
                                              ⋯
@@ -566,13 +537,13 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                             )}
                             {actionLeave && (
                             <motion.div
-                              className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30"
+                              className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               exit={{ opacity: 0 }}
                             >
                               <motion.div
-                                className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full relative"
+                                className={` rounded-lg shadow-xl p-6 max-w-sm w-full relative ${theme==='dark' ? 'bg-gray-800 text-white ':'bg-white text-gray-800 '}`}
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.9, opacity: 0 }}
@@ -583,7 +554,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                                 >
                                   &times;
                                 </button>
-                                <h2 className="text-xl font-bold mb-4 text-gray-800">Take Action</h2>
+                                <h2 className={`text-xl font-bold mb-4 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>Take Action</h2>
                                 {!actionType && (
                                   <div className="flex gap-4 justify-center">
                                     <button
@@ -616,6 +587,7 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                                 )}
                                 {actionType === "reject" && (
                                   <div className="mt-4 flex flex-col items-center">
+                                    <input type="text" row={1} placeholder="Enter Subject..."value={rejectionReason} onChange={e => setRejectionReason(e.target.value)} className="border border-gray-300 rounded p-2 w-full mb-2" />
                                     <textarea
                                       rows={2}
                                       placeholder="Enter rejection reason..."
@@ -644,12 +616,12 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                     </tbody>
                 </table>
             </div>
-            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
+           <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
                 <nav className="flex items-center gap-2">
                     <button
                         onClick={() => setCurrentPage((prev) => prev + 1)}
                         disabled={!hasMoreData || isLoading}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 text-sm font-medium text-gray-700  border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed ${theme==='dark' ? 'bg-gray-700 text-white border-gray-600 ':''}`}
                     >
                         Load More
                     </button>
@@ -660,15 +632,16 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
 };
 
 function LeavesReports({ onBack, leaveHistoryData,setLeaveHistoryData }) {
+    const { theme } = useContext(Context);
     return (
         <motion.div
-            className="p-4 sm:p-8 bg-gray-50 min-h-screen font-sans"
+            className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-stone-100 text-gray-900'}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
             <header className="flex flex-col sm:flex-row items-center justify-between pb-6 mb-6 border-b border-gray-200">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4 sm:mb-0">
+                <h1 className={`text-3xl sm:text-4xl font-extrabold  mb-4 sm:mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                     Leaves Report
                 </h1>
                 <motion.button

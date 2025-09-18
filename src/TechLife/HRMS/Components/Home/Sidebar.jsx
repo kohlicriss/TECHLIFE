@@ -15,17 +15,17 @@ import {
   UserCircle,
   BadgePlus,
   TicketCheck,
-  ToolCase,
+  UserRoundCog,
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 
 function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { userData, setUserData, theme, setTheme } = useContext(Context);
+  const { userData, setUserData, theme } = useContext(Context);
   const empId = userData?.employeeId;
+  const userRole = userData?.roles?.[0]?.toUpperCase();
 
-  // 🔥 FIXED LOGOUT FUNCTION - Only remove specific keys, preserve theme
   const handleLogoutClick = async () => {
     try {
       await fetch("https://hrms.anasolConsultancyservices.com/api/auth/logout", {
@@ -35,23 +35,16 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     } catch (error) {
       console.error("Backend logout failed, proceeding with client-side cleanup.", error);
     } finally {
-      // ✅ Remove only login-related keys, NOT theme
       const keysToRemove = [
-        "accessToken", 
-        "emppayload", 
-        "logedempid", 
+        "accessToken",
+        "emppayload",
+        "logedempid",
         "logedemprole",
         "loggedInUserImage"
       ];
-      
-      // Remove specific keys only
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
       });
-
-      // ✅ DO NOT use localStorage.clear() - it removes theme too!
-      // localStorage.clear(); // ❌ This was the problem
-
       setUserData(null);
       if (onLogout) {
         onLogout();
@@ -71,10 +64,18 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
   ];
 
+  if (userRole === 'ADMIN') {
+    navItems.push({
+      name: "Permissions",
+      icon: <UserRoundCog size={18} />,
+      path: empId ? `/permissions/${empId}` : "/permissions"
+    });
+  }
+
   return (
     <>
       <div
-        className={`fixed inset-0 bg-opacity-100 z-[150] lg:hidden transition-opacity ${
+        className={`fixed inset-0  bg-opacity-50 z-40 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -84,7 +85,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
           collapsed ? "w-20" : "w-60"
-        } ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-lg z-[50] transform transition-all duration-200 ease-in-out ${
+        } ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-lg z-[150] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
@@ -101,8 +102,8 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
             <button
               onClick={() => setCollapsed(!collapsed)}
               className={`border rounded-full p-1 transition ${
-                theme === 'dark' 
-                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
+                theme === 'dark'
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white'
                   : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
               }`}
             >
@@ -123,7 +124,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                 key={item.name}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center ${
+                className={`flex items-center cursor-pointer ${
                   collapsed ? "justify-center" : "justify-start"
                 } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
                   isActive

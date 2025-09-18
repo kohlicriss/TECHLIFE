@@ -20,16 +20,16 @@ const ChatApp = lazy(() => import("./Chats/ChatApp"));
 const Employees = lazy(() => import("./Employees/Employees"));
 const Profiles = lazy(() => import("./Profile/Profiles"));
 const AllTeams = lazy(() => import("./Teams/AllTeams"));
-const TeamDetails = lazy(() => import("./Teams/TeamDetails")); // కొత్తగా జోడించిన ఇంపోర్ట్
+const TeamDetails = lazy(() => import("./Teams/TeamDetails"));
 const Tickets = lazy(() => import("./AdminTickets/Tickets"));
 const EmployeeTicket = lazy(() => import("./EmployeeTicket/EmployeeTicket"));
 const CombinedDashBoard=lazy(() => import("./EmployeeDashboards/CombinedDashBoard"));
 const AttendancesDashboard=lazy(()=> import("./EmployeeDashboards/AttendancesDashboard"))
 const LeavesDashboard=lazy(()=>import("./EmployeeDashboards/LeavesDashboard"))
 const ProjectDashBoard=lazy(()=>import("./Projects/ProjectDashBoard"))
-//const PerformanceDashBoard=lazy(()=>import("./EmployeeDashboards/PerformanceDashBoard"))
 const TasksApp = lazy(() => import("./Tasks/TaskApp"));
 const EmployeeProfile = lazy(() => import("./Employees/EmployeeProfile"));
+const Permissions = lazy(() => import("./Permissions/PermissionsPage"));
 
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
@@ -66,6 +66,7 @@ const MainLayout = ({
         <Navbar
             setSidebarOpen={setSidebarOpen}
             currentUser={currentUser}
+            onLogout={onLogout}
         />
         <div className="flex flex-1 overflow-hidden pt-16">
             <Sidebar
@@ -137,11 +138,10 @@ const HrmsApp = () => {
                                     />
                                 }
                             >
-                                 <Route path="/admin-dashboard/empId/*" element={<ProtectedRoute><CombinedDashBoard /></ProtectedRoute>} />
+                                 <Route path="/admin-dashboard/empId/*" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}><CombinedDashBoard /></ProtectedRoute>} />
                                 <Route path="/attendance/:empId/*" element={<ProtectedRoute><AttendancesDashboard /></ProtectedRoute>} />
                                 <Route path="/leaves/:empId/*" element={<ProtectedRoute><LeavesDashboard /></ProtectedRoute>} />
                                 <Route path="/projects/:empId/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
-                               {/* <Route path="/performance/:empId/*" element={<ProtectedRoute><PerformanceDashBoard /></ProtectedRoute>} />*/}
                                 <Route path="/notifications/:empID/*" element={<ProtectedRoute><NotificationSystem /></ProtectedRoute>} />
                                 <Route path="/chat/:userId/*" element={<ProtectedRoute><ChatApp /></ProtectedRoute>} />
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
@@ -155,9 +155,19 @@ const HrmsApp = () => {
                                 <Route path="/my-teams/:empID" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
                                 <Route path="/teams/:teamId" element={<ProtectedRoute><TeamDetails /></ProtectedRoute>} />
                                 
-                                <Route path="/tickets/:empID/*" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                                <Route path="/tickets/:empID/*" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'TEAM_LEAD']}><Tickets /></ProtectedRoute>} />
                                 <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
+                                
+                                <Route 
+                                    path="/permissions/:empID/*" 
+                                    element={
+                                        <ProtectedRoute allowedRoles={['ADMIN']}>
+                                            <Permissions />
+                                        </ProtectedRoute>
+                                    } 
+                                />
+
                                 <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                             </Route>
                         )}

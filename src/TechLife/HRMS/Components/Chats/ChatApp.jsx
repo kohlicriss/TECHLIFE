@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { getChatOverview } from '../../../../services/apiService';
 import { transformOverviewToChatList } from '../../../../services/dataTransformer';
 import ChatApplication from './ChatApplication';
+import { Context } from '../HrmsContext';
 
 const ChatListItemSkeleton = () => (
     <div className="flex items-center space-x-4 p-3">
@@ -14,10 +15,10 @@ const ChatListItemSkeleton = () => (
     </div>
 );
 
-const ChatAppSkeleton = () => (
-    <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
+const ChatAppSkeleton = ({ theme }) => (
+    <div className={`flex w-full h-full p-0 md:p-4 md:gap-4 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
         {/* Sidebar Skeleton */}
-        <div className="w-full md:w-[30%] h-full p-4 bg-white flex flex-col shadow-xl md:rounded-lg space-y-4">
+        <div className={`w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg space-y-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="h-12 bg-gray-200 rounded-lg animate-pulse mb-4"></div>
             <div className="flex-grow space-y-2 pr-2 overflow-hidden">
                 <ChatListItemSkeleton />
@@ -31,10 +32,10 @@ const ChatAppSkeleton = () => (
         </div>
 
         {/* This part is hidden on mobile to match the final layout's behavior */}
-        <div className="hidden md:flex flex-col w-[70%] h-full bg-white md:rounded-lg shadow-xl">
+        <div className={`hidden md:flex flex-col w-[70%] h-full md:rounded-lg shadow-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                    <p className="text-xl text-gray-400">Loading Chats...</p>
+                    <p className={`text-xl ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`}>Loading Chats...</p>
                 </div>
             </div>
         </div>
@@ -44,6 +45,7 @@ const ChatAppSkeleton = () => (
 
 function ChatApp() {
     const { userId } = useParams();
+    const { theme } = useContext(Context);
     const [chatList, setChatList] = useState({ groups: [], privateChatsWith: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -133,9 +135,9 @@ function ChatApp() {
     }, [userId]);
 
     return (
-        <div style={{ height: '90vh' }} className="flex h-screen bg-gray-100">
+        <div style={{ height: '90vh' }} className={`flex h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
             {isLoading ? (
-                <ChatAppSkeleton />
+                <ChatAppSkeleton theme={theme} />
             ) : (
                 <ChatApplication
                     currentUser={currentUser}
@@ -143,6 +145,7 @@ function ChatApp() {
                     loadMoreChats={handleLoadMore}
                     hasMore={hasMore}
                     isFetchingMore={isFetchingMore}
+                    theme={theme}
                 />
             )}
         </div>
