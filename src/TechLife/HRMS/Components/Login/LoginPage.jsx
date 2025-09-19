@@ -449,7 +449,7 @@ const LoginPage = ({ onLogin }) => {
                 Welcome
               </h1>
               <p className="text-lg lg:text-xl opacity-80 animate-fade-in animation-delay-400 text-indigo-100">
-                Login to continue access
+                Login to continue
               </p>
             </div>
           </div>
