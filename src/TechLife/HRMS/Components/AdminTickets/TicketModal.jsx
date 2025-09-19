@@ -100,7 +100,7 @@ const [loadingOlder, setLoadingOlder] = useState(false);
   const token = localStorage.getItem("accessToken");
 
   const ws = new WebSocket(
-    `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticket.ticketId}&token=${token}`
+    `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticket.ticketId}?token=${token}`
   );
   socketRef.current = ws;
 

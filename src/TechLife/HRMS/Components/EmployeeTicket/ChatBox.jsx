@@ -103,7 +103,7 @@ const formatChatTimeIST = (dateString) => {
   const token = localStorage.getItem("accessToken");
 
   const ws = new WebSocket(
-    `wss://hrms.anasolconsultancyservices.com/api/ticket?ticketId=${ticketId}&token=${token}`
+    `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticketId}?token=${token}`
   );
 
   ws.onopen = () => console.log("✅ WebSocket connected");

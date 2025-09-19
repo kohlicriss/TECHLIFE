@@ -254,73 +254,48 @@ const unsolved = total - resolved;
     >
       <div className="flex flex-row-reverse max-w-7xl mx-auto px-4 py-8 gap-4">
  
-      
-        <aside
-          className={`sm:flex flex-col border-l transition-all duration-200 hidden sm:flex sm:sticky sm:top-0 h-full ${
-            isDark
-              ? "bg-gray-800 border-gray-700 text-gray-200"
-              : "bg-white border-gray-200 text-gray-900"
-          } ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}`}
-        >
-          <div className="flex justify-start p-1.5 items-center">
-            <motion.button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100" transition={{ duration: 0.3 }}>
-              {isSidebarCollapsed ? <FaArrowLeft size={14} /> : <FaArrowRight size={14} />}
-            </motion.button>
-          </div>
- 
-          <nav className="flex-1 space-y-1.5 px-1.5">
-            {sidebarItems
-              .filter(({ tab }) => normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets" ? false : true)
-              .map(({ tab, icon: Icon }) => (
-                <motion.button
-  key={tab}
-  className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
-    ${activeTab === tab 
-        ? "bg-blue-600 text-white" 
-        : `${isDark ? "text-white hover:bg-gray-700" : "text-black hover:bg-gray-200"}`}
-    ${isSidebarCollapsed ? "justify-center" : ""}`}
-  onClick={() => handleTabClick(tab)}
-  whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
->
-  <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
-  {!isSidebarCollapsed && tab}
-</motion.button>
-
-              ))}
-          </nav>
-        </aside>
- 
-      
-        <div className="sm:hidden flex flex-col w-full">
-          <div className="flex justify-start mb-2">
-            <motion.button onClick={toggleMobileSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none p-2 rounded-full hover:bg-gray-100" transition={{ duration: 0.3 }}>
-              <FaBars size={20} />
-            </motion.button>
-          </div>
- 
-          {isMobileSidebarOpen && (
-            <div className="bg-white border rounded-lg shadow p-2 mb-4">
-              {sidebarItems
-                .filter(({ tab }) => normalizedRole === "ROLE_EMPLOYEE" && tab === "Assigned Tickets" ? false : true)
-                .map(({ tab, icon: Icon }) => (
-                 <motion.button
-  key={tab}
-  onClick={() => handleTabClick(tab)}
-  className={`flex w-full items-center gap-2 px-4 py-2 rounded-lg text-left text-sm font-medium
-    ${activeTab === tab 
-        ? "bg-blue-600 text-white" 
-        : `${isDark ? "bg-gray-800 text-white hover:bg-gray-700" : "bg-gray-100 text-black hover:bg-gray-200"}`}`}
-  whileHover={{ scale: 1.02 }}
->
-  <Icon size={16} />
-  {tab}
-</motion.button>
-
-                ))}
-            </div>
-          )}
+      {normalizedRole !== "ROLE_EMPLOYEE" && (
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={`sm:flex flex-col border-l transition-all duration-200 hidden sm:flex sm:sticky sm:top-0 h-full ${
+          isDark
+            ? "bg-gray-800 border-gray-700 text-gray-200"
+            : "bg-white border-gray-200 text-gray-900"
+        } ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}`}
+      >
+        <div className="flex justify-start p-1.5 items-center">
+          <motion.button
+            onClick={toggleSidebar}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
+            transition={{ duration: 0.3 }}
+          >
+            {isSidebarCollapsed ? <FaArrowLeft size={14} /> : <FaArrowRight size={14} />}
+          </motion.button>
         </div>
- 
+
+        <nav className="flex-1 space-y-1.5 px-1.5">
+          {sidebarItems.map(({ tab, icon: Icon }) => (
+            <motion.button
+              key={tab}
+              className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center transition-colors
+                ${activeTab === tab
+                  ? "bg-blue-600 text-white"
+                  : `${isDark ? "text-white hover:bg-gray-700" : "text-black hover:bg-gray-200"}`}
+                ${isSidebarCollapsed ? "justify-center" : ""}`}
+              onClick={() => handleTabClick(tab)}
+              whileHover={{ x: isSidebarCollapsed ? 0 : -3 }}
+            >
+              <Icon size={14} className={isSidebarCollapsed ? "" : "mr-2"} />
+              {!isSidebarCollapsed && tab}
+            </motion.button>
+          ))}
+        </nav>
+      </aside>
+     
+       
+    </>
+  )}
        
         <main className="flex-1 space-y-8">
  
@@ -333,6 +308,20 @@ const unsolved = total - resolved;
             }`}
           >
             <div className="flex flex-col lg:flex-row items-center gap-4 w-full flex-wrap">
+               <label className={`text-sm font-medium text-gray-700
+                 ${
+              isDark
+                ? "bg-gray-800 border-gray-700  text-white"
+                : "bg-white border-gray-200 text-gray-900"
+            }`} htmlFor="search">Search</label>
+              <input
+                id="search"
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Title, status, priority..."
+                className="border border-gray-300 text-sm rounded-lg p-2.5 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
               <label className={`text-sm font-medium   ${
               isDark
                 ? "bg-gray-800 border-gray-700  text-white"
@@ -356,20 +345,7 @@ const unsolved = total - resolved;
                 <option>Last 7 days</option>
                 <option>Today</option>
               </select>
-              <label className={`text-sm font-medium text-gray-700
-                 ${
-              isDark
-                ? "bg-gray-800 border-gray-700  text-white"
-                : "bg-white border-gray-200 text-gray-900"
-            }`} htmlFor="search">Search</label>
-              <input
-                id="search"
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Title, status, priority..."
-                className="border border-gray-300 text-sm rounded-lg p-2.5 w-64 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+             
  
               <label className={`text-sm font-medium text-gray-700 
                  ${
@@ -417,6 +393,22 @@ const unsolved = total - resolved;
               </div>
             </div>
           </div>
+           <div className="sm:hidden flex gap-2 overflow-x-auto py-2 px-1">
+    {sidebarItems.map(({ tab, icon: Icon }) => (
+      <motion.button
+        key={tab}
+        onClick={() => handleTabClick(tab)}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+          ${activeTab === tab
+            ? "bg-blue-600 text-white"
+            : `${isDark ? "bg-gray-800 text-white hover:bg-gray-700" : "bg-gray-100 text-black hover:bg-gray-200"}`}`}
+        whileHover={{ scale: 1.02 }}
+      >
+        <Icon size={16} />
+        {tab}
+      </motion.button>
+    ))}
+  </div>
  
   
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 "

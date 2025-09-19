@@ -23,6 +23,7 @@ export default function TicketDashboard() {
   const [error, setError] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+ // const [activeTab, setActiveTab] = useState("all");
 
     const { userData, theme } = useContext(Context);
   const isDark = theme === "dark";
@@ -94,7 +95,7 @@ export default function TicketDashboard() {
   }
 
   const socket = new WebSocket(
-    `wss://hrms.anasolconsultancyservices.com/api/ticket&token=${token}`
+    `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?token=${token}`
   );
 
   socket.onopen = () => console.log("✅ WebSocket connected");
@@ -324,24 +325,49 @@ const handleTabClick = (tab) => {
           />
 
       
-          <div className="flex space-x-2 my-3">
-            {["all", "resolved"].map((status) => (
-              <button
-                key={status}
-                className={`px-4 py-1 rounded-md font-medium border ${
-                  filterStatus === status
-                    ? btnPrimary
-                    : `${btnSecondary} border`
-                }`}
-                onClick={() => {
-                  setFilterStatus(status);
-                  setCurrentPage(1);
-                }}
-              >
-                {statusLabels[status]}
-              </button>
-            ))}
-          </div>
+        {/* 🔹 Filters Row with All/Resolved + Sidebar Items */}
+<div className="flex flex-wrap items-center gap-2 my-3">
+
+  {/* All / Resolved buttons */}
+  {["all", "resolved"].map((status) => (
+    <button
+      key={status}
+      className={`px-4 py-1 rounded-md font-medium border ${
+        filterStatus === status ? btnPrimary : `${btnSecondary} border`
+      }`}
+      onClick={() => {
+        setFilterStatus(status);
+        setCurrentPage(1);
+      }}
+    >
+      {statusLabels[status]}
+    </button>
+  ))}
+
+  {/* Sidebar Items as slider (mobile) */}
+  <div className="flex-1 overflow-x-auto flex gap-2 sm:hidden">
+    {sidebarItems.map(({ tab, icon: Icon }) => (
+      <motion.button
+        key={tab}
+        onClick={() => handleTabClick(tab)}
+        className={`flex items-center gap-2 px-4 py-1 rounded-md font-medium whitespace-nowrap
+          ${isDark
+            ? sidebarItems === tab
+              ? "bg-blue-600 text-white"
+              : "bg-gray-800 text-white hover:bg-gray-700"
+            : sidebarItems === tab
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-black hover:bg-gray-200"}`}
+        whileHover={{ scale: 1.02 }}
+      >
+        <Icon size={16} />
+        {tab}
+      </motion.button>
+    ))}
+  </div>
+</div>
+
+        
 
           {error && (
             <div className={`p-2 border rounded mb-4 ${
