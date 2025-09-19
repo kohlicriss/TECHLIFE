@@ -8,16 +8,20 @@ const PermissionsPage = () => {
   const [permissions, setPermissions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false); 
-
-  const allPermissionOptions = [
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // New state for the custom permission input
+  const [newPermissionLabel, setNewPermissionLabel] = useState('');
+  
+  // Converted the static options array into a state so it can be updated
+  const [allPermissionOptions, setAllPermissionOptions] = useState([
     { value: 'createTask', label: 'Create Task' },
     { value: 'viewTeams', label: 'View Teams' },
     { value: 'createTaskHistory', label: 'Create Task History' },
     { value: 'createEmployee', label: 'Create Employee' },
     { value: 'viewDocuments', label: 'View Documents' },
     { value: 'viewProfile', label: 'View Profile' },
-  ];
+  ]);
 
   const roleMeta = [
     { key: "hr", roleName: "HR" },
@@ -26,6 +30,40 @@ const PermissionsPage = () => {
     { key: "employee", roleName: "EMPLOYEE" },
     { key: "admin", roleName: "ADMIN" },
   ];
+
+  // Function to add the new permission to the options list
+  const handleAddPermission = () => {
+    if (!newPermissionLabel.trim()) {
+      alert("Please enter a label for the new permission.");
+      return;
+    }
+
+    // Sanitize the label to create a computer-friendly value (e.g., "View Reports" -> "viewReports")
+    const newPermissionValue = newPermissionLabel
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+      .split(' ')
+      .map((word, index) =>
+        index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
+      )
+      .join('');
+
+    // Check for duplicates
+    if (allPermissionOptions.some(option => option.value === newPermissionValue)) {
+      alert("A permission with this value already exists.");
+      return;
+    }
+
+    const newPermission = {
+      value: newPermissionValue,
+      label: newPermissionLabel.trim(),
+    };
+
+    setAllPermissionOptions(prevOptions => [...prevOptions, newPermission]);
+    setNewPermissionLabel(''); // Clear the input field after adding
+  };
+
 
   useEffect(() => {
     const loadFromLocalStorage = () => {
@@ -270,7 +308,6 @@ const handleSubmit = async (e) => {
   return (
     <div className={`min-h-screen px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="mb-6 sm:mb-8 px-4 sm:px-0">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Permissions Management</h1>
           <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -278,9 +315,31 @@ const handleSubmit = async (e) => {
           </p>
         </div>
 
-         
-
-        {/* Form */}
+        {/* New section for adding custom permissions */}
+        <div className={`p-4 sm:p-6 rounded-lg shadow-md mb-8 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+          <h3 className="text-lg font-semibold mb-4">Add a New Permission</h3>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              value={newPermissionLabel}
+              onChange={(e) => setNewPermissionLabel(e.target.value)}
+              placeholder="Enter new permission label (e.g., View Reports)"
+              className={`flex-grow p-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                theme === 'dark' 
+                  ? 'bg-gray-700 border-gray-600 focus:ring-blue-500' 
+                  : 'bg-white border-gray-300 focus:ring-blue-500'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={handleAddPermission}
+              className={`px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200`}
+            >
+              Add Permission
+            </button>
+          </div>
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 md:space-y-8">
           {roles.map((role) => {
             const selectedPermissionsForRole = allPermissionOptions.filter(
@@ -297,7 +356,6 @@ const handleSubmit = async (e) => {
                 } transition-all duration-200`}
               >
                 <div className="p-4 sm:p-6 md:p-8">
-                  {/* Role Header */}
                   <div className="mb-4 sm:mb-6">
                     <h2 className={`text-lg sm:text-xl md:text-2xl font-semibold capitalize mb-2 pb-2 border-b ${
                       theme === 'dark' ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'
@@ -311,7 +369,6 @@ const handleSubmit = async (e) => {
                     </p>
                   </div>
 
-                  {/* Select Component */}
                   <div className="relative">
                     <Select
                       isMulti
@@ -333,7 +390,6 @@ const handleSubmit = async (e) => {
                     />
                   </div>
 
-                  {/* Permission Count */}
                   <div className="mt-3 sm:mt-4">
                     <p className={`text-xs sm:text-sm ${
                       theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -345,8 +401,7 @@ const handleSubmit = async (e) => {
               </div>
             );
           })}
-
-          {/* Submit Button */}
+          
           <div className="pt-4 sm:pt-6 px-4 sm:px-0">
             <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
               <button
