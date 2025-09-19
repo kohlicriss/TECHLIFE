@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
-import logo from "../assets/anasol-logo.png"
+import logo from "../assets/anasol-logo.png";
 import { Context } from "../HrmsContext";
 import { publicinfoApi } from "../../../../axiosInstance"; // Import publicinfoApi
 
@@ -149,12 +149,10 @@ const LoginPage = ({ onLogin }) => {
           localStorage.setItem("logedempid", decodedPayload.employeeId);
           localStorage.setItem("logedemprole", decodedPayload.roles[0]);
           
-          // ✅ FIX: Update the context state directly so the app re-renders
           setUserData(decodedPayload);
           
           employeeIdFromToken = decodedPayload.employeeId;
 
-          // NEW: Fetch full profile to get image and store it
           try {
             const profileResponse = await publicinfoApi.get(`/employee/${employeeIdFromToken}`, {
               headers: { 'Authorization': `Bearer ${data.accessToken}` }
@@ -199,7 +197,6 @@ const LoginPage = ({ onLogin }) => {
     }
   };
   
-  // ... (the rest of the file remains the same) ...
   const handleOtpMethodSelect = (method) => {
     setOtpMethod(method);
     resetTimer();
@@ -413,7 +410,6 @@ const LoginPage = ({ onLogin }) => {
         />
       </div>
      
-
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob ${
           theme === 'dark' ? 'bg-purple-800/60' : 'bg-purple-200/60'
@@ -453,7 +449,7 @@ const LoginPage = ({ onLogin }) => {
                 Welcome
               </h1>
               <p className="text-lg lg:text-xl opacity-80 animate-fade-in animation-delay-400 text-indigo-100">
-                Login to continue access
+                Login to continue 🔐
               </p>
             </div>
           </div>
@@ -471,6 +467,9 @@ const LoginPage = ({ onLogin }) => {
           theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
         }`}>
           <div style={{ marginTop: "80px" }} className="max-w-md mx-auto w-full">
+            <div className="md:hidden flex justify-center mb-6">
+              <img src={logo} alt="Anasol Logo" className="w-24 h-auto" />
+            </div>
             <h2 className={`text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r mb-6 ${
               theme === 'dark' 
                 ? 'from-blue-400 to-purple-400' 

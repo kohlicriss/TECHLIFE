@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense, useContext } from "react"; // useContextను ఇంపోర్ట్ చేయండి
 import {
     BrowserRouter as Router,
     Routes,
@@ -7,7 +7,7 @@ import {
     Outlet,
 } from "react-router-dom";
 import logo from "./assets/anasol-logo.png";
-import HrmsContext from "./HrmsContext";
+import HrmsContext, { Context } from "./HrmsContext"; // Contextను ఇంపోర్ట్ చేయండి
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
@@ -33,6 +33,7 @@ const Permissions = lazy(() => import("./Permissions/PermissionsPage"));
 
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
+    const { theme } = useContext(Context); // Context నుండి themeను పొందండి
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -43,13 +44,17 @@ const FullPageSpinner = () => {
     }, []);
 
     return (
-        <div className="flex h-screen w-full flex-col items-center justify-center bg-white">
+        <div className={`flex h-screen w-full flex-col items-center justify-center transition-colors duration-500 ${
+            theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+        }`}>
             <img
                 src={logo}
                 alt="Loading..."
                 className="h-20 w-20 animate-pulse"
             />
-            <p className="mt-4 text-lg font-semibold text-gray-700">
+            <p className={`mt-4 text-lg font-semibold ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
                 Loading{'.'.repeat(dots)}
             </p>
         </div>
@@ -147,9 +152,9 @@ const HrmsApp = () => {
                                 <Route path="/profile/:empID/*" element={<ProtectedRoute><Profiles /></ProtectedRoute>} />
                                 <Route path="/employees/:empID/*" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                                 
-                                <Route 
-                                    path="/employees/:empID/public/:employeeID" 
-                                    element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} 
+                                <Route
+                                    path="/employees/:empID/public/:employeeID"
+                                    element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>}
                                 />
 
                                 <Route path="/my-teams/:empID" element={<ProtectedRoute><AllTeams /></ProtectedRoute>} />
@@ -159,13 +164,13 @@ const HrmsApp = () => {
                                 <Route path="/tickets/employee/:empID/*" element={<ProtectedRoute><EmployeeTicket /></ProtectedRoute>} />
                                 <Route path="/tasks/:empID/*" element={<ProtectedRoute><TasksApp /></ProtectedRoute>} />
                                 
-                                <Route 
-                                    path="/permissions/:empID/*" 
+                                <Route
+                                    path="/permissions/:empID/*"
                                     element={
                                         <ProtectedRoute allowedRoles={['ADMIN']}>
                                             <Permissions />
                                         </ProtectedRoute>
-                                    } 
+                                    }
                                 />
 
                                 <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
