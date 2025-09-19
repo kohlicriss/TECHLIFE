@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef,useContext } from "react";
+import { Context } from '../HrmsContext';
 
 export default function ChatBox({ userRole = "employee", ticketId, ticketStatus }) {
   const [messages, setMessages] = useState([]);
@@ -10,6 +11,7 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
   const [page, setPage] = useState(0);
 const [hasMore, setHasMore] = useState(true);
 const [loading, setLoading] = useState(false);
+const { userData ,theme} = useContext(Context);
 
 
   const isResolved = ticketStatus?.toLowerCase() === "resolved";
@@ -26,7 +28,7 @@ const [loading, setLoading] = useState(false);
       (a, b) => new Date(a.repliedAt) - new Date(b.repliedAt)
     );
   };
-  
+   const isDark = theme === "dark";
 
   const formatDate = (date) => {
     const msgDate = new Date(date);
@@ -155,7 +157,7 @@ const sendMessage = async () => {
       }
     );
 
-    //setMessages(prev => dedupeMessages([...prev, messageToSend]));
+    setMessages(prev => dedupeMessages([...prev, messageToSend]));
   } catch (err) {
     console.error("❌ Send failed:", err);
   } finally {
@@ -225,14 +227,20 @@ useEffect(() => {
 
 
   return (
-    <div className="flex flex-col h-[500px] bg-white rounded-xl border shadow">
+    <div className={`flex flex-col h-[500px] rounded-xl border shadow transition-colors duration-300 ${
+        isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-white border-gray-200 text-black"
+      }`}>
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+        className={`flex-1 overflow-y-auto p-4 space-y-4 transition-colors duration-300 ${
+          isDark ? "bg-gray-800" : "bg-gray-50"
+        }`}
       >
         {Object.entries(groupedMessages).map(([date, msgs]) => (
           <div key={date}>
-            <div className="text-center text-xs text-gray-500 my-2">{date}</div>
+                   <div className={`text-center text-xs my-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              {date}
+            </div>
 
             {msgs.map((msg, i) => (
               <div
@@ -241,10 +249,12 @@ useEffect(() => {
                   msg.repliedBy === userRole ? "justify-end" : "justify-start"
                 } mb-2`}
               >
-                <div
+                  <div
                   className={`px-4 py-2 rounded-lg shadow text-sm break-words ${
                     msg.repliedBy === userRole
                       ? "bg-blue-600 text-white rounded-br-none"
+                      : isDark
+                      ? "bg-gray-700 text-white rounded-bl-none"
                       : "bg-gray-200 text-gray-900 rounded-bl-none"
                   }`}
                   style={{ maxWidth: "80%", width: "fit-content" }}
@@ -264,7 +274,7 @@ useEffect(() => {
         <div ref={messageEndRef} />
       </div>
 
-      <div className="flex items-center gap-2 p-2 border-t">
+       <div className={`flex items-center gap-2 p-2 border-t ${isDark ? "border-gray-700" : "border-gray-200"}`}>
         <input
           type="text"
           value={input}
@@ -276,16 +286,18 @@ useEffect(() => {
               : "Type your message"
           }
           disabled={isResolved}
-          className={`flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+           className={`flex-1 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors duration-300 ${
             isResolved
               ? "bg-gray-200 cursor-not-allowed text-red-500"
-              : "focus:ring-blue-400"
+              : isDark
+              ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-400"
+              : "bg-white border-gray-300 text-black placeholder-gray-500 focus:ring-blue-400"
           }`}
         />
         <button
           onClick={sendMessage}
           disabled={isResolved}
-          className={`px-4 py-2 rounded text-white ${
+          className={`px-4 py-2 rounded text-white transition ${
             isResolved
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"

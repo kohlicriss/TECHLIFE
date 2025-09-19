@@ -5,13 +5,13 @@ import TicketCard from "./TicketCard";
 import TicketModal from "./TicketModal";
 import TicketStats from "./TicketStats";
 import { motion } from "framer-motion";
-import { FaArrowLeft, FaArrowRight ,FaBars } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight ,FaBars , FaTicketAlt } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import { ticketsApi } from "../../../../axiosInstance";
 
 export default function TicketDashboard() {
-  const { userData } = useContext(Context);
+  
   const { empID } = useParams();
   const [tickets, setTickets] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -23,6 +23,9 @@ export default function TicketDashboard() {
   const [error, setError] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+    const { userData, theme } = useContext(Context);
+  const isDark = theme === "dark";
 
   
   
@@ -39,7 +42,7 @@ export default function TicketDashboard() {
   const repliedBy = "admin";
   const navigate = useNavigate();
 
-  // ✅ Normalize role
+  
   const rawRole = Array.isArray(userData?.roles)
     ? userData.roles[0]
     : userData?.roles || "";
@@ -178,7 +181,15 @@ export default function TicketDashboard() {
       console.error("Reply failed", err);
     }
   };
- 
+  const bgClass = isDark ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900";
+  const cardBg = isDark ? "bg-gray-800 text-white border-gray-700" : "bg-white text-gray-800 border-gray-300";
+  const sidebarBg = isDark ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700";
+  const btnPrimary = isDark
+    ? "bg-blue-600 text-white hover:bg-blue-500"
+    : "bg-blue-600 text-white hover:bg-blue-700";
+  const btnSecondary = isDark
+    ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+    : "bg-gray-100 text-gray-700 hover:bg-gray-200";
   const handleStatusChange = async (statusToUpdate) => {
     if (!selectedTicket) return;
 
@@ -206,7 +217,53 @@ export default function TicketDashboard() {
     }
   };
 
+ const applyFilters = () => {
+  let filtered = [...tickets];
+
+  if (searchTerm.trim() !== '') {
+    const s = searchTerm.toLowerCase();
+    filtered = filtered.filter(t =>
+      (t.title || "").toLowerCase().includes(s) ||
+      (t.status || "").toLowerCase().includes(s) ||
+      (t.priority || "").toLowerCase().includes(s)
+    );
+  }
+
  
+  if (dateFilter !== "All") {
+    const now = new Date();
+
+    filtered = filtered.filter(t => {
+      const date = new Date(t.sentAt || t.createdAt);
+
+      if (dateFilter === "Today") {
+        return date.toDateString() === now.toDateString();
+      }
+
+      if (dateFilter === "Last 7 days") {
+        const last7 = new Date();
+        last7.setDate(now.getDate() - 7);
+        return date >= last7 && date <= now;
+      }
+
+      if (dateFilter === "Last 30 days") {
+        const last30 = new Date();
+        last30.setDate(now.getDate() - 30);
+        return date >= last30 && date <= now;
+      }
+
+      return true;
+    });
+  }
+
+ 
+  filtered.sort(
+    (a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt)
+  );
+
+  return filtered;
+};
+
   const filtered = tickets
     .filter(
       (t) =>
@@ -246,12 +303,16 @@ const handleTabClick = (tab) => {
   }, []);
 
   return (
-    <div className="flex flex-row min-h-screen bg-gray-50">
+    <div className={`flex flex-row min-h-screen ${bgClass}`}>
     
 
       <main className="flex-1 relative">
         <div className="absolute inset-0 bg-[url('/your-image.jpg')] bg-cover bg-center">
-          <div className="w-full h-full bg-gradient-to-b from-white/20 via-white/80 to-white"></div>
+          <div   className={`w-full h-full ${
+              isDark
+                ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900"
+                : "bg-gradient-to-b from-white/20 via-white/80 to-white"
+            }`}></div>
         </div>
 
         <div className="relative z-10 px-4">
@@ -269,8 +330,8 @@ const handleTabClick = (tab) => {
                 key={status}
                 className={`px-4 py-1 rounded-md font-medium border ${
                   filterStatus === status
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-200"
+                    ? btnPrimary
+                    : `${btnSecondary} border`
                 }`}
                 onClick={() => {
                   setFilterStatus(status);
@@ -283,28 +344,39 @@ const handleTabClick = (tab) => {
           </div>
 
           {error && (
-            <div className="bg-red-100 text-red-700 p-2 border rounded mb-4">
+            <div className={`p-2 border rounded mb-4 ${
+                isDark ? "bg-red-900 text-red-200 border-red-700" : "bg-red-100 text-red-700 border-red-300"
+              }`}
+>
               {error}
             </div>
           )}
 
           <TicketStats tickets={tickets} />
 
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((t) => (
-              <TicketCard
-                key={t.ticketId}
-                {...t}
-                onClick={() => {
-                  setSelectedTicket({
-                    ...t,
-                    replies: Array.isArray(t.replies) ? t.replies : [],
-                  });
-                  setNewStatus(t.status);
-                }}
-              />
-            ))}
-          </div>
+         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {applyFilters()
+    .filter(
+      (t) =>
+        filterStatus === "all" ||
+        t.status?.toLowerCase() === filterStatus.toLowerCase()
+    )
+    .map((t) => (
+      <TicketCard
+        key={t.ticketId}
+        {...t}
+        className={`${cardBg}`}
+        onClick={() => {
+          setSelectedTicket({
+            ...t,
+            replies: Array.isArray(t.replies) ? t.replies : [],
+          });
+          setNewStatus(t.status);
+        }}
+      />
+    ))}
+</div>
+
 
         
           <div className="flex justify-center items-center space-x-2 my-6">
@@ -369,7 +441,7 @@ const handleTabClick = (tab) => {
       </main>
 
      
-<header className="sm:hidden relative bg-white px-4 py-3 shadow-md">
+<header className="sm:hidden relative  px-4 py-3 shadow-md">
  
   <button
     onClick={toggleSidebar}
@@ -381,10 +453,11 @@ const handleTabClick = (tab) => {
 
 
 
-<aside
-  className={`hidden sm:flex flex-col h-screen bg-white border-l border-gray-200 transition-all duration-200 z-40
-  ${isSidebarCollapsed ? "w-[60px]" : "w-[250px]"}`}
->
+  <aside
+        className={`hidden sm:flex flex-col h-screen transition-all duration-200 z-40 ${sidebarBg} ${
+          isSidebarCollapsed ? "w-[60px]" : "w-[250px]"
+        }`}
+      >
   <div className="flex justify-start p-2 items-center">
     <motion.button
       onClick={toggleSidebar}
@@ -395,21 +468,23 @@ const handleTabClick = (tab) => {
     </motion.button>
   </div>
 
-  {!isSidebarCollapsed && (
-    <nav className="flex-1 space-y-2 px-2 mt-2">
-      {sidebarItems.map(({ tab, icon: Icon }) => (
-        <motion.button
-          key={tab}
-          className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
-          onClick={() => handleTabClick(tab)}
-          whileHover={{ x: -3 }}
-        >
-          <Icon size={16} className="mr-2" />
-          <span>{tab}</span>
-        </motion.button>
-      ))}
-    </nav>
-  )}
+ {!isSidebarCollapsed && (
+  <nav className="flex-1 space-y-2 px-2 mt-2">
+    {sidebarItems.map(({ tab, icon: Icon }) => (
+      <motion.button
+        key={tab}
+        className={`w-full text-left py-2 px-2 rounded-md font-medium flex items-center hover:bg-gray-200 ${
+          isDark ? "text-white" : "text-black"
+        }`}
+        onClick={() => handleTabClick(tab)}
+        whileHover={{ x: -3 }}
+      >
+        <Icon size={16} className="mr-2" />
+        <span>{tab}</span>
+      </motion.button>
+    ))}
+  </nav>
+)}
 </aside>
 
 
@@ -421,25 +496,40 @@ const handleTabClick = (tab) => {
 )}
 
 <aside
-  className={`sm:hidden fixed top-0 right-0 h-screen bg-white border-l border-gray-200 transition-transform duration-300 z-50
-  ${isSidebarCollapsed ? "translate-x-full" : "translate-x-0"} w-[250px]`}
+  className={`sm:hidden fixed top-0 right-0 h-screen transition-transform duration-300 z-50
+  ${isSidebarCollapsed ? "translate-x-full" : "translate-x-0"} w-[250px]
+  ${isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-white border-gray-200 text-black"}`}
 >
-  <div className="flex justify-between p-3 items-center border-b">
-    <h2 className="font-semibold text-gray-700">Menu</h2>
-    <motion.button
-      onClick={toggleSidebar}
-      className="text-gray-500 hover:text-gray-700 focus:outline-none p-1.5 rounded-full hover:bg-gray-100"
-      transition={{ duration: 0.3 }}
-    >
-      <FaArrowRight size={16} />
-    </motion.button>
+  
+  <div
+    className={`flex justify-between p-3 items-center border-b ${
+      isDark ? "border-gray-700 text-white" : "border-gray-200 text-black"
+    }`}
+  >
+   <motion.button
+  onClick={() => {
+    handleTabClick("My Tickets");
+    setIsSidebarCollapsed(true);
+  }}
+  className={`font-semibold px-3 py-2 mt-8 rounded-md transition flex items-center
+    ${isDark ? "text-white hover:bg-gray-800" : "text-black hover:bg-gray-200"}`}
+  whileHover={{ scale: 1.05 }}
+>
+  <FaTicketAlt size={16} className="mr-2" />
+  My Tickets
+</motion.button>
+
   </div>
 
-  <nav className="flex-1 space-y-2 px-2 mt-2">
+ 
+  <nav className="flex flex-col h-full px-2 mt-2">
+    <div className="flex-1" /> 
+
     {sidebarItems.map(({ tab, icon: Icon }) => (
       <motion.button
         key={tab}
-        className="w-full text-left py-2 px-2 rounded-md font-medium flex items-center text-gray-700 hover:bg-gray-200"
+        className={`w-full text-left py-2 px-2 mb-2 rounded-md font-medium flex items-center transition
+        ${isDark ? "text-white hover:bg-gray-800" : "text-black hover:bg-gray-200"}`}
         onClick={() => {
           handleTabClick(tab);
           setIsSidebarCollapsed(true);
@@ -452,7 +542,6 @@ const handleTabClick = (tab) => {
     ))}
   </nav>
 </aside>
-
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo,useContext } from "react";
 import axios from "axios";
+import { Context } from "../HrmsContext";
 
 export default function TicketModal({
   ticket,
@@ -23,6 +24,9 @@ export default function TicketModal({
 
 const prevScrollHeight = useRef(0);
 const [loadingOlder, setLoadingOlder] = useState(false);
+ const { theme } = useContext(Context);
+  const isDark = theme === "dark";
+
 
   
   const formatDate = (date) => {
@@ -274,19 +278,30 @@ const handleReply = async () => {
     }
   };
 
+    const bgColor = isDark ? "bg-gray-900 text-white" : "bg-white text-gray-900";
+  const chatBg = isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900";
+  const chatAltBg = isDark ? "bg-gray-700 text-white" : "bg-white text-gray-900";
+ const borderColor =
+  bgColor === isDark
+    ? "border-white"
+    : bgColor === !isDark 
+    ? "border-black"
+    : "border-gray-300"; 
+
+
   const displayRole = (role) => role?.replace(/^ROLE_/, "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-[calc(100vw-5rem)] md:max-w-4xl rounded-2xl shadow-2xl relative transition-all duration-300">
-        <div className="p-6 overflow-y-auto h-[90vh] scroll-smooth">
+      <div className={`${bgColor} w-full max-w-[calc(100vw-5rem)] md:max-w-4xl rounded-2xl shadow-2xl relative transition-all duration-300`}>
+        <div className={`p-6 overflow-y-auto h-[90vh] scroll-smooth ${bgColor}`}>
           {!showChat ? (
             <>
-              <h2 className="text-3xl font-extrabold text-blue-700 mb-6">
+                <h2 className={`text-3xl font-extrabold mb-6 ${isDark ? "text-white" : "text-blue-700"}`}>
                 🎫 Ticket Details
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-[15px] text-gray-800 mb-8">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-5 text-[15px] mb-8 ${isDark ? "text-gray-200" : "text-gray-800"}`}>
                 <p>
                   <span className="font-semibold">👤 Employee ID:</span>{" "}
                   {ticket.employeeId}
@@ -317,21 +332,22 @@ const handleReply = async () => {
 
 
                 <div className="md:col-span-2">
-                  <label className="block font-medium text-gray-900 mb-2">
+                  <label className={`block font-medium text-gray-900 mb-2 ${isDark ? "text-white" : "text-blue-700"}`}>
                     📌 Update Status
                   </label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Unsolved">Unsolved</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
+                 <select
+  value={newStatus}
+  onChange={(e) => setNewStatus(e.target.value)}
+  className={`w-full rounded-lg px-3 py-2 text-sm border focus:ring-2 focus:ring-blue-500 ${bgColor} ${borderColor}`}
+>
+  <option value="Unsolved">Unsolved</option>
+  <option value="Resolved">Resolved</option>
+</select>
+
                 </div>
               </div>
 
-              <button
+               <button
                 onClick={() => setShowChat(true)}
                 className="mb-6 px-6 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition-all duration-200 shadow"
               >
@@ -339,20 +355,16 @@ const handleReply = async () => {
               </button>
 
               <div className="mt-10 flex justify-end gap-4">
-                <button
+                 <button
                   onClick={onClose}
-                  className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                  className={`px-5 py-2 rounded-lg border ${borderColor} ${isDark ? "text-gray-200 hover:bg-gray-800" : "text-gray-600 hover:bg-gray-100"} transition`}
                 >
                   Cancel
                 </button>
-                <button
+                 <button
                   onClick={handleStatusChange}
                   disabled={loading}
-                  className={`px-6 py-2 rounded-lg font-medium transition ${
-                    loading
-                      ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
+                  className={`px-6 py-2 rounded-lg font-medium transition  ${borderColor} ${loading ? "bg-gray-400 text-white cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
                 >
                   {loading ? "Saving..." : "Update Status"}
                 </button>
@@ -361,80 +373,43 @@ const handleReply = async () => {
           ) : (
             <>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-blue-700">
-                  💬 Chat with {ticket.employeeId}
-                </h2>
-                <button
-                  onClick={() => setShowChat(false)}
-                  className="text-sm text-blue-600 hover:underline"
-                >
+                  <h2 className={`text-2xl font-bold ${isDark ? "text-white" : "text-blue-700"}`}>💬 Chat with {ticket.employeeId}</h2>
+                <button onClick={() => setShowChat(false)} className={`text-sm ${isDark ? "text-blue-400 hover:text-blue-200" : "text-blue-600 hover:underline"}`}>
                   Back to Ticket
                 </button>
               </div>
 
-               <div
-                ref={chatContainerRef}
-                className="max-h-72 overflow-y-auto space-y-3 p-4 bg-gray-50 rounded-xl border mb-4 shadow-inner"
-              >
-                <div className="bg-white text-gray-900 border rounded-bl-none px-4 py-2 max-w-[75%] text-sm rounded-2xl shadow">
+              <div ref={chatContainerRef} className={`max-h-72 overflow-y-auto space-y-3 p-4 rounded-xl border ${borderColor} shadow-inner ${isDark ? "bg-gray-800" : "bg-gray-50"}`}>
+                <div className={`${chatBg} border rounded-bl-none px-4 py-2 max-w-[75%] text-sm rounded-2xl shadow`}>
                   <p>{ticket.title}</p>
-                  <div className="text-[10px] mt-1 text-left text-gray-500">
-                    {formatChatTimeIST(ticket.sentAt)}
-                  </div>
+                  <div className="text-[10px] mt-1 text-left text-gray-500">{formatChatTimeIST(ticket.sentAt)}</div>
                 </div>
 
-                {Object.keys(groupedReplies).map((date) => (
+               {Object.keys(groupedReplies).map((date) => (
                   <div key={date}>
-                    <div className="text-center text-xs text-gray-500 my-2">
-                      {date}
-                    </div>
+                    <div className={`text-center text-xs my-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>{date}</div>
                     {groupedReplies[date].map((msg, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex ${
-                          msg.repliedBy === "admin"
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`inline-block px-4 py-2 text-sm rounded-2xl shadow transition
-                            ${
-                              msg.repliedBy === "admin"
-                                ? "bg-blue-600 text-white rounded-br-none"
-                                : "bg-white text-gray-900 border rounded-bl-none"
-                            }`}
-                        >
-                          <p className="whitespace-pre-line break-words">
-                            {msg.replyText}
-                          </p>
-                          <div
-                            className={`text-[10px] mt-1 ${
-                              msg.repliedBy === "admin"
-                                ? "text-white text-right"
-                                : "text-gray-500 text-left"
-                            }`}
-                          >
-                            {formatChatTimeIST(msg.repliedAt)}{" "}
-                            {msg.repliedBy === "admin" && "✓✓"}
+                      <div key={idx} className={`flex ${msg.repliedBy === "admin" ? "justify-end" : "justify-start"}`}>
+                        <div className={`inline-block px-4 py-2 text-sm rounded-2xl shadow transition ${msg.repliedBy === "admin" ? "bg-blue-600 text-white rounded-br-none" : chatAltBg + " border rounded-bl-none"}`}>
+                          <p className="whitespace-pre-line break-words">{msg.replyText}</p>
+                          <div className={`text-[10px] mt-1 ${msg.repliedBy === "admin" ? "text-white text-right" : "text-gray-400 text-left"}`}>
+                            {formatChatTimeIST(msg.repliedAt)} {msg.repliedBy === "admin" && "✓✓"}
                           </div>
                         </div>
                       </div>
                     ))}
-                  </div>
+                       </div>
                 ))}
                 <div ref={messagesEndRef} />
               </div>
 
               {ticket.status === "Resolved" ? (
-                <div className="text-center text-red-600 font-medium py-4 border-t border-gray-200">
+                  <div className={`text-center font-medium py-4 border-t ${borderColor} ${isDark ? "text-red-400" : "text-red-600"}`}>
                   This ticket is Resolved. No further replies are allowed.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <label className="block font-medium text-gray-800">
-                    Reply as Admin
-                  </label>
+                  <label className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}>Reply as Admin</label>
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
@@ -445,7 +420,7 @@ const handleReply = async () => {
                       }
                     }}
                     rows="3"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 resize-none text-sm shadow"
+                    className={`w-full p-3 rounded-lg focus:ring-2 focus:ring-blue-400 resize-none text-sm shadow ${bgColor} ${borderColor}`}
                     placeholder="Type your reply..."
                   />
 
@@ -466,9 +441,9 @@ const handleReply = async () => {
           )}
         </div>
 
-        <button
+         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl transition"
+          className={`absolute top-4 right-4 text-2xl transition ${isDark ? "text-gray-400 hover:text-white" : "text-gray-400 hover:text-gray-700"}`}
           aria-label="Close"
         >
           &times;
