@@ -1585,7 +1585,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'flex fixed inset-0 md:relative md:h-full' : 'hidden md:flex md:h-full'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className={`flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'w-full h-full fixed inset-0 md:relative md:w-[70%]' : 'hidden md:flex md:w-[70%] md:h-full'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
