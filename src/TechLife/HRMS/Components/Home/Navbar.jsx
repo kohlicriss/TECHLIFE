@@ -5,7 +5,7 @@ import logo from "../assets/anasol-logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import DarkModeToggle from "../Login/DarkModeToggle";
-import './Navbar.css'; // Import the new CSS file
+import "./Navbar.css";
 
 const NavbarSkeleton = ({ theme }) => (
   <header
