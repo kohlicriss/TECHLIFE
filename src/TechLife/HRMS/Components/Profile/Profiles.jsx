@@ -172,7 +172,7 @@ const Profiles = () => {
 
   const renderMobile = () => (
     <div className="lg:hidden">
-      {/* Card with edit button */}
+      {/* Card */}
       <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'} flex items-center space-x-4`}>
         <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
           {display?.employeeImage || profileImagePreview ? (
@@ -242,13 +242,7 @@ const Profiles = () => {
       <div className={`hidden lg:block h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
         {!isReadOnly && (
           <div className="absolute top-4 right-8">
-            <button
-              onClick={handleEditClick}
-              className={`p-2 cursor-pointer rounded transition-colors ${theme === "dark" ? "bg-gray-700 hover:bg-gray-600 text-gray-300" : "bg-white hover:bg-gray-100 text-gray-600"}`}
-              title="Edit Profile"
-            >
-              <HiPencil className="w-4 h-4" />
-            </button>
+            {/* Edit button removed as requested */}
           </div>
         )}
         <div className="flex items-start pt-4 px-8">
