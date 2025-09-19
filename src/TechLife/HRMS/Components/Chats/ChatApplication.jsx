@@ -234,6 +234,57 @@ const getAudioDuration = (audioBlob) =>
 
         reader.readAsArrayBuffer(audioBlob);
     });
+
+const ContactProfileModal = ({ chat, onClose, theme }) => {
+    const [isZoomed, setIsZoomed] = useState(false);
+
+    if (isZoomed && chat.type === 'private') {
+        return (
+            <div
+                className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-[120]"
+                onClick={() => setIsZoomed(false)}
+            >
+                <img
+                    src={chat?.profile}
+                    alt={chat?.name}
+                    className="max-w-[90vw] max-h-[90vh] object-contain"
+                />
+            </div>
+        );
+    }
+
+    return (
+        // THIS IS THE ONLY LINE WE ARE CHANGING
+        <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-[110] md:hidden"
+            onClick={onClose}
+        >
+            <div
+                className="relative w-11/12 max-w-xs cursor-pointer"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (chat.type === 'private') setIsZoomed(true);
+                }}
+            >
+                {chat.type === 'group' ? (
+                    <div className="w-full aspect-square bg-gray-700 rounded-lg shadow-lg flex items-center justify-center">
+                        <FaUsers className="text-gray-400" size={120} />
+                    </div>
+                ) : (
+                    <img
+                        src={chat?.profile}
+                        alt={chat?.name}
+                        className="w-full aspect-square object-cover rounded-lg shadow-lg"
+                    />
+                )}
+                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent rounded-b-lg">
+                    <h3 className="text-xl font-bold text-white text-center truncate">{chat?.name}</h3>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore, theme }) {
     const location = useLocation();
     const navigate = useNavigate();
@@ -272,6 +323,14 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [isFetchingMoreMessages, setIsFetchingMoreMessages] = useState(false);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const [newMessagesCount, setNewMessagesCount] = useState(0);
+    const [viewingProfile, setViewingProfile] = useState(null);
+    const { setIsChatWindowVisible } = useContext(Context);
+
+    useEffect(() => {
+        if (setIsChatWindowVisible) {
+            setIsChatWindowVisible(isChatOpen);
+        }
+    }, [isChatOpen, setIsChatWindowVisible]);
 
     const sidebarScrollRef = useRef(null);
     const chatContainerRef = useRef(null);
@@ -1488,11 +1547,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                             <div key={chat.chatId} onClick={() => handleChatSelect(chat)} className={`p-3 flex items-center rounded-lg cursor-pointer group ${selectedChat?.chatId === chat.chatId ? 'bg-blue-100 dark:bg-blue-900/30' : (theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-blue-50')}`}>
                                 <div className="relative flex-shrink-0">
                                     {chat.type === 'group' ? (
-                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setViewingProfile(chat);
+                                            }}
+                                            className={`w-11 h-11 rounded-full flex items-center justify-center cursor-pointer md:cursor-default ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}
+                                        >
                                             <FaUsers className={`text-gray-500`} size={24} />
                                         </div>
                                     ) : chat.profile ? (
-                                        <img src={chat.profile} alt={chat.name} className="w-11 h-11 rounded-full object-cover" />
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setViewingProfile(chat);
+                                            }}
+                                            className="w-11 h-11 rounded-full cursor-pointer md:cursor-default"
+                                        >
+                                            <img src={chat.profile} alt={chat.name} className="w-full h-full rounded-full object-cover" />
+                                        </div>
                                     ) : (
                                         <div className={`w-11 h-11 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
                                             <FaUser className={`text-gray-500`} size={24} />
@@ -1776,6 +1849,14 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </button>
                 )}
             </div>
+
+            {viewingProfile && (
+                <ContactProfileModal
+                    chat={viewingProfile}
+                    onClose={() => setViewingProfile(null)}
+                    theme={theme}
+                />
+            )}
 
             {contextMenu.visible && (
                 <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-50 text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
