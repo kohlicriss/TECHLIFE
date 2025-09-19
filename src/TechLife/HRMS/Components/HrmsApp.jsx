@@ -47,7 +47,7 @@ const FullPageSpinner = () => {
 
 const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isChatWindowVisible }) => (
     <div className="flex flex-col h-screen bg-gray-50">
-        <Navbar setSidebarOpen={setSidebarOpen} currentUser={currentUser} />
+        <Navbar setSidebarOpen={setSidebarOpen} currentUser={currentUser} onLogout={onLogout} />
         <div className={`flex flex-1 overflow-hidden ${isChatWindowVisible ? 'pt-0 md:pt-16' : 'pt-16'}`}>
             <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} />
             <main className="flex-1 overflow-y-auto">
