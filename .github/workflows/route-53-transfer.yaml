@@ -39,7 +39,10 @@ jobs:
 
     - name: move to the templates folder
       run: mv build/ terraform/webhosting/
-
+      
+    - name: delete everything from s3
+      run: aws s3 rm s3://hrms-fromtend-web-files/ --recursive
+      
     - name: Terraform Init
       run: terraform -chdir=./terraform/webhosting init
 
