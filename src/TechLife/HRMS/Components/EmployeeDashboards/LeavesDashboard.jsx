@@ -803,6 +803,44 @@ const LeavesDashboard = () => {
             Action: "https://icons8.com/icon/36944/ellipsis",
         },
     ]);
+ //useEffect(() => {
+//  const fetchLeaveData = async () => {
+//    setIsLoading(true);
+//    try {
+//      const response = await axios.get(
+//        `http://192.168.0.123:8081/api/attendance/employee/${empID}/leaves?page=${
+//          currentPage - 1
+//        }&size=${apiPageSize}`
+//      );
+//      const newData = Array.isArray(response.data) ? response.data : [];//
+//      if (newData.length < apiPageSize) {
+//        setHasMoreData(false);
+//      } else {
+//        setHasMoreData(true);
+//      }//
+//      const formatted = newData.map((item) => ({
+//        Leave_type: item.leave_type,
+//        Leave_On: item.leave_on,
+//        status: item.status,
+//        Request_By: item.request_By,
+//        Details: item.details,
+//        Action_Date: item.action_Date,
+//        Rejection_Reason: item.rejection_Reason,
+//        Action: item.action,
+//      }));//
+//      setCurrentLeaveHistoryData((prevData) => [...prevData, ...formatted]);
+//    } catch (error) {
+//      console.error("Failed to fetch leave data:", error);
+//    } finally {
+//      setIsLoading(false);
+//    }
+//  };
+//  fetchLeaveData();
+//}, [currentPage, apiPageSize, empID]);//
+//useEffect(() => {
+//  setCurrentLeaveHistoryData([]);
+//  setCurrentPage(1);
+//}, [leaveTypeFilter, statusFilter, sortOption]);
 
     const handleAddLeave = (newLeave) => {
         setCurrentLeaveHistoryData((prevData) => [newLeave, ...prevData]);
@@ -944,8 +982,8 @@ const LeavesDashboard = () => {
                             </header>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                                 <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
-                                <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />
-                                <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota} color="#FFC107" />
+                                <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota}     color="#2196F3" />
+                                <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota}     color="#FFC107" />
                                 <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
                             </div>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

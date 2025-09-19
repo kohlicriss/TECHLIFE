@@ -114,16 +114,14 @@ const employees = [
         title: 'UI/UX Designer',
         department: 'UI/UX',
         status: 'Clocked In',
-        time: '09:15',
-        profilePic: 'https://randomuser.me/api/portraits/men/30.jpg',
+        time: '09:15'
     },
     {
         name: 'Raju',
         title: 'Project Manager',
         department: 'Management',
         status: 'Clocked In',
-        time: '09:36',
-        profilePic: 'https://randomuser.me/api/portraits/men/57.jpg',
+        time: '09:36'
     },
     {
         name: 'Srilekha',
@@ -131,7 +129,6 @@ const employees = [
         department: 'Development',
         status: 'Clocked In',
         time: '09:15',
-        profilePic: 'https://randomuser.me/api/portraits/women/57.jpg',
         details: {
             clockIn: '10:30 AM',
             clockOut: '09:45 AM',
@@ -140,6 +137,13 @@ const employees = [
     },
 ];
 
+const ProfilePicMap={
+    "John Doe":'https://randomuser.me/api/portraits/men/30.jpg',
+    'Raju':    'https://randomuser.me/api/portraits/men/57.jpg',
+    'Srilekha': 'https://randomuser.me/api/portraits/women/57.jpg',
+    'Anita':    'https://randomuser.me/api/portraits/women/87.jpg'
+}
+
 const lateEmployee = {
     name: 'Anita',
     title: 'Marketing Head',
@@ -147,7 +151,6 @@ const lateEmployee = {
     status: 'Late',
     lateTime: '30 Min',
     time: '08:35',
-    profilePic: 'https://randomuser.me/api/portraits/women/87.jpg',
 };
 
 const departments = ['All Departments', 'UI/UX', 'Development', 'Management', 'HR', 'Marketing'];
@@ -250,7 +253,7 @@ const ClockInOut = () => {
                         <motion.div    key={index}    className={`flex items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-blue-200 hover:text-gray-800 border ${theme==='dark' ? 'bg-gray-600 border-gray-200':'bg-gray-100 '}`}    
                         initial={{ opacity: 0, y: 20 }}    animate={{ opacity: 1, y: 0 }}    exit={{ opacity: 0, y: -20 }}    transition={{ duration: 0.3, delay: index * 0.05 }}>
                             <div className="flex items-center">
-                                <motion.img    className="w-12 h-12 rounded-full mr-4 object-cover"    src={employee.profilePic}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
+                                <motion.img    className="w-12 h-12 rounded-full mr-4 object-cover"   src={ProfilePicMap[employee.name] || "https://randomuser.me/api/portraits/lego/1.jpg"}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
                                 <div>  <p className={`font-semibold  ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`} >{employee.name}</p>  <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.title}</p>  </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -267,7 +270,7 @@ const ClockInOut = () => {
                     <p className={`font-medium mb-3 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>Late</p>
                      <motion.div className={`flex items-center justify-between  rounded-lg p-4 transition-colors duration-200 hover:bg-red-200 hover:text-gray-800 border ${theme==='dark' ? 'bg-gray-600 border-gray-200':'bg-gray-100 '}`} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: employees.length * 0.05 }}>
                         <div className="flex items-center">
-                            <motion.img className="w-12 h-12 rounded-full mr-4 object-cover" src={lateEmployee.profilePic} alt={lateEmployee.name} whileHover={{ scale: 1.1 }}/>
+                            <motion.img className="w-12 h-12 rounded-full mr-4 object-cover" src={ProfilePicMap[lateEmployee.name] || "https://randomuser.me/api/portraits/lego/1.jpg"} alt={lateEmployee.name} whileHover={{ scale: 1.1 }}/>
                             <div>    <p className={`font-semibold text-gray-800 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}> {lateEmployee.name}</p>    <p className={`text-sm text-gray-500 ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{lateEmployee.title}</p></div>
                         </div>
                         <div className="flex items-center space-x-2"><span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">    {lateEmployee.lateTime}</span><ClockIcon className="h-5 w-5 text-gray-400" /><div className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium">    {lateEmployee.time}</div>

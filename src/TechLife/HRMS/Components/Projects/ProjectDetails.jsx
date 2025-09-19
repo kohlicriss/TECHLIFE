@@ -37,47 +37,68 @@ const ProjectDetails = () => {
 
   // Project and team data
   const projectInfo = {
-    title: "Human Resource Management ",
-    projectId: "PRO-0001",
-    status: "InProgress",
-    team: [
-      { name: "Viswa", role: "Backend", description: "Expert in backend architecture and API development. Focused on scalable services,role involves creating and maintaining databases, writing server-side logic, developing and integrating APIs, handling user authentication, and ensuring the application is secure.", email: "viswa@gmail.com", avatar: "https://i.pravatar.cc/40?img=1" },
-      { name: "Rajesh", role: "Integration", description: "Responsible for third-party integrations and automation workflow and design, build, and maintain integration solutions that allow data to flow smoothly across multiple platforms within an organization.", email: "rajesh@example.com", avatar: "https://i.pravatar.cc/40?img=11" },
-      { name: "Saraswati", role: "Database", description: "Specialist in database optimization, indexing, and migrations work closely with application developers to make sure the backend systems can quickly retrieve and update data.", email: "saraswati@example.com", avatar: "https://i.pravatar.cc/40?img=9" },
-      { name: "Mahath", role: "Frontend", description: "Frontend developer focuses on delivering a great user experience by combining design and functionality on the client side, and turn design ideas into working features, ensure smooth navigation, and make the application work well across different devices and browsers.", email: "mahath@example.com", avatar: "https://i.pravatar.cc/40?img=4" }
-    ],
-    teamLead: [
-      { name: "Ramya", avatar: "https://i.pravatar.cc/40?img=5" },
-      { name: "Koteshwar", avatar: "https://i.pravatar.cc/40?img=12" }
-    ],
-    projectManager: [
-      { name: "Varun", avatar: "https://i.pravatar.cc/40?img=8" }
-    ],
-    tags: ["Admin Panel", "High Tech"],
-    description: "The Tech life Management System (EPMS) project aims to modernize and streamline the Human management processes within. By integrating advanced technologies and optimizing existing workflows, the project seeks to improve tickets Processing and resolving the user queries, enhance operational efficiency, and ensure compliance with regulatory standards.",
-    daysSpent: 65,
-    totaldays: 120
-  };
+  title: "Human Resource Management ",
+  projectId: "PRO-0001",
+  status: "InProgress",
+  team: [
+    { name: "Viswa", role: "Backend", description: "Expert in backend architecture and API development. Focused on scalable services,role involves creating and maintaining databases, writing server-side logic, developing and integrating APIs, handling user authentication, and ensuring the application is secure.", email: "viswa@gmail.com" },
+    { name: "Rajesh", role: "Integration", description: "Responsible for third-party integrations and automation workflow and design, build, and maintain integration solutions that allow data to flow smoothly across multiple platforms within an organization.", email: "rajesh@example.com" },
+    { name: "Raghu", role: "Database", description: "Specialist in database optimization, indexing, and migrations work closely with application developers to make sure the backend systems can quickly retrieve and update data.", email: "saraswati@example.com" },
+    { name: "Ravi", role: "Frontend", description: "Frontend developer focuses on delivering a great user experience by combining design and functionality on the client side, and turn design ideas into working features, ensure smooth navigation, and make the application work well across different devices and browsers.", email: "mahath@example.com" }
+  ],
+  teamLead: [
+    { name: "Ramya" },
+    { name: "Koteshwar" }
+  ],
+  projectManager: [
+    { name: "Varun" }
+  ],
+  tags: ["Admin Panel", "High Tech"],
+  description: "The Tech life Management System (EPMS) project aims to modernize and streamline the Human management processes within. By integrating advanced technologies and optimizing existing workflows, the project seeks to improve tickets Processing and resolving the user queries, enhance operational efficiency, and ensure compliance with regulatory standards.",
+  daysSpent: 65,
+  totaldays: 120
+};
 
+  const initialTasks = [
+  { id: 1, title: "Integration operation", status: "OnHold", description: "This task covers system-wide integration testing and validation." },
+  { id: 2, title: "Frontend Dashboard development", status: "InProgress", description: "UI and dashboard features are being built for user interaction." },
+  { id: 3, title: "Backend Tickets Employee Development", status: "Completed", description: "Ticketing system backend modules have been implemented successfully." },
+  { id: 4, title: "API Integration", status: "Pending", description: "API endpoints need to be integrated with frontend services." },
+  { id: 5, title: "Database Administration", status: "InProgress", description: "Database optimization and backup configurations are ongoing." },
+];
+const intialProgress=[
+  { id: 1, title: "Backend Tickets Employee Development", date: "09 JUN 7:20 PM", status: "completed",  },
+    { id: 2, title: "Database Administration", date: "08 JUN 12:20 PM", status: "completed",            },
+    { id: 3, title: "Integration Operation", date: "04 JUN 3:10 PM", status: "in-progress",             },
+    { id: 4, title: "Frontend Dashboard Developement", date: "02 JUN 2:45 PM", status: "in-progress",   },
+    { id: 5, title: "API Intergration and Deployment", date: "18 July 1:30 PM", status: "in-progress",  },
+]
+const ProgressColorsMap={
+ "completed": "bg-green-500",
+  "in-progress": "bg-blue-500", 
+}
+const StatusColorsMap={
+    "OnHold":"bg-pink-200 text-pink-800",
+    "InProgress":"bg-blue-200 text-blue-800",
+    "Completed":"bg-green-200 text-green-800",
+    "Pending":"bg-yellow-200 text-yellow-800"
+  }
+   const tasksWithColors = initialTasks.map(task => ({
+    ...task,
+    statusColor: StatusColorsMap[task.status] || 'bg-gray-200 text-gray-800' // Default color if status not found
+  }));
+   const progressWithColors =intialProgress.map(progress => ({
+    ...progress,
+    color: ProgressColorsMap[progress.status] || 'bg-gray-200 text-gray-800' // Default color if status not found
+  }));
+  const getAvatarUrl = (index) => `https://i.pravatar.cc/40?img=${index + 1}`;
   // State Management
   const [selectedMember, setSelectedMember] = useState(projectInfo.team[0]); // Default to the first team member
   const [status, setStatus] = useState("InProgress");
   const [selectedTask, setSelectedTask] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [tasks, setTasks] = useState([
-    { id: 1, title: "Integration operation", status: "OnHold", statusColor: "bg-pink-200 text-pink-800", description: "This task covers system-wide integration testing and validation." },
-    { id: 2, title: "Frontend Dashboard development", status: "InProgress", statusColor: "bg-blue-200 text-blue-800", description: "UI and dashboard features are being built for user interaction." },
-    { id: 3, title: "Backend Tickets Employee Development", status: "Completed", statusColor: "bg-green-200 text-green-800", description: "Ticketing system backend modules have been implemented successfully." },
-    { id: 4, title: "API Integration", status: "Pending", statusColor: "bg-yellow-200 text-yellow-800", description: "API endpoints need to be integrated with frontend services." },
-    { id: 5, title: "Database Administration", status: "InProgress", statusColor: "bg-blue-200 text-blue-800", description: "Database optimization and backup configurations are ongoing." },
-  ]);
-  const [progress, setprogress] = useState([
-    { id: 1, title: "Backend Tickets Employee Development", date: "09 JUN 7:20 PM", status: "completed", color: "bg-green-500" },
-    { id: 2, title: "Database Administration", date: "08 JUN 12:20 PM", status: "completed", color: "bg-green-500" },
-    { id: 3, title: "Integration Operation", date: "04 JUN 3:10 PM", status: "in-progress", color: "bg-blue-500" },
-    { id: 4, title: "Frontend Dashboard Developement", date: "02 JUN 2:45 PM", status: "in-progress", color: "bg-blue-500" },
-    { id: 5, title: "API Intergration and Deployment", date: "18 July 1:30 PM", status: "in-progress", color: "bg-blue-500" },
-  ]);
+  const [tasks, setTasks] = useState(tasksWithColors)
+  const [progress, setprogress] = useState(progressWithColors);
 
   const departmentData = {
     May: [
@@ -123,7 +144,6 @@ const ProjectDetails = () => {
       dueAlert: 1,
       createdBy: {
         name: "Priya Rathod",
-        avatar: "https://i.pravatar.cc/40?img=15"
       },
       priority: "High"
     },
@@ -209,7 +229,7 @@ const ProjectDetails = () => {
                 <div className="flex flex-wrap gap-3">
                   {projectInfo.team.map((member, index) => (
                     <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition`}>
-                      <img src={member.avatar} alt={member.name} className="w-8 h-8 rounded-full border" />
+                      <img src={getAvatarUrl(index)} alt={member.name} className="w-8 h-8 rounded-full border" />
                       <span className="text-sm font-medium">{member.name}</span>
                     </span>
                   ))}
@@ -226,7 +246,7 @@ const ProjectDetails = () => {
                   <div className="flex flex-wrap gap-3">
                     {projectInfo.teamLead.map((lead, index) => (
                       <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm`}>
-                        <img src={lead.avatar} alt={lead.name} className="w-8 h-8 rounded-full border" />
+                        <img src={getAvatarUrl(index + projectInfo.team.length)} alt={lead.name} className="w-8 h-8 rounded-full border" />
                         <span className="text-sm font-medium">{lead.name}</span>
                       </span>
                     ))}
@@ -237,7 +257,7 @@ const ProjectDetails = () => {
                   <div className="flex flex-wrap gap-3">
                     {projectInfo.projectManager.map((pm, index) => (
                       <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm`}>
-                        <img src={pm.avatar} alt={pm.name} className="w-8 h-8 rounded-full border" />
+                        <img src={getAvatarUrl(index + projectInfo.team.length + projectInfo.teamLead.length)} alt={pm.name} className="w-8 h-8 rounded-full border" />
                         <span className="text-sm font-medium">{pm.name}</span>
                       </span>
                     ))}
@@ -261,17 +281,20 @@ const ProjectDetails = () => {
               <div className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6`}>
                 <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Details</h2>
                 <dl className="divide-y divide-gray-200">
-                  {Object.entries(projectData.projectDetails).map(([key, value]) => {
+                  {Object.entries(projectData.projectDetails).map(([key, value,index]) => {
                     const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                     if (key === 'createdBy') {
                       return (
+                        
                         <div key={key} className="flex items-center justify-between py-3">
                           <dt className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-base`}>Reported by</dt>
                           <dd className="text-right">
+                            
                             <span className="inline-flex items-center gap-2 justify-end">
-                              <img src={value.avatar} alt={value.name} className="w-8 h-8 rounded-full" />
+                              <img src={getAvatarUrl(index)} alt={value.name} className="w-8 h-8 rounded-full" />
                               <span className={` ${theme==='dark'?'text-gray-200':'text-gray-900'} font-medium`}>{value.name}</span>
                             </span>
+                    
                           </dd>
                         </div>
                       );
@@ -330,7 +353,7 @@ const ProjectDetails = () => {
                     className={`cursor-pointer ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800  hover:bg-gray-50 '}  p-4 rounded-xl shadow-md flex items-center justify-between transition ${selectedMember === member ? 'border-2 border-indigo-500' : ''}`}
                   >
                     <div className="flex items-center gap-4">
-                      <img src={member.avatar} alt={member.name} className="w-12 h-12 rounded-full border" />
+                      <img src={getAvatarUrl(index)} alt={member.name} className="w-12 h-12 rounded-full border" />
                       <div>
                         <h3 className="text-lg font-semibold">{member.name}</h3>
                         <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-sm`}>{member.role}</p>
@@ -359,13 +382,15 @@ const ProjectDetails = () => {
             <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-6">Member Details</h2>
               {selectedMember ? (
+                
                 <div className={`${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl space-y-4`}>
                   <div className="flex items-center gap-4">
-                    <img src={selectedMember.avatar} alt={selectedMember.name} className="w-20 h-20 rounded-full border-2 border-indigo-400" />
+                    <img src={getAvatarUrl(projectInfo.team.indexOf(selectedMember))} alt={selectedMember.name} className="w-20 h-20 rounded-full border-2 border-indigo-400" />
                     <div>
                       <h3 className="text-2xl font-bold">{selectedMember.name}</h3>
                       <p className="text-indigo-600 font-medium">{selectedMember.role} Developer</p>
                     </div>
+                    
                   </div>
                   <div className={`space-y-2 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
                     <p className="flex items-center gap-2 text-sm"><MdEmail /> {selectedMember.email}</p>
@@ -373,6 +398,7 @@ const ProjectDetails = () => {
                   </div>
                   <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm leading-relaxed`}>{selectedMember.description}</p>
                 </div>
+                 
               ) : (
               <div className={`${theme==='dark'?'text-gray-200':'text-gray-500'} text-center mt-12 py-10 rounded-xl border border-dashed border-gray-300`}>
                   Click a team member to view details

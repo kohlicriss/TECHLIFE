@@ -17,11 +17,19 @@ const Attendance = () => {
     const [selectedPeriod, setSelectedPeriod] = useState('Today');
     const totalAttendance = 104;
     const data = [
-        { name: 'Present', value: 60, color: '#10b981' },
-        { name: 'Late', value: 20, color: '#1e3a8a' },
-        { name: 'Permission', value: 20, color: '#facc15' },
-        { name: 'Absent', value: 4, color: '#ef4444' },
+        { name: 'Present', value: 60 },
+        { name: 'Late', value: 20 },
+        { name: 'Permission', value: 20},
+        { name: 'Absent', value: 4 },
     ];
+    const statusColorMap = {
+       "Present": "text-green-600",
+       "Late": "text-blue-600",
+       "Permission": "text-yellow-600",
+       "Absent": "text-red-600",
+    };
+    const color=["#4CAF50","#2196F3","#FFC107","#EF5350"];
+
     const chartData = [...data];
     const {theme} = useContext(Context);
 
@@ -64,7 +72,7 @@ const Attendance = () => {
                             cornerRadius={5}
                         >
                             {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                <Cell key={`cell-${index}`} fill={color[index % color.length]} />
                             ))}
                         </Pie>
                         <Tooltip />
@@ -84,14 +92,14 @@ const Attendance = () => {
                             {data.map((item, index) => (
                                 <motion.li
                                     key={item.name}
-                                    className={`flex items-center  font-medium ${theme==='dark' ? 'text-white ':'text-gray-700 '}`}
+                                    className={`flex items-center  font-medium ${theme==='dark' ? 'text-white ': statusColorMap[item.name] || 'text-gray-700 '}`}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
                                 >
                                     <span
                                         className="inline-block h-3 w-3 rounded-full mr-3 ring-2 ring-white"
-                                        style={{ backgroundColor: item.color }}
+                                        style={{ backgroundColor: color[index % color.length] }}
                                     ></span>
                                     {item.name}
                                 </motion.li>

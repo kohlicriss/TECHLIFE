@@ -308,13 +308,22 @@ const MyTeam = () => {
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
 
     const initialEmployeeData = [
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Rajesh", employee_id: "E_01", date: "2025-06-30",role:"Full stack Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Ramesh", employee_id: "E_02", date: "2025-06-30",role:"Backend Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Ramya", employee_id: "E_05", date: "2025-06-30",role:"Devops Engineer", login_time: null, logout_time: null },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Swetha", employee_id: "E_07", date: "2025-06-30",role:"Tester", login_time: "10:00 AM", logout_time: "07:00 PM" },
-        { name: "https://randomuser.me/api/portraits/men/32.jpg Rohit", employee_id: "E_09", date: "2025-06-30",role:"Tester", login_time: null, logout_time: null },
-        { name: "https://randomuser.me/api/portraits/women/65.jpg Deepika", employee_id: "E_11", date: "2025-06-30",role:"Designer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "Rajesh",   employee_id: "E_01", date: "2025-06-30",role:"Full stack Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "Ramesh",   employee_id: "E_02", date: "2025-06-30",role:"Backend Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "Ramya",  employee_id: "E_05", date: "2025-06-30",role:"Devops Engineer", login_time: null, logout_time: null },
+        { name: "Swetha", employee_id: "E_07", date: "2025-06-30",role:"Tester", login_time: "10:00 AM", logout_time: "07:00 PM" },
+        { name: "Rohit",    employee_id: "E_09", date: "2025-06-30",role:"Tester", login_time: null, logout_time: null },
+        { name: "Deepika", employee_id: "E_11", date: "2025-06-30",role:"Designer", login_time: "10:00 AM", logout_time: "07:00 PM" },
     ];
+    
+    const ImageMap={
+        "Rajesh":"https://randomuser.me/api/portraits/men/32.jpg" , 
+        "Ramesh": "https://randomuser.me/api/portraits/men/32.jpg" ,  
+        "Ramya": "https://randomuser.me/api/portraits/women/65.jpg",  
+        "Swetha": "https://randomuser.me/api/portraits/women/65.jpg",  
+        "Rohit": "https://randomuser.me/api/portraits/men/32.jpg",     
+        "Deepika": "https://randomuser.me/api/portraits/women/65.jpg",
+    }
 
     const [employeeData, setEmployeeData] = useState(initialEmployeeData);
     const [showForm, setShowForm] = useState(false);
@@ -464,17 +473,15 @@ const MyTeam = () => {
                                                 title={`View ${name}'s Performance`}
                                                 whileHover={{ scale: 1.1 }}
                                             >
-                                                {imageUrl ? (
+                                                
                                                     <img
-                                                        src={imageUrl}
+                                                        src={ImageMap[name] || "https://randomuser.me/api/portraits/lego/1.jpg"}
                                                         alt={name}
                                                         className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
                                                     />
-                                                ) : (
-                                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full  flex items-center justify-center text-gray-500 font-bold  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}>
-                                                        {name.charAt(0)}
-                                                    </div>
-                                                )}
+                                                
+                                                   
+                                                
                                             </motion.div>
                                         </td>
                                         <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{emp.employee_id}</td>
@@ -688,12 +695,55 @@ function Project() {
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
 
     const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",Lead_Img: "https://i.pravatar.cc/40?img=19", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ],more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",Lead_Img:"https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",        more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",  more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",   more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",     more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
+
+    const teamLeadImageMap = {
+        Naveen: "https://i.pravatar.cc/40?img=1",
+        Rajiv: "https://i.pravatar.cc/40?img=2",
+        Manikanta: "https://i.pravatar.cc/40?img=3",
+        Ravinder: "https://i.pravatar.cc/40?img=4",
+        Sravani: "https://i.pravatar.cc/40?img=5",
+        Gayatri: "https://i.pravatar.cc/40?img=6"
+    };
+
+    const teamImagesMap = {
+        P_01: [
+            "https://randomuser.me/api/portraits/men/32.jpg",
+            "https://randomuser.me/api/portraits/women/65.jpg",
+            "https://randomuser.me/api/portraits/men/76.jpg"
+        ],
+        P_02: [
+            "https://randomuser.me/api/portraits/men/15.jpg",
+            "https://randomuser.me/api/portraits/women/22.jpg"
+        ],
+        P_03: [
+            "https://randomuser.me/api/portraits/men/11.jpg"
+        ],
+        P_04: [
+            "https://randomuser.me/api/portraits/men/55.jpg",
+            "https://randomuser.me/api/portraits/women/88.jpg",
+            "https://randomuser.me/api/portraits/men/99.jpg",
+            "https://randomuser.me/api/portraits/women/78.jpg"
+        ],
+        P_05: [
+            "https://randomuser.me/api/portraits/men/66.jpg",
+            "https://randomuser.me/api/portraits/women/77.jpg",
+            "https://randomuser.me/api/portraits/men/12.jpg",
+            "https://randomuser.me/api/portraits/women/23.jpg",
+            "https://randomuser.me/api/portraits/men/45.jpg"
+        ],
+        P06: [
+            "https://randomuser.me/api/portraits/men/21.jpg",
+            "https://randomuser.me/api/portraits/women/43.jpg",
+            "https://randomuser.me/api/portraits/men/87.jpg"
+        ]
+    };
+
     const getPriorityColor = (priority) => {
         switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
     const getStatusColor = (status) => {
@@ -1209,16 +1259,31 @@ const handleRowClick = (proj) => {
                             >
                                 <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
                                 <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> 
-                                    <motion.img key={index} src={proj.Lead_Img} alt={proj.Team_Lead} className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />{proj.Team_Lead}
+                                     <motion.img
+                                            src={teamLeadImageMap[proj.Team_Lead] || "https://i.pravatar.cc/40?img=19"} // Fallback image
+                                            alt={proj.Team_Lead}
+                                            className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm inline-block mr-2"
+                                            whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
+                                        />
+                                        {proj.Team_Lead}
                                     
                                 </td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <div className="flex -space-x-2 ">
-                                        {proj.Employee_team.map((img, index) => (
-                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
-                                        ))}
-                                    </div>
-                                    <motion.span className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}>{proj.more}</motion.span>
+                                    <div className="flex -space-x-2">
+                                            {(teamImagesMap[proj.project_id] || []).slice(0, 3).map((imgUrl, i) => (
+                                                <motion.img
+                                                    key={i}
+                                                    src={imgUrl}
+                                                    alt={`Team member ${i + 1}`}
+                                                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm"
+                                                    whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
+                                                />
+                                            ))}
+                                            {proj.more && (
+                                                <span className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 text-xs font-bold border-2 border-white shadow-sm">{proj.more}</span>
+                                            )}
+                                        </div>
+
                                 </td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>

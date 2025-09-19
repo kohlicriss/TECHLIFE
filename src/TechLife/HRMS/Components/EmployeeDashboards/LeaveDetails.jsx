@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Context } from "../HrmsContext";
 
 const LeaveDetails = ({ leave, onClose }) => {
+  const {theme}=useContext(Context)
   if (!leave) return null;
   return (
     <AnimatePresence>
@@ -12,18 +14,18 @@ const LeaveDetails = ({ leave, onClose }) => {
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full relative"
+          className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100'} rounded-lg shadow-xl p-6 max-w-lg w-full relative`}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
         >
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
+            className={`w-10 h-10 absolute top-3 right-3 ${theme==='dark'?'text-gray-200':'text-gray-500'} hover:text-gray-700 text-xl`}
           >
             &times;
           </button>
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">Leave Request Summary</h2>
+          <h2 className={`text-2xl font-bold mb-4 ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Leave Request Summary</h2>
           <div className="space-y-2">
             <div><strong>Employee ID:</strong> {leave.EmployeeId}</div>
             <div><strong>Employee Name:</strong> {leave.EmployeeName}</div>
