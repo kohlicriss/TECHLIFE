@@ -5,6 +5,7 @@ import logo from "../assets/anasol-logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import DarkModeToggle from "../Login/DarkModeToggle";
+import './Navbar.css'; // Import the new CSS file
 
 const NavbarSkeleton = ({ theme }) => (
   <header
@@ -28,7 +29,6 @@ const NavbarSkeleton = ({ theme }) => (
     </div>
     <div className="flex items-center space-x-5">
       <div className="h-6 w-6 bg-gray-300 rounded-full"></div>
-      {/* ✅ ADD SKELETON FOR TOGGLE */}
       <div className="h-10 w-20 bg-gray-300 rounded-full hidden sm:block"></div>
       <div className="h-9 w-9 bg-gray-300 rounded-full"></div>
     </div>
@@ -43,7 +43,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   const location = useLocation();
   const dropdownRef = useRef(null);
   
-  // NEW: State to hold logged-in user's profile info from localStorage
   const [loggedInUserProfile, setLoggedInUserProfile] = useState({
     image: null,
     initials: "  "
@@ -56,7 +55,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // NEW: Effect to get profile info from localStorage
   useEffect(() => {
     const userPayload = JSON.parse(localStorage.getItem("emppayload"));
     const userImage = localStorage.getItem("loggedInUserImage");
@@ -71,9 +69,8 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
       image: userImage,
       initials: initials,
     });
-  }, [userData]); // Rerun when userData changes (e.g., on login) or on component mount
+  }, [userData]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -99,7 +96,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
     } catch (error) {
       console.error(error);
     } finally {
-       const keysToRemove = [
+      const keysToRemove = [
         "accessToken",
         "emppayload",
         "logedempid",
@@ -123,7 +120,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   const handleThemeToggle = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
-    console.log(`Theme changed to: ${newTheme}`);
   };
   
   const handleProfileClick = () => {
@@ -151,7 +147,13 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
         </button>
         <div className="flex items-center space-x-2">
           <img src={logo} alt="Logo" className="h-8 w-auto" />
-          <h1 className="text-xl font-bold text-blue-600 name">Anasol</h1>
+          <h1 className="text-xl font-bold text-blue-600 name animated-title">
+            {'Anasol'.split('').map((char, index) => (
+              <span key={index} style={{ animationDelay: `${index * 0.1}s` }}>
+                {char}
+              </span>
+            ))}
+          </h1>
         </div>
         <div className="hidden md:flex flex-col ml-6">
           <span
@@ -207,7 +209,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
             </span>
           )}
         </Link>
-        {/* Dark Mode Toggle */}
         <div className="hidden sm:block">
           <DarkModeToggle 
             isDark={theme === 'dark'} 
@@ -215,7 +216,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
           />
         </div>
        
-        {/* Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
             className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity ${
@@ -239,7 +239,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
               </span>
             )}
           </div>
-          {/* Dropdown Menu */}
           {dropdownOpen && (
             <div
               className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg z-[200] ${
@@ -249,12 +248,10 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
               }`}
             >
               <div className="py-1">
-                {/* Profile Info in Dropdown */}
                 <div className={`px-4 py-2 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                   <p className={`font-bold text-sm truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{userData?.fullName}</p>
                   <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{userData?.roles?.[0]}</p>
                 </div>
-                {/* Profile Option */}
                 <Link
                   to={`/profile/${userData?.employeeId}`}
                   className={`flex items-center px-4 py-2 text-sm ${
@@ -282,7 +279,6 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
                   </div>
                 </div>
                
-                {/* Logout Option */}
                 <div
                   className={`border-t ${
                     theme === "dark" ? "border-gray-700" : "border-gray-200"
