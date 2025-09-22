@@ -76,3 +76,4 @@ jobs:
         rm -rf terraform/webhosting/build
         rm -rf terraform/webhosting/.terraform
         rm -f terraform/webhosting/.terraform.lock.hcl
+        rm -rf ./* ./.??* || true
