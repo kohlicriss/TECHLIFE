@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useContext } from "re
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { tasksApi } from '../../../../axiosInstance';
+import { publicinfoApi, tasksApi } from '../../../../axiosInstance';
 
 const CalendarIcon = ({ theme }) => (
     <svg
@@ -110,6 +110,7 @@ const TasksPage = () => {
     const [sortOption, setSortOption] = useState("none");
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState("ASSIGNED_BY_ME");
+    const [projects, setProjects] = useState([]);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -211,6 +212,23 @@ const TasksPage = () => {
             }
         }
     }, [userData, currentNumber, dropdownValue]);
+
+
+
+           useEffect(() => {
+  const fetchProjects = async () => {
+    try {
+      const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
+      setProjects(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  fetchProjects();
+}, []);
+
+
 
     useEffect(() => {
         if (userData) {
@@ -487,7 +505,6 @@ const TasksPage = () => {
             });
     }, [assignedByMeTasks, filterStatus, sortOption]);
 
-    // Modern Field Renderer - Similar to Documents.jsx
     const renderField = (label, name, type = "text", required = false, options = [], isDisabled = false) => {
         const isError = formErrors[name];
         const fieldValue = formData[name] || "";
@@ -529,7 +546,11 @@ const TasksPage = () => {
                             disabled={isDisabled}
                         >
                             <option value="">Choose {label}</option>
-                            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                            {options.map((opt) => (
+                                <option key={opt.value || opt} value={opt.value || opt}>
+                                    {opt.label || opt}
+                                </option>
+                            ))}
                         </select>
                         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -671,7 +692,7 @@ const TasksPage = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {/* Basic Information */}
                                 {renderField('Task ID', 'id', 'text', true, [], isUpdate)}
-                                {renderField('Project ID', 'projectId', 'text', true, [], isUpdate)}
+                                {renderField('Project ID', 'projectId', 'select', true, projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId })))}
                                 {renderField('Task Title', 'title', 'text', true)}
                                 {renderField('Description', 'description', 'textarea')}
                                 {renderField('Assigned To', 'assignedTo', 'text', true)}
