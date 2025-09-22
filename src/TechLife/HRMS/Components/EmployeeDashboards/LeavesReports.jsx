@@ -78,7 +78,7 @@ const Attendance = () => {
                         <Tooltip />
                     </PieChart>
                 </ResponsiveContainer>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-12">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-18">
                     <p className={`text-sm font-medium ${theme==='dark' ? 'text-white ':'text-gray-500 '}`}> Total Attendance</p>
                     <p className={`text-4xl font-bold ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{totalAttendance}</p>
                 </div>
@@ -162,22 +162,22 @@ const Data = [
     }
 ];
 
-const ChartCard = ({ title, titlecolor, value, icon, color, trends, trendPercentage, trendPeriod }) => {
+const ChartCard = ({ title, icontextcolor, value, icon, color, trends, trendPercentage, trendPeriod }) => {
     const isUp = trends === 'up';
     const {theme} = useContext(Context);
     return (
         <motion.div
-            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
+            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl   transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             whileHover={{ scale: 1.05 }}
         >
-            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-3 ${color}`}>
+            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-3 ${color}  ${icontextcolor}`}>
                 {React.cloneElement(icon, { className: `w-8 h-8 rounded-full` })}
             </div>
             <div>
-                <h3 className={`text-xl font-semibold ${titlecolor}`}>{title}</h3>
+                <h3 className={`text-xl font-semibold  ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{title}</h3>
                 <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{value}</p>
             </div>
             <div className="flex items-center mt-auto">
@@ -201,17 +201,17 @@ const LeaveCharts = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
                 <AnimatePresence>
                     {Data.map((data, index) => {
-                        let icon, titlecolor, colorHandler;
+                        let icon, icontextcolor, colorHandler;
 
                         switch (data.title) {
-                            case "Total Present": icon = <FaUsers className="w-4 h-4 text-white" />; colorHandler = "bg-green-200"; titlecolor = "text-green-400"; break;
-                            case "Paid Leaves": icon = <FaRegUser className="w-4 h-4 text-white" />; colorHandler = "bg-pink-200"; titlecolor = "text-pink-400"; break;
-                            case "Unpaid Leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-yellow-200"; titlecolor = "text-yellow-400"; break;
-                            case "Pending Request": icon = <FaUserEdit className="w-4 h-4 text-white" />; colorHandler = "bg-blue-200"; titlecolor = "text-blue-400"; break;
-                            default: icon = <CircleUserRound className="w-4 h-4 text-white" />; colorHandler = "bg-gray-300";
+                            case "Total Present": icon = <FaUsers className="w-4 h-4 text-white" />; colorHandler = "bg-green-100"; icontextcolor = "text-green-300"; break;
+                            case "Paid Leaves": icon = <FaRegUser className="w-4 h-4 text-white" />; colorHandler = "bg-pink-100"; icontextcolor = "text-pink-300"; break;
+                            case "Unpaid Leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-yellow-100";icontextcolor = "text-yellow-300"; break;
+                            case "Pending Request": icon = <FaUserEdit className="w-4 h-4 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-300"; break;
+                            default: icon = <CircleUserRound className="w-4 h-4 text-white" />; colorHandler = "bg-gray-100";
                         }
                         return (
-                            <ChartCard key={index} icon={icon} color={colorHandler} titlecolor={titlecolor} value={data.value} title={data.title} trends={data.trends} trendPercentage={data.trendPercentage} trendPeriod={data.trendPeriod} />
+                            <ChartCard key={index} icon={icon} color={colorHandler} icontextcolor={icontextcolor} value={data.value} title={data.title} trends={data.trends} trendPercentage={data.trendPercentage} trendPeriod={data.trendPeriod} />
                         );
                     })}
                 </AnimatePresence>
@@ -469,8 +469,8 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                            </select>
                        </div>
                    </div>
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 border border-blue-500">
+            <div className="overflow-x-auto rounded-lg border border-blue-500">
+                <table className="min-w-full divide-y divide-gray-200">
                     <thead className={`bg-gray-50  ${theme==='dark' ? ' bg-gray-500 text-white':''}`}>
                         <tr>
                             <th className={`w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Employee_ID </th>
@@ -643,7 +643,7 @@ function LeavesReports({ onBack, leaveHistoryData,setLeaveHistoryData }) {
     const { theme } = useContext(Context);
     return (
         <motion.div
-            className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-stone-100 text-gray-900'}`}
+            className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

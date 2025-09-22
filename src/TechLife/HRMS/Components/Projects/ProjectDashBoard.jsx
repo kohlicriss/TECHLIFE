@@ -3,7 +3,7 @@ import { CircleUserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip, FaUsers } from 'react-icons/fa';
+import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip, FaUsers, FaRegFolderOpen } from 'react-icons/fa';
 import axios from 'axios';
 import { Context } from '../HrmsContext';
 import classNames from 'classnames';
@@ -14,14 +14,6 @@ const projects = [
     {
         name: "HRMS Project",
         description: " The HRMS Project is a comprehensive web-based solution designed to streamline and automate all core HR processes within an organization. It enhances operational efficiency by integrating modules like employee records, attendance tracking, leave management, payroll, and performance evaluations into one centralized system.",
-        highlights: [
-            " Centralized Employee Database",
-            " Automated Attendance & Leave Tracking",
-            " Payroll Automation",
-            " Performance Management",
-            " Role-Based Access Control",
-        ],
-        characteristics: ["Enterprise-grade, scalable", "highly integrated", "compliance-focused", "data-intensive."],
         team: [
             { role: "Project Manager", avatars: [1] },
             { role: "Backend Developers", avatars: [4] },
@@ -34,14 +26,6 @@ const projects = [
     {
         name: "Employee Self-Service App",
         description: "The Employee Self-Service App is a user-friendly platform that empowers employees to independently manage their personal, professional, and administrative tasks. It reduces HR workload by allowing employees to access and update their records, apply for leaves, view payslips, and track attendance—all from a mobile or web interface.",
-        highlights: [
-            " Profile Management",
-            " Leave Application & Status Tracking",
-            " Attendance Overview",
-            " Request Management",
-            " Mobile-Responsive Design",
-        ],
-        characteristics: ["User-centric", "mobile-first", "intuitive", "secure, responsive."],
         team: [
             { role: "Product Owner", avatars: [1] },
             { role: "Mobile Developers", avatars: [2] },
@@ -53,14 +37,6 @@ const projects = [
     {
         name: "Payroll Automation",
         description: "The Payroll Automation system is designed to streamline and automate the entire payroll process, ensuring accurate, timely, and compliant salary disbursements. It eliminates manual calculations and reduces errors by integrating attendance, leaves, tax regulations, and employee benefits into a seamless payroll workflow",
-        highlights: [
-            " Automated Salary Calculations",
-            " Monthly & On-Demand Payroll Runs",
-            " Payslip Generation & Distribution",
-            " Bank Integration for Direct Deposits",
-            " Customizable Pay Structures",
-        ],
-        characteristics: ["High accuracy", "compliance-driven", "secure, scalable", "integration-focused."],
         team: [
             { role: "Lead Developer", avatars: [1] },
             { role: "Backend Developers", avatars: [3] },
@@ -72,15 +48,7 @@ const projects = [
     {
         name: "Attendance System Upgrade",
         description: "The Attendance System Upgrade modernizes and enhances the organization’s time-tracking infrastructure. It introduces advanced features like biometric integration, real-time monitoring, geo-tagging, and seamless syncing with payroll and HR modules—ensuring higher accuracy, reduced time theft, and improved workforce accountability.",
-        highlights: [
-            " Real-Time Attendance Tracking",
-            " Geo-Tagging & Geo-Fencing ",
-            " Biometric & RFID Integration",
-            " Mobile App Clock-In ",
-            " Auto-Sync with Payroll & HRMS",
-
-        ],
-        characteristics: ["Accurate", "real-time, robust", "integrated", "user-friendly."],
+        
         team: [
             { role: "System Architect", avatars: [1] },
             { role: "Software Engineers", avatars: [2] },
@@ -92,15 +60,7 @@ const projects = [
     {
         name: "AI-Based Recruitment Tool",
         description: " The AI-Based Recruitment Tool is an intelligent hiring platform that leverages machine learning and natural language processing to automate and optimize the recruitment lifecycle. From resume screening to candidate ranking and interview scheduling, it reduces time-to-hire, eliminates bias, and enhances talent acquisition efficiency.",
-        highlights: [
-            " AI-Powered Resume Screening",
-            " Natural Language Processing (NLP)",
-            " Automated Interview Scheduling",
-            " Job Recommendation Engine",
-            " Video Interview Analysis",
-            " Real-Time Hiring Analytics"
-        ],
-        characteristics: ["Intelligent", "efficient", "data-driven", "scalable", "integrates with external platforms."],
+       
         team: [
             { role: "AI/ML Engineer", avatars: [1] },
             { role: "Data Scientists", avatars: [1] },
@@ -112,14 +72,7 @@ const projects = [
     {
         name: "Internal Chatbot System",
         description: "The Internal Chatbot System is an AI-driven virtual assistant designed to support employees with instant responses to HR, IT, and general organizational queries. Integrated within the company’s intranet or collaboration tools, it enhances internal communication, reduces manual support workload, and provides 24/7 self-service access to information.",
-        highlights: [
-            " 24/7 Virtual Assistant",
-            " HR & IT Support Automation",
-            " AI/NLP-Based Understanding",
-            " Meeting Scheduling & Reminders"
-
-        ],
-        characteristics: ["AI-powered", "responsive", "multi-channel", "helpful, analytical."],
+       
         team: [
             { role: "AI Chatbot Developer", avatars: [1] },
             { role: "Content Specialist", avatars: [1] },
@@ -129,6 +82,35 @@ const projects = [
         duration: "5 months"
     }
 ];
+const projectData = {
+    projectDetails: {
+      client: "ABC Enterprises",
+      totalCost: "$1400",
+      DaysToWork: "120 days",
+      createdOn: "14 Nov 2024",
+      startedOn: "15 Jan 2025",
+      dueDate: "15 Nov 2025",
+      dueAlert: 1,
+      createdBy: {
+        name: "Priya Rathod",
+      },
+      priority: "High"
+    },
+    
+  };
+ 
+  
+    const firstColumnData = {
+        createdBy: projectData.projectDetails.createdBy,
+    
+    };
+
+    const secondColumnData = {
+        client: projectData.projectDetails.client,
+        totalCost: projectData.projectDetails.totalCost,
+        DaysToWork: projectData.projectDetails.DaysToWork,
+        priority: projectData.projectDetails.priority,
+    };
 const projectIconMap = {
     "HRMS Project": { icon: "👥", color: "text-indigo-500" },
     "Employee Self-Service App": { icon: "📱", color: "text-green-500" },
@@ -149,7 +131,7 @@ const ProjectCard = () => {
     const goToPreviousProject = () => {
         setCurrentIndex((prevIndex) => (prevIndex - 1 + projects.length) % projects.length);
     };
-
+    const getAvatarUrl = (index) => `https://i.pravatar.cc/40?img=${index + 1}`;
     return (
         <motion.div
             className={`relative p-6  rounded-lg shadow-xl mx-auto border border-gray-200  ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
@@ -158,6 +140,7 @@ const ProjectCard = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
+            
         >
             {/* Duration Button */}
             <motion.button
@@ -198,67 +181,54 @@ const ProjectCard = () => {
                 {currentProject.description}
             </motion.p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2 ">
                 {/* Highlights */}
-                <motion.div
-                    className={`p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-purple-50 to-purple-100 '}`}
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
-                >
-                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}> Highlights</h3>
-                    <ul className={`space-y-3  ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
-                        {currentProject.highlights.map((highlight, index) => (
-                            <motion.li
-                                key={index}
-                                className="flex items-start text-base sm:text-lg"
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: 0.5 + index * 0.1 }}
-                            >
-                                <span className="mr-2 text-green-500 text-xl">✔️</span>
-                                {highlight}
-                            </motion.li>
-                        ))}
-                    </ul>
-                </motion.div>
+                 
+                 <motion.div
+            className={`p-3 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-50 to-blue-100'}`}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
+        >
+            <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Details</h2>
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* First Column */}
+                <div className="md:w-1/2 flex flex-col justify-center items-center p-4 border border-dashed rounded-lg">
+                    <img src={getAvatarUrl(0)} alt={firstColumnData.createdBy.name} className="w-20 h-20 rounded-full mb-2" />
+                    <p className="text-lg font-semibold">{firstColumnData.createdBy.name}</p>
+                    <p className="text-sm text-gray-500">Reported By</p>
+                </div>
 
-                {/* Characteristics */}
-                <motion.div
-                    className={` p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-pink-50 to-pink-100'}`}
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 0.5 }}
-                    whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
-                >
-                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}> Characteristics</h3>
-                    <ul className={`space-y-3 text-gray-700 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
-                        {currentProject.characteristics.map((char, index) => (
-                            <motion.li
-                                key={index}
-                                className="flex items-start text-base sm:text-lg"
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: 0.6 + index * 0.1 }}
-                            >
-                                <span className="mr-2 text-blue-500 text-xl">🌟</span>
-                                {char}
-                            </motion.li>
-                        ))}
-                    </ul>
-                </motion.div>
+                {/* Second Column with four side-by-side items */}
+                <div className="md:w-1/2 grid grid-cols-2 gap-4">
+                    {Object.entries(secondColumnData).map(([key, value]) => {
+                        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return (
+                            <div key={key} className={`p-2 rounded-lg shadow-sm ${theme === 'dark' ? 'bg-gray-700' : 'bg-gradient-to-br from-blue-50 to-blue-100'}`}>
+                                <dt className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} text-xs font-medium uppercase`}>{label}</dt>
+                                <dd className={`mt-1 text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>{value}</dd>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </motion.div>
+               
+
+               
+                
 
                 {/* Team */}
                 <motion.div
-                    className={` p-6 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-indigo-100'}`}
+                    className={` p-3 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-indigo-100'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
                     whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
                     <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>Team</h3>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         {currentProject.team.map((teamMember, index) => (
                             <motion.div
                                 key={index}
@@ -280,22 +250,66 @@ const ProjectCard = () => {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 flex-wrap gap-4">
-                <motion.button
-                    onClick={goToPreviousProject}
-                    className="flex-grow sm:flex-grow-0 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out flex items-center justify-center"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    <span className="text-2xl mr-2">◀️</span> Previous Project
-                </motion.button>
-                <motion.button
-                    onClick={goToNextProject}
-                    className="flex-grow sm:flex-grow-0 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out flex items-center justify-center"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    Next Project <span className="text-2xl ml-2">▶️</span>
-                </motion.button>
+               
+<div class="relative inline-flex items-center justify-center gap-4 group">
+  <div
+    class="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
+  ></div>
+  <a
+    role="button"
+    class="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
+    title="payment"
+    onClick={goToPreviousProject}
+    href="#"
+    >Previous Project<svg
+      aria-hidden="true"
+      viewBox="0 0 10 10"
+      height="10"
+      width="10"
+      fill="none"
+      class="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
+    >
+      <path
+        d="M0 5h7"
+        class="transition opacity-0 group-hover:opacity-100"
+      ></path>
+      <path
+        d="M1 1l4 4-4 4"
+        class="transition group-hover:translate-x-[3px]"
+      ></path>
+    </svg>
+  </a>
+</div>
+
+                <div class="relative inline-flex items-center justify-center gap-4 group">
+  <div
+    class="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
+  ></div>
+  <a
+    role="button"
+    class="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
+    title="payment"
+    onClick={goToNextProject}
+    href="#"
+    >Next Project<svg
+      aria-hidden="true"
+      viewBox="0 0 10 10"
+      height="10"
+      width="10"
+      fill="none"
+      class="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
+    >
+      <path
+        d="M0 5h7"
+        class="transition opacity-0 group-hover:opacity-100"
+      ></path>
+      <path
+        d="M1 1l4 4-4 4"
+        class="transition group-hover:translate-x-[3px]"
+      ></path>
+    </svg>
+  </a>
+</div>
             </div>
         </motion.div>
     );
@@ -358,7 +372,7 @@ const MyTeam = () => {
 
     return (
         <motion.div
-            className={` shadow-xl rounded-lg p-6 border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
+            className={` shadow-xl rounded-lg p-6 border border-blue-500 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-blue-50 to-blue-100'}`}
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
@@ -368,7 +382,7 @@ const MyTeam = () => {
                     My Team</h2>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-gradient-to-br from-blue-200 to-blue-500 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
+                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-blue-500':'bg-blue-50 text-blue-700'} border-lg border-blue-500 font-bold py-2 px-4 rounded-xl shadow transition`}
                         onClick={() => { setShowForm(true); setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" }); setEditIndex(null); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -395,33 +409,39 @@ const MyTeam = () => {
                             transition={{ duration: 0.3 }}
                      >    
                         <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-400">
-                        <h3 className="text-2xl font-bold  border-gray-200   pt-6  text-gray-600 border-lg pb-8">{editIndex !== null ? "Edit Team Member" : "Add Team Member"}</h3>  
+                        <h3 className="text-2xl font-bold  border-gray-200   pt-6  text-gray-600 border-lg pb-8"> <FaUsers className={`w-6 h-6 ${theme==='dark'?'text-white':'text-gray-800'}text-white`}/>{editIndex !== null ? "Edit Team Member" : "Add Team Member"}</h3>  
                         </div>
                         <div className="space-y-4 p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <div className='relative mb-2'>
                                 <label className={`block text-sm  font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Profile Image & Name</label>
-                            <input type="text" placeholder="Profile Image URL + Name" className="border p-2 w-full rounded" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                            <input type="text" placeholder="Profile Image URL + Name" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                             </div>
                             <div className='relative mb-2'>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee ID</label>
-                            <input type="text" placeholder="Employee ID" className="border p-2 w-full rounded" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
+                            <input type="text" placeholder="Employee ID" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
                             </div>
                             <div className='relative mb-2'>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Date</label>
-                            <input type="date" className="border p-2 w-full rounded" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                            <input type="date" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
                             </div>
                             <div className='relative mb-2'>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Role</label>
-                            <input type="text" placeholder="Role" className="border p-2 w-full rounded" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
+                            <input type="text" placeholder="Role" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
                             </div>
                             <div className='relative mb-2'>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Login Time</label>
-                            <input type="text" placeholder="Login Time" className="border p-2 w-full rounded" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
+                            <input type="text" placeholder="Login Time" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
                             </div>
                             <div className='relative mb-2'>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Logout Time</label>
-                            <input type="text" placeholder="Logout Time" className="border p-2 w-full rounded" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
+                            <input type="text" placeholder="Logout Time" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
                             </div>
                         </div>
                         <div className="flex gap-2 mt-2">
@@ -433,18 +453,17 @@ const MyTeam = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className={`w-full ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-blue-100 to-blue-400 text-black'}`}>
+            <div className="overflow-x-auto rounded-xl">
+                <table className="min-w-full ">
+                    <thead className={`w-full ${theme==='dark' ? 'bg-gray-500 text-white':'bg-blue-50 text-blue-800'}`}>
                         <tr> 
-                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}><FaUsers className={`w-6 h-6 ${theme==='dark'?'text-white':'text-gray-800'}text-white`} /></th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Emp ID</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Name</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Date</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Role</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
-                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
-                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Emp ID</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Name</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Date</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Role</th>
+                            <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
+                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
+                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
                         </tr>
                     </thead>
                     <tbody  className="bg-white divide-y divide-gray-500">
@@ -466,24 +485,7 @@ const MyTeam = () => {
                                         exit={{ opacity: 0, x: 20 }}
                                         transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <td className={`px-3 py-2 whitespace-nowrap text-sm text-gray-900 ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                            <motion.div
-                                                className={`cursor-pointer hover:opacity-80 transition-opacity  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
-                                                onClick={() => {/* handle profile click if needed */}}
-                                                title={`View ${name}'s Performance`}
-                                                whileHover={{ scale: 1.1 }}
-                                            >
-                                                
-                                                    <img
-                                                        src={ImageMap[name] || "https://randomuser.me/api/portraits/lego/1.jpg"}
-                                                        alt={name}
-                                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover  ${theme==='dark' ? 'bg-gray-500':'bg-gray-50'}`}
-                                                    />
-                                                
-                                                   
-                                                
-                                            </motion.div>
-                                        </td>
+                                       
                                         <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{emp.employee_id}</td>
                                         <td className={`px-4 py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 text-gray-200':'text-gray-900'}`}>{name}</td>
                                         <td className={`px-4 py-2 whitespace-nowrap text-sm  ${theme==='dark' ?  'bg-gray-500 text-gray-200':' text-gray-900'}`}>{emp.date}</td>
@@ -558,7 +560,7 @@ function ProjectStatus() {
 
      return (
         <motion.div
-            className={`p-6  rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'} `}
+            className={`p-6  rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-green-50 to-green-100'} `}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
@@ -567,7 +569,7 @@ function ProjectStatus() {
                 <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-gradient-to-br from-green-200 to-green-600 text-black font-bold py-2 px-4 rounded shadow transition"
+                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-green-500':'bg-green-50 text-green-700'} border-xl border-green-500 font-bold py-2 px-4 rounded-xl shadow transition`}
                         onClick={() => { setShowForm(true); setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" }); setEditIndex(null); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -599,19 +601,23 @@ function ProjectStatus() {
                             <div className="grid grid-cols-1 gap-2">
                                 <div className='relative mb-2'>
                                  <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project ID</label>   
-                                <input type="text" placeholder="Project ID" className="border p-2 w-full rounded" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
+                                <input type="text" placeholder="Project ID" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
                                 </div>
                                 <div className='relative mb-2'>
                                 <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project Name</label>   
-                                <input type="text" placeholder="Project Name" className="border p-2 w-full rounded" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
+                                <input type="text" placeholder="Project Name" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
                                 </div>
                                 <div className='relative mb-2'>
                                 <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Status (%)</label>
-                                <input type="number" placeholder="Status (%)" className="border p-2 w-full rounded" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
+                                <input type="number" placeholder="Status (%)" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
                                 </div>
                                 <div className='relative mb-2'>
                                 <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Duration</label>
-                                <input type="text" placeholder="Duration" className="border p-2 w-full rounded" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
+                                <input type="text" placeholder="Duration" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
                                 </div>
                             </div>
                             <div className="flex gap-2 mt-2 justify-center">
@@ -625,10 +631,10 @@ function ProjectStatus() {
             </AnimatePresence>
             
     {/* Table container with responsive overflow */}
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg">
         <table className={`min-w-full  divide-y divide-gray-200  `}>
-            <thead>
-                <tr className={`text-left  w-full text-sm  uppercase tracking-wider ${theme==='dark'?'bg-gray-500 text-white  ':'bg-gradient-to-br from-green-100 to-green-400 '}`}>
+            <thead className="border border-green-500">
+                <tr className={`text-left  w-full text-sm  uppercase  tracking-wider border border-green-500 ${theme==='dark'?'bg-gray-500 text-white  ':'bg-green-50 text-green-700'}`}>
                     <th className="py-2 px-4 font-semibold">Project ID</th>
                     <th className="py-2 px-4 font-semibold">Project Name</th>
                     <th className="py-2 px-4 font-semibold">Duration</th>
@@ -849,7 +855,7 @@ const handleRowClick = (proj) => {
 };
     return (
         <motion.div
-            className={`p-6  rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
+            className={`p-6  rounded-2xl shadow-xl border border-purple-500 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-purple-50 to-purple-100 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
@@ -861,7 +867,7 @@ const handleRowClick = (proj) => {
                     <select
                        value={statusFilter}
                        onChange={(e) => setStatusFilter(e.target.value)}
-                       className={`bg-gradient-to-br from-orange-100 to-orange-400  text-gray-800 font-medium rounded px-4 py-2 text-sm shadow hover:bg-orange-500  shadow transition`}
+                       className={`${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50  text-purple-700'} border border-purple-500   font-medium rounded-xl px-4 py-2 text-sm shadow   shadow transition`}
                     >
                      <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select Status</option>
                      <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
@@ -872,7 +878,7 @@ const handleRowClick = (proj) => {
             </div>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
+                        className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
                         onClick={() => setShowCreateForm(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -885,12 +891,12 @@ const handleRowClick = (proj) => {
             <AnimatePresence>
                 {showCreateForm && (
                     <motion.div
-                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        className="fixed backdrop-blur-sm bg-opacity-30 inset-0 z-50 flex items-center justify-center "
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     >
-                         <motion.div className="relative w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
+                         <motion.div className="relative  w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
                         <motion.form
                             className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
                             onSubmit={handleCreateProject}
@@ -899,8 +905,10 @@ const handleRowClick = (proj) => {
                             exit={{ scale: 0.9, y: 50 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
-                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6   border-lg pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Create New Project</h3>
+                            <div className="  mb-4 text-start rounded-t bg-gradient-to-br from-purple-400 to-purple-700">
+                                 
+                                           
+                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6 ml-10   border-lg pb-8 ${theme === 'dark' ? 'text-gray-200 ' : 'text-gray-800 '}`}>Create New Project</h3>
                             </div>
                             <div className="space-y-4 p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -910,7 +918,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="text"
                                     placeholder="Project Name"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
                                     required
@@ -922,17 +931,19 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="text"
                                     placeholder="Team Lead + Profile image URl"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                    required
+                                    required 
                                 />
                                 </div>
                                 <div className="relative mt-1">
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
                                  
                                 <select
-                                    className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.status}
                                     onChange={e => setNewProject({ ...newProject, status: e.target.value })}
                                 >
@@ -946,7 +957,8 @@ const handleRowClick = (proj) => {
                                     <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
                                 <input
                                     type="date"
-                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.start_date}
                                     onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
                                     required
@@ -956,7 +968,8 @@ const handleRowClick = (proj) => {
                                     <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
                                 <input
                                     type="date"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.end_date}
                                     onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
                                     required
@@ -966,7 +979,8 @@ const handleRowClick = (proj) => {
                                 <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
                              
                                 <select
-                                   className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                                   className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.Priority}
                                     onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
                                 >
@@ -982,7 +996,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="number"
                                     placeholder="Open Tasks"
-                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Open_task}
                                     onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
                                 />
@@ -992,7 +1007,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="number"
                                     placeholder="Closed Tasks"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Closed_task}
                                     onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
                                 />
@@ -1002,7 +1018,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="number"
                                     placeholder="Rating (1-5)"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     min="1"
                                     max="5"
                                     value={newProject.rating}
@@ -1012,7 +1029,8 @@ const handleRowClick = (proj) => {
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
                                     <textarea
-                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.Employee_team}
                                         onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
                                     />
@@ -1020,7 +1038,8 @@ const handleRowClick = (proj) => {
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
                                     <textarea
-                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.remark}
                                         onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
                                     />
@@ -1028,21 +1047,23 @@ const handleRowClick = (proj) => {
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
                                     <textarea
-                                        className={`border p-2 rounded shadow-sm w-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.completionNote}
                                         onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                        Related Links</label>
+                                        Related Links:</label>
                                     {newProject.relatedLinks.map((link, index) => (
                                         <div key={index} className="flex gap-2 mb-0">
                                             <input
                                                 type="url"
                                                 value={link}
                                                 onChange={e => handleRelatedLinkChange(index, e.target.value)}
-                                                className={`flex-1 px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                                className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                                 placeholder="Enter related link URL"
                                             />
                                             <button
@@ -1228,12 +1249,12 @@ const handleRowClick = (proj) => {
         </motion.div>
     )}
 </AnimatePresence>
-            <table className="min-w-full bg-white">
-                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800'}`}>
-                    <tr>
+          <div className="overflow-x-auto rounded-xl  ">
+            <table className="min-w-full bg-white  ">
+                <thead className={` text-left uppercase tracking-wider border border-purple-500 ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
+                    <tr className={" border border-purple-500"}>
                         <th className="p-3 text-sm md:text-base">Project</th>
                         <th className="p-3 text-sm md:text-base">Team_Lead</th>
-                        <th className="p-3 text-sm md:text-base">Team</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
                         <th className="p-3 text-sm md:text-base">Priority</th>
@@ -1244,7 +1265,7 @@ const handleRowClick = (proj) => {
                         {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
-                <tbody  className="bg-white divide-y divide-gray-500">
+                <tbody  className="bg-white   ">
                     <AnimatePresence>
                         {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
                         .map((proj, index) => (
@@ -1267,23 +1288,6 @@ const handleRowClick = (proj) => {
                                         />
                                         {proj.Team_Lead}
                                     
-                                </td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <div className="flex -space-x-2">
-                                            {(teamImagesMap[proj.project_id] || []).slice(0, 3).map((imgUrl, i) => (
-                                                <motion.img
-                                                    key={i}
-                                                    src={imgUrl}
-                                                    alt={`Team member ${i + 1}`}
-                                                    className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm"
-                                                    whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
-                                                />
-                                            ))}
-                                            {proj.more && (
-                                                <span className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 text-xs font-bold border-2 border-white shadow-sm">{proj.more}</span>
-                                            )}
-                                        </div>
-
                                 </td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
@@ -1340,6 +1344,7 @@ const handleRowClick = (proj) => {
                     </AnimatePresence>
                 </tbody>
             </table>
+            </div>
         </motion.div>
     );
 }

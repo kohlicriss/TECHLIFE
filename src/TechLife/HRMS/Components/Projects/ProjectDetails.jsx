@@ -5,10 +5,11 @@ import { FaRegFolderOpen } from "react-icons/fa";
 import { TbEyeDotted } from "react-icons/tb";
 import { MdEmail } from "react-icons/md";
 import { FaPhoneFlip } from "react-icons/fa6";
-import { IoMdRefresh } from "react-icons/io";
 import { FaHome, FaUsers, FaTasks, FaChartBar } from "react-icons/fa";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { IoMdCheckmarkCircleOutline } from 'react-icons/io';
+import { IoMdRefresh } from 'react-icons/io';
 import { useLocation, useNavigate } from "react-router-dom";
 import { Context } from "../HrmsContext";
 
@@ -66,6 +67,42 @@ const ProjectDetails = () => {
   { id: 4, title: "API Integration", status: "Pending", description: "API endpoints need to be integrated with frontend services." },
   { id: 5, title: "Database Administration", status: "InProgress", description: "Database optimization and backup configurations are ongoing." },
 ];
+const getStatusColor = (status) => {
+    switch (status) {
+        case 'InProgress':
+            return 'bg-blue-500';
+        case 'Completed':
+            return 'bg-green-500';
+        case 'Pending':
+            return 'bg-yellow-500';
+        case 'OnHold':
+            return 'bg-red-500';
+        default:
+            return 'bg-gray-400';
+    }
+};
+const handleCompleteTask = (taskId) => {
+        setTasks(prevTasks => {
+            const newTasks = [...prevTasks];
+            const currentTaskIndex = newTasks.findIndex(task => task.id === taskId);
+            
+            if (currentTaskIndex !== -1) {
+                // Update the current task's status to 'Completed'
+                newTasks[currentTaskIndex] = { ...newTasks[currentTaskIndex], status: 'Completed' };
+    
+                // Find the next task that isn't already completed
+                const nextPendingTaskIndex = newTasks.findIndex((task, index) => 
+                    index > currentTaskIndex && (task.status === 'Pending' || task.status === 'OnHold')
+                );
+    
+                // If a next pending task exists, update its status to 'InProgress'
+                if (nextPendingTaskIndex !== -1) {
+                    newTasks[nextPendingTaskIndex] = { ...newTasks[nextPendingTaskIndex], status: 'InProgress' };
+                }
+            }
+            return newTasks;
+        });
+    };
 const intialProgress=[
   { id: 1, title: "Backend Tickets Employee Development", date: "09 JUN 7:20 PM", status: "completed",  },
     { id: 2, title: "Database Administration", date: "08 JUN 12:20 PM", status: "completed",            },
@@ -174,22 +211,45 @@ const StatusColorsMap={
   return (
     <div className={` ${theme==='dark'?'bg-gray-800':'bg-stone-100'}  min-h-screen relative font-sans`}>
       {/* Project Header - Fixed to top for full-width coverage */}
-      <div className={`fixed top-16  z-50 p-6 md:p-10 ${theme==='dark'?'bg-gray-600':'bg-gradient-to-r from-indigo-500 via-purple-500 to-orange-400 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
+      <div className={`fixed top-16  z-50 p-6 md:p-10 ${theme==='dark'?'bg-gray-600 ':' bg-gradient-to-r from-indigo-100 to-indigo-200 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
         <div className="flex items-center gap-6">
           <div className={`w-16 h-16 ${theme==='dark'?'bg-gray-800':'bg-white'} rounded-2xl flex items-center justify-center shadow-md`}>
             <span className="text-3xl font-bold text-indigo-600"><FaRegFolderOpen /></span>
           </div>
           <div>
-            <h1 className="text-3xl font-bold">{project.project_name}</h1>
-            <p className="text-sm text-gray-200">Project ID: {project.project_id}</p>
+            <h1 className={`text-3xl font-bold ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>{project.project_name}</h1>
+            <p className={`text-sm  ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Project ID: {project.project_id}</p>
           </div>
         </div>
-        <button
-          className="flex items-center px-4 py-2 mr-52 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
-          onClick={() => navigate(`/projects/${userData?.employeeId}`)}
-        >
-          ← Back to Projects
-        </button>
+        <div class="relative mr-52 inline-flex items-center justify-center gap-4 group">
+  <div
+    class="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
+  ></div>
+  <a
+    role="button"
+    class="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
+    title="payment"
+    onClick={() => navigate(`/projects/${userData?.employeeId}`)}
+    href="#"
+    >Back To Projects<svg
+      aria-hidden="true"
+      viewBox="0 0 10 10"
+      height="10"
+      width="10"
+      fill="none"
+      class="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
+    >
+      <path
+        d="M0 5h7"
+        class="transition opacity-0 group-hover:opacity-100"
+      ></path>
+      <path
+        d="M1 1l4 4-4 4"
+        class="transition group-hover:translate-x-[3px]"
+      ></path>
+    </svg>
+  </a>
+</div>
       </div>
 
       {/* Main content container with dynamic right padding */}
@@ -199,10 +259,10 @@ const StatusColorsMap={
           {/* Overview Section */}
           <section ref={overviewRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 scroll-mt-16">
             {/* Main Overview Card */}
-            <div className={` ${theme==='dark'?'bg-gray-600':'bg-stone-100'} rounded-2xl shadow-lg border border-gray-200 p-4 space-y-6 col-span-1 lg:col-span-2`}>
+            <div className={` ${theme==='dark'?'bg-gray-600':'bg-stone-100'} rounded-2xl shadow-lg border border-gray-200 p-3 space-y-6 col-span-1 lg:col-span-2`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className={`text-2xl ${theme==='dark'?'text-white':'text-gray-800'} font-bold`}>{projectInfo.title}</h2>
+                  <h2 className={`text-2xl ${theme==='dark'?'text-white':'text-gray-800'} font-bold`}>{project.project_name}</h2>
                   <p className={`text-sm mt-1 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
                     Project ID: <span className="text-red-500 font-semibold">{project.project_id}</span>
                   </p>
@@ -240,7 +300,7 @@ const StatusColorsMap={
               </div>
 
               {/* Team Lead & Project Manager */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
                 <div>
                   <h3 className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-semibold mb-2`}>Team Lead</h3>
                   <div className="flex flex-wrap gap-3">
@@ -253,7 +313,7 @@ const StatusColorsMap={
                   </div>
                 </div>
                 <div>
-                  <h3 className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-semibold mb-2`}>Project Manager</h3>
+                  <h3 className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-semibold mb-4`}>Project Manager</h3>
                   <div className="flex flex-wrap gap-3">
                     {projectInfo.projectManager.map((pm, index) => (
                       <span key={index} className={`flex items-center gap-2 ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gray-50 text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 shadow-sm`}>
@@ -267,7 +327,7 @@ const StatusColorsMap={
 
               {/* Description & Hours Spent */}
               <div>
-                  <h3 className={`font-semibold mb-2 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>Description</h3>
+                  <h3 className={`font-semibold mb-6 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>Description</h3>
                 <p className={`${theme==='dark'?'text-gray-200':'text-gray-700'} text-base leading-relaxed`}>{projectInfo.description}</p>
               </div>
               <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl px-6 py-4 text-right font-semibold text-blue-700 shadow-sm">
@@ -509,20 +569,20 @@ const StatusColorsMap={
           {open ? <FiChevronRight /> : <FiChevronLeft />}
         </button>
         {/* Menu Items */}
-        <div className="mt-5 flex flex-col space-y-6 items-center">
-          <button onClick={() => scrollToSection(overviewRef)} className={`flex items-center gap-3 px-3 py-2 rounded-md ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+        <div className="mt-5 flex flex-col space-y-6 items-start">
+          <button onClick={() => scrollToSection(overviewRef)} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
             <FaHome className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
             {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Overview</span>}
           </button>
-          <button onClick={() => scrollToSection(teamRef)} className={`flex items-center gap-3 px-3 py-2 rounded-md  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+          <button onClick={() => scrollToSection(teamRef)} className={`flex items-center gap-3 px-3 py-2 rounded-xl  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
             <FaUsers className={ `text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
             {open && <span className={`t${theme==='dark'?'text-gray-200':'text-gray-`00'} font-medium`}>Team</span>}
           </button>
-          <button onClick={() => scrollToSection(Tasks)} className={`flex items-center gap-3 px-3 py-2 rounded-md  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+          <button onClick={() => scrollToSection(Tasks)} className={`flex items-center gap-3 px-3 py-2 rounded-xl  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
             <FaTasks className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
             {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Tasks</span>}
           </button>
-          <button onClick={() => scrollToSection(reportsRef)} className={`flex items-center gap-3 px-3 py-2 rounded-md  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
+          <button onClick={() => scrollToSection(reportsRef)} className={`flex items-center gap-3 px-3 py-2 rounded-xl  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
             <FaChartBar className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
             {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Reports</span>}
           </button>
@@ -531,5 +591,4 @@ const StatusColorsMap={
     </div>
   );
 };
-
 export default ProjectDetails;

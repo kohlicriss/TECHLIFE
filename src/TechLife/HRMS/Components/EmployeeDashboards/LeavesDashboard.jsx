@@ -681,7 +681,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
                }, [userData]);
     return (
         <motion.div
-            className={`flex justify-between items-center p-6  rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gray-600 ' : 'bg-purple-100 via-pink-100 '}`}
+            className={`flex justify-between items-center p-3  rounded-lg shadow-md mb-3 ${theme === 'dark' ? 'bg-gray-600 ' : 'bg-purple-100 via-pink-100 '}`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -720,7 +720,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
             </div>
             <motion.button
                 onClick={handleRequestLeave}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
             >
@@ -901,7 +901,7 @@ const LeavesDashboard = () => {
     };
 
     return (
-        <div className={`min-h-screen p-4 sm:p-6 lg:p-8 font-sans ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
+        <div className={`min-h-screen p-2 sm:p-3 lg:p-4 font-sans ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
             <AnimatePresence>
                 {/* Sidebar Trigger Button */}
                 {showSidebar && !sidebarOpen && (

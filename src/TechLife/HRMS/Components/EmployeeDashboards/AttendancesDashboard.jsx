@@ -275,7 +275,7 @@ const MyComponent = ({ Data, selectedDate }) => {
         return (
             <div>
                 <motion.div
-                    className="w-full h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300"
+                    className="w-full  h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300"
                     initial={{ opacity: 0, scaleX: 0 }}
                     animate={{ opacity: 1, scaleX: 1 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
@@ -311,7 +311,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                         );
                     })}
                 </motion.div>
-                <div className={`flex justify-between text-xs sm:text-sm  mt-2 px-2 ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
+                <div className={`flex justify-between text-xs sm:text-sm  mt-2  ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
                     {sortedTimes.map((time, index) => (
                         <motion.span
                             key={index}
@@ -336,7 +336,7 @@ const MyComponent = ({ Data, selectedDate }) => {
         >
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <motion.div
-                    className="flex flex-col items-center p-4 rounded-lg bg-gray-50 border border-gray-200 shadow-sm"
+                    className="flex flex-col items-center p-2 rounded-lg bg-gray-50 border border-gray-200 shadow-sm"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300 }}
                 >
@@ -344,12 +344,12 @@ const MyComponent = ({ Data, selectedDate }) => {
                         <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
                         <span className="text-sm font-medium">Total</span>
                     </div>
-                    <span className="text-xl sm:text-xl font-bold text-gray-800">
+                    <span className="text-lg sm:text-xl font-bold text-gray-800">
                         {calculateMetrics?.totalWorkingHours || 'N/A'}
                     </span>
                 </motion.div>
                 <motion.div
-                    className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 shadow-sm"
+                    className="flex flex-col items-center p-2 rounded-lg bg-green-50 border border-green-200 shadow-sm"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300 }}
                 >
@@ -357,12 +357,12 @@ const MyComponent = ({ Data, selectedDate }) => {
                         <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
                         <span className="text-sm font-medium">Productive</span>
                     </div>
-                    <span className="text-xl sm:text-xl font-bold text-green-800">
+                    <span className="text-lg sm:text-xl font-bold text-green-800">
                         {calculateMetrics?.productiveHours || 'N/A'}
                     </span>
                 </motion.div>
                 <motion.div
-                    className="flex flex-col items-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm"
+                    className="flex flex-col items-center p-2 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300 }}
                 >
@@ -370,12 +370,12 @@ const MyComponent = ({ Data, selectedDate }) => {
                         <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
                         <span className="text-sm font-medium">Break</span>
                     </div>
-                    <span className="text-xl sm:text-xl font-bold text-yellow-800">
+                    <span className="text-lg sm:text-xl font-bold text-yellow-800">
                         {calculateMetrics?.breakHours || 'N/A'}
                     </span>
                 </motion.div>
                 <motion.div
-                    className="flex flex-col items-center p-4 rounded-lg bg-blue-50 border border-blue-200 shadow-sm"
+                    className="flex flex-col items-center p-2 rounded-lg bg-blue-50 border border-blue-200 shadow-sm"
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300 }}
                 >
@@ -383,7 +383,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                         <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
                         <span className="text-sm font-medium">Overtime</span>
                     </div>
-                    <span className="text-xl sm:text-xl font-bold text-blue-800">
+                    <span className="text-lg sm:text-xl font-bold text-blue-800">
                         {calculateMetrics?.overtime || 'N/A'}
                     </span>
                 </motion.div>
@@ -416,6 +416,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [sortOption, setSortOption] = useState("Recently added");
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+      const [open, setOpen] = useState(true);
     const [loggedInUserProfile, setLoggedInUserProfile] = useState({
         image: null,
         initials: "  "
@@ -423,13 +424,13 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
        
     const [rawTableData , setRawTableData] = useState(  [
     { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
-    { employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
-    { employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+    { employee_id: "E_02", date: "2025-06-29", login_time: null, logout_time: null },
+    { employee_id: "E_03", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_04", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_05", date: "2025-06-26", login_time: null, logout_time: null },
+    { employee_id: "E_06", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_07", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+    { employee_id: "E_08", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
 ]);
 
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
@@ -469,9 +470,9 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
 
     // Action Handlers
     const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
-   const handleLogin = () => {setIsLoggedIn(true);const now = new Date();setStartTime(now);setEndTime(null);setGrossHours(0);setEffectiveHours(0);
+   const handleLogin = (index) => {setIsLoggedIn(true);const now = new Date();setStartTime(now);setEndTime(null);setGrossHours(0);setEffectiveHours(0);
 
-    setRawTableData(prev => [...prev,{ employee_id:"E_XX",date: now.toLocaleDateString(), login_time: formatClockTime(now),logout_time: null,login_hours: 0, barWidth: "0%",    }]);// Add new record
+    setRawTableData(prev => [...prev,{ employee_id:"E_"[index+1],date: now.toLocaleDateString(), login_time: formatClockTime(now),logout_time: null,login_hours: 0, barWidth: "0%",    }]);// Add new record
 };
     const handleLogout = () => { setIsLogoutConfirmed(true); };
     const handleConfirmLogout = () => {setIsLoggedIn(false);setIsLogoutConfirmed(false);const now = new Date();setEndTime(now);
@@ -541,20 +542,22 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             {/* Sidebar */}
             {showSidebar && (
                 <>
-                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? 'opacity-0' : 'opacity-100'}`} aria-label="Open Sidebar">
+                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600   text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? ' bg-black opacity-50' : 'opacity-100'}`} aria-label="Open Sidebar">
                         <ChevronLeft />
                     </button>
+                    
                     <motion.div
-                        className={`fixed inset-y-0 right-0 w-60  shadow-xl z-40 p-4 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-l border-gray-700' : 'bg-white border-l border-gray-200'}`}
+                        className={`fixed bg-opacity-25 backdrop-blur inset-y-0 right-0 w-60  shadow-xl z-40 p-4 flex flex-col  ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
                         initial={{ x: '100%' }}
                         animate={{ x: isSidebarOpen ? '0%' : '100%' }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
+                         
                         <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg" aria-label="Close Sidebar" >
                             <ChevronRight />
                         </button>
                         <motion.h3
-                            className={`text-lg font-bold  cursor-pointer mb-4 p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
+                            className={`text-lg font-bold  cursor-pointer mb-4 p-2 rounded-md  hover:bg-gray-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
                             onClick={() => { setShowAttendanceReports(true); setIsSidebarOpen(false); }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -562,6 +565,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
                         </motion.h3>
                     </motion.div>
+                   
                 </>
             )}
             {/* Main Content Wrapper */}
@@ -614,7 +618,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     transition={{ duration: 0.5, delay: 0.2 }}
                                 >
                                     {/* Main container with motion and color accents */}
-                                    <div className={`rounded-2xl shadow-xl p-6 w-full max-w-2xl transition-transform hover:scale-105 hover:shadow-2xl duration-300 relative overflow-hidden ${theme === 'dark'? 'bg-gray-700 ': 'bg-stone-100 '}`}>
+                                    <div className={`rounded-2xl shadow-xl p-8 w-full max-w-2xl transition-transform hover:scale-105 hover:shadow-2xl duration-300 relative overflow-hidden ${theme === 'dark'? 'bg-gray-700 ': 'bg-stone-100 '}`}>
 
                                         {/* Subtle animated background pattern */}
                                         <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-purple-200 via-pink-200 to-red-200 opacity-70 z-0 animate-bounce-slow"></div>
@@ -665,7 +669,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 </div>
                                                 {/* User info */}
                                                 <div>
-                                                    <div className="flex space-x-4 mt-1">
+                                                    <div className="flex space-x-4 mt-5 mr-5">
                                                         <motion.div
                                                             className="flex flex-col text-center"
                                                             initial={{ opacity: 0, x: -20 }}
@@ -818,21 +822,21 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                             <div className="grid grid-cols-2 gap-4 w-full max-w-md px-2">
                                                 {/* Gross Time Card */}
                                                 <motion.div
-                                                    className={` rounded-xl p-4 shadow-sm  ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-purple-50 to-purple-100 border border-gray-300'}`}
+                                                    className={` rounded-xl p-2 shadow-sm  ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-purple-50 to-purple-100 border border-gray-300'}`}
                                                     whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
                                                     <p className={`text-sm  font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Gross Time</p>
-                                                    <p className={`text-xl font-semibold ${theme === 'dark'? 'text-white': 'text-purple-700 '}`}>{grossHoursFormatted}</p>
+                                                    <p className={`text-lg font-semibold ${theme === 'dark'? 'text-white': 'text-purple-700 '}`}>{grossHoursFormatted}</p>
                                                 </motion.div>
                                                 {/* Effective Time Card */}
                                                 <motion.div
-                                                    className={` ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-pink-50 to-pink-100 border border-gray-300'} rounded-xl p-4 shadow-sm border border-gray-300`}
+                                                    className={` ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-pink-50 to-pink-100 border border-gray-300'} rounded-xl p-2 shadow-sm border border-gray-300`}
                                                     whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
                                                     <p className={`text-sm font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Effective Time</p>
-                                                    <p className={`text-xl font-semibold  ${theme === 'dark'? 'text-white': 'text-orange-700 '}`}>{effectiveHoursFormatted}</p>
+                                                    <p className={`text-lg font-semibold  ${theme === 'dark'? 'text-white': 'text-orange-700 '}`}>{effectiveHoursFormatted}</p>
                                                 </motion.div>
                                             </div>
                                         </div>

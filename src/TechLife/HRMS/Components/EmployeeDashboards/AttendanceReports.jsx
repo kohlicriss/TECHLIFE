@@ -41,7 +41,7 @@ const ChartData = [
     }
 ];
 
-const ChartCard = ({ title, titlecolor, icon, value, color, trend, trendPercentage, trendPeriod }) => {
+const ChartCard = ({ title, icontextcolor, icon, value, color, trend, trendPercentage, trendPeriod }) => {
     const isUp = trend === 'up';
     const {theme} = useContext(Context);
     return (
@@ -52,12 +52,12 @@ const ChartCard = ({ title, titlecolor, icon, value, color, trend, trendPercenta
             transition={{ duration: 0.5, ease: "easeOut" }}
             whileHover={{ scale: 1.05 }}
         >
-            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-2 ${color}`}>
-                {React.cloneElement(icon, { className: `w-10 h-10 rounded-full` })}
+            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-2 ${color} ${icontextcolor}`}>
+                {React.cloneElement(icon, { className: `w-10 h-10 rounded-full ` })}
             </div>
             <div>
-                <h3 className={`text-lg font-medium ${titlecolor}`}>{title}</h3>
-                <p className={`text-3xl font-bold mt-2 ${theme==='dark' ?  'bg-gradient-to-br from-blue-100 to-blue-500 bg-clip-text text-transparent' :'text-gray-800 '}`}>
+                <h3 className={`text-lg font-medium ${theme==='dark' ? 'text-white ':'text-gray-800'} `}>{title}</h3>
+                <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-500 bg-clip-text text-transparent' :'text-gray-800 '}`}>
                     {value}</p>
             </div>
             <div className="flex items-center mt-auto">
@@ -90,17 +90,17 @@ const DashboardGrid = () => {
         <div className="p-6 h-full flex flex-col justify-between">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
                 {ChartData.map((chart, index) => {
-                    let icon, titlecolor, colorHandler;
+                    let icon, icontextcolor, colorHandler;
 
                     switch (chart.title) {
-                        case "Total Working Days in Month": icon = <CalendarDaysIcon className="w-8 h-8 text-white" />; colorHandler = "bg-orange-200"; titlecolor = "text-orange-400";  break;
-                        case "Total Leave Taken Today": icon = <BiCalendarStar className="w-8 h-8 text-white" />; colorHandler = "bg-blue-200"; titlecolor = "text-blue-400";  break;
-                        case "Total Holidays per Year": icon = <LiaCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-200"; titlecolor = "text-pink-400";  break;
-                        case "Total Halfdays per Day": icon = <MdEditCalendar className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-200"; titlecolor = "text-yellow-400";  break;
-                        default:  icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; titlecolor = "text-gray-200";
+                        case "Total Working Days in Month": icon = <CalendarDaysIcon className="w-8 h-8 text-white" />; colorHandler = "bg-orange-100"; icontextcolor = "text-orange-400";  break;
+                        case "Total Leave Taken Today": icon = <BiCalendarStar className="w-8 h-8 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-400";  break;
+                        case "Total Holidays per Year": icon = <LiaCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-100"; icontextcolor = "text-pink-400";  break;
+                        case "Total Halfdays per Day": icon = <MdEditCalendar className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-400";  break;
+                        default:  icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; icontextcolor = "text-gray-100";
                     }
                     return (
-                        <ChartCard key={index} icon={icon} color={colorHandler} value={chart.value} title={chart.title} titlecolor={titlecolor} trend={chart.trend} trendPercentage={chart.trendPercentage} trendPeriod={chart.trendPeriod}
+                        <ChartCard key={index} icon={icon} color={colorHandler} value={chart.value} title={chart.title} icontextcolor={icontextcolor} trend={chart.trend} trendPercentage={chart.trendPercentage} trendPeriod={chart.trendPeriod}
                         />
                     );
                 })}
@@ -114,14 +114,16 @@ const employees = [
         title: 'UI/UX Designer',
         department: 'UI/UX',
         status: 'Clocked In',
-        time: '09:15'
+        time: '09:15',
+        Arrival:"On-Time"
     },
     {
         name: 'Raju',
         title: 'Project Manager',
         department: 'Management',
         status: 'Clocked In',
-        time: '09:36'
+        time: '09:36',
+        Arrival:"On-Time"
     },
     {
         name: 'Srilekha',
@@ -129,29 +131,26 @@ const employees = [
         department: 'Development',
         status: 'Clocked In',
         time: '09:15',
+        Arrival:"On-Time",
         details: {
             clockIn: '10:30 AM',
             clockOut: '09:45 AM',
             production: '09:21 Hrs',
         },
     },
+    {
+        name: 'Anita',
+        title: 'Marketing Head',
+        department: 'Marketing',
+        Arrival: 'Late',
+        lateTime: '30 Min',
+        time: '10:35',
+    }
+
 ];
 
-const ProfilePicMap={
-    "John Doe":'https://randomuser.me/api/portraits/men/30.jpg',
-    'Raju':    'https://randomuser.me/api/portraits/men/57.jpg',
-    'Srilekha': 'https://randomuser.me/api/portraits/women/57.jpg',
-    'Anita':    'https://randomuser.me/api/portraits/women/87.jpg'
-}
 
-const lateEmployee = {
-    name: 'Anita',
-    title: 'Marketing Head',
-    department: 'Marketing',
-    status: 'Late',
-    lateTime: '30 Min',
-    time: '08:35',
-};
+
 
 const departments = ['All Departments', 'UI/UX', 'Development', 'Management', 'HR', 'Marketing'];
 const timeframes = ['Today', 'This week', 'This month', 'Last Month'];
@@ -253,30 +252,18 @@ const ClockInOut = () => {
                         <motion.div    key={index}    className={`flex items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-blue-200 hover:text-gray-800 border ${theme==='dark' ? 'bg-gray-600 border-gray-200':'bg-gray-100 '}`}    
                         initial={{ opacity: 0, y: 20 }}    animate={{ opacity: 1, y: 0 }}    exit={{ opacity: 0, y: -20 }}    transition={{ duration: 0.3, delay: index * 0.05 }}>
                             <div className="flex items-center">
-                                <motion.img    className="w-12 h-12 rounded-full mr-4 object-cover"   src={ProfilePicMap[employee.name] || "https://randomuser.me/api/portraits/lego/1.jpg"}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
-                                <div>  <p className={`font-semibold  ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`} >{employee.name}</p>  <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.title}</p>  </div>
+                                <motion.img    className="w-12 h-12 rounded-full mr-4 object-cover"   src={ "https://randomuser.me/api/portraits/lego/1.jpg"}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
+                                <div>  <p className={`font-semibold  ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`} >{employee.name}</p>  <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.title}</p> <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.Arrival}</p>  </div>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <ClockIcon className={`h-5 w-5 ${theme=== 'dark' ? 'text-gray-200':'text-gray-400'}`} />
-                                <div className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                                <div className={`px-3 py-1 rounded-full  text-sm font-medium ${employee.Arrival==='On-Time'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>
                                     {employee.time}
                                 </div>
                             </div>
                         </motion.div>
                     ))}
                 </AnimatePresence>
-
-                <div className="mt-6 border-t pt-4 border-gray-200">
-                    <p className={`font-medium mb-3 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>Late</p>
-                     <motion.div className={`flex items-center justify-between  rounded-lg p-4 transition-colors duration-200 hover:bg-red-200 hover:text-gray-800 border ${theme==='dark' ? 'bg-gray-600 border-gray-200':'bg-gray-100 '}`} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: employees.length * 0.05 }}>
-                        <div className="flex items-center">
-                            <motion.img className="w-12 h-12 rounded-full mr-4 object-cover" src={ProfilePicMap[lateEmployee.name] || "https://randomuser.me/api/portraits/lego/1.jpg"} alt={lateEmployee.name} whileHover={{ scale: 1.1 }}/>
-                            <div>    <p className={`font-semibold text-gray-800 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}> {lateEmployee.name}</p>    <p className={`text-sm text-gray-500 ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{lateEmployee.title}</p></div>
-                        </div>
-                        <div className="flex items-center space-x-2"><span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">    {lateEmployee.lateTime}</span><ClockIcon className="h-5 w-5 text-gray-400" /><div className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium">    {lateEmployee.time}</div>
-                        </div>
-                    </motion.div>
-                </div>
             </div>
         </motion.div>
     );
@@ -377,7 +364,7 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
                                                    </div>
                                                </div>
                                            </div>
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                                                  <div className="overflow-x-auto rounded-lg border border-purple-400">
                                                       <table className="min-w-full divide-y divide-gray-200">
                                                           <thead className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'}`}>
                                                               <tr>
