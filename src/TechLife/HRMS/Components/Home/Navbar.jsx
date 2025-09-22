@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import { FiMenu, FiSearch, FiSettings, FiUser, FiLogOut } from "react-icons/fi";
 import { Bell } from "lucide-react";
 import logo from "../assets/anasol-logo.png";
-import { Link, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import DarkModeToggle from "../Login/DarkModeToggle";
 import './Navbar.css'; // Import the new CSS file
@@ -36,6 +36,7 @@ const NavbarSkeleton = ({ theme }) => (
 );
 
 const Navbar = ({ setSidebarOpen, onLogout }) => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const {
@@ -105,7 +106,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
         <button className={`md:hidden text-2xl ${theme === "dark" ? "text-white" : "text-gray-700"}`} onClick={() => setSidebarOpen(true)}>
           <FiMenu />
         </button>
-        <div className="flex items-center space-x-2">
+        <div   onClick={()=>{navigate(`/profile/${userData?.employeeId}`)}} className="flex items-center space-x-2  cursor-pointer   ">
           <img src={logo} alt="Logo" className="h-8 w-auto" />
           <h1 className="text-xl font-bold text-blue-600 name">Anasol</h1>
         </div>
