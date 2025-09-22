@@ -6,8 +6,15 @@ on:
 
 jobs:
   host-webpage: 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
+    - name: Cleanup build folder
+      run: |
+        ls -la ./
+        rm -rf ./* || true
+        rm -rf ./.??* || true
+        ls -la ./
+        
     - name: Checkout
       uses: actions/checkout@v4
 
@@ -18,23 +25,24 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: 1.0.11
         terraform_wrapper: false
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-
+        
     - name: Install dependencies
       run: npm install
 
     - name: Run build
       env:
         CI: ""
+        
       run: npm run build
 
     - name: move to the templates folder
