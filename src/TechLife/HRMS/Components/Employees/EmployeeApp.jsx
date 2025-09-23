@@ -109,6 +109,10 @@ function EmployeeApp() {
   const [sortBy, setSortBy] = useState('employeeId');
   const [sortOrder, setSortOrder] = useState('asc');
 
+  // Terminated employees state
+  const [isTerminatedEmployeesModalOpen, setIsTerminatedEmployeesModalOpen] = useState(false);
+  const [terminatedEmployeesData, setTerminatedEmployeesData] = useState([]);
+
   // Get the user's role and check permissions
   const userRole = userData?.roles?.[0]?.toUpperCase();
   const hasManagementAccess = ['ADMIN', 'MANAGER', 'HR'].includes(userRole);
@@ -468,7 +472,7 @@ function EmployeeApp() {
                 {renderField("First Name", "firstName", "text", true)}
                 {renderField("Middle Name", "middleName", "text")}
                 {renderField("Last Name", "lastName", "text")}
-                {renderField("Display Name", "displayName", "text")}
+                {renderField("DisplayName", "displayName", "text")}
                 {renderField("Marital Status", "maritalStatus", "select", false, ["Single", "Married", "Divorced", "Widowed"])}
                 {renderField("Department ID", "departmentId", "text")}
               </div>
@@ -520,6 +524,104 @@ function EmployeeApp() {
                 </>
               )}
             </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+  
+  const handleTerminateEmployees = async () => {
+    try {
+      const response = await publicinfoApi.get(`employee/0/10/employeeId/asc/terminated/employees`);
+      console.log("Terminated Employees Response:", response.data);
+      setTerminatedEmployeesData(response.data);
+      setIsTerminatedEmployeesModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching terminated employees:", error);
+      alert("Failed to fetch terminated employees. Check console for details.");
+    }
+  };
+
+  const renderTerminatedEmployeesModal = () => {
+    if (!isTerminatedEmployeesModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] p-2 sm:p-4">
+        <motion.div
+          initial={{ y: -50, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -50, opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.3 }}
+          className={`relative w-full max-w-sm sm:max-w-md lg:max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
+            theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
+          {/* Header */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-red-500 to-red-700 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center space-x-3 min-w-0 flex-1">
+                <div className="text-lg sm:text-2xl">
+                  <IoTrashOutline />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg sm:text-xl font-bold break-words">Terminated Employees</h2>
+                  <p className="text-white/90 text-xs sm:text-sm break-words">List of employees who have left the company.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsTerminatedEmployeesModalOpen(false)} 
+                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
+              >
+                <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
+              </button>
+            </div>
+          </div>
+
+          {/* Employee List */}
+          <div className="overflow-y-auto max-h-[calc(95vh-140px)] p-4 sm:p-6">
+            {terminatedEmployeesData.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {terminatedEmployeesData.map((employee, index) => (
+                  <div key={index} className={`p-4 rounded-lg border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'}`}>
+                    <h4 className="font-semibold text-sm truncate">{employee.displayName || 'N/A'}</h4>
+                    <p className="text-xs text-gray-500">Employee ID: {employee.employeeId || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Work Email: {employee.workEmail || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Date of Joining: {employee.dateOfJoining || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Date of Leaving: {employee.dateOfLeaving || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Department: {employee.departmentId || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Projects: {employee.projectId?.length > 0 ? employee.projectId.join(', ') : 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Teams: {employee.teamId?.length > 0 ? employee.teamId.join(', ') : 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Aadhaar: {employee.aadharNumber || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">PAN: {employee.panNumber || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Passport: {employee.passportNumber || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Gender: {employee.gender || 'N/A'}</p>
+                    {employee.employeeImage && (
+                        <p className="text-xs text-blue-500 mt-2">
+                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.employeeImage}`} target="_blank" rel="noopener noreferrer">Click for Employee Image</a>
+                        </p>
+                    )}
+                     {employee.aadharImage && (
+                        <p className="text-xs text-blue-500 mt-1">
+                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.aadharImage}`} target="_blank" rel="noopener noreferrer">Click for Aadhaar Image</a>
+                        </p>
+                    )}
+                    {employee.panImage && (
+                        <p className="text-xs text-blue-500 mt-1">
+                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.panImage}`} target="_blank" rel="noopener noreferrer">Click for PAN Image</a>
+                        </p>
+                    )}
+                    {employee.passportImage && (
+                        <p className="text-xs text-blue-500 mt-1">
+                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.passportImage}`} target="_blank" rel="noopener noreferrer">Click for Passport Image</a>
+                        </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-sm italic text-gray-500">No terminated employees found.</p>
+            )}
           </div>
         </motion.div>
       </div>
@@ -633,6 +735,17 @@ function EmployeeApp() {
                   <span>Add Employee</span>
                 </button>
               )}
+
+              {userRole === 'ADMIN' && (
+                <button
+                  onClick={handleTerminateEmployees}
+                  className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
+                >
+                  <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Terminated Employees</span>
+                </button>
+              )}
+
 
               {/* View Mode Toggle */}
               <div className={`flex rounded-lg p-1 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
@@ -1160,6 +1273,8 @@ function EmployeeApp() {
           </div>
         </Modal>
       )}
+
+      {renderTerminatedEmployeesModal()}
 
       {/* CSS FOR 3D FLIP EFFECT */}
       <style jsx>{`

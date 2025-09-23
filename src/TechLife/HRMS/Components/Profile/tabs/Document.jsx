@@ -23,8 +23,8 @@ const Modal = ({ children, onClose, title, type, theme }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-250">
       <div className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md m-4 border ${
-        theme === 'dark' 
-          ? 'bg-gray-800 border-gray-700' 
+        theme === 'dark'
+          ? 'bg-gray-800 border-gray-700'
           : 'bg-white border-gray-200'
       }`}>
         <div className="flex items-center mb-4">
@@ -40,7 +40,7 @@ const Modal = ({ children, onClose, title, type, theme }) => {
 const identityFields = {
   aadhaar: [
     { label: "Aadhaar Number", name: "aadhaarNumber", type: "text", required: true, pattern: "/^[2-9][0-9]{11}$/", message: "Invalid Aadhaar number format" },
-    { label: "Enrollment Number", name: "enrollmentNumber", type: "text", required: true, pattern: "/^[0-9]{4}/[0-9]{4}/[0-9]{4}$/", message: "Invalid enrollment number format" },
+    { label: "Enrollment Number", name: "enrollmentNumber", type: "text", required: true, pattern: "/^[0-9]{4}/[0-9]{5}/[0-9]{7}$/", message: "Invalid enrollment number format (e.g., 1234/12345/1234567)" },
     { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
     { label: "Name", name: "aadhaarName", type: "text", required: true },
     { label: "Address", name: "address", type: "textarea", required: true },
@@ -216,8 +216,8 @@ const Document = () => {
 
     if (!data.enrollmentNumber) {
       errors.enrollmentNumber = 'Enrollment number is required';
-    } else if (!/^[0-9]{4}\/[0-9]{4}\/[0-9]{5}$/.test(data.enrollmentNumber)) {
-      errors.enrollmentNumber = 'Invalid enrollment number format';
+    } else if (!/^[0-9]{4}\/[0-9]{5}\/[0-9]{7}$/.test(data.enrollmentNumber)) {
+      errors.enrollmentNumber = 'Invalid enrollment number format (e.g., 1234/12345/1234567)';
     }
 
     if (!data.dateOfBirth) {
@@ -431,7 +431,7 @@ const Document = () => {
 
     setErrors({});
     const dataToEdit = identityData[subSection];
-    setEditingData(dataToEdit);
+    setEditingData(dataToEdit || {});
     setEditingSection(subSection);
   };
 
@@ -600,13 +600,13 @@ const Document = () => {
 
   const SkeletonCard = () => (
     <div className={`border rounded-none sm:rounded-2xl shadow-sm overflow-hidden animate-pulse ${
-      theme === 'dark' 
-        ? 'bg-gray-800 border-gray-700' 
+      theme === 'dark'
+        ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     }`}>
       <div className={`p-4 sm:p-6 border-b ${
-        theme === 'dark' 
-          ? 'bg-gray-700 border-gray-600' 
+        theme === 'dark'
+          ? 'bg-gray-700 border-gray-600'
           : 'bg-gray-100 border-gray-200'
       }`}>
         <div className="flex justify-between items-center">
@@ -914,7 +914,7 @@ const Document = () => {
             >
               {isUpdating ? (
                 <>
-                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <div className="h-4 w-4 sm:h-5 sm:h-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
                   <span>Updating...</span>
                 </>
               ) : (
@@ -1006,7 +1006,7 @@ const Document = () => {
     const hasData = !!data;
 
     return (
-      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
+      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500
                      overflow-hidden group hover:scale-[1.02] ${
         theme === 'dark'
           ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
@@ -1155,8 +1155,8 @@ const Document = () => {
 
     return (
       <div className={`rounded-none sm:rounded-2xl p-4 sm:p-6 shadow-lg border ${
-        theme === 'dark' 
-          ? 'bg-gray-800 border-gray-700' 
+        theme === 'dark'
+          ? 'bg-gray-800 border-gray-700'
           : 'bg-white border-gray-200'
       }`}>
         <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -1194,15 +1194,15 @@ const Document = () => {
     );
   };
 
-  const filteredSections = Object.keys(documentConfig).filter(key => 
+  const filteredSections = Object.keys(documentConfig).filter(key =>
     documentConfig[key].title.toLowerCase().includes(searchFilter.toLowerCase()) ||
     documentConfig[key].description.toLowerCase().includes(searchFilter.toLowerCase())
   );
 
   return (
     <div className={`min-h-screen ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
       {loading ? (
