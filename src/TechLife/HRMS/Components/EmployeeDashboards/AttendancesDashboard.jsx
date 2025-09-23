@@ -400,6 +400,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showAttendanceReports, setShowAttendanceReports] = useState(false);
+    const [showMainDashboard,setShowMainDashboard]=useState(false);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [selectedDate, setSelectedDate] = useState("All");
@@ -542,34 +543,50 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             {/* Sidebar */}
             {showSidebar && (
                 <>
-                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600   text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? ' bg-black opacity-50' : 'opacity-100'}`} aria-label="Open Sidebar">
-                        <ChevronLeft />
+                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600   text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? '  opacity-0' : 'opacity-100'}`} aria-label="Open Sidebar"
+                           initial={{ x: '100%' }}
+                            animate={{ x: '0%' }}
+                            exit={{ x: '100%' }}
+                            transition={{ duration: 0.3, delay: 0.2 }}>
+                        <ChevronLeft  />
                     </button>
                     
                     <motion.div
-                        className={`fixed bg-opacity-25 backdrop-blur inset-y-0 right-0 w-60  shadow-xl z-40 p-4 flex flex-col  ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
+                        className={`fixed  inset-y-0 right-0 w-80  shadow-xl z-40 p-2 flex flex-col  ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
                         initial={{ x: '100%' }}
                         animate={{ x: isSidebarOpen ? '0%' : '100%' }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                         
-                        <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg" aria-label="Close Sidebar" >
-                            <ChevronRight />
-                        </button>
                         <motion.h3
-                            className={`text-lg font-bold  cursor-pointer mb-4 p-2 rounded-md  hover:bg-gray-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
+                            className={`text-lg font-bold mt-20  cursor-pointer mb-1 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
+                            onClick={() => { setShowMainDashboard(true); setIsSidebarOpen(false); }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> My Attendence 
+                        </motion.h3> 
+                       <motion.h3
+                            className={`text-lg font-bold   cursor-pointer mb-4 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
                             onClick={() => { setShowAttendanceReports(true); setIsSidebarOpen(false); }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
-                        </motion.h3>
+                        </motion.h3>  
+                        <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-2 ml-0 bg-indigo-600 text-white p-2 mt-48 rounded-full shadow-lg" aria-label="Close Sidebar" 
+                            initial={{ x: '100%' }}
+                            animate={{ x: '0%' }}
+                            exit={{ x: '100%' }}
+                            transition={{ duration: 0.3, delay: 0.2 }}>
+                            <ChevronRight />
+                        </button>
+                        
                     </motion.div>
                    
                 </>
             )}
             {/* Main Content Wrapper */}
-            <main className={`p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-60' : 'mr-0'}`}>
+            <main className={`p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-80 filter blur-sm' : 'mr-0'}`}>
                 <header className="flex items-center justify-between mb-8">
                     <motion.h1
                         className={`text-2xl sm:text-4xl font-extrabold ${theme === 'dark'? 'text-white': 'text-gray-900'}`}

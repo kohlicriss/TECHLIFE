@@ -22,7 +22,8 @@ import { Context } from "../HrmsContext";
 import LeavesReports from "./LeavesReports";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import LeaveDetails from "./LeaveDetails";
-import { FaFileAlt } from "react-icons/fa";
+import { FaFileAlt, FaRegFileAlt } from "react-icons/fa";
+import { LiaFileAlt, LiaFileAltSolid } from "react-icons/lia";
 
 // AddLeaveForm component
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
@@ -80,16 +81,19 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
                                     Employee Id
                                 </label>
-                                <input    type="text"    value={employeeId}    onChange={e => setEmployeeId(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
+                                <input    type="text"    value={employeeId}    onChange={e => setEmployeeId(e.target.value)}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Employee Name</label>
-                                <input    type="text"    value={employeeName}    onChange={e => setEmployeeName(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
+                                <input    type="text"    value={employeeName}    onChange={e => setEmployeeName(e.target.value)}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                             </motion.div>
                         </div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
                              <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>   Leave Type</label>
-                            <select    className={`mt-1 block w-full rounded-md ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}    onChange={handleLeaveTypeChange}    value={selectedLeaveType}>
+                            <select    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}    onChange={handleLeaveTypeChange}    value={selectedLeaveType}>
                                 <option value=""            className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
                                 <option value="Sick Leave"  className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Sick Leave</option>
                                 <option value="Casual Leave"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Casual Leave</option>
@@ -101,7 +105,8 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>   From</label>
                                 <div className="relative mt-1">
-                                    <input type="text" readOnly value={fromDate? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"} onClick={() => setShowFromCalendar(!showFromCalendar)} className={`block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`}/>
+                                    <input type="text" readOnly value={fromDate? fromDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"} onClick={() => setShowFromCalendar(!showFromCalendar)} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`}/>
                                     {showFromCalendar && (
                                         <Calendar    selectedDate={fromDate}    onSelectDate={(date) => {        setFromDate(date);        setShowFromCalendar(false);    }}    onClose={() => setShowFromCalendar(false) } className={`$`} />
                                     )}
@@ -110,7 +115,8 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
                                  <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>     To</label>
                                 <div className="relative mt-1">
-                                    <input    type="text"    readOnly    value={        toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"    }    onClick={() => setShowToCalendar(!showToCalendar)}    className={`block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-pointer ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`}/>
+                                    <input    type="text"    readOnly    value={        toDate ? toDate.toLocaleDateString("en-GB") : "dd-mm-yyyy"    }    onClick={() => setShowToCalendar(!showToCalendar)}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`}/>
                                     {showToCalendar && (
                                         <Calendar    selectedDate={toDate}    onSelectDate={(date) => {        setToDate(date);        setShowToCalendar(false);    }}    onClose={() => setShowToCalendar(false)}/>
                                     )}
@@ -120,11 +126,13 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    No. of Days</label>
-                                <input    readOnly    type="text"    value={        fromDate && toDate            ? `${            Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +            1            } Days`            : "0 Days"    }    className={`mt-1 block w-full cursor-not-allowed rounded-md   shadow-sm ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
+                                <input    readOnly    type="text"    value={        fromDate && toDate            ? `${            Math.floor((toDate - fromDate) / (1000 * 60 * 60 * 24)) +            1            } Days`            : "0 Days"    }    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                             </motion.div>
                             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.7 }}>
                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>     Leave Duration</label>
-                                <select className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50  ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}>
+                                <select className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}>
                                     <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
                                      <option value="Full Day" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Full Day</option>
                                      <option value="First Half Day"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>First Half Day</option>
@@ -134,15 +142,18 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                         </div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}>
                             <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Rejection Policy</label>
-                            <input    type="text"    value="Panalisation Policy"    readOnly    className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 cursor-not-allowed   ${theme==='dark' ? 'border border-gray-100 text-white  ':'border border-gray-300 text-black'}`}/>
+                            <input    type="text"    value="Panalisation Policy"    readOnly    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none cursor-not-allowed  ${theme==='dark' ? 'border border-gray-100 text-white  ':'border border-gray-300 text-black'}`}/>
                         </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9 }}>
                              <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Remaining Days</label>
-                            <input    type="text"    readOnly    value={remainingDays ? Object.values(remainingDays)[0] : "0"}    className={`mt-1 block w-full cursor-not-allowed rounded-md  shadow-sm text-black ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
+                            <input    type="text"    readOnly    value={remainingDays ? Object.values(remainingDays)[0] : "0"}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none cursor-not-allowed ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
                         </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1 }}>
                             <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Reason</label>
-                            <textarea    rows="3"    value={reason}    onChange={(e) => setReason(e.target.value)}    className={`mt-1 block w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50  ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}></textarea>
+                            <textarea    rows="3"    value={reason}    onChange={(e) => setReason(e.target.value)}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}></textarea>
                         </motion.div>
                     </div>
                     <div className="mt-6 flex justify-end space-x-3 border-t p-4">
@@ -169,6 +180,7 @@ const LeaveTypeCard = ({
     ];
     const COLORS = [color, "#E0E0E0"];
     const { theme } = useContext(Context);
+    const [isLoading, setIsLoading] = useState(true);
     return (
         <motion.div
             className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
@@ -187,6 +199,12 @@ const LeaveTypeCard = ({
                 alignItems="center"
                 className="w-full"
             >
+                {isLoading ? (
+                    <div className="items-center justify-center"> 
+                    <div className={`${theme==='dark' ? 'text-gray-200':'text-gray-700'} text-center w-full`}> <div className={`w-16 h-16  rounded-full mb-1 p-3`} ><LiaFileAltSolid className={ `w-8 h-8  ml-12  bg-yllow-500  text-yellow-400 rounded-full`} /></div>Leaves data loading...</div>
+                    </div>
+                ) : chartData > 0 ? (
+                <>
                 <ResponsiveContainer width={140} height={140}>
                     <PieChart>
                         <Pie
@@ -236,6 +254,13 @@ const LeaveTypeCard = ({
                         <strong>Total:</strong> {total} days
                     </div>
                 </div>
+                </>
+                ):(
+                   <div className={` text-center w-full ${theme === 'dark' ? 'text-white' : 'text-gray-500'} italic`}>
+                        No leave data available.
+                    </div>
+                )}
+                
             </Box>
         </motion.div>
     );
@@ -565,8 +590,8 @@ const handleCloseModal = () => {
                     </select>
                 </div>
             </div>
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+            <div className="overflow-x-auto rounded-xl">
+                <table className="min-w-full divide-y divide-gray-200 broder border-gray-200">
                     <thead className={`bg-gray-50 ${theme==='dark' ? 'border-black  bg-gray-500 text-white':''}`}>
                         <tr>
                             <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Leave Type</th>
@@ -739,6 +764,7 @@ const LeavesDashboard = () => {
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
+    const[showMain,setShowMain]=useState(false);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
         {
@@ -896,6 +922,10 @@ const LeavesDashboard = () => {
         setShowReport(true);
         setSidebarOpen(false);
     };
+    const handleShowMain=()=>{
+        setShowMain(true);
+        setSidebarOpen(false);
+    }
     const handleGoBackToDashboard = () => {
         setShowReport(false);
     };
@@ -929,27 +959,40 @@ const LeavesDashboard = () => {
                         exit={{ x: '100%' }}
                         transition={{ duration: 0.3 }}
                     >
-                        <button
-                            onClick={() => setSidebarOpen(false)}
-                            className="self-start mb-4 bg-indigo-600 text-white p-2 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
-                            aria-label="Close Sidebar"
-                        >
-                            <ChevronRight />
-                        </button>
                         <motion.h3
-                            className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-gray-100'} cursor-pointer mb-4  p-2 rounded-md`}
+                            className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-blue-100'} cursor-pointer mb-1 mt-20  p-2 rounded-md`}
+                            onClick={handleShowMain}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />My Leaves 
+                        </motion.h3>
+                        <motion.h3
+                            className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-blue-100'} cursor-pointer mb-4   p-2 rounded-md`}
                             onClick={handleShowReports}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            Leaves Reports
+                            <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />Leaves Reports
                         </motion.h3>
+                        <button
+                            onClick={() => setSidebarOpen(false)}
+                            className="self-start mb-4 bg-indigo-600 text-white p-2 mt-48 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+                            aria-label="Close Sidebar"
+                            initial={{ x: '100%' }}
+                            animate={{ x: '0%' }}
+                            exit={{ x: '100%' }}
+                            transition={{ duration: 0.3, delay: 0.2 }}
+                        >
+                            <ChevronRight />
+                        </button>
+                        
                     </motion.div>
                 )}
             </AnimatePresence>
 
             <main
-                className={`transition-all duration-300 ease-in-out ${sidebarOpen && showSidebar ? "mr-60" : "mr-0"}`}
+                className={`transition-all duration-300 ease-in-out ${sidebarOpen && showSidebar ? "mr-80 filter blur-sm" : "mr-0"}`}
             >
                 <AnimatePresence mode="wait">
                     {showReport ? (

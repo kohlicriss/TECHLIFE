@@ -78,6 +78,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     })
   }
 
+  if(userRole==='HR'){
+    navItems.push({
+       name: "HR",
+       icon: <FaUsers size={18} />,
+       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
+    })
+  }
+
   return (
     <>
       <div

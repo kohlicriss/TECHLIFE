@@ -304,7 +304,7 @@ const EmployeeStatusDashboard = ({ onViewAll }) => {
                     {Object.entries(statusData).map(([key, data], index) => (
                         <motion.div
                             key={key}
-                            className={`p-4 ${theme==='dark'?'bg-gray-900':'bg-gray-300'} rounded-lg border border-gray-200`}
+                            className={`p-4 ${theme==='dark'?'bg-gray-900':'bg-blue-50'} rounded-xl border border-gray-200`}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
@@ -605,12 +605,55 @@ function Project() {
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
 
     const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",Lead_Img: "https://i.pravatar.cc/40?img=19", Employee_team: [     "https://randomuser.me/api/portraits/men/32.jpg",     "https://randomuser.me/api/portraits/women/65.jpg",     "https://randomuser.me/api/portraits/men/76.jpg" ],more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688", Action: "https://icons8.com/icon/102350/delete" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",Lead_Img:"https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",Lead_Img: "https://i.pravatar.cc/40?img=19",Employee_team: [    "https://randomuser.me/api/portraits/men/32.jpg",    "https://randomuser.me/api/portraits/women/65.jpg",    "https://randomuser.me/api/portraits/men/76.jpg"],more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688",Action: "https://icons8.com/icon/102350/delete"}]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",        more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",  more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",   more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",     more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
+
+    const teamLeadImageMap = {
+        Naveen: "https://i.pravatar.cc/40?img=1",
+        Rajiv: "https://i.pravatar.cc/40?img=2",
+        Manikanta: "https://i.pravatar.cc/40?img=3",
+        Ravinder: "https://i.pravatar.cc/40?img=4",
+        Sravani: "https://i.pravatar.cc/40?img=5",
+        Gayatri: "https://i.pravatar.cc/40?img=6"
+    };
+
+    const teamImagesMap = {
+        P_01: [
+            "https://randomuser.me/api/portraits/men/32.jpg",
+            "https://randomuser.me/api/portraits/women/65.jpg",
+            "https://randomuser.me/api/portraits/men/76.jpg"
+        ],
+        P_02: [
+            "https://randomuser.me/api/portraits/men/15.jpg",
+            "https://randomuser.me/api/portraits/women/22.jpg"
+        ],
+        P_03: [
+            "https://randomuser.me/api/portraits/men/11.jpg"
+        ],
+        P_04: [
+            "https://randomuser.me/api/portraits/men/55.jpg",
+            "https://randomuser.me/api/portraits/women/88.jpg",
+            "https://randomuser.me/api/portraits/men/99.jpg",
+            "https://randomuser.me/api/portraits/women/78.jpg"
+        ],
+        P_05: [
+            "https://randomuser.me/api/portraits/men/66.jpg",
+            "https://randomuser.me/api/portraits/women/77.jpg",
+            "https://randomuser.me/api/portraits/men/12.jpg",
+            "https://randomuser.me/api/portraits/women/23.jpg",
+            "https://randomuser.me/api/portraits/men/45.jpg"
+        ],
+        P06: [
+            "https://randomuser.me/api/portraits/men/21.jpg",
+            "https://randomuser.me/api/portraits/women/43.jpg",
+            "https://randomuser.me/api/portraits/men/87.jpg"
+        ]
+    };
+
     const getPriorityColor = (priority) => {
         switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
     const getStatusColor = (status) => {
@@ -712,23 +755,23 @@ const handleUpdateProject = (e) => {
  const [statusFilter, setStatusFilter] = useState("All");
    const navigate = useNavigate();
 const handleRowClick = (proj) => {
-    navigate(`/projects/${proj.project_id}`, { state: { project: proj } });
+    navigate(`/project-details/${proj.project_id}`, { state: { project: proj } });
 };
     return (
         <motion.div
-            className={`p-6  rounded-lg shadow-xl border border-gray-200 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
+            className={`p-6  rounded-2xl shadow-xl border border-purple-500 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-purple-10 to-purple-50 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
+                <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
                     Project Overview</h2>
                     <div className=" absolute right-52 gap-2">
                     <select
                        value={statusFilter}
                        onChange={(e) => setStatusFilter(e.target.value)}
-                       className={`bg-gradient-to-br from-orange-100 to-orange-400  text-gray-800 font-medium rounded px-4 py-2 text-sm shadow hover:bg-orange-500  shadow transition`}
+                       className={`${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50  text-purple-700'} border border-purple-500   font-medium rounded-xl px-4 py-2 text-sm shadow   shadow transition`}
                     >
                      <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select Status</option>
                      <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
@@ -739,7 +782,7 @@ const handleRowClick = (proj) => {
             </div>
                 {showSidebar && (
                     <motion.button
-                        className="flex items-center bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800 font-bold py-2 px-4 rounded shadow transition"
+                        className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
                         onClick={() => setShowCreateForm(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -752,12 +795,12 @@ const handleRowClick = (proj) => {
             <AnimatePresence>
                 {showCreateForm && (
                     <motion.div
-                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                        className="fixed backdrop-blur-sm bg-opacity-30 inset-0 z-50 flex items-center justify-center "
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     >
-                         <motion.div className="relative w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
+                         <motion.div className="relative  w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
                         <motion.form
                             className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
                             onSubmit={handleCreateProject}
@@ -766,8 +809,10 @@ const handleRowClick = (proj) => {
                             exit={{ scale: 0.9, y: 50 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
-                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6   border-lg pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Create New Project</h3>
+                            <div className="  mb-4 text-start rounded-t bg-gradient-to-br from-purple-400 to-purple-700">
+                                 
+                                           
+                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6 ml-10   border-lg pb-8 ${theme === 'dark' ? 'text-gray-200 ' : 'text-gray-800 '}`}>Create New Project</h3>
                             </div>
                             <div className="space-y-4 p-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -777,7 +822,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="text"
                                     placeholder="Project Name"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
                                     required
@@ -789,17 +835,19 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="text"
                                     placeholder="Team Lead + Profile image URl"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.project_name}
                                     onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                    required
+                                    required 
                                 />
                                 </div>
                                 <div className="relative mt-1">
                                 <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
                                  
                                 <select
-                                    className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.status}
                                     onChange={e => setNewProject({ ...newProject, status: e.target.value })}
                                 >
@@ -813,7 +861,8 @@ const handleRowClick = (proj) => {
                                     <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
                                 <input
                                     type="date"
-                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.start_date}
                                     onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
                                     required
@@ -823,7 +872,8 @@ const handleRowClick = (proj) => {
                                     <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
                                 <input
                                     type="date"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.end_date}
                                     onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
                                     required
@@ -833,7 +883,8 @@ const handleRowClick = (proj) => {
                                 <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
                              
                                 <select
-                                   className={`border p-2 rounded w-full  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                                   className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                                     value={newProject.Priority}
                                     onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
                                 >
@@ -849,7 +900,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="number"
                                     placeholder="Open Tasks"
-                                     className={`border p-2 w-full rounded shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Open_task}
                                     onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
                                 />
@@ -859,7 +911,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="number"
                                     placeholder="Closed Tasks"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     value={newProject.Closed_task}
                                     onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
                                 />
@@ -869,7 +922,8 @@ const handleRowClick = (proj) => {
                                 <input
                                     type="number"
                                     placeholder="Rating (1-5)"
-                                    className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                     min="1"
                                     max="5"
                                     value={newProject.rating}
@@ -879,7 +933,8 @@ const handleRowClick = (proj) => {
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
                                     <textarea
-                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.Employee_team}
                                         onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
                                     />
@@ -887,7 +942,8 @@ const handleRowClick = (proj) => {
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
                                     <textarea
-                                        className={`border p-2 rounded w-full shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.remark}
                                         onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
                                     />
@@ -895,21 +951,23 @@ const handleRowClick = (proj) => {
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
                                     <textarea
-                                        className={`border p-2 rounded shadow-sm w-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                         value={newProject.completionNote}
                                         onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
                                     />
                                 </div>
                                 <div className="mt-2">
                                     <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                        Related Links</label>
+                                        Related Links:</label>
                                     {newProject.relatedLinks.map((link, index) => (
                                         <div key={index} className="flex gap-2 mb-0">
                                             <input
                                                 type="url"
                                                 value={link}
                                                 onChange={e => handleRelatedLinkChange(index, e.target.value)}
-                                                className={`flex-1 px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
+                                                className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
                                                 placeholder="Enter related link URL"
                                             />
                                             <button
@@ -1016,13 +1074,15 @@ const handleRowClick = (proj) => {
                         <input
                             type="text"
                             placeholder="Project Name"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.project_name || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
                             required
                         />
                         <select
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.status || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
                         >
@@ -1033,20 +1093,23 @@ const handleRowClick = (proj) => {
                         </select>
                         <input
                             type="date"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.start_date || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
                             required
                         />
                         <input
                             type="date"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.end_date || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
                             required
                         />
                         <select
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.Priority || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
                         >
@@ -1058,14 +1121,16 @@ const handleRowClick = (proj) => {
                         <input
                             type="number"
                             placeholder="Open Tasks"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.Open_task || 0}
                             onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
                         />
                         <input
                             type="number"
                             placeholder="Closed Tasks"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.Closed_task || 0}
                             onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
                         />
@@ -1095,12 +1160,12 @@ const handleRowClick = (proj) => {
         </motion.div>
     )}
 </AnimatePresence>
-            <table className="min-w-full bg-white">
-                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-gradient-to-br from-purple-100 to-purple-400 text-gray-800'}`}>
-                    <tr>
+          <div className="overflow-x-auto rounded-xl  ">
+            <table className="min-w-full bg-white  ">
+                <thead className={` text-left uppercase tracking-wider border border-purple-500 ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
+                    <tr className={" border border-purple-500"}>
                         <th className="p-3 text-sm md:text-base">Project</th>
                         <th className="p-3 text-sm md:text-base">Team_Lead</th>
-                        <th className="p-3 text-sm md:text-base">Team</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
                         <th className="p-3 text-sm md:text-base">Priority</th>
@@ -1111,7 +1176,7 @@ const handleRowClick = (proj) => {
                         {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
-                <tbody  className="bg-white divide-y divide-gray-500">
+                <tbody  className="bg-white   ">
                     <AnimatePresence>
                         {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
                         .map((proj, index) => (
@@ -1126,16 +1191,14 @@ const handleRowClick = (proj) => {
                             >
                                 <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
                                 <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> 
-                                    <motion.img key={index} src={proj.Lead_Img} alt={proj.Team_Lead} className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />{proj.Team_Lead}
+                                     <motion.img
+                                            src={teamLeadImageMap[proj.Team_Lead] || "https://i.pravatar.cc/40?img=19"} // Fallback image
+                                            alt={proj.Team_Lead}
+                                            className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm inline-block mr-2"
+                                            whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
+                                        />
+                                        {proj.Team_Lead}
                                     
-                                </td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <div className="flex -space-x-2 ">
-                                        {proj.Employee_team.map((img, index) => (
-                                            <motion.img key={index} src={img} alt="team member" className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }} />
-                                        ))}
-                                    </div>
-                                    <motion.span className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm" whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}>{proj.more}</motion.span>
                                 </td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
@@ -1192,6 +1255,7 @@ const handleRowClick = (proj) => {
                     </AnimatePresence>
                 </tbody>
             </table>
+            </div>
         </motion.div>
     );
 }
@@ -1301,7 +1365,7 @@ const CombinedDashboard = () => {
     ];
 
     return (
-        <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-stone-100 text-gray-900'} p-4 font-sans`}>
+        <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} p-4 font-sans`}>
             <Header />
             <div className="container mx-auto">
                 <UserGreeting />

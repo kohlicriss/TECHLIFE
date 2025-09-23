@@ -185,7 +185,7 @@ const ProjectCard = () => {
                 {/* Highlights */}
                  
                  <motion.div
-            className={`p-3 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-50 to-blue-100'}`}
+            className={`p-3 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-10 to-blue-50'}`}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -221,7 +221,7 @@ const ProjectCard = () => {
 
                 {/* Team */}
                 <motion.div
-                    className={` p-3 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-indigo-100'}`}
+                    className={` p-3 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-10 to-indigo-50'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
@@ -372,17 +372,17 @@ const MyTeam = () => {
 
     return (
         <motion.div
-            className={` shadow-xl rounded-lg p-6 border border-blue-500 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-blue-50 to-blue-100'}`}
+            className={` shadow-xl rounded-lg p-6 border border-blue-500 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-blue-10 to-blue-50'}`}
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-400 bg-clip-text text-transparent ':''}`}>
+                <h2 className={`text-2xl font-bold text-blue-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-400 bg-clip-text text-transparent ':''}`}>
                     My Team</h2>
                 {showSidebar && (
                     <motion.button
-                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-blue-500':'bg-blue-50 text-blue-700'} border-lg border-blue-500 font-bold py-2 px-4 rounded-xl shadow transition`}
+                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-blue-500':'bg-blue-50 text-blue-700'} border border-blue-500 font-bold py-2 px-4 rounded-xl shadow transition`}
                         onClick={() => { setShowForm(true); setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" }); setEditIndex(null); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -560,16 +560,16 @@ function ProjectStatus() {
 
      return (
         <motion.div
-            className={`p-6  rounded-lg shadow-xl border border-gray-200 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-green-50 to-green-100'} `}
+            className={`p-6  rounded-lg shadow-xl border border-green-500 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-green-10 to-green-50'} `}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
+                <h2 className={`text-2xl font-bold text-green-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
                 {showSidebar && (
                     <motion.button
-                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-green-500':'bg-green-50 text-green-700'} border-xl border-green-500 font-bold py-2 px-4 rounded-xl shadow transition`}
+                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-green-500':'bg-green-50 text-green-700'} border border-green-500 font-bold py-2 px-4 rounded-xl shadow transition`}
                         onClick={() => { setShowForm(true); setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" }); setEditIndex(null); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -631,10 +631,10 @@ function ProjectStatus() {
             </AnimatePresence>
             
     {/* Table container with responsive overflow */}
-    <div className="overflow-x-auto rounded-lg">
+    <div className="overflow-x-auto rounded-xl">
         <table className={`min-w-full  divide-y divide-gray-200  `}>
-            <thead className="border border-green-500">
-                <tr className={`text-left  w-full text-sm  uppercase  tracking-wider border border-green-500 ${theme==='dark'?'bg-gray-500 text-white  ':'bg-green-50 text-green-700'}`}>
+            <thead className="">
+                <tr className={`text-left  w-full text-sm  uppercase  tracking-wider ${theme==='dark'?'bg-gray-500 text-white  ':'bg-green-50 text-green-700'}`}>
                     <th className="py-2 px-4 font-semibold">Project ID</th>
                     <th className="py-2 px-4 font-semibold">Project Name</th>
                     <th className="py-2 px-4 font-semibold">Duration</th>
@@ -855,13 +855,13 @@ const handleRowClick = (proj) => {
 };
     return (
         <motion.div
-            className={`p-6  rounded-2xl shadow-xl border border-purple-500 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-purple-50 to-purple-100 '}`}
+            className={`p-6  rounded-2xl shadow-xl border border-purple-500 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-purple-10 to-purple-50 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-gray-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
+                <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
                     Project Overview</h2>
                     <div className=" absolute right-52 gap-2">
                     <select
@@ -1170,13 +1170,15 @@ const handleRowClick = (proj) => {
                         <input
                             type="text"
                             placeholder="Project Name"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.project_name || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
                             required
                         />
                         <select
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.status || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
                         >
@@ -1187,20 +1189,23 @@ const handleRowClick = (proj) => {
                         </select>
                         <input
                             type="date"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.start_date || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
                             required
                         />
                         <input
                             type="date"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.end_date || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
                             required
                         />
                         <select
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.Priority || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
                         >
@@ -1212,14 +1217,16 @@ const handleRowClick = (proj) => {
                         <input
                             type="number"
                             placeholder="Open Tasks"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.Open_task || 0}
                             onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
                         />
                         <input
                             type="number"
                             placeholder="Closed Tasks"
-                            className="border p-2 rounded w-full"
+                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.Closed_task || 0}
                             onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
                         />

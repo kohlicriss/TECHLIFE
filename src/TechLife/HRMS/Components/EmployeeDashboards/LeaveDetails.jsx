@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Context } from "../HrmsContext";
+import { FaRegCircleXmark } from "react-icons/fa6";
 
 const LeaveDetails = ({ leave, onClose }) => {
   const {theme}=useContext(Context)
@@ -21,9 +22,9 @@ const LeaveDetails = ({ leave, onClose }) => {
         >
           <button
             onClick={onClose}
-            className={`w-10 h-10 absolute top-3 right-3 ${theme==='dark'?'text-gray-200':'text-gray-500'} hover:text-gray-700 text-xl`}
+            className={`w-20 h-20 absolute top-3 right-3 ${theme==='dark'?'text-gray-200':'text-gray-500'} hover:text-gray-700 text-xl`}
           >
-            &times;
+         <FaRegCircleXmark  />
           </button>
           <h2 className={`text-2xl font-bold mb-4 ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Leave Request Summary</h2>
           <div className="space-y-2">

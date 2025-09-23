@@ -202,11 +202,10 @@ const LeaveCharts = () => {
                 <AnimatePresence>
                     {Data.map((data, index) => {
                         let icon, icontextcolor, colorHandler;
-
                         switch (data.title) {
                             case "Total Present": icon = <FaUsers className="w-4 h-4 text-white" />; colorHandler = "bg-green-100"; icontextcolor = "text-green-300"; break;
-                            case "Paid Leaves": icon = <FaRegUser className="w-4 h-4 text-white" />; colorHandler = "bg-pink-100"; icontextcolor = "text-pink-300"; break;
-                            case "Unpaid Leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-yellow-100";icontextcolor = "text-yellow-300"; break;
+                            case "Paid Leaves": icon = <FaRegUser className="w-4 h-4 text-white" />; colorHandler = "bg-pink-100";  icontextcolor = "text-pink-300"; break;
+                            case "Unpaid Leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-300"; break;
                             case "Pending Request": icon = <FaUserEdit className="w-4 h-4 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-300"; break;
                             default: icon = <CircleUserRound className="w-4 h-4 text-white" />; colorHandler = "bg-gray-100";
                         }
@@ -469,8 +468,8 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
                            </select>
                        </div>
                    </div>
-            <div className="overflow-x-auto rounded-lg border border-blue-500">
-                <table className="min-w-full divide-y divide-gray-200">
+            <div className="overflow-x-auto rounded-xl ">
+                <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
                     <thead className={`bg-gray-50  ${theme==='dark' ? ' bg-gray-500 text-white':''}`}>
                         <tr>
                             <th className={`w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}> Employee_ID </th>
@@ -641,7 +640,9 @@ const LeaveHistory = ({ leaveHistoryData,setLeaveHistoryData}) => {
 
 function LeavesReports({ onBack, leaveHistoryData,setLeaveHistoryData }) {
     const { theme } = useContext(Context);
+    const [isLoading,setIsLoading]=useState();
     return (
+        
         <motion.div
             className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
             initial={{ opacity: 0, y: 20 }}

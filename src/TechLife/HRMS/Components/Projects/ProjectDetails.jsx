@@ -159,7 +159,7 @@ const StatusColorsMap={
       { department: "Integration", progress: 70 }, { department: "API Integration", progress: 40 }, { department: "Deployment", progress: 30 },
     ],
   };
-
+ const COLOR=["purple"]
   const [selectedMonth, setSelectedMonth] = useState(Object.keys(departmentData)[0]); // Default to the first month
 
   if (!project) {
@@ -209,7 +209,7 @@ const StatusColorsMap={
   };
 
   return (
-    <div className={` ${theme==='dark'?'bg-gray-800':'bg-stone-100'}  min-h-screen relative font-sans`}>
+    <div className={` ${theme==='dark'?'bg-gray-800':'bg-gray-50'}  min-h-screen relative font-sans`}>
       {/* Project Header - Fixed to top for full-width coverage */}
       <div className={`fixed top-16  z-50 p-6 md:p-10 ${theme==='dark'?'bg-gray-600 ':' bg-gradient-to-r from-indigo-100 to-indigo-200 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
         <div className="flex items-center gap-6">
@@ -544,15 +544,15 @@ const StatusColorsMap={
                   ))}
                 </select>
               </div>
-              <div className={`p-4 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-blue-800 via-blue-600 to-blue-300 '}  rounded-lg`}>
-                {isMounted && ( // Conditional rendering based on isMounted state
+              <div className={`p-4 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-blue-50 to-blue-100 '}  rounded-lg`}>
+                {isMounted &&  ( // Conditional rendering based on isMounted state
                   <ResponsiveContainer width="100%" height={350}>
                     <BarChart data={departmentData[selectedMonth]} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                       <XAxis dataKey="department" stroke="#fff"  />
                       <YAxis domain={[0, 100]} stroke="#fff" />
                       <Tooltip className={`  ${theme==='dark'?'bg-gray-600':'bg-gray-200'}`}formatter={(value) => `${value}%`} />
                       <Legend wrapperStyle={{ color: "#fff" }} />
-                      <Bar dataKey="progress" fill="#ffffff" barSize={40} radius={[5, 5, 0, 0]} barCategoryGap="20%" />
+                      <Bar dataKey="progress"fill={COLOR} barSize={40} radius={[5, 5, 0, 0]} barCategoryGap="20%" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
