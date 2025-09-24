@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Context } from "../HrmsContext";
-import { publicinfoApi } from "../../../../axiosInstance";
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Context } from '../HrmsContext';
+import { publicinfoApi } from '../../../../axiosInstance';
 import {
   IoSearchOutline,
   IoMailOutline,
@@ -28,7 +28,7 @@ import {
   IoIdCardOutline,
   IoPeopleOutline,
   IoTrashOutline,
-} from "react-icons/io5";
+} from 'react-icons/io5';
 
 // --- Reusable Modal Component ---
 const Modal = ({ children, onClose, title, type, theme }) => {
@@ -109,9 +109,16 @@ function EmployeeApp() {
   const [sortBy, setSortBy] = useState('employeeId');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  // Terminated employees state
+  // Enhanced Terminated employees state with infinite scroll
   const [isTerminatedEmployeesModalOpen, setIsTerminatedEmployeesModalOpen] = useState(false);
   const [terminatedEmployeesData, setTerminatedEmployeesData] = useState([]);
+  const [terminatedLoading, setTerminatedLoading] = useState(false);
+  const [terminatedHasMore, setTerminatedHasMore] = useState(true);
+  const [terminatedCurrentPage, setTerminatedCurrentPage] = useState(0);
+  const [terminatedSearchTerm, setTerminatedSearchTerm] = useState('');
+  const terminatedScrollRef = useRef(null);
+
+  const TERMINATED_PAGE_SIZE = 15;
 
   // Get the user's role and check permissions
   const userRole = userData?.roles?.[0]?.toUpperCase();
@@ -529,21 +536,91 @@ function EmployeeApp() {
       </div>
     );
   };
-  
-  const handleTerminateEmployees = async () => {
+
+  // Enhanced function to load terminated employees with infinite scroll
+  const loadTerminatedEmployees = useCallback(async (page = 0, reset = false) => {
+    if (terminatedLoading || (!terminatedHasMore && !reset)) return;
+    
+    setTerminatedLoading(true);
     try {
-      const response = await publicinfoApi.get(`employee/0/10/employeeId/asc/terminated/employees`);
+      const response = await publicinfoApi.get(`employee/${page}/${TERMINATED_PAGE_SIZE}/employeeId/asc/terminated/employees`);
       console.log("Terminated Employees Response:", response.data);
-      setTerminatedEmployeesData(response.data);
-      setIsTerminatedEmployeesModalOpen(true);
+      
+      const newEmployees = response.data || [];
+      
+      setTerminatedEmployeesData(prev => reset ? newEmployees : [...prev, ...newEmployees]);
+      setTerminatedCurrentPage(page);
+      setTerminatedHasMore(newEmployees.length === TERMINATED_PAGE_SIZE);
     } catch (error) {
       console.error("Error fetching terminated employees:", error);
-      alert("Failed to fetch terminated employees. Check console for details.");
+      if (reset) {
+        alert("Failed to fetch terminated employees. Check console for details.");
+      }
+    } finally {
+      setTerminatedLoading(false);
+    }
+  }, [terminatedLoading, terminatedHasMore]);
+
+  const handleTerminateEmployees = async () => {
+    setTerminatedEmployeesData([]);
+    setTerminatedCurrentPage(0);
+    setTerminatedHasMore(true);
+    setTerminatedSearchTerm('');
+    setIsTerminatedEmployeesModalOpen(true);
+    
+    // Load first page
+    loadTerminatedEmployees(0, true);
+  };
+
+  // Handle scroll for infinite loading
+  const handleTerminatedScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 50 && terminatedHasMore && !terminatedLoading) {
+      loadTerminatedEmployees(terminatedCurrentPage + 1);
     }
   };
 
+  // Filter terminated employees based on search term
+  const filteredTerminatedEmployees = terminatedEmployeesData.filter(employee => {
+    if (!terminatedSearchTerm) return true;
+    const searchLower = terminatedSearchTerm.toLowerCase();
+    return (
+      (employee.displayName && employee.displayName.toLowerCase().includes(searchLower)) ||
+      (employee.employeeId && employee.employeeId.toLowerCase().includes(searchLower)) ||
+      (employee.workEmail && employee.workEmail.toLowerCase().includes(searchLower))
+    );
+  });
+
   const renderTerminatedEmployeesModal = () => {
     if (!isTerminatedEmployeesModalOpen) return null;
+
+    const baseApiUrl = "https://hrms.anasolconsultancyservices.com/api";
+
+    const renderDataField = (label, value) => {
+        if (Array.isArray(value)) {
+            value = value.join(', ');
+        }
+        return (
+            <div className="text-xs">
+                <span className="font-semibold">{label}:</span> {value || 'N/A'}
+            </div>
+        );
+    };
+
+    const renderLink = (label, path) => {
+      if (!path) return null;
+      const fullUrl = path.startsWith("http") ? path : `${baseApiUrl}/${path}`;
+      return (
+        <a 
+          href={fullUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-blue-500 hover:underline text-xs mt-1 inline-block"
+        >
+          {label}
+        </a>
+      );
+    };
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] p-2 sm:p-4">
@@ -552,7 +629,7 @@ function EmployeeApp() {
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: -50, opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className={`relative w-full max-w-sm sm:max-w-md lg:max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
+          className={`relative w-full max-w-sm sm:max-w-md lg:max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
             theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
           }`}
         >
@@ -566,7 +643,9 @@ function EmployeeApp() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-lg sm:text-xl font-bold break-words">Terminated Employees</h2>
-                  <p className="text-white/90 text-xs sm:text-sm break-words">List of employees who have left the company.</p>
+                  <p className="text-white/90 text-xs sm:text-sm break-words">
+                    List of employees who have left the company ({filteredTerminatedEmployees.length} found)
+                  </p>
                 </div>
               </div>
               <button 
@@ -578,49 +657,130 @@ function EmployeeApp() {
             </div>
           </div>
 
-          {/* Employee List */}
-          <div className="overflow-y-auto max-h-[calc(95vh-140px)] p-4 sm:p-6">
-            {terminatedEmployeesData.length > 0 ? (
+          {/* Search Bar */}
+          <div className={`px-4 sm:px-6 py-3 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="relative">
+              <IoSearchOutline className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+              <input
+                type="text"
+                placeholder="Search terminated employees..."
+                value={terminatedSearchTerm}
+                onChange={(e) => setTerminatedSearchTerm(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Employee List with Infinite Scroll */}
+          <div 
+            ref={terminatedScrollRef}
+            className="overflow-y-auto max-h-[calc(95vh-180px)] p-4 sm:p-6"
+            onScroll={handleTerminatedScroll}
+          >
+            {filteredTerminatedEmployees.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {terminatedEmployeesData.map((employee, index) => (
-                  <div key={index} className={`p-4 rounded-lg border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'}`}>
-                    <h4 className="font-semibold text-sm truncate">{employee.displayName || 'N/A'}</h4>
-                    <p className="text-xs text-gray-500">Employee ID: {employee.employeeId || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Work Email: {employee.workEmail || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Date of Joining: {employee.dateOfJoining || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Date of Leaving: {employee.dateOfLeaving || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Department: {employee.departmentId || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Projects: {employee.projectId?.length > 0 ? employee.projectId.join(', ') : 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Teams: {employee.teamId?.length > 0 ? employee.teamId.join(', ') : 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Aadhaar: {employee.aadharNumber || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">PAN: {employee.panNumber || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Passport: {employee.passportNumber || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">Gender: {employee.gender || 'N/A'}</p>
-                    {employee.employeeImage && (
-                        <p className="text-xs text-blue-500 mt-2">
-                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.employeeImage}`} target="_blank" rel="noopener noreferrer">Click for Employee Image</a>
-                        </p>
-                    )}
-                     {employee.aadharImage && (
-                        <p className="text-xs text-blue-500 mt-1">
-                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.aadharImage}`} target="_blank" rel="noopener noreferrer">Click for Aadhaar Image</a>
-                        </p>
-                    )}
-                    {employee.panImage && (
-                        <p className="text-xs text-blue-500 mt-1">
-                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.panImage}`} target="_blank" rel="noopener noreferrer">Click for PAN Image</a>
-                        </p>
-                    )}
-                    {employee.passportImage && (
-                        <p className="text-xs text-blue-500 mt-1">
-                            <a href={`https://hrms.anasolconsultancyservices.com/api/${employee.passportImage}`} target="_blank" rel="noopener noreferrer">Click for Passport Image</a>
-                        </p>
-                    )}
-                  </div>
+                {filteredTerminatedEmployees.map((employee, index) => (
+                  <motion.div 
+                    key={`${employee.employeeId}-${index}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (index % TERMINATED_PAGE_SIZE) * 0.05 }}
+                    className={`p-4 rounded-lg border ${
+                      theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
+                    } hover:shadow-lg transition-all duration-300`}
+                  >
+                    {/* Profile Picture */}
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="flex-shrink-0">
+                        {employee.employeeImage ? (
+                          <img
+                            src={employee.employeeImage.startsWith("http") 
+                              ? employee.employeeImage 
+                              : `${baseApiUrl}/${employee.employeeImage}`
+                            }
+                            alt={`${employee.displayName || 'Employee'}'s profile`}
+                            className="h-12 w-12 rounded-full object-cover border-2 border-red-300 shadow-md"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`h-12 w-12 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 flex items-center justify-center text-white text-sm font-bold shadow-md ${
+                            employee.employeeImage ? 'hidden' : 'flex'
+                          }`}
+                        >
+                          {generateInitials(employee.displayName || employee.employeeId || 'N/A')}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm truncate">{employee.displayName || 'N/A'}</h4>
+                        <p className="text-xs text-gray-500 truncate">{employee.employeeId}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                        {renderDataField("Work Email", employee.workEmail)}
+                        {renderDataField("Work Number", employee.workNumber)}
+                        {renderDataField("Gender", employee.gender)}
+                        {renderDataField("Date of Joining", employee.dateOfJoining)}
+                        {renderDataField("Date of Leaving", employee.dateOfLeaving)}
+                        {renderDataField("Department", employee.departmentId)}
+                        {renderDataField("Projects", employee.projectId)}
+                        {renderDataField("Teams", employee.teamId)}
+                        {renderDataField("Aadhaar Number", employee.aadharNumber)}
+                        {renderDataField("PAN Number", employee.panNumber)}
+                        {renderDataField("Passport Number", employee.passportNumber)}
+                        
+                        {employee.degreeDocuments && Array.isArray(employee.degreeDocuments) && employee.degreeDocuments.map((doc, docIndex) => (
+                          <div key={docIndex}>
+                            {renderLink(`Click for Degree Image ${docIndex + 1}`, doc)}
+                          </div>
+                        ))}
+
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {renderLink("Employee Image", employee.employeeImage)}
+                          {renderLink("Aadhaar Image", employee.aadharImage)}
+                          {renderLink("PAN Image", employee.panImage)}
+                          {renderLink("Passport Image", employee.passportImage)}
+                        </div>
+                    </div>
+                  </motion.div>
                 ))}
               </div>
+            ) : terminatedLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                <span className="ml-3 text-sm">Loading terminated employees...</span>
+              </div>
             ) : (
-              <p className="text-center text-sm italic text-gray-500">No terminated employees found.</p>
+              <p className="text-center text-sm italic text-gray-500 py-8">
+                {terminatedSearchTerm ? 'No terminated employees found matching your search.' : 'No terminated employees found.'}
+              </p>
+            )}
+
+            {/* Loading indicator for infinite scroll */}
+            {terminatedLoading && terminatedEmployeesData.length > 0 && (
+              <div className="flex justify-center items-center py-4 mt-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+                <span className="ml-3 text-sm">Loading more...</span>
+              </div>
+            )}
+
+            {/* End of results indicator */}
+            {!terminatedHasMore && terminatedEmployeesData.length > 0 && (
+              <div className="text-center py-4 mt-4">
+                <p className="text-sm text-gray-500 italic">
+                  — End of results ({terminatedEmployeesData.length} total employees) —
+                </p>
+              </div>
             )}
           </div>
         </motion.div>
@@ -746,7 +906,6 @@ function EmployeeApp() {
                 </button>
               )}
 
-
               {/* View Mode Toggle */}
               <div className={`flex rounded-lg p-1 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
                 <button
@@ -792,7 +951,7 @@ function EmployeeApp() {
             <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
               theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
             }`}>
-              <IoPersonOutline className={`w-8 h-8 sm:w-10 sm:h-10 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+              <IoPersonOutline className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
             </div>
             <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>No Employees Found</h2>
             <p className={`text-sm sm:text-base mb-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
