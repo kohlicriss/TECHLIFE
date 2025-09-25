@@ -135,7 +135,7 @@ function ChatApp() {
     }, [userId]);
 
     return (
-        <div style={{ height: '90vh' }} className={`flex h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
+        <div className={`flex h-full w-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
             {isLoading ? (
                 <ChatAppSkeleton theme={theme} />
             ) : (

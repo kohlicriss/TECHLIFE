@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from "react";
+import { Context } from "../HrmsContext";
 
 export default function IssueForm({ onSubmit }) {
+  const { theme } = useContext(Context);
+  const isDark = theme === "dark";
+
   const [formData, setFormData] = useState({
-    employeeId: '',
-    ticketId: '',
-    title: '',
-    priority: 'Low',
-    description: '',
-    roles: '',
+    employeeId: "",
+    ticketId: "",
+    title: "",
+    priority: "Low",
+    description: "",
+    roles: "",
   });
 
   const [showNotification, setShowNotification] = useState(false);
-
 
   useEffect(() => {
     const userData = localStorage.getItem("employeeId");
@@ -19,7 +22,7 @@ export default function IssueForm({ onSubmit }) {
       const parsed = JSON.parse(userData);
       setFormData((prev) => ({
         ...prev,
-        employeeId: parsed.employeeId || "", 
+        employeeId: parsed.employeeId || "",
       }));
     }
   }, []);
@@ -29,17 +32,17 @@ export default function IssueForm({ onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form Submitted:', formData);
+    console.log("Form Submitted:", formData);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
     onSubmit(formData);
     setFormData((prev) => ({
       ...prev,
-      ticketId: '',
-      title: '',
-      priority: 'Low',
-      description: '',
-      roles: '',
+      ticketId: "",
+      title: "",
+      priority: "Low",
+      description: "",
+      roles: "",
     }));
   };
 
@@ -47,27 +50,32 @@ export default function IssueForm({ onSubmit }) {
     <div className="relative">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-lg space-y-6 border border-gray-200"
+        className={`p-8 rounded-2xl shadow-lg space-y-6 border transition ${
+          isDark
+            ? "bg-gray-900 border-gray-700 text-white"
+            : "bg-white border-gray-500 text-black"
+        }`}
       >
-        <h2 className="text-3xl font-bold text-blue-700 text-center">Fill the form</h2>
+        <h2
+          className={`text-3xl font-bold text-center ${
+            isDark ? "text-blue-300" : "text-blue-700"
+          }`}
+        >
+          Fill the form
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
-          {/* ✅ Employee ID auto-filled & read-only */}
-          {/* <input
-            name="employeeId"
-            placeholder="Employee ID"
-            value={formData.employeeId}
-            readOnly
-            className="w-full p-3 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
-          /> */}
-
           <input
             name="title"
             placeholder="Issue Title"
             value={formData.title}
             onChange={handleChange}
             required
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+              isDark
+                ? "bg-gray-800 border-gray-600 text-white"
+                : "bg-white border-gray-300 text-black"
+            }`}
           />
         </div>
 
@@ -76,7 +84,11 @@ export default function IssueForm({ onSubmit }) {
           value={formData.priority}
           onChange={handleChange}
           required
-          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+            isDark
+              ? "bg-gray-800 border-gray-600 text-white"
+              : "bg-white border-gray-300 text-black"
+          }`}
         >
           <option value="Low">Low</option>
           <option value="Medium">Medium</option>
@@ -88,13 +100,16 @@ export default function IssueForm({ onSubmit }) {
           value={formData.roles}
           onChange={handleChange}
           required
-          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+            isDark
+              ? "bg-gray-800 border-gray-600 text-white"
+              : "bg-white border-gray-300 text-black"
+          }`}
         >
           <option value="">Select Role</option>
           <option value="ROLE_ADMIN">Admin</option>
           <option value="ROLE_HR">HR</option>
           <option value="ROLE_MANAGER">Manager</option>
-          <option value="ROLE_TEAM_LEAD">Team Lead</option>
         </select>
 
         <textarea
@@ -104,7 +119,11 @@ export default function IssueForm({ onSubmit }) {
           onChange={handleChange}
           required
           rows="5"
-          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+            isDark
+              ? "bg-gray-800 border-gray-600 text-white"
+              : "bg-white border-gray-300 text-black"
+          }`}
         ></textarea>
 
         <div className="flex justify-center">

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Context } from "../HrmsContext";
-import { publicinfoApi } from "../../../../axiosInstance";
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Context } from '../HrmsContext';
+import { publicinfoApi } from '../../../../axiosInstance';
 import {
   IoSearchOutline,
   IoMailOutline,
@@ -28,7 +28,11 @@ import {
   IoIdCardOutline,
   IoPeopleOutline,
   IoTrashOutline,
-} from "react-icons/io5";
+  IoCloudUpload,
+  IoCalendarOutline,
+  IoFitness,
+  IoGlobe,
+} from 'react-icons/io5';
 
 // --- Reusable Modal Component ---
 const Modal = ({ children, onClose, title, type, theme }) => {
@@ -70,6 +74,268 @@ const generateInitials = (name) => {
   return nameParts[0][0].toUpperCase();
 };
 
+// Simplified employee form fields - 5 essential fields including Display Name
+const employeeFormFields = [
+  {
+    label: "Employee ID",
+    name: "employeeId",
+    type: "text",
+    required: true,
+    hint: "Must start with 'ACS' followed by 8 digits (e.g., ACS12345678)"
+  },
+  {
+    label: "First Name",
+    name: "firstName",
+    type: "text",
+    required: true,
+    hint: "Enter employee's first name"
+  },
+  {
+    label: "Display Name",
+    name: "displayName",
+    type: "text",
+    required: false,
+    hint: "Name to display in the system (optional)"
+  },
+  {
+    label: "Marital Status",
+    name: "maritalStatus",
+    type: "select",
+    required: true,
+    options: ["Single", "Married", "Divorced", "Widowed"],
+    hint: "Select employee's marital status"
+  },
+  {
+    label: "Department ID",
+    name: "departmentId",
+    type: "department-dropdown",
+    required: true,
+    hint: "Select department from the list"
+  }
+];
+
+// Department Dropdown Component with Infinite Scroll - UPDATED
+const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+  const PAGE_SIZE = 10;
+
+  // Load departments with infinite scroll
+  const loadDepartments = useCallback(async (page = 0, reset = false) => {
+    if (loading || (!hasMore && !reset)) return;
+    
+    setLoading(true);
+    try {
+      const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/departmentId/asc/all/departments`);
+      console.log("Departments Response:", response.data);
+      
+      const newDepartments = response.data || [];
+      
+      setDepartments(prev => reset ? newDepartments : [...prev, ...newDepartments]);
+      setCurrentPage(page);
+      setHasMore(newDepartments.length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, hasMore]);
+
+  // Initial load when dropdown opens
+  useEffect(() => {
+    if (isOpen && departments.length === 0) {
+      loadDepartments(0, true);
+    }
+  }, [isOpen, loadDepartments, departments.length]);
+
+  // Handle scroll for infinite loading
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !loading) {
+      loadDepartments(currentPage + 1);
+    }
+  };
+
+  // Filter departments based on search term
+  const filteredDepartments = departments.filter(dept => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      dept.departmentId.toLowerCase().includes(searchLower) ||
+      dept.departmentName.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // Handle outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Get display text for selected value
+  const getDisplayText = () => {
+    if (!value) return 'Choose Department ID';
+    const selectedDept = departments.find(dept => dept.departmentId === value);
+    return selectedDept ? `${selectedDept.departmentId}(${selectedDept.departmentName})` : value;
+  };
+
+  return (
+    <div className="group relative" ref={dropdownRef}>
+      <label className={`block text-xs sm:text-sm font-semibold mb-2 flex items-center ${
+        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+      }`}>
+        Department ID
+        <span className="text-red-500 ml-1 text-sm">*</span>
+      </label>
+      
+      {/* Hint text */}
+      {hint && (
+        <p className={`text-xs mb-2 ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+        }`}>
+          {hint}
+        </p>
+      )}
+      
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 text-left text-sm
+            focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+            ${isError 
+              ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+              : theme === 'dark'
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+            }`}
+        >
+          <span className={value ? '' : 'text-gray-500'}>
+            {getDisplayText()}
+          </span>
+        </button>
+        
+        <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+          <IoChevronDownOutline className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          } ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+        </div>
+        
+        {/* Dropdown Menu */}
+        {isOpen && (
+          <div className={`absolute z-50 w-full mt-1 border rounded-lg shadow-lg max-h-64 ${
+            theme === 'dark'
+              ? 'bg-gray-700 border-gray-600'
+              : 'bg-white border-gray-300'
+          }`}>
+            {/* Search Input */}
+            <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+              <div className="relative">
+                <IoSearchOutline className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`} />
+                <input
+                  type="text"
+                  placeholder="Search departments..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
+                    theme === 'dark'
+                      ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400'
+                      : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+                  }`}
+                />
+              </div>
+            </div>
+            
+            {/* Options List with Infinite Scroll */}
+            <div
+              className="overflow-y-auto max-h-48"
+              onScroll={handleScroll}
+            >
+              {filteredDepartments.length > 0 ? (
+                filteredDepartments.map((dept, index) => (
+                  <button
+                    key={`${dept.departmentId}-${index}`}
+                    type="button"
+                    onClick={() => {
+                      onChange(dept.departmentId); // Only save departmentId
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 ${
+                      value === dept.departmentId
+                        ? theme === 'dark'
+                          ? 'bg-blue-700 text-white'
+                          : 'bg-blue-100 text-blue-800'
+                        : theme === 'dark'
+                        ? 'text-gray-200'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {dept.departmentId}({dept.departmentName})
+                      </span>
+                      <span className={`text-xs mt-1 ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {dept.departmentDescription}
+                      </span>
+                    </div>
+                  </button>
+                ))
+              ) : !loading ? (
+                <div className={`px-4 py-8 text-center text-sm ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  {searchTerm ? 'No departments found matching your search.' : 'No departments available.'}
+                </div>
+              ) : null}
+              
+              {/* Loading indicator */}
+              {loading && (
+                <div className="flex justify-center items-center py-4">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <span className={`ml-2 text-sm ${
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                  }`}>Loading departments...</span>
+                </div>
+              )}
+              
+              {/* End of results indicator */}
+              {!hasMore && departments.length > 0 && (
+                <div className={`text-center py-2 text-xs ${
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                }`}>
+                  — End of results ({departments.length} departments) —
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {isError && (
+        <div className="mt-1 sm:mt-2 flex items-center space-x-2 text-red-600">
+          <IoWarning className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <p className="text-xs sm:text-sm font-medium">{isError}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function EmployeeApp() {
   const navigate = useNavigate();
   const [employeeData, setEmployeeData] = useState(null);
@@ -89,12 +355,10 @@ function EmployeeApp() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
+    employeeId: '',
     firstName: '',
-    middleName: '',
-    lastName: '',
     displayName: '',
     maritalStatus: '',
-    employeeId: '',
     departmentId: '',
   });
   const [errors, setErrors] = useState({});
@@ -109,9 +373,41 @@ function EmployeeApp() {
   const [sortBy, setSortBy] = useState('employeeId');
   const [sortOrder, setSortOrder] = useState('asc');
 
+  // Enhanced Terminated employees state with infinite scroll
+  const [isTerminatedEmployeesModalOpen, setIsTerminatedEmployeesModalOpen] = useState(false);
+  const [terminatedEmployeesData, setTerminatedEmployeesData] = useState([]);
+  const [terminatedLoading, setTerminatedLoading] = useState(false);
+  const [terminatedHasMore, setTerminatedHasMore] = useState(true);
+  const [terminatedCurrentPage, setTerminatedCurrentPage] = useState(0);
+  const [terminatedSearchTerm, setTerminatedSearchTerm] = useState('');
+  const terminatedScrollRef = useRef(null);
+
+  const TERMINATED_PAGE_SIZE = 15;
+
   // Get the user's role and check permissions
   const userRole = userData?.roles?.[0]?.toUpperCase();
   const hasManagementAccess = ['ADMIN', 'MANAGER', 'HR'].includes(userRole);
+
+  // Load form data from localStorage when component mounts
+  useEffect(() => {
+    const savedFormData = localStorage.getItem("employeeFormData");
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        setNewEmployee(parsedData);
+        console.log("Loaded form data from localStorage:", parsedData);
+      } catch (error) {
+        console.error("Error parsing saved form data:", error);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (isFormOpen) {
+      localStorage.setItem("employeeFormData", JSON.stringify(newEmployee));
+    }
+  }, [newEmployee, isFormOpen]);
 
   useEffect(() => {
     const handleOutsideClick = () => {
@@ -280,6 +576,12 @@ function EmployeeApp() {
     if (!data.firstName) {
       errors.firstName = "First name is required.";
     }
+    if (!data.maritalStatus) {
+      errors.maritalStatus = "Marital status is required.";
+    }
+    if (!data.departmentId) {
+      errors.departmentId = "Department ID is required.";
+    }
     return errors;
   };
 
@@ -295,20 +597,38 @@ function EmployeeApp() {
     }
 
     try {
-      await publicinfoApi.post('employee', newEmployee);
-      setPopup({ show: true, message: 'Employee created successfully!', type: 'success' });
+      // Send the 5 essential fields including displayName
+      const employeeDataToSubmit = {
+        employeeId: newEmployee.employeeId,
+        firstName: newEmployee.firstName,
+        displayName: newEmployee.displayName,
+        maritalStatus: newEmployee.maritalStatus,
+        departmentId: newEmployee.departmentId,
+      };
+
+      await publicinfoApi.post('employee', employeeDataToSubmit, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      setPopup({ show: true, message: 'Employee created successfully! You can add more details later.', type: 'success' });
       setIsFormOpen(false);
+      
+      // Clear localStorage after successful submission
+      localStorage.removeItem("employeeFormData");
+      console.log("Cleared form data from localStorage after successful submission");
       
       // Refresh employee list
       const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
       setEmployeeData(response.data);
+      
+      // Reset form
       setNewEmployee({
+        employeeId: '',
         firstName: '',
-        middleName: '',
-        lastName: '',
         displayName: '',
         maritalStatus: '',
-        employeeId: '',
         departmentId: '',
       });
     } catch (error) {
@@ -333,9 +653,39 @@ function EmployeeApp() {
     }
   };
 
-  const renderField = (label, name, type = 'text', required = false, options = []) => {
+  const handleDepartmentChange = (value) => {
+    setNewEmployee({ ...newEmployee, departmentId: value });
+    if (errors.departmentId) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.departmentId;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    // Don't clear localStorage when closing the form, so data persists
+  };
+
+  const renderField = (field) => {
+    const { label, name, type, required, options = [], hint } = field;
     const isError = errors[name];
     const fieldValue = newEmployee[name] || '';
+
+    if (type === 'department-dropdown') {
+      return (
+        <DepartmentDropdown
+          key={name}
+          value={fieldValue}
+          onChange={handleDepartmentChange}
+          theme={theme}
+          isError={isError}
+          hint={hint}
+        />
+      );
+    }
 
     return (
       <div className="group relative" key={name}>
@@ -345,6 +695,15 @@ function EmployeeApp() {
           {label}
           {required && <span className="text-red-500 ml-1 text-sm">*</span>}
         </label>
+        
+        {/* Hint text */}
+        {hint && (
+          <p className={`text-xs mb-2 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {hint}
+          </p>
+        )}
         
         {type === 'select' ? (
           <div className="relative">
@@ -364,6 +723,11 @@ function EmployeeApp() {
               <option value="">Choose {label}</option>
               {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
             </select>
+            <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <IoChevronDownOutline className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
+              }`} />
+            </div>
           </div>
         ) : (
           <input 
@@ -404,7 +768,7 @@ function EmployeeApp() {
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: -50, opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className={`relative w-full max-w-sm sm:max-w-md lg:max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
+          className={`relative w-full max-w-sm sm:max-w-md lg:max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
             theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
           }`}
         >
@@ -418,11 +782,11 @@ function EmployeeApp() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-lg sm:text-xl font-bold break-words">Create New Employee</h2>
-                  <p className="text-white/90 text-xs sm:text-sm break-words">Fill in the details to add a new employee to the system.</p>
+                  <p className="text-white/90 text-xs sm:text-sm break-words">Basic information only. More details can be added later.</p>
                 </div>
               </div>
               <button 
-                onClick={() => setIsFormOpen(false)} 
+                onClick={handleFormClose} 
                 className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
               >
                 <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
@@ -433,15 +797,19 @@ function EmployeeApp() {
           {/* Form Content */}
           <div className="overflow-y-auto max-h-[calc(95vh-140px)]">
             <form className="p-4 sm:p-6" onSubmit={handleFormSubmit}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                {renderField("Employee ID", "employeeId", "text", true)}
-                {renderField("First Name", "firstName", "text", true)}
-                {renderField("Middle Name", "middleName", "text")}
-                {renderField("Last Name", "lastName", "text")}
-                {renderField("Display Name", "displayName", "text")}
-                {renderField("Marital Status", "maritalStatus", "select", false, ["Single", "Married", "Divorced", "Widowed"])}
-                {renderField("Department ID", "departmentId", "text")}
+              {/* Essential Information Section */}
+              <div className="mb-6">
+                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                }`}>
+                  <IoPersonOutline className="w-5 h-5 mr-2" />
+                  Essential Information
+                </h3>
+                <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                  {employeeFormFields.map(renderField)}
+                </div>
               </div>
+
               {errors.general && (
                 <div className={`mt-4 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
                   theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
@@ -461,7 +829,7 @@ function EmployeeApp() {
           }`}>
             <button 
               type="button" 
-              onClick={() => setIsFormOpen(false)}
+              onClick={handleFormClose}
               className={`w-full sm:w-auto px-4 sm:px-6 py-2 border-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
                 theme === 'dark' 
                   ? 'border-gray-600 text-gray-300 hover:bg-gray-600' 
@@ -490,6 +858,257 @@ function EmployeeApp() {
                 </>
               )}
             </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+
+  // Enhanced function to load terminated employees with infinite scroll
+  const loadTerminatedEmployees = useCallback(async (page = 0, reset = false) => {
+    if (terminatedLoading || (!terminatedHasMore && !reset)) return;
+    
+    setTerminatedLoading(true);
+    try {
+      const response = await publicinfoApi.get(`employee/${page}/${TERMINATED_PAGE_SIZE}/employeeId/asc/terminated/employees`);
+      console.log("Terminated Employees Response:", response.data);
+      
+      const newEmployees = response.data || [];
+      
+      setTerminatedEmployeesData(prev => reset ? newEmployees : [...prev, ...newEmployees]);
+      setTerminatedCurrentPage(page);
+      setTerminatedHasMore(newEmployees.length === TERMINATED_PAGE_SIZE);
+    } catch (error) {
+      console.error("Error fetching terminated employees:", error);
+      if (reset) {
+        alert("Failed to fetch terminated employees. Check console for details.");
+      }
+    } finally {
+      setTerminatedLoading(false);
+    }
+  }, [terminatedLoading, terminatedHasMore]);
+
+  const handleTerminateEmployees = async () => {
+    setTerminatedEmployeesData([]);
+    setTerminatedCurrentPage(0);
+    setTerminatedHasMore(true);
+    setTerminatedSearchTerm('');
+    setIsTerminatedEmployeesModalOpen(true);
+    
+    // Load first page
+    loadTerminatedEmployees(0, true);
+  };
+
+  // Handle scroll for infinite loading
+  const handleTerminatedScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 50 && terminatedHasMore && !terminatedLoading) {
+      loadTerminatedEmployees(terminatedCurrentPage + 1);
+    }
+  };
+
+  // Filter terminated employees based on search term
+  const filteredTerminatedEmployees = terminatedEmployeesData.filter(employee => {
+    if (!terminatedSearchTerm) return true;
+    const searchLower = terminatedSearchTerm.toLowerCase();
+    return (
+      (employee.displayName && employee.displayName.toLowerCase().includes(searchLower)) ||
+      (employee.employeeId && employee.employeeId.toLowerCase().includes(searchLower)) ||
+      (employee.workEmail && employee.workEmail.toLowerCase().includes(searchLower))
+    );
+  });
+
+  const renderTerminatedEmployeesModal = () => {
+    if (!isTerminatedEmployeesModalOpen) return null;
+
+    const baseApiUrl = "https://hrms.anasolconsultancyservices.com/api";
+
+    const renderDataField = (label, value) => {
+        if (Array.isArray(value)) {
+            value = value.join(', ');
+        }
+        return (
+            <div className="text-xs">
+                <span className="font-semibold">{label}:</span> {value || 'N/A'}
+            </div>
+        );
+    };
+
+    const renderLink = (label, path) => {
+      if (!path) return null;
+      const fullUrl = path.startsWith("http") ? path : `${baseApiUrl}/${path}`;
+      return (
+        <a 
+          href={fullUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-blue-500 hover:underline text-xs mt-1 inline-block"
+        >
+          {label}
+        </a>
+      );
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] p-2 sm:p-4">
+        <motion.div
+          initial={{ y: -50, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -50, opacity: 0, scale: 0.9 }}
+          transition={{ duration: 0.3 }}
+          className={`relative w-full max-w-sm sm:max-w-md lg:max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
+            theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
+          {/* Header */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-red-500 to-red-700 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center space-x-3 min-w-0 flex-1">
+                <div className="text-lg sm:text-2xl">
+                  <IoTrashOutline />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg sm:text-xl font-bold break-words">Terminated Employees</h2>
+                  <p className="text-white/90 text-xs sm:text-sm break-words">
+                    List of employees who have left the company ({filteredTerminatedEmployees.length} found)
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsTerminatedEmployeesModalOpen(false)} 
+                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
+              >
+                <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className={`px-4 sm:px-6 py-3 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="relative">
+              <IoSearchOutline className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+              <input
+                type="text"
+                placeholder="Search terminated employees..."
+                value={terminatedSearchTerm}
+                onChange={(e) => setTerminatedSearchTerm(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Employee List with Infinite Scroll */}
+          <div 
+            ref={terminatedScrollRef}
+            className="overflow-y-auto max-h-[calc(95vh-180px)] p-4 sm:p-6"
+            onScroll={handleTerminatedScroll}
+          >
+            {filteredTerminatedEmployees.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTerminatedEmployees.map((employee, index) => (
+                  <motion.div 
+                    key={`${employee.employeeId}-${index}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (index % TERMINATED_PAGE_SIZE) * 0.05 }}
+                    className={`p-4 rounded-lg border ${
+                      theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
+                    } hover:shadow-lg transition-all duration-300`}
+                  >
+                    {/* Profile Picture */}
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="flex-shrink-0">
+                        {employee.employeeImage ? (
+                          <img
+                            src={employee.employeeImage.startsWith("http") 
+                              ? employee.employeeImage 
+                              : `${baseApiUrl}/${employee.employeeImage}`
+                            }
+                            alt={`${employee.displayName || 'Employee'}'s profile`}
+                            className="h-12 w-12 rounded-full object-cover border-2 border-red-300 shadow-md"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`h-12 w-12 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 flex items-center justify-center text-white text-sm font-bold shadow-md ${
+                            employee.employeeImage ? 'hidden' : 'flex'
+                          }`}
+                        >
+                          {generateInitials(employee.displayName || employee.employeeId || 'N/A')}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm truncate">{employee.displayName || 'N/A'}</h4>
+                        <p className="text-xs text-gray-500 truncate">{employee.employeeId}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                        {renderDataField("Work Email", employee.workEmail)}
+                        {renderDataField("Work Number", employee.workNumber)}
+                        {renderDataField("Gender", employee.gender)}
+                        {renderDataField("Date of Joining", employee.dateOfJoining)}
+                        {renderDataField("Date of Leaving", employee.dateOfLeaving)}
+                        {renderDataField("Department", employee.departmentId)}
+                        {renderDataField("Projects", employee.projectId)}
+                        {renderDataField("Teams", employee.teamId)}
+                        {renderDataField("Aadhaar Number", employee.aadharNumber)}
+                        {renderDataField("PAN Number", employee.panNumber)}
+                        {renderDataField("Passport Number", employee.passportNumber)}
+                        
+                        {employee.degreeDocuments && Array.isArray(employee.degreeDocuments) && employee.degreeDocuments.map((doc, docIndex) => (
+                          <div key={docIndex}>
+                            {renderLink(`Click for Degree Image ${docIndex + 1}`, doc)}
+                          </div>
+                        ))}
+
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {renderLink("Employee Image", employee.employeeImage)}
+                          {renderLink("Aadhaar Image", employee.aadharImage)}
+                          {renderLink("PAN Image", employee.panImage)}
+                          {renderLink("Passport Image", employee.passportImage)}
+                        </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : terminatedLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                <span className="ml-3 text-sm">Loading terminated employees...</span>
+              </div>
+            ) : (
+              <p className="text-center text-sm italic text-gray-500 py-8">
+                {terminatedSearchTerm ? 'No terminated employees found matching your search.' : 'No terminated employees found.'}
+              </p>
+            )}
+
+            {/* Loading indicator for infinite scroll */}
+            {terminatedLoading && terminatedEmployeesData.length > 0 && (
+              <div className="flex justify-center items-center py-4 mt-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+                <span className="ml-3 text-sm">Loading more...</span>
+              </div>
+            )}
+
+            {/* End of results indicator */}
+            {!terminatedHasMore && terminatedEmployeesData.length > 0 && (
+              <div className="text-center py-4 mt-4">
+                <p className="text-sm text-gray-500 italic">
+                  — End of results ({terminatedEmployeesData.length} total employees) —
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -604,6 +1223,16 @@ function EmployeeApp() {
                 </button>
               )}
 
+              {userRole === 'ADMIN' && (
+                <button
+                  onClick={handleTerminateEmployees}
+                  className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
+                >
+                  <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Terminated Employees</span>
+                </button>
+              )}
+
               {/* View Mode Toggle */}
               <div className={`flex rounded-lg p-1 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
                 <button
@@ -649,7 +1278,7 @@ function EmployeeApp() {
             <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
               theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
             }`}>
-              <IoPersonOutline className={`w-8 h-8 sm:w-10 sm:h-10 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+              <IoPersonOutline className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
             </div>
             <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>No Employees Found</h2>
             <p className={`text-sm sm:text-base mb-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -992,7 +1621,7 @@ function EmployeeApp() {
                               theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
                             }`}>
                               <IoIdCardOutline className={`w-3 h-3 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                              <span className="truncate font-mono text-xs">{employee.employeeId}</span>
+                              <span className="truncate font-mongo text-xs">{employee.employeeId}</span>
                             </div>
 
                             <div className={`flex items-center space-x-1 p-1 sm:p-2 rounded-md ${
@@ -1070,6 +1699,7 @@ function EmployeeApp() {
                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            disabled={filteredEmployees.length < pageSize}
           >
             <span>Next</span>
             <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1129,6 +1759,8 @@ function EmployeeApp() {
           </div>
         </Modal>
       )}
+
+      {renderTerminatedEmployeesModal()}
 
       {/* CSS FOR 3D FLIP EFFECT */}
       <style jsx>{`

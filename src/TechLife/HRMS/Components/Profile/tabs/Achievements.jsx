@@ -124,11 +124,27 @@ const Achievements = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const achievementDTO = Object.fromEntries(formData.entries());
-
+    
+    // Create a new FormData object
     const submissionData = new FormData();
-    submissionData.append('achievementDTO', new Blob([JSON.stringify(achievementDTO)], { type: 'application/json' }));
+    const form = e.target;
+    const achievementFile = form.achievementFile.files[0];
+    const achievementDTO = {
+        certificationName: form.certificationName.value,
+        issuingAuthorityName: form.issuingAuthorityName.value,
+        certificationURL: form.certificationURL.value,
+        issueMonth: form.issueMonth.value,
+        issueYear: form.issueYear.value,
+        expirationMonth: form.expirationMonth.value,
+        expirationYear: form.expirationYear.value,
+        licenseNumber: form.licenseNumber.value
+    };
+
+    // Append the file and the DTO
+    if (achievementFile) {
+      submissionData.append('achievementFile', achievementFile);
+    }
+    submissionData.append('achievementsDTO', new Blob([JSON.stringify(achievementDTO)], { type: 'application/json' }));
 
     try {
         let response;
@@ -631,6 +647,23 @@ const Achievements = () => {
                       type="url"
                       defaultValue={selectedAchievement?.certificationURL} 
                       placeholder="https://..." 
+                      className={`w-full p-2 sm:p-3 rounded-lg border transition-colors text-sm ${
+                        theme === 'dark'
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500'
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-xs sm:text-sm font-semibold mb-2 ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Achievement File (Optional)
+                    </label>
+                    <input 
+                      name="achievementFile" 
+                      type="file"
                       className={`w-full p-2 sm:p-3 rounded-lg border transition-colors text-sm ${
                         theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500'

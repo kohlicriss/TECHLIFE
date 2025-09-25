@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle } from "lucide-react";
+import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle, ChevronDown, Search } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { tasksApi } from '../../../../axiosInstance';
+import { publicinfoApi, tasksApi } from '../../../../axiosInstance';
 
 const CalendarIcon = ({ theme }) => (
     <svg
@@ -16,7 +16,7 @@ const CalendarIcon = ({ theme }) => (
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002-2z"
         />
     </svg>
 );
@@ -97,6 +97,240 @@ const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
     </Modal>
 );
 
+// New EmployeeDropdown Component with Infinity Scroll Pagination
+const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [allLoaded, setAllLoaded] = useState(false);
+    const { userData } = useContext(Context);
+    
+    const PAGE_SIZE = 10;
+
+    // Load initial employees and reset when dropdown opens
+    useEffect(() => {
+        if (isOpen && employees.length === 0) {
+            loadEmployees(0, true);
+        }
+    }, [isOpen]);
+
+    const loadEmployees = async (page = 0, reset = false) => {
+        if (loading || (allLoaded && !reset)) return;
+        
+        setLoading(true);
+        try {
+            const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/public/employees`);
+            const newEmployees = response.data || [];
+            
+            // Filter out the logged-in user
+            const filteredNewEmployees = newEmployees.filter(emp => emp.employeeId !== userData?.employeeId);
+            
+            if (reset) {
+                setEmployees(filteredNewEmployees);
+                setCurrentPage(0);
+            } else {
+                setEmployees(prev => [...prev, ...filteredNewEmployees]);
+            }
+            
+            setCurrentPage(page);
+            setHasMore(newEmployees.length === PAGE_SIZE);
+            
+            if (newEmployees.length < PAGE_SIZE) {
+                setAllLoaded(true);
+            }
+        } catch (error) {
+            console.error('Error fetching employees:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadMoreEmployees = () => {
+        if (!loading && hasMore && !allLoaded) {
+            loadEmployees(currentPage + 1, false);
+        }
+    };
+
+    const filteredEmployees = employees.filter(emp => 
+        emp.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const selectedEmployee = employees.find(emp => emp.employeeId === value);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            loadMoreEmployees();
+        }
+    };
+
+    const handleEmployeeSelect = (employeeId) => {
+        onChange(employeeId);
+        setIsOpen(false);
+        setSearchTerm('');
+    };
+
+    const handleDropdownToggle = () => {
+        if (!disabled) {
+            if (!isOpen) {
+                // Reset employees when opening
+                setEmployees([]);
+                setCurrentPage(0);
+                setAllLoaded(false);
+                setHasMore(true);
+            }
+            setIsOpen(!isOpen);
+        }
+    };
+
+    return (
+        <div className="relative">
+            <div
+                onClick={handleDropdownToggle}
+                className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+                    error 
+                        ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                        : theme === 'dark' 
+                            ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' 
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                } ${
+                    disabled 
+                        ? theme === 'dark' 
+                            ? 'bg-gray-800 cursor-not-allowed opacity-60' 
+                            : 'bg-gray-50 cursor-not-allowed opacity-60'
+                        : ''
+                }`}
+            >
+                <div className="flex-1">
+                    {selectedEmployee ? (
+                        <div className="flex items-center space-x-3">
+                            <div>
+                                <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                    {selectedEmployee.fullName}
+                                </div>
+                                <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {selectedEmployee.employeeId}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+                            Choose employee to assign task
+                        </span>
+                    )}
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+            </div>
+            
+            {isOpen && !disabled && (
+                <div className={`absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-lg z-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    {/* Search Box */}
+                    <div className="p-3 border-b border-gray-200 dark:border-gray-600">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search employees..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className={`w-full pl-10 pr-4 py-2 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                                    theme === 'dark' 
+                                        ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
+                                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                                }`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Employee List */}
+                    <div 
+                        className="max-h-64 overflow-y-auto" 
+                        onScroll={handleScroll}
+                    >
+                        {filteredEmployees.length > 0 ? (
+                            <>
+                                {filteredEmployees.map(employee => (
+                                    <div
+                                        key={employee.employeeId}
+                                        onClick={() => handleEmployeeSelect(employee.employeeId)}
+                                        className={`p-3 cursor-pointer transition-colors duration-150 flex items-center space-x-3 hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'} ${
+                                            value === employee.employeeId ? (theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-50') : ''
+                                        }`}
+                                    >
+                                        <div className="flex-1">
+                                            <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                {employee.fullName}
+                                            </div>
+                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {employee.employeeId}
+                                            </div>
+                                        </div>
+                                        {value === employee.employeeId && (
+                                            <CheckCircle className="w-5 h-5 text-blue-500" />
+                                        )}
+                                    </div>
+                                ))}
+                                
+                                {/* Loading indicator */}
+                                {loading && (
+                                    <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                            <span>Loading more employees...</span>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Load more button */}
+                                {!loading && hasMore && !allLoaded && filteredEmployees.length >= PAGE_SIZE && (
+                                    <div className="p-3 border-t border-gray-200 dark:border-gray-600">
+                                        <button
+                                            onClick={loadMoreEmployees}
+                                            className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${
+                                                theme === 'dark' 
+                                                    ? 'bg-gray-600 hover:bg-gray-500 text-white' 
+                                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                            }`}
+                                        >
+                                            Load More Employees
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                {/* No more employees message */}
+                                {allLoaded && filteredEmployees.length > 0 && (
+                                    <div className={`p-3 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        All employees loaded
+                                    </div>
+                                )}
+                            </>
+                        ) : searchTerm ? (
+                            <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                No employees found matching "{searchTerm}"
+                            </div>
+                        ) : loading ? (
+                            <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <div className="flex items-center justify-center space-x-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                    <span>Loading employees...</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                No employees found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const TasksPage = () => {
     const navigate = useNavigate();
     const { employeeId } = useParams();
@@ -109,7 +343,8 @@ const TasksPage = () => {
     const [filterStatus, setFilterStatus] = useState("ALL");
     const [sortOption, setSortOption] = useState("none");
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-    const [displayMode, setDisplayMode] = useState("ASSIGNED_BY_ME");
+    const [displayMode, setDisplayMode] = useState("MY_TASKS");
+    const [projects, setProjects] = useState([]);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -211,6 +446,20 @@ const TasksPage = () => {
             }
         }
     }, [userData, currentNumber, dropdownValue]);
+
+    // Fetch projects
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
+                setProjects(response.data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchProjects();
+    }, []);
 
     useEffect(() => {
         if (userData) {
@@ -364,7 +613,6 @@ const TasksPage = () => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (formMode === 'create' && !formData.id.trim()) newErrors.id = 'Task ID is required';
         if (!formData.title || formData.title.trim().length < 3) newErrors.title = 'Title must be at least 3 characters';
         if (formData.title.length > 100) newErrors.title = 'Title cannot exceed 100 characters';
         if (!formData.assignedTo) newErrors.assignedTo = 'Assigned to is required';
@@ -432,6 +680,11 @@ const TasksPage = () => {
             relatedLinks: formData.relatedLinks.filter(link => link.trim() !== ''),
             projectId: formData.projectId,
         };
+        
+        if (formMode === 'create') {
+            delete taskPayload.id;
+        }
+
         formDataToSend.append('taskDTO', new Blob([JSON.stringify(taskPayload)], { type: 'application/json' }));
         files.forEach(file => formDataToSend.append('attachedFileLinks', file));
 
@@ -487,7 +740,6 @@ const TasksPage = () => {
             });
     }, [assignedByMeTasks, filterStatus, sortOption]);
 
-    // Modern Field Renderer - Similar to Documents.jsx
     const renderField = (label, name, type = "text", required = false, options = [], isDisabled = false) => {
         const isError = formErrors[name];
         const fieldValue = formData[name] || "";
@@ -495,6 +747,40 @@ const TasksPage = () => {
         const handleLocalFieldChange = (value) => {
             handleInputChange({ target: { name, value } });
         };
+
+        // Special handling for assignedTo field with new EmployeeDropdown
+        if (name === 'assignedTo') {
+            return (
+                <div className="group relative" key={name}>
+                    <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                        {label}
+                        {required && <span className="text-red-500 ml-1 text-base">*</span>}
+                        {isDisabled && (
+                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                                theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                Read Only
+                            </span>
+                        )}
+                    </label>
+                    <EmployeeDropdown
+                        value={fieldValue}
+                        onChange={handleLocalFieldChange}
+                        theme={theme}
+                        error={isError}
+                        disabled={isDisabled}
+                    />
+                    {isError && (
+                        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p className="text-sm font-medium">{isError}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
         return (
             <div className="group relative" key={name}>
@@ -529,7 +815,11 @@ const TasksPage = () => {
                             disabled={isDisabled}
                         >
                             <option value="">Choose {label}</option>
-                            {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                            {options.map((opt) => (
+                                <option key={opt.value || opt} value={opt.value || opt}>
+                                    {opt.label || opt}
+                                </option>
+                            ))}
                         </select>
                         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
                             <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -670,8 +960,8 @@ const TasksPage = () => {
                         <form className="p-8" onSubmit={handleFormSubmit}>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {/* Basic Information */}
-                                {renderField('Task ID', 'id', 'text', true, [], isUpdate)}
-                                {renderField('Project ID', 'projectId', 'text', true, [], isUpdate)}
+                                {isUpdate && renderField('Task ID', 'id', 'text', true, [], true)}
+                                {renderField('Project ID', 'projectId', 'select', true, projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId })))}
                                 {renderField('Task Title', 'title', 'text', true)}
                                 {renderField('Description', 'description', 'textarea')}
                                 {renderField('Assigned To', 'assignedTo', 'text', true)}
@@ -855,7 +1145,7 @@ const TasksPage = () => {
                                 {showAssignedTo && isTeamLead && <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-slate-600'}`}>Actions</th>}
                             </tr>
                         </thead>
-                        <tbody className={`divide-y ${theme === 'dark' ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-slate-200'}`}>
+                        <tbody className={`divide-y transition-colors duration-150 ${theme === 'dark' ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-slate-200'}`}>
                             {taskList.length > 0 ? taskList.map(task => {
                                 const timeCompletedBar = calculateTimeCompletedBar(task.startDate || task.createdDate, task.dueDate, today);
                                 const progressBarColor = timeCompletedBar <= 50 ? 'bg-green-500' : timeCompletedBar <= 75 ? 'bg-yellow-500' : 'bg-red-500';

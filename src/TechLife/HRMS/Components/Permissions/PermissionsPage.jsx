@@ -8,15 +8,20 @@ const PermissionsPage = () => {
   const [permissions, setPermissions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const allPermissionOptions = [
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // New state for the custom permission input
+  const [newPermissionLabel, setNewPermissionLabel] = useState('');
+  
+  // Converted the static options array into a state so it can be updated
+  const [allPermissionOptions, setAllPermissionOptions] = useState([
     { value: 'createTask', label: 'Create Task' },
     { value: 'viewTeams', label: 'View Teams' },
     { value: 'createTaskHistory', label: 'Create Task History' },
     { value: 'createEmployee', label: 'Create Employee' },
     { value: 'viewDocuments', label: 'View Documents' },
     { value: 'viewProfile', label: 'View Profile' },
-  ];
+  ]);
 
   const roleMeta = [
     { key: "hr", roleName: "HR" },
@@ -26,27 +31,102 @@ const PermissionsPage = () => {
     { key: "admin", roleName: "ADMIN" },
   ];
 
+  // Function to add the new permission to the options list
+  const handleAddPermission = () => {
+    if (!newPermissionLabel.trim()) {
+      alert("Please enter a label for the new permission.");
+      return;
+    }
+
+    // Sanitize the label to create a computer-friendly value (e.g., "View Reports" -> "viewReports")
+    const newPermissionValue = newPermissionLabel
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+      .split(' ')
+      .map((word, index) =>
+        index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
+      )
+      .join('');
+
+    // Check for duplicates
+    if (allPermissionOptions.some(option => option.value === newPermissionValue)) {
+      alert("A permission with this value already exists.");
+      return;
+    }
+
+    const newPermission = {
+      value: newPermissionValue,
+      label: newPermissionLabel.trim(),
+    };
+
+    setAllPermissionOptions(prevOptions => [...prevOptions, newPermission]);
+    setNewPermissionLabel(''); // Clear the input field after adding
+  };
+
+
   useEffect(() => {
+    const loadFromLocalStorage = () => {
+      console.log("Loading permissions from localStorage...");
+      const saved = localStorage.getItem("permissionsData");
+      if (saved) {
+        try {
+          const parsedData = JSON.parse(saved);
+          console.log("Loaded permissions from localStorage:", parsedData);
+          return parsedData;
+        } catch (error) {
+          console.error("Error parsing saved permissions data:", error);
+        }
+      }
+      return null;
+    };
+
     const fetchPermissions = async () => {
       setLoading(true);
+      
+      const savedPermissions = loadFromLocalStorage();
+      
       try {
         const response = await publicinfoApi.get('/permissions/all');
-        setPermissions(response.data);
+        const apiPermissions = response.data;
+        
+        if (savedPermissions) {
+          console.log("Using saved permissions over API data");
+          setPermissions(savedPermissions);
+        } else {
+          setPermissions(apiPermissions);
+        }
       } catch (error) {
-        console.error("Failed to fetch permissions, using default empty.", error);
-        setPermissions({
-          employee: [],
-          team_lead: [],
-          admin: [],
-          hr: [],
-          manager: [],
-        });
+        console.error("Failed to fetch permissions from API", error);
+        
+        if (savedPermissions) {
+          console.log("API failed, using saved permissions");
+          setPermissions(savedPermissions);
+        } else {
+          console.log("API failed, using default empty permissions");
+          setPermissions({
+            employee: [],
+            team_lead: [],
+            admin: [],
+            hr: [],
+            manager: [],
+          });
+        }
       } finally {
         setLoading(false);
+        setIsLoaded(true); 
       }
     };
+
     fetchPermissions();
   }, []);
+
+  useEffect(() => {
+    if (isLoaded && permissions) {
+      console.log("Saving permissions to localStorage:", permissions);
+      localStorage.setItem("permissionsData", JSON.stringify(permissions));
+    }
+  }, [permissions, isLoaded]);
 
   const handleSelectionChange = (selectedOptions, role) => {
     const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
@@ -56,41 +136,69 @@ const PermissionsPage = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    const transformedPermissions = roleMeta.map(({ key, roleName }) => ({
-      roleName,
-      permissions: permissions[key] || [],
-    }));
+  const transformedPermissions = roleMeta.map(({ key, roleName }) => ({
+    roleName,
+    permissions: permissions[key] || [],
+  }));
 
-    console.log("Submitting permissions:", transformedPermissions);
+  // ✅ Print data to console
+  console.log("Submitting permissions:", transformedPermissions);
 
-    try {
-      await publicinfoApi.post('/permissions/update', transformedPermissions);
-      alert("Permissions updated successfully!");
-    } catch (error) {
-      console.error("Failed to save permissions:", error);
-      alert("Error: Could not save permissions. Please check the console.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  try {
+    // ✅ Clear localStorage after printing data
+    console.log("Clearing localStorage...");
+    localStorage.removeItem("permissionsData");
+    console.log("LocalStorage cleared. Current content:", localStorage.getItem("permissionsData"));
+    
+    alert("Permissions data printed to console and localStorage cleared!");
+    
+  } catch (error) {
+    console.error("Error:", error);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
+
+  const handleReset = () => {
+    console.log("Resetting permissions and clearing localStorage");
+    localStorage.removeItem("permissionsData");
+    window.location.reload();
   };
 
   const customSelectStyles = {
     control: (provided, state) => ({
       ...provided,
       backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
-      borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
-      boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
+      borderColor: state.isFocused 
+        ? '#3b82f6' 
+        : theme === 'dark' ? '#4b5563' : '#d1d5db',
+      boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.2)' : 'none',
+      borderRadius: '0.5rem',
+      minHeight: '44px',
+      fontSize: '14px',
+      transition: 'all 0.2s ease',
       '&:hover': {
-        borderColor: theme === 'dark' ? '#6b7280' : '#a5b4fc',
+        borderColor: state.isFocused ? '#3b82f6' : (theme === 'dark' ? '#6b7280' : '#a5b4fc'),
       },
     }),
     menu: (provided) => ({
       ...provided,
       backgroundColor: theme === 'dark' ? '#374151' : 'white',
+      borderRadius: '0.5rem',
+      border: theme === 'dark' ? '1px solid #4b5563' : '1px solid #d1d5db',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      zIndex: 50,
+      fontSize: '14px',
+    }),
+    menuPortal: (provided) => ({
+      ...provided,
+      zIndex: 50,
     }),
     option: (provided, state) => ({
       ...provided,
@@ -99,64 +207,241 @@ const PermissionsPage = () => {
         : state.isFocused
         ? (theme === 'dark' ? '#4b5563' : '#eef2ff')
         : 'transparent',
-      color: theme === 'dark' ? 'white' : 'black',
+      color: state.isSelected 
+        ? 'white' 
+        : (theme === 'dark' ? 'white' : 'black'),
+      padding: '12px 16px',
+      fontSize: '14px',
+      cursor: 'pointer',
+      '&:hover': {
+        backgroundColor: state.isSelected 
+          ? '#3b82f6' 
+          : (theme === 'dark' ? '#4b5563' : '#eef2ff'),
+      },
     }),
     multiValue: (provided) => ({
       ...provided,
       backgroundColor: theme === 'dark' ? '#4b5563' : '#e0e7ff',
+      borderRadius: '6px',
+      margin: '2px',
+      fontSize: '13px',
     }),
     multiValueLabel: (provided) => ({
       ...provided,
       color: theme === 'dark' ? 'white' : '#1e3a8a',
+      fontSize: '13px',
+      fontWeight: '500',
+      padding: '4px 8px',
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: theme === 'dark' ? '#e0e7ff' : '#1e3a8a',
+      borderRadius: '0 6px 6px 0',
+      padding: '4px',
+      ':hover': {
+        backgroundColor: theme === 'dark' ? '#ef4444' : '#f87171',
+        color: 'white',
+      },
     }),
     input: (provided) => ({
       ...provided,
       color: theme === 'dark' ? 'white' : 'black',
+      fontSize: '14px',
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+      fontSize: '14px',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: theme === 'dark' ? 'white' : 'black',
+      fontSize: '14px',
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+      padding: '8px',
+      ':hover': {
+        color: theme === 'dark' ? '#d1d5db' : '#374151',
+      },
+    }),
+    clearIndicator: (provided) => ({
+      ...provided,
+      color: theme === 'dark' ? '#9ca3af' : '#6b7280',
+      padding: '8px',
+      ':hover': {
+        color: theme === 'dark' ? '#ef4444' : '#f87171',
+      },
     }),
   };
 
-  if (loading)
-    return <div className={`p-6 ${theme === 'dark' ? 'text-white' : ''}`}>Loading Permissions...</div>;
+  if (loading) {
+    return (
+      <div className={`flex items-center justify-center min-h-screen p-4 sm:p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-sm sm:text-base">Loading permissions...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!permissions)
-    return <div className={`p-6 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>Could not load permissions data.</div>;
+  if (!permissions) {
+    return (
+      <div className={`flex items-center justify-center min-h-screen p-4 sm:p-6 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className={`text-center p-6 sm:p-8 rounded-lg shadow-md max-w-md w-full ${theme === 'dark' ? 'bg-gray-800 text-red-400' : 'bg-white text-red-600'}`}>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold mb-2">Error Loading Permissions</h2>
+          <p className="text-sm sm:text-base">Could not load permissions data. Please try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   const roles = ['employee', 'team_lead', 'admin', 'hr', 'manager'];
 
   return (
-    <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
-      <h1 className="text-3xl font-bold mb-6">Permissions Form</h1>
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {roles.map(role => {
-          const selectedPermissionsForRole = allPermissionOptions.filter(
-            option => permissions[role] && permissions[role].includes(option.value)
-          );
-          return (
-            <div key={role} className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-              <h2 className="text-2xl font-semibold capitalize mb-4 border-b pb-2">{role.replace('_', ' ')}</h2>
-              <Select
-                isMulti
-                options={allPermissionOptions}
-                value={selectedPermissionsForRole}
-                onChange={selectedOptions => handleSelectionChange(selectedOptions, role)}
-                className="basic-multi-select"
-                classNamePrefix="select"
-                styles={customSelectStyles}
-                placeholder="Select permissions..."
-              />
-            </div>
-          );
-        })}
-        <div className="flex justify-end pt-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-          >
-            {isSubmitting ? 'Saving...' : 'Save Permissions'}
-          </button>
+    <div className={`min-h-screen px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-6 sm:mb-8 px-4 sm:px-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Permissions Management</h1>
+          <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            Configure role-based permissions for your organization
+          </p>
         </div>
-      </form>
+
+        {/* New section for adding custom permissions */}
+        <div className={`p-4 sm:p-6 rounded-lg shadow-md mb-8 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+          <h3 className="text-lg font-semibold mb-4">Add a New Permission</h3>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              value={newPermissionLabel}
+              onChange={(e) => setNewPermissionLabel(e.target.value)}
+              placeholder="Enter new permission label (e.g., View Reports)"
+              className={`flex-grow p-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                theme === 'dark' 
+                  ? 'bg-gray-700 border-gray-600 focus:ring-blue-500' 
+                  : 'bg-white border-gray-300 focus:ring-blue-500'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={handleAddPermission}
+              className={`px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200`}
+            >
+              Add Permission
+            </button>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 md:space-y-8">
+          {roles.map((role) => {
+            const selectedPermissionsForRole = allPermissionOptions.filter(
+              option => permissions[role] && permissions[role].includes(option.value)
+            );
+
+            return (
+              <div 
+                key={role} 
+                className={`mx-4 sm:mx-0 rounded-none sm:rounded-lg md:rounded-xl shadow-sm sm:shadow-md border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-800 border-gray-700 hover:border-gray-600' 
+                    : 'bg-white border-gray-200 hover:border-gray-300'
+                } transition-all duration-200`}
+              >
+                <div className="p-4 sm:p-6 md:p-8">
+                  <div className="mb-4 sm:mb-6">
+                    <h2 className={`text-lg sm:text-xl md:text-2xl font-semibold capitalize mb-2 pb-2 border-b ${
+                      theme === 'dark' ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-900'
+                    }`}>
+                      {role.replace('_', ' ')}
+                    </h2>
+                    <p className={`text-xs sm:text-sm ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Select permissions for {role.replace('_', ' ').toLowerCase()} role
+                    </p>
+                  </div>
+
+                  <div className="relative">
+                    <Select
+                      isMulti
+                      options={allPermissionOptions}
+                      value={selectedPermissionsForRole}
+                      onChange={selectedOptions => handleSelectionChange(selectedOptions, role)}
+                      styles={customSelectStyles}
+                      placeholder="Select permissions..."
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      menuPortalTarget={document.body}
+                      menuPosition="absolute"
+                      noOptionsMessage={() => "No permissions available"}
+                      isClearable={true}
+                      isSearchable={true}
+                      hideSelectedOptions={false}
+                      closeMenuOnSelect={false}
+                      blurInputOnSelect={false}
+                    />
+                  </div>
+
+                  <div className="mt-3 sm:mt-4">
+                    <p className={`text-xs sm:text-sm ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      {selectedPermissionsForRole.length} permission{selectedPermissionsForRole.length !== 1 ? 's' : ''} selected
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          
+          <div className="pt-4 sm:pt-6 px-4 sm:px-0">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
+              <button
+                type="button"
+                onClick={handleReset} 
+                className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
+                  theme === 'dark'
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                }`}
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base ${
+                  isSubmitting 
+                    ? 'cursor-not-allowed opacity-75 transform-none' 
+                    : 'hover:shadow-xl'
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Save Permissions</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
