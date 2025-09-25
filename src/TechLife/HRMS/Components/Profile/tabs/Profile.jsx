@@ -46,14 +46,32 @@ const defaultProfile = {
 
 const sectionFields = {
   primaryDetails: [
-    { label: "First Name", name: "firstName", type: "text", required: true },
-    { label: "Middle Name", name: "middleName", type: "text" },
-    { label: "Last Name", name: "lastName", type: "text", required: true },
+    { 
+      label: "First Name", 
+      name: "firstName", 
+      type: "text", 
+      required: true,
+      hint: "Enter your first name (up to 50 characters)"
+    },
+    { 
+      label: "Middle Name", 
+      name: "middleName", 
+      type: "text",
+      hint: "Enter your middle name if applicable (up to 50 characters)"
+    },
+    { 
+      label: "Last Name", 
+      name: "lastName", 
+      type: "text", 
+      required: true,
+      hint: "Enter your last name (up to 50 characters)"
+    },
     {
       label: "Display Name",
       name: "displayName",
       type: "text",
       required: true,
+      hint: "Name to display in system (up to 100 characters)"
     },
     {
       label: "Gender",
@@ -61,25 +79,30 @@ const sectionFields = {
       type: "select",
       required: true,
       options: ["Male", "Female", "Other"],
+      hint: "Select your gender"
     },
     {
       label: "Date of Birth",
       name: "dateOfBirth",
       type: "date",
       required: true,
+      hint: "Select your birth date (must be in the past)"
     },
     {
       label: "Marital Status",
       name: "maritalStatus",
       type: "select",
-      options: ["Single", "Married", "Divorced"],
+      required: true,
+      options: ["Single", "Married", "Divorced", "Widowed"],
+      hint: "Select your current marital status"
     },
     {
       label: "Blood Group",
       name: "bloodGroup",
       type: "select",
       required: true,
-      options: ["O+ (O Positive)", "A+", "B+", "AB+", "O-", "A-", "B-", "AB-"],
+      options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
+      hint: "Select your blood group"
     },
     {
       label: "Physically Handicapped",
@@ -87,54 +110,251 @@ const sectionFields = {
       type: "select",
       required: true,
       options: ["Yes", "No"],
+      hint: "Indicate if you have any physical disabilities"
     },
     {
       label: "Nationality",
       name: "nationality",
-      type: "select",
+      type: "text",
       required: true,
-      options: ["United States", "India", "Canada"],
+      hint: "Enter your nationality (up to 50 characters)"
     },
   ],
   contactDetails: [
-    { label: "Work Email", name: "workEmail", type: "email", required: true },
-    { label: "Personal Email", name: "personalEmail", type: "email" },
-    { label: "Mobile Number", name: "mobileNumber", type: "text", required: true },
-    { label: "Work Number", name: "workNumber", type: "text" },
+    { 
+      label: "Work Email", 
+      name: "workEmail", 
+      type: "email", 
+      required: true,
+      hint: "Enter your official work email address"
+    },
+    { 
+      label: "Personal Email", 
+      name: "personalEmail", 
+      type: "email",
+      hint: "Enter your personal email address"
+    },
+    { 
+      label: "Mobile Number", 
+      name: "mobileNumber", 
+      type: "text", 
+      required: true,
+      hint: "Enter 10-digit Indian mobile number starting with 6-9"
+    },
+    { 
+      label: "Work Number", 
+      name: "workNumber", 
+      type: "text",
+      hint: "Enter work phone number (3-15 digits)"
+    },
   ],
   address: [
-    { label: "Street", name: "street", type: "text", required: true },
-    { label: "City", name: "city", type: "text", required: true },
-    { label: "State", name: "state", type: "text", required: true },
-    { label: "Zip", name: "zip", type: "text", required: true },
-    { label: "Country", name: "country", type: "text", required: true },
-    { label: "District", name: "district", type: "text", required: true },
+    { 
+      label: "Street", 
+      name: "street", 
+      type: "text", 
+      required: true,
+      hint: "Enter street address (up to 100 characters)"
+    },
+    { 
+      label: "City", 
+      name: "city", 
+      type: "text", 
+      required: true,
+      hint: "Enter city name (up to 50 characters)"
+    },
+    { 
+      label: "State", 
+      name: "state", 
+      type: "text", 
+      required: true,
+      hint: "Enter state name (up to 50 characters)"
+    },
+    { 
+      label: "Zip", 
+      name: "zip", 
+      type: "text", 
+      required: true,
+      hint: "Enter 6-digit Indian ZIP code"
+    },
+    { 
+      label: "Country", 
+      name: "country", 
+      type: "text", 
+      required: true,
+      hint: "Enter country name (up to 50 characters)"
+    },
+    { 
+      label: "District", 
+      name: "district", 
+      type: "text", 
+      required: true,
+      hint: "Enter district name (up to 50 characters)"
+    },
   ],
   relations: [
-    { label: "Father Name", name: "fatherName", type: "text" },
-    { label: "Mother Name", name: "motherName", type: "text" },
-    { label: "Spouse Name", name: "spouseName", type: "text" },
-    { label: "Children", name: "children", type: "number" },
-    { label: "Siblings", name: "siblings", type: "number" },
+    { 
+      label: "Father Name", 
+      name: "fatherName", 
+      type: "text",
+      hint: "Enter your father's name"
+    },
+    { 
+      label: "Mother Name", 
+      name: "motherName", 
+      type: "text",
+      hint: "Enter your mother's name"
+    },
+    { 
+      label: "Spouse Name", 
+      name: "spouseName", 
+      type: "text",
+      hint: "Enter your spouse's name if married"
+    },
+    { 
+      label: "Children", 
+      name: "children", 
+      type: "number",
+      hint: "Enter number of children"
+    },
+    { 
+      label: "Siblings", 
+      name: "siblings", 
+      type: "number",
+      hint: "Enter number of siblings"
+    },
   ],
   education: [
-    { label: "Degree Type", name: "degreeType", type: "text", required: true },
-    { label: "Institution", name: "universityOrCollege", type: "text", required: true },
-    { label: "Specialization", name: "branchOrSpecialization", type: "text", required: true },
-    { label: "Start Year", name: "startYear", type: "text", required: true },
-    { label: "End Year", name: "endYear", type: "text", required: true },
-    { label: "CGPA/Percentage", name: "cgpaOrPercentage", type: "text" },
-    { label: "Degree Certificate", name: "addFiles", type: "file", required: true },
+    { 
+      label: "Degree Type", 
+      name: "degreeType", 
+      type: "text", 
+      required: true,
+      hint: "Enter degree name (up to 100 characters)"
+    },
+    { 
+      label: "Institution", 
+      name: "universityOrCollege", 
+      type: "text", 
+      required: true,
+      hint: "Enter university/college name (up to 200 characters)"
+    },
+    { 
+      label: "Specialization", 
+      name: "branchOrSpecialization", 
+      type: "text", 
+      required: true,
+      hint: "Enter branch or specialization (up to 100 characters)"
+    },
+    { 
+      label: "Start Month", 
+      name: "startMonth", 
+      type: "select", 
+      required: true,
+      options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      hint: "Select the starting month"
+    },
+    { 
+      label: "Start Year", 
+      name: "startYear", 
+      type: "text", 
+      required: true,
+      hint: "Enter year between 1900-2099"
+    },
+    { 
+      label: "End Month", 
+      name: "endMonth", 
+      type: "select", 
+      required: true,
+      options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      hint: "Select the ending month"
+    },
+    { 
+      label: "End Year", 
+      name: "endYear", 
+      type: "text", 
+      required: true,
+      hint: "Enter year between 1900-2099"
+    },
+    { 
+      label: "CGPA/Percentage", 
+      name: "cgpaOrPercentage", 
+      type: "text", 
+      required: true,
+      hint: "Enter CGPA or percentage (0-100)"
+    },
+    { 
+      label: "Degree Certificate", 
+      name: "addFiles", 
+      type: "file",
+      hint: "Upload degree certificate (JPG, PNG, PDF)"
+    },
   ],
   experience: [
-    { label: "Company Name", name: "companyName", type: "text", required: true },
-    { label: "Job Title", name: "jobTitle", type: "text", required: true },
-    { label: "Location", name: "location", type: "text" },
-    { label: "Description", name: "description", type: "text" },
-    { label: "Start Date", name: "startMonth", type: "text", required: true },
-    { label: "Start Year", name: "startYear", type: "text", required: true },
-    { label: "End Date", name: "endMonth", type: "text" },
-    { label: "End Year", name: "endYear", type: "text" },
+    { 
+      label: "ID", 
+      name: "id", 
+      type: "text", 
+      required: true,
+      hint: "Enter unique experience ID"
+    },
+    { 
+      label: "Company Name", 
+      name: "companyName", 
+      type: "text", 
+      required: true,
+      hint: "Enter company name (2-100 characters)"
+    },
+    { 
+      label: "Job Title", 
+      name: "jobTitle", 
+      type: "text", 
+      required: true,
+      hint: "Enter job title/position (2-100 characters)"
+    },
+    { 
+      label: "Location", 
+      name: "location", 
+      type: "text", 
+      required: true,
+      hint: "Enter work location/city"
+    },
+    { 
+      label: "Description", 
+      name: "description", 
+      type: "textarea",
+      hint: "Describe your role and responsibilities (up to 1000 characters)"
+    },
+    { 
+      label: "Start Month", 
+      name: "startMonth", 
+      type: "select", 
+      required: true,
+      options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      hint: "Select the starting month"
+    },
+    { 
+      label: "Start Year", 
+      name: "startYear", 
+      type: "text", 
+      required: true,
+      hint: "Enter 4-digit year (e.g., 2020)"
+    },
+    { 
+      label: "End Month", 
+      name: "endMonth", 
+      type: "select", 
+      required: true,
+      options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+      hint: "Select the ending month"
+    },
+    { 
+      label: "End Year", 
+      name: "endYear", 
+      type: "text", 
+      required: true,
+      hint: "Enter 4-digit year (e.g., 2023)"
+    },
   ],
 };
 
@@ -607,7 +827,7 @@ function Profile() {
     setEditingSection(null);
   };
   
-  const renderField = (label, name, type = "text", required = false, options = []) => {
+  const renderField = (label, name, type = "text", required = false, options = [], hint = "") => {
     const isError = errors[name];
     const fieldValue = editingData[name] || "";
     
@@ -620,6 +840,16 @@ function Profile() {
             {label}
             {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
           </label>
+          
+          {/* Hint text */}
+          {hint && (
+            <p className={`text-xs mb-2 ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              {hint}
+            </p>
+          )}
+
           <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 
               ${isError 
                   ? 'border-red-300 bg-red-50' 
@@ -653,6 +883,13 @@ function Profile() {
               )}
             </div>
           </div>
+          
+          {isError && (
+            <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+              <IoWarning className="w-4 h-4 flex-shrink-0" />
+              <p className="text-xs sm:text-sm font-medium">{isError}</p>
+            </div>
+          )}
         </div>
       );
     }
@@ -665,6 +902,15 @@ function Profile() {
           {label}
           {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
         </label>
+        
+        {/* Hint text */}
+        {hint && (
+          <p className={`text-xs mb-2 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {hint}
+          </p>
+        )}
         
         {type === "select" ? (
           <div className="relative">
@@ -702,6 +948,21 @@ function Profile() {
                 ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                 : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
               }`}
+          />
+        ) : type === "textarea" ? (
+          <textarea 
+            value={fieldValue} 
+            onChange={(e) => handleEditFieldChange(name, e.target.value)} 
+            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm resize-none h-24 sm:h-32
+              focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+              ${isError 
+                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                : theme === 'dark'
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+              }`}
+            placeholder={`Enter ${label.toLowerCase()}...`} 
+            required={required} 
           />
         ) : (
           <input 
@@ -770,7 +1031,7 @@ function Profile() {
           <div className="overflow-y-auto flex-grow">
             <form className="p-4 sm:p-6 md:p-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(section); }}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options))}
+                {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
               </div>
               
               {errors.general && (

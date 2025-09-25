@@ -39,55 +39,300 @@ const Modal = ({ children, onClose, title, type, theme }) => {
 
 const identityFields = {
   aadhaar: [
-    { label: "Aadhaar Number", name: "aadhaarNumber", type: "text", required: true, pattern: "/^[2-9][0-9]{11}$/", message: "Invalid Aadhaar number format" },
-    { label: "Enrollment Number", name: "enrollmentNumber", type: "text", required: true, pattern: "/^[0-9]{4}/[0-9]{5}/[0-9]{7}$/", message: "Invalid enrollment number format (e.g., 1234/12345/1234567)" },
-    { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
-    { label: "Name", name: "aadhaarName", type: "text", required: true },
-    { label: "Address", name: "address", type: "textarea", required: true },
-    { label: "Gender", name: "gender", type: "select", options: ["Male", "Female", "Other"], required: true },
-    { label: "Aadhaar Image", name: "aadhaarImage", type: "file" },
+    { 
+      label: "Aadhaar Number", 
+      name: "aadhaarNumber", 
+      type: "text", 
+      required: true, 
+      hint: "Must be 12 digits starting with 2-9 (e.g., 234567891012)" 
+    },
+    { 
+      label: "Enrollment Number", 
+      name: "enrollmentNumber", 
+      type: "text", 
+      required: true, 
+      hint: "Format: 1234/12345/1234567" 
+    },
+    { 
+      label: "Date of Birth", 
+      name: "dateOfBirth", 
+      type: "date", 
+      required: true,
+      hint: "Select your birth date"
+    },
+    { 
+      label: "Name", 
+      name: "aadhaarName", 
+      type: "text", 
+      required: true,
+      hint: "Name as per Aadhaar card (3-50 characters)" 
+    },
+    { 
+      label: "Address", 
+      name: "address", 
+      type: "textarea", 
+      required: true,
+      hint: "Complete address as per Aadhaar (10-200 characters)" 
+    },
+    { 
+      label: "Gender", 
+      name: "gender", 
+      type: "select", 
+      options: ["Male", "Female", "Other"], 
+      required: true,
+      hint: "Select your gender" 
+    },
+    { 
+      label: "Aadhaar Image", 
+      name: "aadhaarImage", 
+      type: "file",
+      hint: "Upload clear image of your Aadhaar card" 
+    },
   ],
   pan: [
-    { label: "PAN Number", name: "panNumber", type: "text", required: true, pattern: "/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/", message: "Invalid PAN format (e.g., ABCDE1234F)" },
-    { label: "PAN Name", name: "panName", type: "text", required: true },
-    { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
-    { label: "Parent's Name", name: "parentsName", type: "text", required: true },
-    { label: "PAN Image", name: "panImage", type: "file" },
+    { 
+      label: "PAN Number", 
+      name: "panNumber", 
+      type: "text", 
+      required: true, 
+      hint: "10-character format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)" 
+    },
+    { 
+      label: "PAN Name", 
+      name: "panName", 
+      type: "text", 
+      required: true,
+      hint: "Name as per PAN card (3-100 characters)" 
+    },
+    { 
+      label: "Date of Birth", 
+      name: "dateOfBirth", 
+      type: "text", 
+      required: true,
+      hint: "Format: YYYY-MM-DD (e.g., 1990-01-15)" 
+    },
+    { 
+      label: "Parent's Name", 
+      name: "parentsName", 
+      type: "text", 
+      required: true,
+      hint: "Father's or mother's name as per PAN" 
+    },
+    { 
+      label: "PAN Image", 
+      name: "panImage", 
+      type: "file",
+      hint: "Upload clear image of your PAN card" 
+    },
   ],
   drivingLicense: [
-    { label: "License Number", name: "licenseNumber", type: "text", required: true },
-    { label: "Name", name: "name", type: "text", required: true },
-    { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
-    { label: "Blood Group", name: "bloodGroup", type: "select", options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], required: true },
-    { label: "Father's Name", name: "fatherName", type: "text", required: true },
-    { label: "Issue Date", name: "issueDate", type: "date", required: true },
-    { label: "Expiry Date", name: "expiresOn", type: "date", required: true },
-    { label: "Address", name: "address", type: "textarea", required: true },
-    { label: "License Image", name: "licenseImage", type: "file" },
+    { 
+      label: "License Number", 
+      name: "licenseNumber", 
+      type: "text", 
+      required: true,
+      hint: "Your driving license number (up to 20 characters)" 
+    },
+    { 
+      label: "Name", 
+      name: "name", 
+      type: "text", 
+      required: true,
+      hint: "Name as per driving license (up to 100 characters)" 
+    },
+    { 
+      label: "Date of Birth", 
+      name: "dateOfBirth", 
+      type: "date", 
+      required: true,
+      hint: "Select your birth date as per license"
+    },
+    { 
+      label: "Blood Group", 
+      name: "bloodGroup", 
+      type: "select", 
+      options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], 
+      required: true,
+      hint: "Select your blood group" 
+    },
+    { 
+      label: "Father's Name", 
+      name: "fatherName", 
+      type: "text", 
+      required: true,
+      hint: "Father's name as per license (up to 100 characters)" 
+    },
+    { 
+      label: "Issue Date", 
+      name: "issueDate", 
+      type: "date", 
+      required: true,
+      hint: "Date when license was issued"
+    },
+    { 
+      label: "Expiry Date", 
+      name: "expiresOn", 
+      type: "date", 
+      required: true,
+      hint: "License expiration date"
+    },
+    { 
+      label: "Address", 
+      name: "address", 
+      type: "textarea", 
+      required: true,
+      hint: "Address as per driving license (up to 255 characters)" 
+    },
+    { 
+      label: "License Image", 
+      name: "licenseImage", 
+      type: "file",
+      hint: "Upload clear image of your driving license" 
+    },
   ],
   passport: [
-    { label: "Passport Number", name: "passportNumber", type: "text", required: true, pattern: "/^[A-Z][0-9]{6,9}$/", message: "Invalid passport number format" },
-    { label: "Country Code", name: "countryCode", type: "text", required: true, size: "2-3" },
-    { label: "Passport Type", name: "passportType", type: "text", required: true },
-    { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
-    { label: "Name", name: "name", type: "text", required: true },
-    { label: "Gender", name: "gender", type: "select", options: ["Male", "Female", "Other"], required: true },
-    { label: "Date of Issue", name: "dateOfIssue", type: "date", required: true },
-    { label: "Place of Issue", name: "placeOfIssue", type: "text", required: true },
-    { label: "Place of Birth", name: "placeOfBirth", type: "text", required: true },
-    { label: "Date of Expiration", name: "dateOfExpiration", type: "date", required: true },
-    { label: "Address", name: "address", type: "textarea", required: true },
-    { label: "Passport Image", name: "passportImage", type: "file" },
+    { 
+      label: "Passport Number", 
+      name: "passportNumber", 
+      type: "text", 
+      required: true, 
+      hint: "6-9 characters starting with letter (e.g., A1234567)" 
+    },
+    { 
+      label: "Country Code", 
+      name: "countryCode", 
+      type: "text", 
+      required: true,
+      hint: "2-3 character country code (e.g., IN, USA)" 
+    },
+    { 
+      label: "Passport Type", 
+      name: "passportType", 
+      type: "text", 
+      required: true,
+      hint: "Type of passport (e.g., P, S, D)" 
+    },
+    { 
+      label: "Date of Birth", 
+      name: "dateOfBirth", 
+      type: "date", 
+      required: true,
+      hint: "Select your birth date as per passport"
+    },
+    { 
+      label: "Name", 
+      name: "name", 
+      type: "text", 
+      required: true,
+      hint: "Name as per passport (3-100 characters)" 
+    },
+    { 
+      label: "Gender", 
+      name: "gender", 
+      type: "select", 
+      options: ["Male", "Female", "Other"], 
+      required: true,
+      hint: "Select your gender as per passport" 
+    },
+    { 
+      label: "Date of Issue", 
+      name: "dateOfIssue", 
+      type: "date", 
+      required: true,
+      hint: "Passport issue date"
+    },
+    { 
+      label: "Place of Issue", 
+      name: "placeOfIssue", 
+      type: "text", 
+      required: true,
+      hint: "City/location where passport was issued" 
+    },
+    { 
+      label: "Place of Birth", 
+      name: "placeOfBirth", 
+      type: "text", 
+      required: true,
+      hint: "Your birth place as per passport" 
+    },
+    { 
+      label: "Date of Expiration", 
+      name: "dateOfExpiration", 
+      type: "date", 
+      required: true,
+      hint: "Passport expiry date"
+    },
+    { 
+      label: "Address", 
+      name: "address", 
+      type: "textarea", 
+      required: true,
+      hint: "Current address as per passport" 
+    },
+    { 
+      label: "Passport Image", 
+      name: "passportImage", 
+      type: "file",
+      hint: "Upload clear image of your passport" 
+    },
   ],
   voter: [
-    { label: "Voter ID Number", name: "voterIdNumber", type: "text", required: true, pattern: "/^[A-Z]{3}[0-9]{7}$/", message: "Invalid Voter ID format (e.g., ABC1234567)" },
-    { label: "Full Name", name: "fullName", type: "text", required: true },
-    { label: "Relation Name", name: "relationName", type: "text", required: true },
-    { label: "Gender", name: "gender", type: "select", options: ["Male", "Female", "Other"], required: true },
-    { label: "Date of Birth", name: "dateOfBirth", type: "date", required: true },
-    { label: "Address", name: "address", type: "textarea", required: true },
-    { label: "Issued Date", name: "issuedDate", type: "date", required: true },
-    { label: "Voter Image", name: "uploadVoter", type: "file" },
+    { 
+      label: "Voter ID Number", 
+      name: "voterIdNumber", 
+      type: "text", 
+      required: true, 
+      hint: "Format: 3 letters + 7 digits (e.g., ABC1234567)" 
+    },
+    { 
+      label: "Full Name", 
+      name: "fullName", 
+      type: "text", 
+      required: true,
+      hint: "Name as per voter ID (3-100 characters)" 
+    },
+    { 
+      label: "Relation Name", 
+      name: "relationName", 
+      type: "text", 
+      required: true,
+      hint: "Father's/Husband's name (3-100 characters)" 
+    },
+    { 
+      label: "Gender", 
+      name: "gender", 
+      type: "select", 
+      options: ["Male", "Female", "Other"], 
+      required: true,
+      hint: "Select your gender as per voter ID" 
+    },
+    { 
+      label: "Date of Birth", 
+      name: "dateOfBirth", 
+      type: "date", 
+      required: true,
+      hint: "Select your birth date"
+    },
+    { 
+      label: "Address", 
+      name: "address", 
+      type: "textarea", 
+      required: true,
+      hint: "Address as per voter ID card" 
+    },
+    { 
+      label: "Issued Date", 
+      name: "issuedDate", 
+      type: "date", 
+      required: true,
+      hint: "Date when voter ID was issued"
+    },
+    { 
+      label: "Voter Image", 
+      name: "uploadVoter", 
+      type: "file",
+      hint: "Upload clear image of your voter ID" 
+    },
   ],
 };
 
@@ -167,7 +412,6 @@ const Document = () => {
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // State for popups
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
 
@@ -647,7 +891,7 @@ const Document = () => {
     </div>
   );
 
-  const renderField = (label, name, type = 'text', required = false, options = [], isDisabled = false) => {
+  const renderField = (label, name, type = 'text', required = false, options = [], isDisabled = false, hint = '') => {
     const isError = errors[name];
     const fieldValue = editingData[name] || '';
 
@@ -684,6 +928,15 @@ const Document = () => {
             </span>
           )}
         </label>
+
+        {/* Hint text */}
+        {hint && (
+          <p className={`text-xs mb-2 ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {hint}
+          </p>
+        )}
 
         {type === 'select' ? (
           <div className="relative">
@@ -869,7 +1122,7 @@ const Document = () => {
                 {fields.map((f) => {
                   const isIdField = ['aadhaarNumber', 'panNumber', 'licenseNumber', 'passportNumber', 'voterIdNumber'].includes(f.name);
                   const isDisabled = isUpdate && isIdField;
-                  return renderField(f.label, f.name, f.type, f.required, f.options, isDisabled);
+                  return renderField(f.label, f.name, f.type, f.required, f.options, isDisabled, f.hint);
                 })}
               </div>
 
@@ -914,7 +1167,7 @@ const Document = () => {
             >
               {isUpdating ? (
                 <>
-                  <div className="h-4 w-4 sm:h-5 sm:h-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
                   <span>Updating...</span>
                 </>
               ) : (
