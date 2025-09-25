@@ -24,6 +24,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import LeaveDetails from "./LeaveDetails";
 import { FaFileAlt, FaRegFileAlt } from "react-icons/fa";
 import { LiaFileAlt, LiaFileAltSolid } from "react-icons/lia";
+import { IoPersonOutline } from "react-icons/io5";
 
 // AddLeaveForm component
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
@@ -58,7 +59,6 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
             Leave_type: selectedLeaveType,
             Leave_On: fromDate && toDate ? [`${fromDate.toLocaleDateString("en-GB")}`, "-", `${toDate.toLocaleDateString("en-GB")}`] : [fromDate.toLocaleDateString("en-GB")],
             status: "Pending",
-            Request_By: "Panalisation Policy",
             Reason: reason,
             Action_Date: new Date().toLocaleDateString("en-GB"),
             Action: "https://icons8.com/icon/36944/ellipsis",
@@ -140,11 +140,6 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                                 </select>
                             </motion.div>
                         </div>
-                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}>
-                            <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Rejection Policy</label>
-                            <input    type="text"    value="Panalisation Policy"    readOnly    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none cursor-not-allowed  ${theme==='dark' ? 'border border-gray-100 text-white  ':'border border-gray-300 text-black'}`}/>
-                        </motion.div>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9 }}>
                              <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>    Remaining Days</label>
                             <input    type="text"    readOnly    value={remainingDays ? Object.values(remainingDays)[0] : "0"}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
@@ -187,7 +182,7 @@ const LeaveTypeCard = ({
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
+
         >
             <h1 className={`text-xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-yellow-100 to-yellow-400 bg-clip-text text-transparent border-gray-100':'text-gray-700'}`}>
                 {title}
@@ -469,6 +464,7 @@ const WeeklyPattern = () => {
         </motion.div>
     );
 };
+
 
 // LeaveHistory component
 const LeaveHistory = ({ leaveHistoryData }) => {
@@ -764,7 +760,8 @@ const LeavesDashboard = () => {
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
-    const[showMain,setShowMain]=useState(false);
+    const [showMain,setShowMain]=useState(false);
+    const [loading,setLoading]=useState(false);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
         {
@@ -929,6 +926,24 @@ const LeavesDashboard = () => {
     const handleGoBackToDashboard = () => {
         setShowReport(false);
     };
+    if (loading) {
+        return (
+          <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
+            <div className="min-h-screen flex items-center justify-center px-4">
+              <div className="text-center">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <IoPersonOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+                  </div>
+                </div>
+                <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading Employee Directory</h2>
+                <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Discovering your colleagues...</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
 
     return (
         <div className={`min-h-screen p-2 sm:p-3 lg:p-4 font-sans ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>

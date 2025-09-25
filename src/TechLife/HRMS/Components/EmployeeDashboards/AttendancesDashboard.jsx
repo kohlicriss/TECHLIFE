@@ -29,6 +29,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
 import { publicinfoApi } from "../../../../axiosInstance";
+import { IoPersonOutline } from "react-icons/io5";
 
 // --- Constants and Helper Functions ---
 const PIE_COLORS = ["#4F46E5", "#F97316"]; // Tailwind's indigo-600 and orange-500
@@ -153,7 +154,6 @@ const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend,
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
         >
             <div className="flex justify-between items-start">
                 <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2 p-3 ${iconBgColor} ${iconTextColor}`}>
@@ -414,10 +414,13 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [effectiveHours, setEffectiveHours] = useState(0);
     const [showModeConfirm, setShowModeConfirm] = useState(false);
     const [isLogoutConfirmed, setIsLogoutConfirmed] = useState(false);
+    const [isConnected, setIsConnected] = useState(navigator.onLine);
+    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
+    const [showReconnectAlert, setShowReconnectAlert] = useState(false);
     const [sortOption, setSortOption] = useState("Recently added");
+    const [isLoading,setIsLoading]=useState(false);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-      const [open, setOpen] = useState(true);
     const [loggedInUserProfile, setLoggedInUserProfile] = useState({
         image: null,
         initials: "  "
@@ -467,6 +470,8 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
         } else { setGrossHours(0); setEffectiveHours(0); }
         const clockTimer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => { clearInterval(interval); clearInterval(clockTimer); };
+       
+   
     }, [isLoggedIn, startTime]);
 
     // Action Handlers
@@ -538,6 +543,25 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
         return selectedDate === "All" ? barChartData : barChartData.filter((d) => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
     }, [selectedDate, barChartData]);
 
+    if (isLoading) {
+        return (
+          <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
+            <div className="min-h-screen flex items-center justify-center px-4">
+              <div className="text-center">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <IoPersonOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+                  </div>
+                </div>
+                <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading Employee Attendance</h2>
+                <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Discovering your colleagues...</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
     return (
         <div className={`min-h-screen ${theme === 'dark'? 'bg-gray-900': 'bg-gray-50'} font-sans text-gray-800 relative`}>
             {/* Sidebar */}
@@ -573,21 +597,19 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                         >
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
                         </motion.h3>  
-                        <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-2 ml-0 bg-indigo-600 text-white p-2 mt-48 rounded-full shadow-lg" aria-label="Close Sidebar" 
+                        <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-2  ml-0 bg-indigo-600 text-white p-2 mt-48 rounded-full shadow-lg" aria-label="Close Sidebar" 
                             initial={{ x: '100%' }}
                             animate={{ x: '0%' }}
                             exit={{ x: '100%' }}
                             transition={{ duration: 0.3, delay: 0.2 }}>
                             <ChevronRight />
                         </button>
-                        
-                    </motion.div>
-                   
+                    </motion.div>                   
                 </>
             )}
             {/* Main Content Wrapper */}
-            <main className={`p-4 sm:p-6 lg:p-8 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-80 filter blur-sm' : 'mr-0'}`}>
-                <header className="flex items-center justify-between mb-8">
+            <main className={`p-2 sm:p-2 lg:p-4 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-80 filter blur-sm' : 'mr-0'}`}>
+                <header className="flex items-center justify-between mb-1">
                     <motion.h1
                         className={`text-2xl sm:text-4xl font-extrabold ${theme === 'dark'? 'text-white': 'text-gray-900'}`}
                         initial={{ opacity: 0, x: -20 }}
@@ -595,6 +617,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                         transition={{ duration: 0.5 }}
                     >
                         {showAttendanceReports ? "Attendance Reports" : "Attendance"}
+                        
                     </motion.h1>
                     <motion.button
                         onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack}
@@ -614,28 +637,27 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ duration: 0.3 }}
-                            className="p-2"
+                            className=""
                         >
                             <AttendanceReports rawTableData={rawTableData} role={role.toLowerCase()} />
+                          
                         </motion.div>
                     ) : (
                         <motion.div
                             key="dashboard"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3 }}
+                            
+                           
                         >
                             {/* Employee Profile and Clock Layouts - REFACTORED */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-2">
                                 <motion.div
                                     className="p-4 flex items-center justify-center"
-                                    initial={{ opacity: 0, scale: 0.9 }}
+                                   
                                     animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.5, delay: 0.2 }}
+                                   
                                 >
                                     {/* Main container with motion and color accents */}
-                                    <div className={`rounded-2xl shadow-xl p-8 w-full max-w-2xl transition-transform hover:scale-105 hover:shadow-2xl duration-300 relative overflow-hidden ${theme === 'dark'? 'bg-gray-700 ': 'bg-stone-100 '}`}>
+                                    <div className={`rounded-2xl shadow-xl p-4 w-full max-w-2xl transition-transform  hover:shadow-2xl duration-300 relative overflow-hidden ${theme === 'dark'? 'bg-gray-700 ': 'bg-stone-100 '}`}>
 
                                         {/* Subtle animated background pattern */}
                                         <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-purple-200 via-pink-200 to-red-200 opacity-70 z-0 animate-bounce-slow"></div>
@@ -649,7 +671,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 <div className="relative">
                                                     <motion.div
                                                         className={`w-20 h-20 rounded-full overflow-hidden border-4  shadow-lg cursor-pointer ${theme === 'dark'? 'border-gray-600': 'border-white'}`}
-                                                        whileHover={{ scale: 1.1 }}
                                                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
                                                         
                                                     >
@@ -716,8 +737,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                             <div className="relative">
                                                 <motion.button
                                                     onClick={() => setShowModeConfirm(!showModeConfirm)}
-                                                    className="px-4 py-2.5 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300 flex items-center justify-center gap-2 text-sm font-medium shadow-sm border border-blue-300 transition-transform hover:scale-105 duration-300"
-                                                    whileHover={{ scale: 1.1 }}
+                                                    className="px-4 py-2.5 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300 flex items-center justify-center gap-2 text-sm font-medium shadow-sm border border-blue-300 transition-transform duration-300"
                                                     whileTap={{ scale: 0.9 }}
                                                 >
                                                     {/* Mode icon */}
@@ -761,7 +781,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                 <motion.button
                                                                     onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
                                                                     className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-colors font-semibold"
-                                                                    whileHover={{ scale: 1.05 }}
+                                                                    
                                                                     whileTap={{ scale: 0.95 }}
                                                                 >
                                                                     Confirm
@@ -769,7 +789,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                 <motion.button
                                                                     onClick={() => setShowModeConfirm(false)}
                                                                     className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                                                    whileHover={{ scale: 1.05 }}
+                                                                    
                                                                     whileTap={{ scale: 0.95 }}
                                                                 >
                                                                     Cancel
@@ -840,7 +860,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 {/* Gross Time Card */}
                                                 <motion.div
                                                     className={` rounded-xl p-2 shadow-sm  ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-purple-50 to-purple-100 border border-gray-300'}`}
-                                                    whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
                                                     <p className={`text-sm  font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Gross Time</p>
@@ -849,7 +868,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 {/* Effective Time Card */}
                                                 <motion.div
                                                     className={` ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-pink-50 to-pink-100 border border-gray-300'} rounded-xl p-2 shadow-sm border border-gray-300`}
-                                                    whileHover={{ scale: 1.05 }}
                                                     transition={{ type: "spring", stiffness: 300 }}
                                                 >
                                                     <p className={`text-sm font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Effective Time</p>
@@ -876,7 +894,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 <motion.button
                                                     onClick={handleLogin}
                                                     className="flex items-center justify-center w-48 max-w-md py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:from-green-500 hover:to-green-600 font-semibold text-lg"
-                                                    whileHover={{ scale: 1.1 }}
                                                     whileTap={{ scale: 0.9 }}
                                                 >
                                                     <ClockIcon className="w-5 h-5 mr-2" />
@@ -894,7 +911,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                     initial={{ opacity: 0, x: -20 }}
                                                                     animate={{ opacity: 1, x: 0 }}
                                                                     exit={{ opacity: 0, x: -20 }}
-                                                                    whileHover={{ scale: 1.05 }}
                                                                     whileTap={{ scale: 0.95 }}
                                                                 >
                                                                     <ClockIcon className="w-4 h-4 mr-2" />
@@ -907,7 +923,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                     initial={{ opacity: 0, x: 20 }}
                                                                     animate={{ opacity: 1, x: 0 }}
                                                                     exit={{ opacity: 0, x: 20 }}
-                                                                    whileHover={{ scale: 1.05 }}
                                                                     whileTap={{ scale: 0.95 }}
                                                                 >
                                                                     <XCircleIcon className="w-4 h-4 mr-2" />
@@ -922,7 +937,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                 initial={{ opacity: 0, scale: 0.8 }}
                                                                 animate={{ opacity: 1, scale: 1 }}
                                                                 exit={{ opacity: 0, scale: 0.8 }}
-                                                                whileHover={{ scale: 1.1 }}
                                                                 whileTap={{ scale: 0.9 }}
                                                             >
                                                                 <ClockIcon className="w-5 h-5 mr-2" />
@@ -935,8 +949,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                         </div>
                                     </div>
                                 </motion.div>
-
-
                                 {/* Stat Cards Grid */}
                                 <motion.div
                                     className="p-6 h-full flex flex-col justify-between"

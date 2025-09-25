@@ -4,109 +4,144 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import React, { useMemo, useState, Fragment, useContext } from "react";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { MdEditCalendar } from "react-icons/md";
-import { BiCalendarStar } from "react-icons/bi";
-import { LiaCalendarCheck } from "react-icons/lia";
+import { BiArchiveOut, BiCalendarStar, BiCodeBlock, BiError, BiLogIn, BiSolidCalendarEvent, BiSolidUser } from "react-icons/bi";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiUser } from "react-icons/fi";
+import { AiOutlineGift } from "react-icons/ai";
 import { Context } from "../HrmsContext";
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
+import {BarChart,Bar,XAxis,YAxis,CartesianGrid,ResponsiveContainer,} from "recharts";
 
 const ChartData = [
     {
-        title: "Total Working Days in Month",
-        value: "25",
-        trend: "up",
-        trendPercentage: "83.3",
-        trendPeriod: "This Month"
+        title: "Total ClockIn",
+        value: "104",
     },
     {
-        title: "Total Leave Taken Today",
-        value: "12",
-        trend: "down",
-        trendPercentage: "20",
-        trendPeriod: "This Week"
+        title: "Not ClockIn ",
+        value: "10",
     },
     {
-        title: "Total Holidays per Year",
+        title: "On leave",
         value: "6",
-        trend: "up",
-        trendPercentage: "50",
-        trendPeriod: "This Year"
     },
     {
-        title: "Total Halfdays per Day",
+        title: "Weekly Off",
         value: "5",
-        trend: "down",
-        trendPercentage: "16.6",
-        trendPeriod: "This Month"
+       
+    },
+    {
+        title: "Holiday",
+        value: "10", 
+    },
+    {
+        title: "ClockOut",
+        value: "104",
+       
     }
 ];
 
-const ChartCard = ({ title, icontextcolor, icon, value, color, trend, trendPercentage, trendPeriod }) => {
-    const isUp = trend === 'up';
+
+const ChartCard = ({ title, icontextcolor, icon, value, color }) => {
+    
     const {theme} = useContext(Context);
     return (
         <motion.div
-            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center space-y-2 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
+            className={` rounded-xl p-6 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center space-y-2 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
         >
+            
             <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-2 ${color} ${icontextcolor}`}>
                 {React.cloneElement(icon, { className: `w-10 h-10 rounded-full ` })}
             </div>
             <div>
-                <h3 className={`text-lg font-medium ${theme==='dark' ? 'text-white ':'text-gray-800'} `}>{title}</h3>
                 <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-500 bg-clip-text text-transparent' :'text-gray-800 '}`}>
                     {value}</p>
+                <h3 className={`text-sm  ${theme==='dark' ? 'text-white ':'text-gray-800'} `}>{title}</h3>
             </div>
-            <div className="flex items-center mt-auto">
-                {isUp ? (
-                    <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                    >
-                        <TrendingUpIcon className="w-5 h-5 text-green-500" />
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                    >
-                        <TrendingDownIcon className="w-5 h-5 text-red-500" />
-                    </motion.div>
-                )}
-                <span className={`ml-1 text-sm ${isUp ? 'text-green-500' : 'text-red-500'}`}>
-                    {trendPercentage}% {trendPeriod}
-                </span>
-            </div>
+            
         </motion.div>
     );
 };
 const DashboardGrid = () => {
+    const {theme}= useContext(Context)
     return (
-        <div className="p-6 h-full flex flex-col justify-between">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
+        <div className="p-8 h-full flex flex-col justify-between">
+            <div className={`flex justify-center py-4 px-8 items-end w-full mx-w-md mx-auto p-2  shadow-lg relative ${theme==='dark'?'bg-gray-800':'bg-gray-50'} `}>
+                <EmployeePieChart/>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-6 gap-6 h-full">
                 {ChartData.map((chart, index) => {
                     let icon, icontextcolor, colorHandler;
 
                     switch (chart.title) {
-                        case "Total Working Days in Month": icon = <CalendarDaysIcon className="w-8 h-8 text-white" />; colorHandler = "bg-orange-100"; icontextcolor = "text-orange-400";  break;
-                        case "Total Leave Taken Today": icon = <BiCalendarStar className="w-8 h-8 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-400";  break;
-                        case "Total Holidays per Year": icon = <LiaCalendarCheck className="w-8 h-8 text-white" />; colorHandler = "bg-pink-100"; icontextcolor = "text-pink-400";  break;
-                        case "Total Halfdays per Day": icon = <MdEditCalendar className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-400";  break;
+                        case "Total ClockIn": icon = <BiArchiveOut className="w-8 h-8 text-white" />; colorHandler = "bg-orange-100"; icontextcolor = "text-orange-400";  break;
+                        case "Not ClockIn ": icon = < BiError  className="w-8 h-8 text-white" />; colorHandler = "bg-red-100"; icontextcolor = "text-red-400";  break;
+                        case "On leave": icon = <BiCodeBlock className="w-8 h-8 text-white" />; colorHandler = "bg-green-100"; icontextcolor = "text-green-400";  break;
+                        case "Weekly Off": icon = <BiSolidCalendarEvent className="w-8 h-8 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-400";  break;
+                        case "Holiday": icon = <AiOutlineGift  className="w-8 h-8 text-white" />; colorHandler = "bg-indigo-100"; icontextcolor = "text-indigo-400";  break;
+                        case "ClockOut": icon = <BiLogIn className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-400";  break;
                         default:  icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; icontextcolor = "text-gray-100";
                     }
                     return (
-                        <ChartCard key={index} icon={icon} color={colorHandler} value={chart.value} title={chart.title} icontextcolor={icontextcolor} trend={chart.trend} trendPercentage={chart.trendPercentage} trendPeriod={chart.trendPeriod}
-                        />
+                        <ChartCard key={index} icon={icon} color={colorHandler} value={chart.value} title={chart.title} icontextcolor={icontextcolor}/>
                     );
                 })}
             </div>
+            </div>
         </div>
     );
+};
+
+
+const piechartData = [
+  { title: "Total ClockIn", value: 104 },
+  { title: "Not ClockIn ", value: 10 },
+  { title: "On leave", value: 6 },
+  { title: "Weekly Off", value: 5 },
+  { title: "Holiday", value: 10 },
+  { title: "ClockOut", value: 104 },
+];
+
+const COLORS = ["#3B82F6", "#F59E0B", "#EF4444", "#84CC16", "#6B7280", "#22C55E"];
+
+const EmployeePieChart = () => {
+    const {theme}=useContext(Context)
+  const totalEmployees = piechartData.reduce(
+    (sum, entry) => sum + entry.value,
+    0
+  );
+
+  return (
+    <div className="flex justify-center items-center">
+      {/* Chart container */}
+      <PieChart width={180} height={180}>
+        <Pie
+          data={piechartData}
+          dataKey="value"
+          nameKey="title"
+          cx="50%"
+          cy="50%"
+          innerRadius={55} // Donut chart shape kosam inner radius set cheyyandi
+          outerRadius={80}
+         
+        >
+          {piechartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+      </PieChart>
+
+      {/* Centered text for total employees */}
+      <div className="absolute text-center flex flex-col justify-center items-center">
+        <span className={` ${theme==='dark'?'text-gray-200':'text-gray-800'} text-sm`}>Total Employees</span>
+        <span className={` ${theme==='dark'?'text-gray-200':'text-gray-800'} text-xl font-bold `}>
+          {totalEmployees}
+        </span>
+      </div>
+    </div>
+  );
 };
 const employees = [
     {
@@ -168,11 +203,11 @@ const ClockInOut = () => {
         <motion.div
             className={` rounded-xl shadow-md p-2 w-full font-sans border border-gray-200 h-full flex flex-col ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100'}`}
             initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0.5,scale:1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <div className="flex items-center justify-between border-b pb-4 mb-4 border-gray-200 flex-wrap gap-2">
-                <h2 className={`text-xl font-bold text-gray-800  ${theme==='dark' ? 'text-white ':'text-gray-800'}`}><ClockIcon className="w-6 h-6 text-blue-600 mr-2" />
+            <div className="flex items-center justify-between border-b pb-2 mb-2 border-gray-200 flex-wrap gap-2">
+                <h2 className={`text-lg font-bold text-gray-800  ${theme==='dark' ? 'text-white ':'text-gray-800'}`}><ClockIcon className="w-6 h-6 text-blue-600 mr-2" />
                     Clock-In/Out</h2>
                 <div className="flex items-center space-x-2">
                     <Menu as="div" className="relative inline-block text-left">
@@ -191,7 +226,7 @@ const ClockInOut = () => {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <MenuItems className={`origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg  ring-1 ring-black ring-opacity-5 focus:outline-none z-10 ${theme==='dark' ? 'bg-gray-600 text-white':'bg-white text-gray-700'}`}>
+                            <MenuItems className={`origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg  ring-1 ring-black ring-opacity-5 focus:outline-none z-10 ${theme==='dark' ? 'bg-gray-600 text-white':'bg-white text-gray-700'}`}>
                                 <div className="py-1">
                                     {departments.map((department) => (
                                         <MenuItem key={department}>
@@ -222,7 +257,7 @@ const ClockInOut = () => {
                             </MenuButton>
                         </div>
                         <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
-                            <MenuItems className={`origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg  ring-1 ring-black ring-opacity-5 focus:outline-none z-10 ${theme==='dark' ? 'bg-gray-600 text-white':'bg-white text-gray-700'}`}>
+                            <MenuItems className={`origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg  ring-1 ring-black ring-opacity-5 focus:outline-none z-10 ${theme==='dark' ? 'bg-gray-600 text-white':'bg-white text-gray-700'}`}>
                                 <div className="py-1">
                                     {timeframes.map((timeframe) => (
                                         <MenuItem key={timeframe}>
@@ -252,7 +287,7 @@ const ClockInOut = () => {
                         <motion.div    key={index}    className={`flex items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-blue-200 hover:text-gray-800 border ${theme==='dark' ? 'bg-gray-600 border-gray-200':'bg-gray-100 '}`}    
                         initial={{ opacity: 0, y: 20 }}    animate={{ opacity: 1, y: 0 }}    exit={{ opacity: 0, y: -20 }}    transition={{ duration: 0.3, delay: index * 0.05 }}>
                             <div className="flex items-center">
-                                <motion.img    className="w-12 h-12 rounded-full mr-4 object-cover"   src={ "https://randomuser.me/api/portraits/lego/1.jpg"}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
+                                <motion.img    className="w-10 h-10 rounded-full mr-4 object-cover"   src={ "https://randomuser.me/api/portraits/lego/1.jpg"}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
                                 <div>  <p className={`font-semibold  ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`} >{employee.name}</p>  <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.title}</p> <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.Arrival}</p>  </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -269,6 +304,137 @@ const ClockInOut = () => {
     );
 };
 
+const onTimeDate = [
+  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 100 },
+  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 120 },
+  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 80 },
+  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 150 },
+  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 7 },
+];
+
+const EmployeeBarChart = () => {
+    const {theme}=useContext(Context);
+  // Y-axis lo "Date-Month" format kosam data ni format cheyyadam
+  const formattedData = onTimeDate.map((item) => ({
+    name: `${item.Date}-${item.Month}`,
+    employees: item.NoofEmployee,
+    
+  }));
+  const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
+  const backgroundColor = theme==='dark' ? "bg-gray-800" : "bg-white";
+  const barColor = "#ADD8E6";
+
+  return (
+    <motion.div
+            className={` rounded-xl shadow-md p-2 w-full font-sans border border-gray-200 h-full flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0.5,scale:1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
+      <ClockIcon className="w-6 h-6 text-blue-600 inline-block mr-2" /> <h2 className="text-xl font-semibold mb-4 text-start"> On-Time Employees</h2>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={formattedData}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+         
+        >
+         
+          <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
+          <YAxis stroke={textColor} tick={{ fill: textColor }} hide/>
+          <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
+          <Bar dataKey="employees" fill={barColor} />
+        </BarChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+};
+
+const overTimeworkDate = [
+  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 50, Hour: 3 },
+  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 60, Hour: 5 },
+  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 10, Hour: 10 },
+  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 8, Hour: 15 },
+  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 40, Hour: 20 },
+];
+
+const EmployeeOvertimeChart = () => {
+  const {theme}=useContext(Context);
+  const [chartType, setChartType] = useState("hours");
+
+  const formattedData = overTimeworkDate.map((item) => ({
+    name: `${item.Date}-${item.Month}`,
+    hours: item.Hour,
+    employees: item.NoofEmployee,
+  }));
+
+  const yAxisDataKey = chartType === "hours" ? "hours" : "employees";
+  const yAxisLabel = chartType === "hours" ? "Hours" : "No. of Employees";
+
+  const handleChartChange = (type) => {
+    setChartType(type);
+  };
+  const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
+  const backgroundColor = theme==='dark' ? "bg-gray-800" : "bg-white";
+  const barColor = "#B19CD9";
+
+  return (
+    <motion.div
+            className={` rounded-xl shadow-md p-2 w-full font-sans border border-gray-200 h-full flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0.5,scale:1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
+      <h2 className="text-xl font-semibold mb-4 text-start">
+        OverTime
+      </h2>
+      <div className="absolute top-4 right-4 flex space-x-2">
+        <button
+          onClick={() => handleChartChange("hours")}
+          className={`py-1 px-3 rounded-md text-sm font-medium ${
+            chartType === "hours"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-gray-800"
+          }`}
+        >
+          Hours
+        </button>
+        <button
+          onClick={() => handleChartChange("employees")}
+          className={`py-1 px-3 rounded-md text-sm font-medium ${
+            chartType === "employees"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-gray-800"
+          }`}
+        >
+          Employees
+        </button>
+      </div>
+
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={formattedData}
+          margin={{
+            top: 40,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          
+          <XAxis dataKey="name"  stroke={textColor} tick={{ fill: textColor }} />
+          <YAxis label={{ value: yAxisLabel, angle: -90, position: "insideLeft" }} stroke={textColor} tick={{ fill: textColor }} hide />
+          <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
+          <Bar dataKey={yAxisDataKey} fill={barColor} />
+        </BarChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+};
 const AttendanceTable = ({rawTableData,setRawTableData}) => {
     const {theme} = useContext(Context);
     const [selectedMonth, setSelectedMonth] = useState("All");
@@ -344,13 +510,13 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
 
     return (
                                     <motion.div
-                                       className={`p-4 sm:p-6  rounded-xl border border-gray-200 shadow-lg mb-8 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
+                                       className={`p-4 sm:p-6  rounded-xl border border-gray-200 shadow-lg mb-2 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
                                        initial={{ opacity: 0, y: 50 }}
                                        animate={{ opacity: 1, y: 0 }}
                                        transition={{ duration: 0.5, delay: 1 }}
                                    >
                                        <section>
-                                           <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+                                           <div className="flex justify-between items-center mb-2 flex-wrap gap-3">
                                                <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-green-200 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
                                                    <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" /> Attendance Records
                                                </h2>
@@ -433,10 +599,16 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
 
 function AttendanceReports({ rawTableData, setRawTableData }) {
     return (
-        <div className="p-4 sm:p-8 min-h-screen font-sans">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 h-full items-stretch">
+        <div className="p-2 sm:p-4 min-h-screen font-sans">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2 h-full items-stretch">
                 <DashboardGrid />
+                
+                
+            </div>
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-full items-stretch">
                 <ClockInOut />
+                <EmployeeBarChart/>
+                <EmployeeOvertimeChart/>
             </div>
 
             <div className="w-full">

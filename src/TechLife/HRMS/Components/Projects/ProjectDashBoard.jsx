@@ -89,19 +89,18 @@ const projectData = {
       DaysToWork: "120 days",
       createdOn: "14 Nov 2024",
       startedOn: "15 Jan 2025",
-      dueDate: "15 Nov 2025",
+      endDate: "15 Nov 2025",
       dueAlert: 1,
-      createdBy: {
-        name: "Priya Rathod",
+      Manager: {
+        name: "Ramesh",
       },
       priority: "High"
     },
-    
   };
  
   
     const firstColumnData = {
-        createdBy: projectData.projectDetails.createdBy,
+        Manager: projectData.projectDetails.Manager,
     
     };
 
@@ -110,6 +109,8 @@ const projectData = {
         totalCost: projectData.projectDetails.totalCost,
         DaysToWork: projectData.projectDetails.DaysToWork,
         priority: projectData.projectDetails.priority,
+        startedOn:projectData.projectDetails.startedOn,
+        endDate:projectData.projectDetails.endDate
     };
 const projectIconMap = {
     "HRMS Project": { icon: "👥", color: "text-indigo-500" },
@@ -185,7 +186,7 @@ const ProjectCard = () => {
                 {/* Highlights */}
                  
                  <motion.div
-            className={`p-3 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-10 to-blue-50'}`}
+            className={`p-1 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-10 to-blue-50'}`}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -194,9 +195,9 @@ const ProjectCard = () => {
             <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Details</h2>
             <div className="flex flex-col md:flex-row gap-6">
                 {/* First Column */}
-                <div className="md:w-1/2 flex flex-col justify-center items-center p-4 border border-dashed rounded-lg">
-                    <img src={getAvatarUrl(0)} alt={firstColumnData.createdBy.name} className="w-20 h-20 rounded-full mb-2" />
-                    <p className="text-lg font-semibold">{firstColumnData.createdBy.name}</p>
+                <div className="md:w-1/2 flex flex-col justify-center items-center p-2 border border-dashed rounded-lg">
+                    <img src={getAvatarUrl(0)} alt={firstColumnData.Manager.name} className="w-28 h-28 rounded-full mb-2" />
+                    <p className="text-lg font-semibold">{firstColumnData.Manager.name}</p>
                     <p className="text-sm text-gray-500">Reported By</p>
                 </div>
 
@@ -205,7 +206,7 @@ const ProjectCard = () => {
                     {Object.entries(secondColumnData).map(([key, value]) => {
                         const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                         return (
-                            <div key={key} className={`p-2 rounded-lg shadow-sm ${theme === 'dark' ? 'bg-gray-700' : 'bg-gradient-to-br from-blue-50 to-blue-100'}`}>
+                            <div key={key} className={` ${theme === 'dark' ? 'bg-gray-800' : ''}`}>
                                 <dt className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} text-xs font-medium uppercase`}>{label}</dt>
                                 <dd className={`mt-1 text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>{value}</dd>
                             </div>
@@ -221,7 +222,7 @@ const ProjectCard = () => {
 
                 {/* Team */}
                 <motion.div
-                    className={` p-3 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-10 to-indigo-50'}`}
+                    className={` p-1 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-10 to-indigo-50'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
@@ -1258,8 +1259,8 @@ const handleRowClick = (proj) => {
 </AnimatePresence>
           <div className="overflow-x-auto rounded-xl  ">
             <table className="min-w-full bg-white  ">
-                <thead className={` text-left uppercase tracking-wider border border-purple-500 ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
-                    <tr className={" border border-purple-500"}>
+                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
+                    <tr>
                         <th className="p-3 text-sm md:text-base">Project</th>
                         <th className="p-3 text-sm md:text-base">Team_Lead</th>
                         <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
@@ -1272,7 +1273,7 @@ const handleRowClick = (proj) => {
                         {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
-                <tbody  className="bg-white   ">
+                <tbody  className="bg-white ">
                     <AnimatePresence>
                         {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
                         .map((proj, index) => (

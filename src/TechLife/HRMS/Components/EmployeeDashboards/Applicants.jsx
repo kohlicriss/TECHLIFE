@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { FaSortAlphaDown, FaSortAlphaUp, FaFilter } from 'react-icons/fa';
+import { Context } from '../HrmsContext';
 
 const applicants = [
   { candidateId: "C_01", name: 'John Doe', emailId: 'johndoe12@gmail.com', location: 'Hydrebad', job: 'Senior DevOps Engineer', image: 'https://randomuser.me/api/portraits/men/74.jpg', color: 'bg-teal-500', status: "sent" },
@@ -15,6 +16,7 @@ const applicants = [
 ];
 
 const Applicants = ({onBack}) => {
+  const{theme}=useContext(Context)
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOption, setSortOption] = useState("Recently Added");
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,10 +70,11 @@ const Applicants = ({onBack}) => {
   };
 
   return (
-    <div className="p-2">
-      <header className="flex items-center justify-between">
+    <div className={`p-2 ${theme==='dark'?'bg-gray-800':'bg-gray-50'}`}>
+    <div className={` ${theme==='dark'?'bg-gray-500':'bg-gray-50'} shadow-lg rounded-xl p-6 col-span-full border border-gray-200`}>
+     <header className="flex items-center justify-between">
         <div className="text-center sm:text-left mb-4 sm:mb-0">
-          <h1 className="text-xl sm:text-4xl ml-5 font-extrabold text-gray-900 mb-2">
+          <h1 className={`text-xl sm:text-4xl ml-5 font-extrabold ${theme==='dark'?'text-gray-100':'text-gray-800'} mb-2`}>
            Candidate List
           </h1>
         </div>
@@ -85,14 +88,10 @@ const Applicants = ({onBack}) => {
           Back to Dashboard
         </button>
       </header>
-    <div className="bg-white shadow-lg rounded-xl p-6 col-span-full border border-gray-200">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Candidate List
-      </h2>
       <div className="flex flex-wrap items-center gap-4 mb-6">
         {/* Status Filter Dropdown */}
         <div className="relative">
-          <label className="text-sm font-semibold mr-2 text-gray-700">
+          <label className={`text-sm font-semibold mr-2 ${theme==='dark'?'text-gray-100':'text-gray-700'}`}>
             Status:
           </label>
           <div className="inline-block relative w-48">
@@ -102,13 +101,13 @@ const Applicants = ({onBack}) => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1); // Reset to page 1 on filter change
               }}
-              className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500"
+              className={`block appearance-none w-full ${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'} border border-gray-300  py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none  focus:border-blue-500`}
             >
               {statuses.map(status => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status} className={`${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'}`}>{status}</option>
               ))}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${theme==='dark'?'text-gray-100':'text-gray-800'}`}>
               <FaFilter />
             </div>
           </div>
@@ -116,21 +115,21 @@ const Applicants = ({onBack}) => {
 
         {/* Sort Dropdown */}
         <div className="relative">
-          <label className="text-sm font-semibold mr-2 text-gray-700">
+          <label className={`text-sm font-semibold mr-2 ${theme==='dark'?' text-gray-100':' text-gray-800'}`}>
             Sort by:
           </label>
           <div className="inline-block relative w-48">
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
-              className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-500"
+              className={`block appearance-none w-full ${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'} border border-gray-300  py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none  focus:border-blue-500`}
             >
-              <option value="Recently Added">Recently Added</option>
-              <option value="Acsending">Acsending</option>
-              <option value="Descending">Descending</option>
-              <option value="Last Month">Last Month</option>
+              <option value="Recently Added"className={`${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'}`}>Recently Added</option>
+              <option value="Acsending" className={`${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'}`}>Acsending</option>
+              <option value="Descending" className={`${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'}`}>Descending</option>
+              <option value="Last Month" className={`${theme==='dark'?'bg-gray-800 text-gray-100':'bg-gray-200 text-gray-800'}`}>Last Month</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${theme==='dark'?' text-gray-100':' text-gray-800'}`}>
               {sortOption === "Acsending" ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
             </div>
           </div>
@@ -138,62 +137,33 @@ const Applicants = ({onBack}) => {
       </div>
 
       {/* Table Section */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+      <div className="overflow-x-auto rounded-xl">
+        <table className="min-w-full divide-y divide-gray-200 broder border-gray-200">
+          <thead className={`bg-gray-100 ${theme==='dark' ? 'border-black  bg-gray-500 text-white':''}`}>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                CandidateId
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Candidate
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Job Title
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Location
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                Status
-              </th>
+              <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>  CandidateId</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>  Candidate</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>  Email</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>  Job Title</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>  Location</th>
+              <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>  Status</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedData.length > 0 ? (
               paginatedData.map((applicant) => (
                 <tr key={applicant.candidateId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {applicant.candidateId}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center">
-                      <img className="h-10 w-10 rounded-full mr-4" src={applicant.image} alt={applicant.name} />
-                      {applicant.name}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {applicant.emailId}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {applicant.job}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {applicant.location}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${getStatusColor(applicant.status)}`}>
-                      {applicant.status}
-                    </span>
-                  </td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {applicant.candidateId}</td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  <div className="flex items-center">    <img className="h-10 w-10 rounded-full mr-4" src={applicant.image} alt={applicant.name} />    {applicant.name}  </div></td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>   {applicant.emailId} </td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {applicant.job}</td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {applicant.location}</td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme==='dark' ? ' bg-gray-500 ':''}`}>  <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${getStatusColor(applicant.status)}`}>    {applicant.status}  </span></td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center py-4 text-gray-500">
+                <td colSpan="5" className={`text-center py-4 ${theme==='dark' ? ' text-gray-200':'text-gray-900'} italic`}>
                   No matching candidates found.
                 </td>
               </tr>
@@ -205,21 +175,21 @@ const Applicants = ({onBack}) => {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
-          <span className="text-sm text-gray-700 mb-2 sm:mb-0">
+          <span className={`text-sm ${theme==='dark' ? '  text-gray-200':'text-gray-900'} mb-2 sm:mb-0`}>
             Page {currentPage} of {totalPages}
           </span>
           <nav className="flex items-center gap-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-4 py-2 text-sm font-medium ${theme==='dark' ? ' bg-gray-500 text-gray-200':'bg-white text-gray-700'} border border-gray-300 rounded-md  disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               Previous
             </button>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-4 py-2 text-sm font-medium ${theme==='dark' ? ' bg-gray-500 text-gray-200':' bg-white text-gray-700'} border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               Next
             </button>
