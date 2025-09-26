@@ -7,6 +7,141 @@ import { Context } from '../HrmsContext';
 import ConfirmationModal from './ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// --- Project Dropdown with Infinite Scroll ---
+const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [currentPage, setCurrentPage] = useState(0);
+    
+    const PAGE_SIZE = 10;
+
+    const loadProjects = useCallback(async (page = 0, reset = false) => {
+        if (loading || (!hasMore && !reset)) return;
+        
+        setLoading(true);
+        try {
+            const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/projectId/asc/projects`);
+            const newProjects = response.data || [];
+            
+            setProjects(prev => reset ? newProjects : [...prev, ...newProjects]);
+            setCurrentPage(page);
+            setHasMore(newProjects.length === PAGE_SIZE);
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+            setHasMore(false);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isOpen) {
+            loadProjects(0, true);
+        }
+    }, [isOpen, loadProjects]);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !loading) {
+            loadProjects(currentPage + 1);
+        }
+    };
+
+    const handleSelect = (project) => {
+        onChange({ value: project.projectId, label: `${project.projectId}(${project.title})` });
+        setIsOpen(false);
+    };
+
+    const toggleDropdown = () => {
+        if (!disabled) setIsOpen(!isOpen);
+    };
+
+    const filteredProjects = projects.filter(proj => 
+        proj.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        proj.projectId?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className="relative">
+            <div 
+                onClick={toggleDropdown} 
+                className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${
+                    error ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-200')
+                } ${disabled ? 'opacity-50' : ''} ${
+                    theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'
+                }`}
+            >
+                <span className={!value ? (theme === 'dark' ? 'text-gray-400' : 'text-gray-500') : ''}>
+                    {value ? value.label : 'Select project...'}
+                </span>
+                <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+            </div>
+            <AnimatePresence>
+                {isOpen && !disabled && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0, y: -10 }} 
+                        className={`absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-lg z-50 ${
+                            theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                        }`}
+                    >
+                        <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+                            <div className="relative">
+                                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search projects..." 
+                                    value={searchTerm} 
+                                    onChange={(e) => setSearchTerm(e.target.value)} 
+                                    className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${
+                                        theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`} 
+                                />
+                            </div>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
+                            {filteredProjects.map(project => {
+                                const isSelected = value?.value === project.projectId;
+                                return (
+                                    <div 
+                                        key={project.projectId} 
+                                        onClick={() => handleSelect(project)} 
+                                        className={`p-3 cursor-pointer flex items-center justify-between ${
+                                            isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`
+                                        }`}
+                                    >
+                                        <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                                            <div className="font-medium">{project.projectId}({project.title})</div>
+                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                Client: {project.client} • Status: {project.projectStatus}
+                                            </div>
+                                        </div>
+                                        {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
+                                    </div>
+                                );
+                            })}
+                            {loading && (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading more projects...
+                                </div>
+                            )}
+                            {!hasMore && projects.length > 0 && (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No more projects
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 // --- Employee Dropdown with Infinite Scroll ---
 const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = false }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -41,7 +176,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
         if (isOpen) {
             loadEmployees(0, true);
         }
-    }, [isOpen]);
+    }, [isOpen, loadEmployees]);
 
     const handleScroll = (e) => {
         const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -95,7 +230,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
 
     return (
         <div className="relative">
-            <div onClick={toggleDropdown} className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${error ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-200')} ${disabled ? 'opacity-50' : ''}`}>
+            <div onClick={toggleDropdown} className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${error ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-200')} ${disabled ? 'opacity-50' : ''} ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}>
                 <div className="flex-1">{renderSelectedValue()}</div>
                 <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
@@ -105,7 +240,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                         <div className="p-2 border-b border-gray-200 dark:border-gray-600">
                             <div className="relative">
                                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`} />
+                                <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`} />
                             </div>
                         </div>
                         <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
@@ -113,7 +248,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                 const isSelected = isMulti ? (Array.isArray(value) && value.some(item => item.value === employee.employeeId)) : value?.value === employee.employeeId;
                                 return (
                                     <div key={employee.employeeId} onClick={() => handleSelect(employee)} className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
-                                        <div>
+                                        <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
                                             <div className="font-medium">{employee.displayName}</div>
                                             <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
                                         </div>
@@ -121,7 +256,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                     </div>
                                 );
                             })}
-                            {loading && <div className="p-4 text-center text-sm">Loading...</div>}
+                            {loading && <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Loading...</div>}
                         </div>
                     </motion.div>
                 )}
@@ -129,7 +264,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
         </div>
     );
 };
-
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center h-64">
@@ -152,12 +286,13 @@ const AllTeams = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
-  const [searchTerm, setSearchTerm] = useState(''); // Search bar state
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form state
   const [teamName, setTeamName] = useState('');
   const [teamLead, setTeamLead] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
@@ -212,12 +347,9 @@ const AllTeams = () => {
     }
   };
 
-
   useEffect(() => {
     console.log('🔄 useEffect triggered:', { canCreateTeam, employeeIdToFetch });
-    
     fetchTeams();
-    
   }, [canCreateTeam, employeeIdToFetch]);
   
   // Filter teams based on search term
@@ -230,6 +362,7 @@ const AllTeams = () => {
     if (!teamName.trim()) errors.teamName = "Team Name is required.";
     if (!teamLead) errors.teamLead = "Team Lead is required.";
     if (teamMembers.length === 0) errors.teamMembers = "At least one Team Member is required.";
+    if (!selectedProject) errors.selectedProject = "Project selection is required.";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -245,7 +378,7 @@ const AllTeams = () => {
         teamName,
         teamDescription: "Default Description",
         employeeIds: [teamLead?.value, ...teamMembers.map(member => member.value)].filter(Boolean),
-        projectId: "PRO1001"
+        projectId: selectedProject?.value // Send only the project ID
     };
 
     console.log('🚀 Creating team with data:', newTeamData);
@@ -256,10 +389,12 @@ const AllTeams = () => {
         
         await fetchTeams();
 
+        // Reset form
         setIsCreateModalOpen(false);
         setTeamName('');
         setTeamLead(null);
         setTeamMembers([]);
+        setSelectedProject(null);
         alert('Team created successfully!');
     } catch (err) {
         console.error("❌ Error creating team:", err);
@@ -316,7 +451,15 @@ const AllTeams = () => {
                                 <p className="text-white/90 text-xs sm:text-sm break-words">Organize employees into a new team.</p>
                             </div>
                         </div>
-                        <button onClick={() => setIsCreateModalOpen(false)} className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all group flex-shrink-0">
+                        <button onClick={() => {
+                            setIsCreateModalOpen(false);
+                            // Reset form
+                            setTeamName('');
+                            setTeamLead(null);
+                            setTeamMembers([]);
+                            setSelectedProject(null);
+                            setFormErrors({});
+                        }} className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all group flex-shrink-0">
                             <FaTimes className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform" />
                         </button>
                     </div>
@@ -326,17 +469,45 @@ const AllTeams = () => {
                     <form className="p-4 sm:p-6 md:p-8" onSubmit={handleCreateTeam}>
                         <div className="space-y-4 sm:space-y-6">
                            <div>
-                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>Team Name <span className="text-red-500">*</span></label>
-                                <input type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className={`w-full p-3 border-2 rounded-xl ${formErrors.teamName ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-200')}`} placeholder="e.g., Development Team" />
+                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    Team Name <span className="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={teamName} 
+                                    onChange={(e) => setTeamName(e.target.value)} 
+                                    className={`w-full p-3 border-2 rounded-xl transition-colors ${
+                                        formErrors.teamName ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-200 bg-white text-gray-900')
+                                    }`} 
+                                    placeholder="e.g., Development Team" 
+                                />
                                 {formErrors.teamName && <p className="text-red-500 text-xs mt-1">{formErrors.teamName}</p>}
                             </div>
+
                             <div>
-                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>Team Lead <span className="text-red-500">*</span></label>
+                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    Project <span className="text-red-500">*</span>
+                                </label>
+                                <ProjectDropdown 
+                                    value={selectedProject} 
+                                    onChange={setSelectedProject} 
+                                    theme={theme} 
+                                    error={formErrors.selectedProject} 
+                                />
+                                {formErrors.selectedProject && <p className="text-red-500 text-xs mt-1">{formErrors.selectedProject}</p>}
+                            </div>
+
+                            <div>
+                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    Team Lead <span className="text-red-500">*</span>
+                                </label>
                                 <EmployeeDropdown value={teamLead} onChange={setTeamLead} theme={theme} error={formErrors.teamLead} />
                                 {formErrors.teamLead && <p className="text-red-500 text-xs mt-1">{formErrors.teamLead}</p>}
                             </div>
                             <div>
-                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>Team Members <span className="text-red-500">*</span></label>
+                                <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    Team Members <span className="text-red-500">*</span>
+                                </label>
                                 <EmployeeDropdown value={teamMembers} onChange={setTeamMembers} theme={theme} error={formErrors.teamMembers} isMulti={true} />
                                 {formErrors.teamMembers && <p className="text-red-500 text-xs mt-1">{formErrors.teamMembers}</p>}
                             </div>
@@ -353,12 +524,29 @@ const AllTeams = () => {
                 </div>
 
                 <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                    <button type="button" onClick={() => setIsCreateModalOpen(false)} className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all text-sm ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>
+                    <button 
+                        type="button" 
+                        onClick={() => {
+                            setIsCreateModalOpen(false);
+                            // Reset form
+                            setTeamName('');
+                            setTeamLead(null);
+                            setTeamMembers([]);
+                            setSelectedProject(null);
+                            setFormErrors({});
+                        }} 
+                        className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all text-sm ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+                    >
                         Cancel
                     </button>
-                    <button type="button" onClick={handleCreateTeam} disabled={isSubmitting} className={`w-full sm:w-auto px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-lg sm:rounded-xl
+                    <button 
+                        type="button" 
+                        onClick={handleCreateTeam} 
+                        disabled={isSubmitting} 
+                        className={`w-full sm:w-auto px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-lg sm:rounded-xl
                                      hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center space-x-2 text-sm
-                                     ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}>
+                                     ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
+                    >
                         {isSubmitting ? (
                             <>
                                 <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -377,7 +565,6 @@ const AllTeams = () => {
     );
   };
 
-
   return (
     <div className={`px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         {fromContextMenu && targetEmployeeId && (
@@ -395,7 +582,6 @@ const AllTeams = () => {
                 {fromContextMenu ? 'Employee Teams' : 'All Teams'}
             </h1>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
-                 {/* Search Bar */}
                 <div className="relative w-full sm:w-64">
                     <input
                         type="text"
