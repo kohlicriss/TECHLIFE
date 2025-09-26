@@ -4,16 +4,14 @@ import { Context } from '../HrmsContext';
 import { publicinfoApi } from '../../../../axiosInstance';
 
 const PermissionsPage = () => {
-  const { theme } = useContext(Context);
+  const { theme, permissionsdata, userData } = useContext(Context);
   const [permissions, setPermissions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  // New state for the custom permission input
   const [newPermissionLabel, setNewPermissionLabel] = useState('');
   
-  // Converted the static options array into a state so it can be updated
   const [allPermissionOptions, setAllPermissionOptions] = useState([
     { value: 'createTask', label: 'Create Task' },
     { value: 'viewTeams', label: 'View Teams' },
@@ -30,6 +28,54 @@ const PermissionsPage = () => {
     { key: "employee", roleName: "EMPLOYEE" },
     { key: "admin", roleName: "ADMIN" },
   ];
+
+  const hasUserPermission = (requiredPermission) => {
+    try {
+      if (!permissionsdata || !Array.isArray(permissionsdata)) {
+        return false;
+      }
+
+      let currentUserRole = null;
+      if (userData && userData.roles && userData.roles[0]) {
+        currentUserRole = userData.roles[0];
+      } else {
+        currentUserRole = localStorage.getItem('userRole');
+      }
+
+      if (!currentUserRole) {
+        return false;
+      }
+
+      const userRoleData = permissionsdata.find(role => {
+        const roleNameVariations = [
+          currentUserRole,
+          currentUserRole.replace('ROLE_', ''),
+          `ROLE_${currentUserRole}`,
+          currentUserRole.toUpperCase(),
+          currentUserRole.toLowerCase()
+        ];
+        return roleNameVariations.includes(role.roleName);
+      });
+
+      if (!userRoleData) {
+        return false;
+      }
+      
+      // Check if the required permission exists in user's permissions array
+      const hasPermission = userRoleData.permissions && userRoleData.permissions.includes(requiredPermission);
+      
+      return hasPermission;
+    } catch (error) {
+      console.error('Error checking user permission:', error);
+      return false;
+    }
+  };
+
+  // Create User button click handler
+  const handleCreateUser = () => {
+    // Add your create user logic here
+    alert('Create User functionality will be implemented here!');
+  };
 
   // Function to add the new permission to the options list
   const handleAddPermission = () => {
@@ -64,15 +110,12 @@ const PermissionsPage = () => {
     setNewPermissionLabel(''); // Clear the input field after adding
   };
 
-
   useEffect(() => {
     const loadFromLocalStorage = () => {
-      console.log("Loading permissions from localStorage...");
       const saved = localStorage.getItem("permissionsData");
       if (saved) {
         try {
           const parsedData = JSON.parse(saved);
-          console.log("Loaded permissions from localStorage:", parsedData);
           return parsedData;
         } catch (error) {
           console.error("Error parsing saved permissions data:", error);
@@ -91,7 +134,6 @@ const PermissionsPage = () => {
         const apiPermissions = response.data;
         
         if (savedPermissions) {
-          console.log("Using saved permissions over API data");
           setPermissions(savedPermissions);
         } else {
           setPermissions(apiPermissions);
@@ -100,10 +142,8 @@ const PermissionsPage = () => {
         console.error("Failed to fetch permissions from API", error);
         
         if (savedPermissions) {
-          console.log("API failed, using saved permissions");
           setPermissions(savedPermissions);
         } else {
-          console.log("API failed, using default empty permissions");
           setPermissions({
             employee: [],
             team_lead: [],
@@ -123,7 +163,6 @@ const PermissionsPage = () => {
 
   useEffect(() => {
     if (isLoaded && permissions) {
-      console.log("Saving permissions to localStorage:", permissions);
       localStorage.setItem("permissionsData", JSON.stringify(permissions));
     }
   }, [permissions, isLoaded]);
@@ -136,37 +175,26 @@ const PermissionsPage = () => {
     }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  const transformedPermissions = roleMeta.map(({ key, roleName }) => ({
-    roleName,
-    permissions: permissions[key] || [],
-  }));
+    const transformedPermissions = roleMeta.map(({ key, roleName }) => ({
+      roleName,
+      permissions: permissions[key] || [],
+    }));
 
-  // ✅ Print data to console
-  console.log("Submitting permissions:", transformedPermissions);
-
-  try {
-    // ✅ Clear localStorage after printing data
-    console.log("Clearing localStorage...");
-    localStorage.removeItem("permissionsData");
-    console.log("LocalStorage cleared. Current content:", localStorage.getItem("permissionsData"));
-    
-    alert("Permissions data printed to console and localStorage cleared!");
-    
-  } catch (error) {
-    console.error("Error:", error);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
+    try {
+      localStorage.removeItem("permissionsData");
+      alert("Permissions data printed to console and localStorage cleared!");
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleReset = () => {
-    console.log("Resetting permissions and clearing localStorage");
     localStorage.removeItem("permissionsData");
     window.location.reload();
   };
@@ -305,14 +333,36 @@ const handleSubmit = async (e) => {
 
   const roles = ['employee', 'team_lead', 'admin', 'hr', 'manager'];
 
+  // Check if current user has CREAT_USER permission
+  const canCreateUser = hasUserPermission('CREAT_USER');
+
   return (
     <div className={`min-h-screen px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
       <div className="max-w-6xl mx-auto">
         <div className="mb-6 sm:mb-8 px-4 sm:px-0">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Permissions Management</h1>
-          <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-            Configure role-based permissions for your organization
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Permissions Management</h1>
+              <p className={`text-sm sm:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Configure role-based permissions for your organization
+              </p>
+            </div>
+            
+            {/* Create User Button - Conditional based on CREAT_USER permission */}
+            {canCreateUser && (
+              <div className="flex-shrink-0">
+                <button
+                  onClick={handleCreateUser}
+                  className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg shadow-lg hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-500/30 text-sm sm:text-base`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>Create User</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* New section for adding custom permissions */}
