@@ -25,7 +25,7 @@ import {
     MdLocationOn,
     MdEdit,
 } from "react-icons/md";
-import { FaPhone, FaBuilding, FaCamera, FaTrash, FaTimes, FaExpand, FaCompress } from "react-icons/fa";
+import { FaPhone, FaBuilding, FaCamera, FaTrash, FaTimes, FaExpand, FaCompress, FaChevronDown } from "react-icons/fa";
 import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { publicinfoApi } from "../../../../axiosInstance";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,10 +44,10 @@ const Profiles = () => {
     const isOwnProfile = profileEmployeeId === empID;
     const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
     
-    // Simplified logic for editing permission
     const canEditHeader = isOwnProfile || (isAdmin && !isOwnProfile);
 
     const [activeTab, setActiveTab] = useState(location.pathname);
+    const [depdata, setDeptdata] = useState([]);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const [profileImagePreview, setProfileImagePreview] = useState(null);
@@ -64,6 +64,112 @@ const Profiles = () => {
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [isImageFullView, setIsImageFullView] = useState(false);
     const fileInputRef = useRef(null);
+
+    // Department dropdown states
+    const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false);
+    const [departmentPage, setDepartmentPage] = useState(0);
+    const [departmentLoading, setDepartmentLoading] = useState(false);
+    const [departmentHasMore, setDepartmentHasMore] = useState(true);
+    const [allDepartments, setAllDepartments] = useState([]);
+    const [selectedDepartmentDisplay, setSelectedDepartmentDisplay] = useState('');
+    const [selectedDepartmentValue, setSelectedDepartmentValue] = useState('');
+    const departmentDropdownRef = useRef(null);
+
+    // Define computed variables AFTER state variables
+    const display = !isOwnProfile ? viewedEmployeeData : userprofiledata;
+    const displayHeader = !isOwnProfile ? (viewedEmployeeHeaderData || viewedEmployeeData) : (headerData || userprofiledata);
+
+    const initials = (displayHeader?.name || displayHeader?.displayName || display?.displayName || "  ")
+        .split(" ")
+        .map(w => w[0])
+        .join("")
+        .substring(0, 2);
+
+    const tabs = [
+        { name: "About", path: "about", icon: MdPerson },
+        { name: "Profile", path: "profile", icon: HiIdentification },
+        { name: "Job", path: "job", icon: MdWork },
+        { name: "Documents", path: "documents", icon: MdBusiness },
+        { name: "Achievements", path: "achievements", icon: MdStar },
+    ];
+
+    // Load initial departments
+    useEffect(() => {
+        fetchDepartments(0, true);
+    }, []);
+
+    const fetchDepartments = async (page = 0, reset = false) => {
+        if (departmentLoading) return;
+        
+        setDepartmentLoading(true);
+        try {
+            const response = await publicinfoApi.get(`employee/${page}/10/departmentId/asc/all/departments`);
+            console.log("Department Response:", response.data);
+            
+            if (reset) {
+                setAllDepartments(response.data);
+            } else {
+                setAllDepartments(prev => [...prev, ...response.data]);
+            }
+            
+            setDepartmentHasMore(response.data.length === 10);
+            setDepartmentPage(page);
+        } catch (error) {
+            console.log("Error fetching departments:", error);
+            setDepartmentHasMore(false);
+        } finally {
+            setDepartmentLoading(false);
+        }
+    };
+
+    const handleDepartmentScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollHeight - scrollTop <= clientHeight + 5 && departmentHasMore && !departmentLoading) {
+            fetchDepartments(departmentPage + 1, false);
+        }
+    };
+
+    const handleDepartmentSelect = (department) => {
+        setSelectedDepartmentDisplay(`${department.departmentId}(${department.departmentName})`);
+        setSelectedDepartmentValue(department.departmentName);
+        
+        setEditingHeaderData(prev => ({
+            ...prev,
+            department: department.departmentName
+        }));
+        setDepartmentDropdownOpen(false);
+    };
+
+    // Initialize department values when editing starts
+    useEffect(() => {
+        if (isEditingHeader && displayHeader?.department) {
+            setSelectedDepartmentValue(displayHeader.department);
+            const matchingDept = allDepartments.find(dept => 
+                dept.departmentName === displayHeader.department ||
+                displayHeader.department.includes(dept.departmentName)
+            );
+            
+            if (matchingDept) {
+                setSelectedDepartmentDisplay(`${matchingDept.departmentId}(${matchingDept.departmentName})`);
+            } else {
+                setSelectedDepartmentDisplay(displayHeader.department);
+            }
+        }
+    }, [isEditingHeader, displayHeader?.department, allDepartments]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (departmentDropdownRef.current && !departmentDropdownRef.current.contains(event.target)) {
+                setDepartmentDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         if (!profileEmployeeId) return;
@@ -103,23 +209,6 @@ const Profiles = () => {
     useEffect(() => {
         setActiveTab(location.pathname);
     }, [location.pathname]);
-
-    const display = !isOwnProfile ? viewedEmployeeData : userprofiledata;
-    const displayHeader = !isOwnProfile ? (viewedEmployeeHeaderData || viewedEmployeeData) : (headerData || userprofiledata);
-
-    const initials = (displayHeader?.name || displayHeader?.displayName || display?.displayName || "  ")
-        .split(" ")
-        .map(w => w[0])
-        .join("")
-        .substring(0, 2);
-
-    const tabs = [
-        { name: "About", path: "about", icon: MdPerson },
-        { name: "Profile", path: "profile", icon: HiIdentification },
-        { name: "Job", path: "job", icon: MdWork },
-        { name: "Documents", path: "documents", icon: MdBusiness },
-        { name: "Achievements", path: "achievements", icon: MdStar },
-    ];
 
     const handleImageUpload = async e => {
         const file = e.target.files[0];
@@ -192,20 +281,29 @@ const Profiles = () => {
 
     const handleHeaderEditClick = () => {
         if (!canEditHeader) return;
-        setEditingHeaderData(displayHeader);
+        setEditingHeaderData(displayHeader || {});
         setIsEditingHeader(true);
     };
 
     const handleHeaderSave = async (e) => {
         e.preventDefault();
         try {
-            const res = await publicinfoApi.put(`employee/${profileEmployeeId}/header`, editingHeaderData);
+            const payload = {
+                ...editingHeaderData,
+                department: selectedDepartmentValue || editingHeaderData.department
+            };
+            
+            console.log("Sending payload:", payload);
+            
+            const res = await publicinfoApi.put(`employee/${profileEmployeeId}/header`, payload);
             if(!isOwnProfile) {
                 setViewedEmployeeHeaderData(res.data);
             } else {
                 setHeaderData(res.data);
             }
             setIsEditingHeader(false);
+            setSelectedDepartmentDisplay('');
+            setSelectedDepartmentValue('');
             alert("Header information updated successfully!");
         } catch (err) {
             console.error("❌ Error updating header:", err);
@@ -521,22 +619,57 @@ const Profiles = () => {
                                         <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
                                             Department
                                         </label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="department"
-                                                value={editingHeaderData.department || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 ${
+                                        <div className="relative" ref={departmentDropdownRef}>
+                                            <div 
+                                                onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
+                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 cursor-pointer flex justify-between items-center group-hover:border-purple-300 focus:border-purple-500 ${
                                                     theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                                        ? 'bg-gray-700 border-gray-600 text-white'
+                                                        : 'bg-gray-50 border-gray-300 text-gray-900'
                                                 }`}
-                                                placeholder="Enter department"
-                                            />
+                                            >
+                                                <span className={selectedDepartmentDisplay || editingHeaderData.department ? '' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-500')}>
+                                                    {selectedDepartmentDisplay || editingHeaderData.department || 'Select department'}
+                                                </span>
+                                                <FaChevronDown className={`transition-transform duration-200 ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+                                            
+                                            {departmentDropdownOpen && (
+                                                <div className={`absolute z-50 w-full mt-2 max-h-60 overflow-y-auto rounded-xl border-2 shadow-lg ${
+                                                    theme === 'dark'
+                                                        ? 'bg-gray-700 border-gray-600'
+                                                        : 'bg-white border-gray-300'
+                                                }`}
+                                                onScroll={handleDepartmentScroll}
+                                                >
+                                                    {allDepartments.map((department) => (
+                                                        <div
+                                                            key={department.departmentId}
+                                                            onClick={() => handleDepartmentSelect(department)}
+                                                            className={`px-4 py-3 cursor-pointer border-b hover:bg-opacity-80 transition-colors ${
+                                                                theme === 'dark'
+                                                                    ? 'text-white hover:bg-gray-600 border-gray-600'
+                                                                    : 'text-gray-900 hover:bg-gray-100 border-gray-200'
+                                                            } ${department === allDepartments[allDepartments.length - 1] ? 'border-b-0' : ''}`}
+                                                        >
+                                                            {department.departmentId}({department.departmentName})
+                                                        </div>
+                                                    ))}
+                                                    {departmentLoading && (
+                                                        <div className={`px-4 py-3 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                            Loading more departments...
+                                                        </div>
+                                                    )}
+                                                    {!departmentHasMore && allDepartments.length > 0 && (
+                                                        <div className={`px-4 py-3 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                            No more departments
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Department or division name
+                                            Department or division name (Only department name will be saved)
                                         </p>
                                     </div>
                                     <div className="group">
@@ -609,7 +742,11 @@ const Profiles = () => {
                                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200 dark:border-gray-600">
                                     <button
                                         type="button"
-                                        onClick={() => setIsEditingHeader(false)}
+                                        onClick={() => {
+                                            setIsEditingHeader(false);
+                                            setSelectedDepartmentDisplay('');
+                                            setSelectedDepartmentValue('');
+                                        }}
                                         className={`w-full sm:w-auto px-8 py-3 border-2 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${
                                             theme === 'dark'
                                                 ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
