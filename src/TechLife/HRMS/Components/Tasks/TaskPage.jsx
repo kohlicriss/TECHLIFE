@@ -97,7 +97,6 @@ const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
     </Modal>
 );
 
-// New EmployeeDropdown Component with Infinity Scroll Pagination
 const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -110,7 +109,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     
     const PAGE_SIZE = 10;
 
-    // Load initial employees and reset when dropdown opens
     useEffect(() => {
         if (isOpen && employees.length === 0) {
             loadEmployees(0, true);
@@ -125,7 +123,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/public/employees`);
             const newEmployees = response.data || [];
             
-            // Filter out the logged-in user
             const filteredNewEmployees = newEmployees.filter(emp => emp.employeeId !== userData?.employeeId);
             
             if (reset) {
@@ -177,7 +174,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     const handleDropdownToggle = () => {
         if (!disabled) {
             if (!isOpen) {
-                // Reset employees when opening
                 setEmployees([]);
                 setCurrentPage(0);
                 setAllLoaded(false);
@@ -228,7 +224,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
             
             {isOpen && !disabled && (
                 <div className={`absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-lg z-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-                    {/* Search Box */}
                     <div className="p-3 border-b border-gray-200 dark:border-gray-600">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -246,7 +241,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                         </div>
                     </div>
 
-                    {/* Employee List */}
                     <div 
                         className="max-h-64 overflow-y-auto" 
                         onScroll={handleScroll}
@@ -275,7 +269,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                                     </div>
                                 ))}
                                 
-                                {/* Loading indicator */}
                                 {loading && (
                                     <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                         <div className="flex items-center justify-center space-x-2">
@@ -285,7 +278,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                                     </div>
                                 )}
                                 
-                                {/* Load more button */}
                                 {!loading && hasMore && !allLoaded && filteredEmployees.length >= PAGE_SIZE && (
                                     <div className="p-3 border-t border-gray-200 dark:border-gray-600">
                                         <button
@@ -301,7 +293,6 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                                     </div>
                                 )}
                                 
-                                {/* No more employees message */}
                                 {allLoaded && filteredEmployees.length > 0 && (
                                     <div className={`p-3 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                         All employees loaded
@@ -335,6 +326,11 @@ const TasksPage = () => {
     const navigate = useNavigate();
     const { employeeId } = useParams();
     const { userData, theme } = useContext(Context);
+    const [hasAccess,setHasAccess]=useState([])
+    useEffect(()=>{
+        setHasAccess(userData?.permissions)
+    },[userData])
+    console.log("permissions from userdata:",hasAccess)
 
     const [tasks, setTasks] = useState([]);
     const [assignedByMeTasks, setAssignedByMeTasks] = useState([]);
@@ -447,7 +443,6 @@ const TasksPage = () => {
         }
     }, [userData, currentNumber, dropdownValue]);
 
-    // Fetch projects
     useEffect(() => {
         const fetchProjects = async () => {
             try {
@@ -748,7 +743,6 @@ const TasksPage = () => {
             handleInputChange({ target: { name, value } });
         };
 
-        // Special handling for assignedTo field with new EmployeeDropdown
         if (name === 'assignedTo') {
             return (
                 <div className="group relative" key={name}>
@@ -920,7 +914,6 @@ const TasksPage = () => {
         );
     };
 
-    // Modern Edit Modal - Documents.jsx Style
     const renderEditModal = () => {
         if (!isFormOpen) return null;
         const isUpdate = formMode === 'edit';
@@ -930,7 +923,6 @@ const TasksPage = () => {
                 <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
                     theme === 'dark' ? 'bg-gray-800' : 'bg-white'
                 }`}>
-                    {/* Header */}
                     <div className={`px-8 py-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white relative overflow-hidden`}>
                         <div className="absolute inset-0 bg-black/10"></div>
                         <div className="relative flex items-center justify-between">
@@ -954,12 +946,9 @@ const TasksPage = () => {
                             </button>
                         </div>
                     </div>
-
-                    {/* Form Content */}
                     <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
                         <form className="p-8" onSubmit={handleFormSubmit}>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                {/* Basic Information */}
                                 {isUpdate && renderField('Task ID', 'id', 'text', true, [], true)}
                                 {renderField('Project ID', 'projectId', 'select', true, projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId })))}
                                 {renderField('Task Title', 'title', 'text', true)}
@@ -976,7 +965,6 @@ const TasksPage = () => {
                                 {renderField('Completion Note', 'completionNote', 'textarea')}
                             </div>
 
-                            {/* Related Links */}
                             <div className="mt-8 space-y-4">
                                 <label className={`block text-sm font-semibold ${
                                     theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
@@ -1014,7 +1002,6 @@ const TasksPage = () => {
                                 </button>
                             </div>
 
-                            {/* File Upload */}
                             <div className="mt-8">
                                 {renderField('Attached Files', 'attachedFileLinks', 'file')}
                                 
@@ -1047,7 +1034,6 @@ const TasksPage = () => {
                                 )}
                             </div>
 
-                            {/* Error Message */}
                             {submissionError && (
                                 <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
                                     theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
@@ -1061,7 +1047,6 @@ const TasksPage = () => {
                         </form>
                     </div>
                     
-                    {/* Footer */}
                     <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
                         theme === 'dark' 
                             ? 'bg-gray-700 border-gray-600' 
@@ -1083,9 +1068,9 @@ const TasksPage = () => {
                             onClick={handleFormSubmit}
                             disabled={isSubmitting}
                             className={`px-10 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl
-                                        hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                                        focus:ring-4 focus:ring-indigo-500/30 flex items-center space-x-2
-                                        ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
+                                     hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                                     focus:ring-4 focus:ring-indigo-500/30 flex items-center space-x-2
+                                     ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
                         >
                             {isSubmitting ? (
                                 <>
@@ -1127,7 +1112,7 @@ const TasksPage = () => {
     const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
 
     const renderTaskTable = (taskList, tableTitle, noTasksMessage, showAssignedTo) => (
-        <div className="mb-8">
+        <div className="mb-8 hidden md:block">
             <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{tableTitle}</h2>
             <div className={`rounded-xl shadow-md overflow-hidden border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200/80'}`}>
                 <div className="overflow-x-auto">
@@ -1202,6 +1187,74 @@ const TasksPage = () => {
             </div>
         </div>
     );
+    
+    const renderTaskCards = (taskList, noTasksMessage) => (
+        <div className="space-y-4 md:hidden">
+            {taskList.length > 0 ? (
+                taskList.map(task => {
+                    const timeCompletedBar = calculateTimeCompletedBar(task.startDate || task.createdDate, task.dueDate, today);
+                    const progressBarColor = timeCompletedBar <= 50 ? 'bg-green-500' : timeCompletedBar <= 75 ? 'bg-yellow-500' : 'bg-red-500';
+                    return (
+                        <div 
+                            key={`${task.id}-${task.projectId}`} 
+                            onClick={() => clickHandler(task.projectId, task.id)} 
+                            className={`p-4 rounded-xl shadow-md cursor-pointer transition-transform duration-200 ease-in-out hover:scale-[1.01] ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+                        >
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{task.title}</h3>
+                                <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{task.assignedTo}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm mb-2">
+                                <div className="flex items-center">
+                                    <span className={`h-2 w-2 rounded-full inline-block ${getStatusDot(task.status)} mr-2`}></span>
+                                    <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{task.status.replace("_", " ")}</span>
+                                </div>
+                                <span className={`text-xs font-bold py-0.5 px-2 rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'border'} ${getPriorityStyles(task.priority)}`}>
+                                    {task.priority}
+                                </span>
+                            </div>
+                            <div className={`flex justify-between text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <div className="flex items-center">
+                                    <CalendarIcon theme={theme} />
+                                    <span>{task.startDate || task.createdDate}</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <CalendarIcon theme={theme} />
+                                    <span>{task.dueDate}</span>
+                                </div>
+                            </div>
+                            <div className="mt-4">
+                                <p className={`text-sm mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Progress</p>
+                                <div className={`w-full rounded-full h-2.5 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
+                                    <div className={`${progressBarColor} h-full rounded-full`} style={{ width: `${timeCompletedBar}%` }}></div>
+                                </div>
+                            </div>
+                            {isTeamLead && task.createdBy === userData?.employeeId && (
+                                <div className="flex justify-end mt-4 gap-2">
+                                    <button
+                                        onClick={(e) => handleEditClick(e, task)}
+                                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-gray-200 transition-colors"
+                                    >
+                                        <Edit size={18} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => handleDeleteTask(e, task.projectId, task.id)}
+                                        className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-gray-200 transition-colors"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })
+            ) : (
+                <div className={`text-center py-10 rounded-xl shadow-md ${theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
+                    {noTasksMessage}
+                </div>
+            )}
+        </div>
+    );
 
     const handleMyTasksClick = () => {
         setDisplayMode("MY_TASKS");
@@ -1235,12 +1288,9 @@ const TasksPage = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                         <div>
                             <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Task Dashboard</h1>
-                            <p className={`mt-1 text-lg ${theme === 'dark' ? 'text-gray-400' : 'text-slate-500'}`}>
-                                Welcome, {userData?.fullName || userData?.employeeId}. You are viewing the task dashboard.
-                            </p>
                         </div>
                         <div className="mt-4 sm:mt-0 flex gap-4">
-                            {isTeamLead && (
+                            {hasAccess.includes("CREATE_TASK") && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="flex cursor-pointer items-center justify-center bg-indigo-600 text-white font-semibold py-2.5 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
@@ -1251,17 +1301,17 @@ const TasksPage = () => {
                         </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                        <div>
-                            <label htmlFor="filterStatus" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Filter by Status:</label>
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-4 mb-6">
+                        <div className="w-full sm:w-1/3 mb-4 sm:mb-0">
+                            <label htmlFor="filterStatus" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Filter:</label>
                             <select id="filterStatus" value={filterStatus} onChange={handleFilterChange} className={`block w-full pl-3 pr-10 py-2 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}>
-                                <option value="ALL">All Statuses</option>
+                                <option value="ALL">All</option>
                                 <option value="PENDING">Pending</option>
                                 <option value="IN_PROGRESS">In Progress</option>
                                 <option value="COMPLETED">Completed</option>
                             </select>
                         </div>
-                        <div>
+                        <div className="w-full sm:w-1/3 mb-4 sm:mb-0">
                             <label htmlFor="sortOption" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Sort by:</label>
                             <select id="sortOption" value={sortOption} onChange={handleSortChange} className={`block w-full pl-3 pr-10 py-2 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}>
                                 <option value="none">None</option>
@@ -1269,7 +1319,7 @@ const TasksPage = () => {
                                 <option value="priorityDesc">Priority (High to Low)</option>
                             </select>
                         </div>
-                        <div>
+                        <div className="w-full sm:w-1/3">
                             <label htmlFor="itemsPerPage" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Items per page:</label>
                             <select 
                                 id="itemsPerPage" 
@@ -1286,12 +1336,21 @@ const TasksPage = () => {
 
                     {isTeamLead ? (
                         displayMode === "MY_TASKS" ? (
-                            renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)
+                            <>
+                                {renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)}
+                                {renderTaskCards(filteredAndSortedTasks, "No tasks to display.")}
+                            </>
                         ) : (
-                            renderTaskTable(filteredAndSortedAssignedByMeTasks, "Tasks Assigned By You", "You have not assigned any tasks yet.", true)
+                            <>
+                                {renderTaskTable(filteredAndSortedAssignedByMeTasks, "Tasks Assigned By You", "You have not assigned any tasks yet.", true)}
+                                {renderTaskCards(filteredAndSortedAssignedByMeTasks, "You have not assigned any tasks yet.")}
+                            </>
                         )
                     ) : (
-                        renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)
+                        <>
+                            {renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)}
+                            {renderTaskCards(filteredAndSortedTasks, "No tasks to display.")}
+                        </>
                     )}
 
                     <div className="mt-8 flex justify-center">
@@ -1312,7 +1371,6 @@ const TasksPage = () => {
                         </div>
                     </div>
 
-                    {/* Modern Edit Modal */}
                     {renderEditModal()}
                 </div>
             </div>
@@ -1368,7 +1426,6 @@ const TasksPage = () => {
                 />
             )}
 
-            {/* Animations CSS */}
             <style jsx>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
