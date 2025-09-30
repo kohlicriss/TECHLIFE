@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef, useCallback } from 'rea
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Context } from '../HrmsContext';
-import { publicinfoApi } from '../../../../axiosInstance';
+import { authApi, publicinfoApi } from '../../../../axiosInstance';
 import {
   IoSearchOutline,
   IoMailOutline,
@@ -346,10 +346,34 @@ function EmployeeApp() {
   const { empID } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilters, setSelectedFilters] = useState({});
+  const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+      const [matchedArray,setMatchedArray]=useState(null);
+       const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
 
   // State for card flipping
   const [flippedCard, setFlippedCard] = useState(null);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, employee: null });
+
+
+
+
+         useEffect(()=>{
+                let fetchedData=async()=>{
+                        let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                        console.log("from EmployeesApp :",response.data);
+                        setLoggedPermissionData(response.data);
+                }
+                fetchedData();
+            },[])
+          
+            useEffect(()=>{
+                if(loggedPermissiondata){
+                    setMatchedArray(loggedPermissiondata?.permissions)
+                }
+            },[loggedPermissiondata]);
+            console.log(matchedArray);
+
+
 
   // New state for modal
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -381,6 +405,11 @@ function EmployeeApp() {
   const [terminatedCurrentPage, setTerminatedCurrentPage] = useState(0);
   const [terminatedSearchTerm, setTerminatedSearchTerm] = useState('');
   const terminatedScrollRef = useRef(null);
+  const [hasAccess,setHasAccess]=useState([])
+      useEffect(()=>{
+          setHasAccess(userData?.permissions)
+      },[userData])
+      console.log("permissions from userdata:",hasAccess)
 
   const TERMINATED_PAGE_SIZE = 15;
 
@@ -1213,7 +1242,7 @@ function EmployeeApp() {
                 <span>Clear</span>
               </button>
               
-              {hasManagementAccess && (
+              {matchedArray.includes("CREAT_USER") && (
                 <button
                   onClick={() => setIsFormOpen(true)}
                   className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
@@ -1223,7 +1252,7 @@ function EmployeeApp() {
                 </button>
               )}
 
-              {userRole === 'ADMIN' && (
+              { matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
                 <button
                   onClick={handleTerminateEmployees}
                   className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-xs sm:text-sm"
@@ -1492,7 +1521,7 @@ function EmployeeApp() {
                               <span className="font-medium">View Teams</span>
                             </button>
 
-                            {hasManagementAccess && (
+                            {hasAccess.includes("DELETE_USER") && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

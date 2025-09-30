@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { publicinfoApi } from '../../../../axiosInstance';
+import { authApi, publicinfoApi } from '../../../../axiosInstance';
 import { FaUsers, FaProjectDiagram, FaArrowLeft, FaUserShield, FaEdit } from 'react-icons/fa';
 import { Context } from '../HrmsContext';
 import EditTeamModal from './EditTeamModal';
@@ -27,11 +27,39 @@ const TeamDetails = () => {
     const [error, setError] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState([]);
+    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+    const [matchedArray,setMatchedArray]=useState(null);
+
+    useEffect(()=>{
+        let fetchedData=async()=>{
+                let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                console.log("from Edit Team :",response.data);
+                setLoggedPermissionData(response.data);
+        }
+        fetchedData();
+    },[])
+  
+    useEffect(()=>{
+        if(loggedPermissiondata){
+            setMatchedArray(loggedPermissiondata?.permissions)
+        }
+    },[loggedPermissiondata]);
+    console.log(matchedArray);
+
+
 
     const { theme, userData } = useContext(Context);
     const userRoles = userData?.roles || [];
     const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
     
+
+        const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+        console.log("Logged user role ",LoggedUserRole)
+
+        
+        
+
+
     // 🎯 Get logged in user ID
     const empID = userData?.employeeId;
 
@@ -106,7 +134,7 @@ const TeamDetails = () => {
                             Details for team ID: {team.teamId}
                         </p>
                     </div>
-                    {canModifyTeam && (
+                    {matchedArray.includes("TEAMS_EDIT_TEAM") && (
                         <button
                             onClick={() => setIsEditModalOpen(true)}
                             className="w-full sm:w-auto bg-blue-600 text-white px-3 sm:px-4 md:px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center shadow-md text-xs sm:text-sm md:text-base"

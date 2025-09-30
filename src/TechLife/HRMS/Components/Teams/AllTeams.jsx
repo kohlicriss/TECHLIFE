@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { publicinfoApi } from '../../../../axiosInstance';
+import { publicinfoApi ,authApi} from '../../../../axiosInstance';
 import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch } from 'react-icons/fa';
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
@@ -287,6 +287,7 @@ const AllTeams = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [expandedTeams, setExpandedTeams] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [matchedArray,setMatchedArray]=useState(null);
 
   // Form state
   const [teamName, setTeamName] = useState('');
@@ -295,6 +296,7 @@ const AllTeams = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [permissionArray,setPermissionArray]=useState(null)
 
   const { userData, theme } = useContext(Context);
   const userRoles = userData?.roles || [];
@@ -346,6 +348,34 @@ const AllTeams = () => {
       setLoading(false);
     }
   };
+
+
+  useEffect(()=>{
+    let fetchForPermissionArray=async()=>{
+        try {
+            let response=await authApi.get(`role-access/${loggedinuserRole}`);
+            console.log("Response From AllTeams for Fetching Permissions Array:",response.data);
+            setMatchedArray(response?.data?.permissions);
+        } catch (error) {
+            console.log("error from Fetching Error matching Objects:",error);
+        }
+    }
+    fetchForPermissionArray();
+  },[])
+
+  console.log(matchedArray)
+
+
+   const loggedinuserRole = userData?.roles[0] 
+  ? `ROLE_${userData.roles[0]}` 
+  : null;
+
+ 
+
+   
+
+   
+
 
   useEffect(() => {
     console.log('🔄 useEffect triggered:', { canCreateTeam, employeeIdToFetch });
@@ -592,7 +622,7 @@ const AllTeams = () => {
                     />
                     <FaSearch className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
                 </div>
-                {canCreateTeam && !fromContextMenu && (
+                {matchedArray?.includes("CREATE_TEAM") && !fromContextMenu && (
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="w-full sm:w-auto bg-black text-white px-4 sm:px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center shadow-md text-sm"
@@ -662,7 +692,7 @@ const AllTeams = () => {
                                                 <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
                                                     <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
                                                 </Link>
-                                                {canModifyTeam && !fromContextMenu && (
+                                                { matchedArray.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
                                                     <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
                                                         <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
                                                     </button>
