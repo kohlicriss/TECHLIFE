@@ -110,7 +110,7 @@ window.addEventListener('storage', (event) => {
         console.log("🔄 Token updated in another tab:", event.newValue);
     }
 });
-export const chatApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
+export const chatApi = createAxiosInstance('http://192.168.0.244:8083/api');
 
 export const getChatOverview = async (employeeId, page = 0, size = 10) => {
   try {
@@ -260,5 +260,54 @@ export const getGroupMembers = async (teamId) => {
   } catch (error) {
     console.error(`Failed to fetch members for team ${teamId}:`, error);
     return null;
+  }
+};
+
+export const searchMessages = async (userId, chatId, query) => {
+  try {
+    const response = await chatApi.get(`/chat/search`, {
+      params: { userId, chatId, query }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to search messages in chat ${chatId}:`, error);
+    return [];
+  }
+};
+
+export const getMessageContext = async (messageId, userId, chatId) => {
+  try {
+    const response = await chatApi.get(`/chat/context`, {
+      params: { messageId, userId, chatId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch message context for message ${messageId}:`, error);
+    return [];
+  }
+};
+
+export const getChatAttachments = async (chatId, type) => {
+  try {
+    const response = await chatApi.get(`/chat/${chatId}/attachments`, {
+      params: { type }
+    });
+    console.log(`Response for ${type}:`, response.data);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch ${type} for chat ${chatId}:`, error);
+    return [];
+  }
+};
+
+export const searchChatOverview = async (employeeId, query) => {
+  try {
+    const response = await chatApi.get(`/chat/overview/search`, {
+      params: { employeeId, query }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to search chat overview:", error);
+    return [];
   }
 };
