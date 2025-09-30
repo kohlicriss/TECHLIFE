@@ -365,7 +365,7 @@ const HrmsApp = () => {
                                             }
                                         >
                                             <Route 
-                                                path="/admin-dashboard/:empId/*" 
+                                                path="/combined-dashboard/:empId/*" 
                                                 element={
                                                     <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
                                                         <RouteWrapper moduleName="Admin Dashboard">

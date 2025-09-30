@@ -1,34 +1,16 @@
-import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useContext, useCallback,useRef } from "react";
 import { Context } from "../HrmsContext";
-import {
-    CalendarDaysIcon,
-    ClockIcon,
-    ArrowLeftIcon,
-    BriefcaseIcon,
-    ChartBarIcon,
-    ChartPieIcon,
-    XCircleIcon,
-} from "@heroicons/react/24/outline";
-import {
-    PieChart,
-    Pie,
-    Cell,
-    Tooltip,
-    ResponsiveContainer,
-    Legend,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-} from "recharts";
+import {CalendarDaysIcon,ClockIcon,ArrowLeftIcon,BriefcaseIcon,ChartBarIcon,ChartPieIcon,XCircleIcon,} from "@heroicons/react/24/outline";
+import {PieChart,Pie,Cell,Tooltip,ResponsiveContainer,Legend,BarChart,Bar,XAxis,YAxis,} from "recharts";
+import { LineChart, Line, } from 'recharts'; 
 import { motion, AnimatePresence } from "framer-motion";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from 'axios';
 import { useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, SidebarOpen } from "lucide-react";
 import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
-import { publicinfoApi } from "../../../../axiosInstance";
+import { dashboardApi, publicinfoApi } from "../../../../axiosInstance";
 import { IoPersonOutline } from "react-icons/io5";
 
 // --- Constants and Helper Functions ---
@@ -106,11 +88,50 @@ const TrendingDownIcon = ({ className,theme }) => (
         />
     </svg>
 );
-const cardData = [
-    { value: "8.5/10", description: "Total Hours Today", trend: "up", trendPercentage: "5", trendPeriod: "This week" },
-    { value: "40.5/50", description: "Total Hours Week", trend: "up", trendPercentage: "7", trendPeriod: "Last week" },
-    { value: "162/200", description: "Total Hours Month", trend: "down", trendPercentage: "8", trendPeriod: "Last Month" },
-    { value: "16/28", description: "Overtime this Month", trend: "down", trendPercentage: "6", trendPeriod: "Last Month" }
+const backendData = [
+    {
+        id: 1,
+        title: "Total Hours Today",
+        currentValue: 8.5,
+        targetValue: 10,
+        trend: "up",
+        trendPercentage: "5",
+        trendPeriod: "This week",
+        chartData: [{hours: 7}, {hours: 8}, {hours: 7.5}, {hours: 9}, {hours: 8.5}], 
+        chartColor: "#8884d8", 
+    },
+    {
+        id: 2,
+        title: "Total Hours Week",
+        currentValue: 40.5,
+        targetValue: 50,
+        trend: "up",
+        trendPercentage: "7",
+        trendPeriod: "Last week",
+        chartData: [{hours: 30}, {hours: 40.5}, {hours: 38}, {hours: 45}, {hours: 40.5}], 
+        chartColor: "#4ADE80", 
+    },
+    {
+        id: 3,
+        title: "Total Hours Month",
+        currentValue: 162,
+        targetValue: 200,
+        trend: "down",
+        trendPercentage: "8",
+        trendPeriod: "Last Month",
+        iconColor: "text-blue-500", 
+    },
+    {
+        id: 4,
+        title: "Overtime this Month",
+        currentValue: 16,
+        targetValue: 28,
+        trend: "down",
+        trendPercentage: "6",
+        trendPeriod: "Last Month",
+        chartData: null,
+        iconColor: "text-pink-500",
+    }
 ];
 
 const dates = ["All", "11", "12", "13", "14", "15"];
@@ -145,34 +166,98 @@ const Data = [
     { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
     { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
 ];
-const StatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod, }) => {
+const chartData = [
+    { name: 'Day 1', hours: 7 },
+    { name: 'Day 2', hours: 8 },
+    { name: 'Day 3', hours: 7.5 },
+    { name: 'Day 4', hours: 9 },
+    { name: 'Day 5', hours: 8.5 },
+];
+
+const ProfessionalStatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod, chartData, chartColor }) => {
     const isUp = trend === 'up';
-    const {theme} = useContext(Context);
+    const {theme}=useContext(Context);
+
     return (
-        <motion.div
-            className={`rounded-xl p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-stone-100'}`}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-            <div className="flex justify-between items-start">
-                <div className={`w-18 h-18 flex items-center justify-center rounded-full mb-2 p-3 ${iconBgColor} ${iconTextColor}`}>
-                    {React.cloneElement(icon, { className: `w-12 h-12 rounded-full` })}
+        <div className={`rounded-xl p-5 shadow-lg border border-gray-100   ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}  transition-all duration-300 hover:shadow-xl`}>
+            <div className="flex items-start justify-between">
+                <div>
+                    <div className={`w-12 h-12 flex items-center justify-center rounded-lg mb-3 ${iconBgColor} ${iconTextColor} p-2`}>
+                        {React.cloneElement(icon, { className: 'w-8 h-8' })}
+                    </div>
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{description}</p>
+                    <p className={`text-4xl font-bold mt-1  ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                        {value}
+                    </p>
+                </div>
+
+                <div className="w-24 h-16">
+                
+                    <ResponsiveContainer width="120%" height="120%">
+                        <LineChart data={chartData}>
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '5px' }}
+                                labelStyle={{ color: '#fff' }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="hours"
+                                stroke={chartColor}
+                                strokeWidth={2}
+                                dot={false}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
-            <div className="mt-4">
-                <p className={`text-3xl font-bold  ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                    {value}</p>
-                <p className={`text-gray-500 text-sm mt-1  ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
-                    {description}</p>
-            </div>
-            <div className="flex items-center mt-auto">
-                {isUp ? <TrendingUpIcon className="w-5 h-5 text-green-500" /> : <TrendingDownIcon className="w-5 h-5 text-red-500" />}
-                <span className={`ml-1 text-sm ${isUp ? 'text-green-500' : 'text-red-500'} ${theme === 'dark' ? (isUp ? 'text-green-400' : 'text-red-400') : ''}`}>
-                    {trendPercentage}% {trendPeriod}
+
+            
+            <div className="flex items-center mt-4">
+                <span className={`text-sm font-semibold ${isUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {isUp ? <TrendingUpIcon className="w-4 h-4 inline mr-1" /> : <TrendingDownIcon className="w-4 h-4 inline mr-1" />}
+                    {trendPercentage}%
+                </span>
+                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                    {trendPeriod} 
                 </span>
             </div>
-        </motion.div>
+        </div>
+    );
+};
+const ProgressBarCard = ({ currentValue, targetValue, description, icon,iconBgColor, iconColor, trend, trendPercentage, trendPeriod }) => {
+    const {theme}=useContext(Context);
+    const percentage = Math.round((currentValue / targetValue) * 100);
+    const isUp = trend === 'up';
+
+    return (
+        <div className={`rounded-xl p-5 shadow-lg border border-gray-100 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} `}>
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <div className={`w-10 h-10 flex items-center justify-center rounded-full mr-3 ${iconBgColor} `}>
+                        {React.cloneElement(icon, { className: `w-6 h-6 ${iconColor}` })}
+                    </div>
+                    <p className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{description}</p>
+                     <span className={`text-2xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                    {currentValue}/{targetValue}
+                </span>
+                </div>
+            </div>
+
+            
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-2">
+                <div
+                    className={`h-2.5 rounded-full`}
+                    style={{ width: `${percentage > 100 ? 100 : percentage}%`, backgroundColor: iconColor.split('-')[1] === 'blue' ? '#3B82F6' : '#10B981' }} // Tailwind రంగులను డైరెక్టుగా ఉపయోగించడం
+                ></div>
+            </div>
+
+            <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+                <span>{percentage}% Completed</span>
+                <span className={`font-medium ${isUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {isUp ? '↑' : '↓'} {trendPercentage}% {trendPeriod} compare
+                </span>
+            </div>
+        </div>
     );
 };
 
@@ -285,7 +370,7 @@ const MyComponent = ({ Data, selectedDate }) => {
                         const { start, end } = getHourValue(hour.time);
                         const leftPosition = scaleHour(start);
                         const widthPercentage = scaleHour(end) - scaleHour(start);
-                        const colorClass = hour.type === 'working' ? 'bg-green-400' : 'bg-yellow-400';
+                        const colorClass = hour.type === 'working' ? 'bg-green-300' : 'bg-yellow-300';
                         return (
                             <motion.div
                                 key={index}
@@ -414,9 +499,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [effectiveHours, setEffectiveHours] = useState(0);
     const [showModeConfirm, setShowModeConfirm] = useState(false);
     const [isLogoutConfirmed, setIsLogoutConfirmed] = useState(false);
-    const [isConnected, setIsConnected] = useState(navigator.onLine);
-    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
-    const [showReconnectAlert, setShowReconnectAlert] = useState(false);
     const [sortOption, setSortOption] = useState("Recently added");
     const [isLoading,setIsLoading]=useState(false);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -425,23 +507,81 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
         image: null,
         initials: "  "
       });
+      const intervalRef = useRef(null);
+       const clockTimerRef = useRef(null); 
        
     const [rawTableData , setRawTableData] = useState(  [
-    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_02", date: "2025-06-29", login_time: null, logout_time: null },
-    { employee_id: "E_03", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_04", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_05", date: "2025-06-26", login_time: null, logout_time: null },
-    { employee_id: "E_06", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_07", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    { employee_id: "E_08", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+     { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     { employee_id: "E_02", date: "2025-06-29", login_time: null, logout_time: null },
+     { employee_id: "E_03", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     { employee_id: "E_04", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     { employee_id: "E_05", date: "2025-06-26", login_time: null, logout_time: null },
+     { employee_id: "E_06", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     { employee_id: "E_07", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     { employee_id: "E_08", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
 ]);
 
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
     const rowsPerPageOptions = [10, 25, 50, 100];
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+    const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
 
-    useEffect(() => {
+   // const [barChartData, setBarChartData] = useState([]);
+   // const [rawPieData, setRawPieData] = useState([]);
+   // const [dates, setDates] = useState([]);
+   // const [Data, setData] = useState([])
+   // const [cardData, setCardData] = useState([]);
+
+
+ // //Data Fetching Effects
+    //// Data Fetching Effects
+    //// 1. Bar Chart Data
+    //useEffect(() => {
+    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/bar-chart`;
+    //    // NOTE: Using dashboardApi assuming it's configured for 'https://hrms.anasolconsultancyservices.com/api/attendance'
+    //    // If it's a raw axios instance, this is fine too.
+    //    dashboardApi.get(url).then(response => {
+    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Work_Hours: item.working_hour, Break_Hours: item.break_hour }));
+    //        setBarChartData(formatted);
+    //        const dates = ["All", ...formatted.map(item => item.Date)];
+    //        setDates(dates);
+    //    }).catch(error => console.error('Error fetching bar chart data:', error));
+    //}, [empID]);
+//
+    //// 2. Attendance Table Data
+    //useEffect(() => {
+    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/attendance?page=0&size=10`;
+    //    dashboardApi.get(url).then(response => {
+    //        setRawTableData(response.data);
+    //    }).catch(error => console.error('Error fetching attendance data:', error));
+    //}, [empID]);
+//
+    //// 3. Pie Chart Data
+    //useEffect(() => {
+    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/pie-chart`;
+    //    dashboardApi.get(url).then(response => {
+    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Working_hour: item.working_hour, Break_hour: item.break_hour, EmployeeId: item.employeeId }));
+    //        setRawPieData(formatted);
+    //    }).catch(error => console.error('Error fetching pie chart data:', error));
+    //}, [empID]);
+//
+    //// 4. Line Graph/Schedule Bar Data (Data)
+    //useEffect(() => {
+    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/line-graph`;
+    //    dashboardApi.get(url).then(response => {
+    //        const formatted = response.data.map(item => ({ EmployeeId: item.employeeId, Date: item.date, Month: item.month, Year: item.year, Start_time: item.start_time, End_time: item.end_time, Break_hour: item.breaks.map(b => ({ Time: b.time, hour: b.hour })) }));
+    //        setData(formatted);
+    //    }).catch(error => console.error('Error fetching line graph data:', error));
+    //}, [empID]);
+//
+    //// 5. Stat Card Data
+    //useEffect(() => {
+    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/attendance/leaves/dashboard/${empID}`;
+    //    dashboardApi.get(url).then(response => {
+    //        setCardData(response.data);
+    //    }).catch(error => console.error('Error fetching card data:', error));
+    //}, [empID]);
+   useEffect(() => {
        const userPayload = JSON.parse(localStorage.getItem("emppayload"));
        const userImage = localStorage.getItem("loggedInUserImage");
    
@@ -459,47 +599,179 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
   
     // Timer and Clock Effects
     useEffect(() => {
-        let interval;
-        if (isLoggedIn && startTime) {
-            interval = setInterval(() => {
-                const now = new Date();
-                const diffInSeconds = (now - startTime) / 1000;
-                setGrossHours(diffInSeconds);
-                setEffectiveHours(diffInSeconds); // Assuming effective hours are the same as gross hours for now
-            }, 1000);
-        } else { setGrossHours(0); setEffectiveHours(0); }
-        const clockTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => { clearInterval(interval); clearInterval(clockTimer); };
+    // 1. Gross/Effective Hours Timer Logic:
+    if (isLoggedIn && startTime) {
+        
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+        
        
+        intervalRef.current = setInterval(() => {
+            const now = new Date();
+            const diffInSeconds = (now - startTime) / 1000;
+            setGrossHours(diffInSeconds);
+            setEffectiveHours(diffInSeconds);
+        }, 1000);
+    } else { 
+        setGrossHours(0); 
+        setEffectiveHours(0); 
+        if (intervalRef.current) {
+             clearInterval(intervalRef.current);
+             intervalRef.current = null;
+        }
+    }
+    
+  
+    if (!clockTimerRef.current) {
+        clockTimerRef.current = setInterval(() => setCurrentTime(new Date()), 1000);
+    }
+
    
-    }, [isLoggedIn, startTime]);
+    return () => { 
+        if (intervalRef.current) {
+             clearInterval(intervalRef.current);
+             intervalRef.current = null;
+        }
+        if (clockTimerRef.current) {
+             clearInterval(clockTimerRef.current);
+             clockTimerRef.current = null;
+        }
+    };
+}, [isLoggedIn, startTime]);
 
     // Action Handlers
     const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
-   const handleLogin = (index) => {setIsLoggedIn(true);const now = new Date();setStartTime(now);setEndTime(null);setGrossHours(0);setEffectiveHours(0);
+     const handleRefresh = () => {
+        const currentState = isLoggedIn;
+        setIsLoggedIn(false); 
+        setTimeout(() => setIsLoggedIn(currentState), 0); 
+    };
+ 
 
-    setRawTableData(prev => [...prev,{ employee_id:"E_"[index+1],date: now.toLocaleDateString(), login_time: formatClockTime(now),logout_time: null,login_hours: 0, barWidth: "0%",    }]);// Add new record
+
+
+
+const formatEmployeeId = (index) => {
+    // Assuming index 0 corresponds to employee 1 (ACS00000001)
+    // and you want a 10-character ID (ACS + 7 digits)
+    const employeeNumber = index + 1;
+    return `ACS${String(employeeNumber).padStart(7, '0')}`;
+};
+
+
+const handleLogin = (index) => {
+   
+    const employeeId = empID//formatEmployeeId(index); 
+    const now = new Date();
+
+    // Client-side state updates
+    setIsLoggedIn(true);
+    setStartTime(now);
+    setEndTime(null);
+    setGrossHours(0);
+    setEffectiveHours(0);
+
+    setRawTableData(prev => [...prev, { 
+        employee_id:employeeId, // Use the correctly formatted ID
+        date: now.toLocaleDateString(), 
+        login_time: formatClockTime(now),
+        logout_time: null,
+        login_hours: 0, 
+        barWidth: "0%", 
+    }]);
+
+    // --- 2. API Integration: Clock-in (PUT request) ---
+    // The URL now uses the correct employeeId string
+    const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/ACS00000001/office/clock-in`;
+
+    fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+            'accept': '*/*',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Include response details in the error for better debugging
+            throw new Error(`HTTP error! status: ${response.status}. Response text: ${response.statusText}`);
+        }
+        return response.json(); 
+    })
+    .then(data => {
+        console.log("Clock-in successful:", data);
+    })
+    .catch(error => {
+        console.error("Clock-in failed:", error);
+        // Optional: Revert isLoggedIn state if clock-in truly failed
+    });
 };
     const handleLogout = () => { setIsLogoutConfirmed(true); };
-    const handleConfirmLogout = () => {setIsLoggedIn(false);setIsLogoutConfirmed(false);const now = new Date();setEndTime(now);
+   const handleConfirmLogout = async () => { // Make the function async
+    const now = new Date(); // Get the current time for both local state and API payload
 
-    setRawTableData(prev => {
-        if (prev.length === 0) return prev;
-        const lastIndex = prev.length - 1;
-        const lastRecord = prev[lastIndex];
-        const loginDate = new Date(`2000-01-01 ${lastRecord.login_time}`);
-        const logoutDate = now;
-        const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
-        return [
-            ...prev.slice(0, lastIndex),
-            {
-                ...lastRecord,
-                logout_time: formatClockTime(now),
-                login_hours: loginHours > 0 ? loginHours : 0,
-                barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
-            }
-        ];
-    });
+    // 1. Prepare Data for the Backend
+    const employeeId = 'ACS00000001'; // Get this dynamically if possible
+    const clockOutData = {
+        employee_id: employeeId,
+        clock_out_time: now.toISOString(), // ISO format is best for backend storage
+        
+    };
+
+    // 2. Call the PUT API
+    try {
+        const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/clock-out`;
+
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(clockOutData),
+        });
+
+        if (!response.ok) {
+            // Handle HTTP errors (e.g., 400, 500)
+            const errorText = await response.text();
+            console.error('Clock-out API call failed:', response.status, errorText);
+            alert('Failed to record clock-out time on the server. Please try again or contact support.');
+        }
+
+        // 3. Update Local State ONLY after the API call (successful or failed)
+        setIsLoggedIn(false);
+        setIsLogoutConfirmed(false);
+        setEndTime(now);
+
+       
+        setRawTableData(prev => {
+            if (prev.length === 0) return prev;
+            // ... (rest of your local state update logic)
+            const lastIndex = prev.length - 1;
+            const lastRecord = prev[lastIndex];
+            const loginDate = new Date(`2000-01-01 ${lastRecord.login_time}`);
+            const logoutDate = now;
+            const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
+
+            return [
+                ...prev.slice(0, lastIndex),
+                {
+                    ...lastRecord,
+                    logout_time: formatClockTime(now),
+                    login_hours: loginHours > 0 ? loginHours : 0,
+                    barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
+                }
+            ];
+        });
+
+    } catch (error) {
+        console.error('Error during clock-out API call:', error);
+        alert('A network error occurred while clocking out. You have been logged out locally, but the server record might be missing.');
+        
+        // Log out locally even on network error
+        setIsLoggedIn(false);
+        setIsLogoutConfirmed(false);
+        setEndTime(now);
+    }
 };
     const handleCancel = () => { setIsLogoutConfirmed(false); };
     // Format hours for display
@@ -565,22 +837,29 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     return (
         <div className={`min-h-screen ${theme === 'dark'? 'bg-gray-900': 'bg-gray-50'} font-sans text-gray-800 relative`}>
             {/* Sidebar */}
-            {showSidebar && (
-                <>
-                    <button onClick={() => setIsSidebarOpen(true)} className={`fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600   text-white p-3 rounded-l-lg shadow-lg z-50 transition-all duration-300 ${isSidebarOpen ? '  opacity-0' : 'opacity-100'}`} aria-label="Open Sidebar"
-                           initial={{ x: '100%' }}
-                            animate={{ x: '0%' }}
-                            exit={{ x: '100%' }}
-                            transition={{ duration: 0.3, delay: 0.2 }}>
-                        <ChevronLeft  />
-                    </button>
-                    
-                    <motion.div
-                        className={`fixed  inset-y-0 right-0 w-80  shadow-xl z-40 p-2 flex flex-col  ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
+             <AnimatePresence>
+            {showSidebar && !isSidebarOpen && (
+              
+                    <motion.button onClick={() => setIsSidebarOpen(true)}  className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
+                        aria-label="Open Sidebar"
                         initial={{ x: '100%' }}
-                        animate={{ x: isSidebarOpen ? '0%' : '100%' }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
+                        animate={{ x: '0%' }}
+                        exit={{ x: '100%' }}
+                        transition={{ duration: 0.3, delay: 0.2 }}
+                           
+                            >
+                        <ChevronLeft  />
+                    </motion.button>
+                    )}
+                    {showSidebar && isSidebarOpen && (
+                    <motion.div
+                                            key="sidebar"
+                                            className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
+                                            initial={{ x: '100%' }}
+                                            animate={{ x: '0%' }}
+                                            exit={{ x: '100%' }}
+                                            transition={{ duration: 0.3 }}
+                                        >
                         <motion.h3
                             className={`text-lg font-bold mt-20  cursor-pointer mb-1 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
                             onClick={() => { setShowMainDashboard(true); setIsSidebarOpen(false); }}
@@ -597,16 +876,20 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                         >
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
                         </motion.h3>  
-                        <button onClick={() => setIsSidebarOpen(false)} className="self-start mb-2  ml-0 bg-indigo-600 text-white p-2 mt-48 rounded-full shadow-lg" aria-label="Close Sidebar" 
+                        <button onClick={() => setIsSidebarOpen(false)} className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
+                            aria-label="Close Sidebar"
                             initial={{ x: '100%' }}
                             animate={{ x: '0%' }}
                             exit={{ x: '100%' }}
-                            transition={{ duration: 0.3, delay: 0.2 }}>
+                            transition={{ duration: 0.3, delay: 0.2 }} 
+                            
+                          >
                             <ChevronRight />
                         </button>
                     </motion.div>                   
-                </>
+              
             )}
+            </AnimatePresence>
             {/* Main Content Wrapper */}
             <main className={`p-2 sm:p-2 lg:p-4 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-80 filter blur-sm' : 'mr-0'}`}>
                 <header className="flex items-center justify-between mb-1">
@@ -692,6 +975,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                          
                                                     </motion.div>
                                                     {/* Status indicator */}
+                                                    
                                                     <motion.div
                                                         className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white transition-colors ${mode === "office" ? "bg-blue-500" : "bg-green-500"}`}
                                                         initial={{ scale: 0 }}
@@ -707,15 +991,15 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 </div>
                                                 {/* User info */}
                                                 <div>
-                                                    <div className="flex space-x-4 mt-5 mr-5">
+                                                    <div className="flex space-x-4 mt-10 mr-2">
                                                         <motion.div
                                                             className="flex flex-col text-center"
                                                             initial={{ opacity: 0, x: -20 }}
                                                             animate={{ opacity: 1, x: 0 }}
                                                             transition={{ delay: 0.3, duration: 0.5 }}
                                                         >
-                                                            <span className={`text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Attendance</span>
-                                                            <span className="font-semibold text-green-600 text-xl">{`100%`}</span>
+                                                            <span className={`text-md ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Attendance</span>
+                                                            <span className="font-semibold text-green-600 text-lg">{`100%`}</span>
                                                         </motion.div>
                                                         <motion.div
                                                             className="flex flex-col text-center"
@@ -723,8 +1007,8 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                             animate={{ opacity: 1, x: 0 }}
                                                             transition={{ delay: 0.4, duration: 0.5 }}
                                                         >
-                                                            <span className={`text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Avg. Hours</span>
-                                                            <span className="font-semibold text-blue-600 text-xl">{`10h 9m`}</span>
+                                                            <span className={`text-md ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Avg. Hours</span>
+                                                            <span className="font-semibold text-blue-600 text-lg">{`10h 9m`}</span>
                                                         </motion.div>
                                                     </div>
                                                 </div>
@@ -734,6 +1018,19 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
 
                                         {/* Mode selector with animated pop-up */}
                                         <div className="absolute top-1 right-1 z-20">
+                                            <div className="flex space-x-2">
+                                                <motion.button
+                                                    onClick={handleRefresh}
+                                                    className={`px-3 py-2 rounded-full hover:shadow-md flex items-center justify-center gap-1 text-sm font-medium transition-transform duration-300 ${theme === 'dark'? 'bg-gray-800 text-white border border-gray-600': 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300  border border-gray-300'}`}
+                                                    whileTap={{ scale: 0.9 }}
+                                                    aria-label="Refresh Timer"
+                                                >
+                                                    <motion.svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} initial={{ rotate: 0 }}
+                                                        animate={{ rotate: showModeConfirm ? 180 : 0 }}>
+                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.001 8.001 0 01-15.357-2m15.357 2H15" />
+                                                    </motion.svg>
+                                                    <span className="hidden sm:inline">Refresh</span>
+                                                </motion.button>
                                             <div className="relative">
                                                 <motion.button
                                                     onClick={() => setShowModeConfirm(!showModeConfirm)}
@@ -800,6 +1097,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                 </AnimatePresence>
                                             </div>
                                         </div>
+                                         </div>
 
                                         {/* Welcome message */}
                                         <motion.div
@@ -950,27 +1248,65 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     </div>
                                 </motion.div>
                                 {/* Stat Cards Grid */}
-                                <motion.div
-                                    className="p-6 h-full flex flex-col justify-between"
-                                    initial={{ opacity: 0, x: 50 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.5, delay: 0.4 }}
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
-                                        {cardData.map((card, index) => {
-                                            let icon, iconBgColor, iconTextColor;
-                                            switch (card.description) {
-                                                case "Total Hours Today": icon = <ClockIcon className="w-6 h-6" />; iconBgColor = "bg-purple-100"; iconTextColor = "text-purple-500"; break;
-                                                case "Total Hours Week": icon = <CalendarDaysIcon className="w-6 h-6" />; iconBgColor = "bg-teal-100"; iconTextColor = "text-teal-500"; break;
-                                                case "Total Hours Month": icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-blue-100"; iconTextColor = "text-blue-500"; break;
-                                                case "Overtime this Month": icon = <TrendingUpIcon className="w-6 h-6" />; iconBgColor = "bg-pink-100"; iconTextColor = "text-pink-500"; break;
-                                                default: icon = <BriefcaseIcon className="w-6 h-6" />; iconBgColor = "bg-gray-100"; iconTextColor = "text-gray-900";
-                                            }
-                                            return <StatCard key={index} icon={icon} iconBgColor={iconBgColor} iconTextColor={iconTextColor} value={card.value} description={card.description} trend={card.trend} trendPercentage={card.trendPercentage} trendPeriod={card.trendPeriod} />;
-                                        })}
-                                    </div>
-                                </motion.div>
+                               
+    
+                        <motion.div
+                            className="p-6 h-full flex flex-col justify-between"
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5, delay: 0.4 }}
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
+                                {backendData.map((data) => {
+                                    let icon, iconBgColor, iconTextColor;
+                
+                                    switch (data.title) {
+                                        case "Total Hours Today": icon = <ClockIcon />; iconBgColor = "bg-purple-100"; iconTextColor = "text-purple-500"; break;
+                                        case "Total Hours Week": icon = <CalendarDaysIcon />; iconBgColor = "bg-teal-100"; iconTextColor = "text-teal-500"; break;
+                                        case "Total Hours Month": icon = <BriefcaseIcon />; iconBgColor = "bg-blue-100"; iconTextColor = "text-blue-500"; break;
+                                        case "Overtime this Month": icon = <TrendingUpIcon />; iconBgColor = "bg-pink-100"; iconTextColor = "text-pink-500"; break;
+                                        default: icon = <BriefcaseIcon />; iconBgColor = "bg-gray-100"; iconTextColor = "text-gray-900";
+                                    }
+                
+                               
+                                    if (data.title === "Total Hours Month" || data.title === "Overtime this Month") {
+                                        return (
+                                            <ProgressBarCard
+                                                key={data.id}
+                                                icon={icon}
+                                                iconTextColor={iconTextColor}
+                                                iconColor={data.iconColor}
+                                                currentValue={data.currentValue}
+                                                targetValue={data.targetValue}
+                                                description={data.title}
+                                                trend={data.trend}
+                                                trendPercentage={data.trendPercentage}
+                                                trendPeriod={data.trendPeriod}
+                                            />
+                                        );
+                                    }
+                
+                        
+                                    return (
+                                        <ProfessionalStatCard
+                                            key={data.id}
+                                            icon={icon}
+                                            iconBgColor={iconBgColor}
+                                            iconTextColor={iconTextColor}
+                                            value={`${data.currentValue}/${data.targetValue}`}
+                                            description={data.title}
+                                            trend={data.trend}
+                                            trendPercentage={data.trendPercentage}
+                                            trendPeriod={data.trendPeriod}
+                                            chartData={data.chartData}
+                                            chartColor={data.chartColor}
+                                        />
+                                    );
+                                })}
                             </div>
+                        </motion.div>
+    
+                    </div>
 
                             {/* Charts Grid */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -1030,7 +1366,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                     <div className="flex-grow flex items-center justify-center">
                                         <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
                                             <BarChart data={filteredBarChartData} margin={{ top: 20, right: 10, left: 5, bottom: 5 }}>
-                                                <XAxis dataKey="Date" axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }}  tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick } className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}/>
+                                                <XAxis dataKey="Date" stroke={textColor} axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }}  tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick } className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}/>
                                                 <YAxis allowDecimals={false} hide />
                                                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
                                                 <Legend wrapperStyle={{ paddingTop: "10px" }} />
@@ -1091,9 +1427,9 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><span className={`font-semibold text-indigo-700 ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}>{entry.login_hours.toFixed(2)}</span> hrs</td>
                                                                 <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
-                                                                    <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
+                                                                    <div className="relative rounded-full h-4 w-full bg-white overflow-hidden">
                                                                         <motion.div
-                                                                            className="bg-indigo-500 h-full rounded-full"
+                                                                            className="bg-blue-200 h-full rounded-full"
                                                                             initial={{ width: 0 }}
                                                                             animate={{ width: entry.barWidth }}
                                                                             transition={{ duration: 0.8, ease: "easeOut" }}

@@ -67,10 +67,10 @@ const ChartCard = ({ title, icontextcolor, icon, value, color }) => {
 const DashboardGrid = () => {
     const {theme}= useContext(Context)
     return (
-        <div className="p-8 h-full flex flex-col justify-between">
-            <div className={`flex justify-center py-4 px-8 items-end w-full mx-w-md mx-auto p-2  shadow-lg relative ${theme==='dark'?'bg-gray-800':'bg-gray-50'} `}>
+        <div className="p-2 h-full flex flex-col justify-between">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-7 gap-6 h-full">
                 <EmployeePieChart/>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-6 gap-6 h-full">
                 {ChartData.map((chart, index) => {
                     let icon, icontextcolor, colorHandler;
 
@@ -89,7 +89,7 @@ const DashboardGrid = () => {
                 })}
             </div>
             </div>
-        </div>
+        
     );
 };
 
@@ -111,11 +111,12 @@ const EmployeePieChart = () => {
     (sum, entry) => sum + entry.value,
     0
   );
+  const textColor = theme==='dark' ? "white" : "black";
 
   return (
     <div className="flex justify-center items-center">
       {/* Chart container */}
-      <PieChart width={180} height={180}>
+      <PieChart width={160} height={160}>
         <Pie
           data={piechartData}
           dataKey="value"
@@ -130,16 +131,21 @@ const EmployeePieChart = () => {
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip />
-      </PieChart>
-
-      {/* Centered text for total employees */}
-      <div className="absolute text-center flex flex-col justify-center items-center">
-        <span className={` ${theme==='dark'?'text-gray-200':'text-gray-800'} text-sm`}>Total Employees</span>
-        <span className={` ${theme==='dark'?'text-gray-200':'text-gray-800'} text-xl font-bold `}>
+        <text
+            x="50%"
+            y="50%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            stroke={textColor}
+            className={`text-sm font-small `}
+        >
+           Total Employees
+          <span className={` ${theme==='dark'?'text-gray-200':'text-gray-800'} text-xl font-bold `}>
           {totalEmployees}
         </span>
-      </div>
+        </text>
+        <Tooltip />
+      </PieChart>
     </div>
   );
 };
@@ -201,18 +207,19 @@ const ClockInOut = () => {
 
     return (
         <motion.div
-            className={` rounded-xl shadow-md p-2 w-full font-sans border border-gray-200 h-full flex flex-col ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100'}`}
+            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0.5,scale:1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <div className="flex items-center justify-between border-b pb-2 mb-2 border-gray-200 flex-wrap gap-2">
-                <h2 className={`text-lg font-bold text-gray-800  ${theme==='dark' ? 'text-white ':'text-gray-800'}`}><ClockIcon className="w-6 h-6 text-blue-600 mr-2" />
+            <h2 className={`flex items-start justify-start text-lg font-bold text-gray-800  ${theme==='dark' ? 'text-white ':'text-gray-800'}`}><ClockIcon className="w-6 h-6 text-blue-600 mr-2" />
                     Clock-In/Out</h2>
-                <div className="flex items-center space-x-2">
+            <div className="flex items-end justify-end border-b pb-2 mb-2 border-gray-200 flex-wrap gap-2">
+                
+                <div className="flex items-end space-x-2">
                     <Menu as="div" className="relative inline-block text-left">
                         <div>
-                            <MenuButton className={`inline-flex justify-center w-full rounded-md border border-gray-200 shadow-sm px-4 py-2 text-sm font-medium  hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-700':'bg-white text-gray-700'}`}>
+                            <MenuButton className={`inline-flex justify-end w-full rounded-md border border-gray-200 shadow-sm px-4 py-2 text-sm font-medium  hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-700':'bg-white text-gray-700'}`}>
                                 {selectedDepartment}
                                 <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
                             </MenuButton>
@@ -251,7 +258,7 @@ const ClockInOut = () => {
 
                     <Menu as="div" className="relative inline-block text-left">
                         <div>
-                             <MenuButton className={`inline-flex justify-center w-full rounded-md border border-gray-200 shadow-sm px-4 py-2 text-sm font-medium  hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-700':'bg-white text-gray-700'}`}>
+                             <MenuButton className={`inline-flex justify-end w-full rounded-md border border-gray-200 shadow-sm px-4 py-2 text-sm font-medium  hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-700':'bg-white text-gray-700'}`}>
                                 {selectedTimeframe}
                                 <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
                             </MenuButton>
@@ -326,11 +333,12 @@ const EmployeeBarChart = () => {
 
   return (
     <motion.div
-            className={` rounded-xl shadow-md p-2 w-full font-sans border border-gray-200 h-full flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
+            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0.5,scale:1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
+        
       <ClockIcon className="w-6 h-6 text-blue-600 inline-block mr-2" /> <h2 className="text-xl font-semibold mb-4 text-start"> On-Time Employees</h2>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
@@ -341,15 +349,14 @@ const EmployeeBarChart = () => {
             left: 20,
             bottom: 5,
           }}
-         
         >
-         
           <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
           <YAxis stroke={textColor} tick={{ fill: textColor }} hide/>
           <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
           <Bar dataKey="employees" fill={barColor} />
         </BarChart>
       </ResponsiveContainer>
+      
     </motion.div>
   );
 };
@@ -384,7 +391,7 @@ const EmployeeOvertimeChart = () => {
 
   return (
     <motion.div
-            className={` rounded-xl shadow-md p-2 w-full font-sans border border-gray-200 h-full flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
+            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0.5,scale:1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -429,7 +436,7 @@ const EmployeeOvertimeChart = () => {
           <XAxis dataKey="name"  stroke={textColor} tick={{ fill: textColor }} />
           <YAxis label={{ value: yAxisLabel, angle: -90, position: "insideLeft" }} stroke={textColor} tick={{ fill: textColor }} hide />
           <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
-          <Bar dataKey={yAxisDataKey} fill={barColor} />
+          <Bar dataKey={yAxisDataKey} fill={barColor} barSize={40} />
         </BarChart>
       </ResponsiveContainer>
     </motion.div>
@@ -562,7 +569,7 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
                                                                               <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
                                                                                   <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
                                                                                       <motion.div
-                                                                                          className="bg-indigo-500 h-full rounded-full"
+                                                                                          className="bg-blue-300 h-full rounded-full"
                                                                                           initial={{ width: 0 }}
                                                                                           animate={{ width: entry.barWidth }}
                                                                                           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -579,7 +586,7 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
                                                           </tbody>
                                                       </table>
                                                   </div>
-                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
+                                        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
                                         <div className="flex items-center gap-2 mb-4 sm:mb-0">
                                             <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
                                             <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`border border-gray-300 px-2 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
@@ -600,12 +607,12 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
 function AttendanceReports({ rawTableData, setRawTableData }) {
     return (
         <div className="p-2 sm:p-4 min-h-screen font-sans">
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2 h-full items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2">
                 <DashboardGrid />
                 
                 
             </div>
-             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-full items-stretch">
+             <div className="grid grid-cols-1 lg:grid-cols-3  gap-6 mb-8">
                 <ClockInOut />
                 <EmployeeBarChart/>
                 <EmployeeOvertimeChart/>

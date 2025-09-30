@@ -21,67 +21,96 @@ const projects = [
             { role: "QA Engineers", avatars: [2] },
             { role: "UX/UI Designer", avatars: [1] },
         ],
-        duration: "12 months"
+        duration: "12 months",
+        modules: ["Payroll", "Attendance Tracking", "Leave Management"],
+        status: "On Track", 
+        kpis: { 
+            "Sprints Completed": "5/10",
+            "Bugs Critical": "2",
+            "Code Coverage": "85%"
+        },
+        managerContact: { email: "ramesh@abc.com", phone: "+919876543210" } 
     },
+
     {
         name: "Employee Self-Service App",
-        description: "The Employee Self-Service App is a user-friendly platform that empowers employees to independently manage their personal, professional, and administrative tasks. It reduces HR workload by allowing employees to access and update their records, apply for leaves, view payslips, and track attendance—all from a mobile or web interface.",
-        team: [
-            { role: "Product Owner", avatars: [1] },
-            { role: "Mobile Developers", avatars: [2] },
-            { role: "Web Developer", avatars: [3] },
-            { role: "QA Tester", avatars: [1] },
-        ],
-        duration: "6 months"
+        description:  "The Employee Self-Service App is a user-friendly platform that empowers employees to independently manage their personal, professional, and administrative tasks. It reduces HR workload by allowing employees to access and update their records, apply for leaves, view payslips, and track attendance—all from a mobile or web interface.",
+        team: [ { role: "Product Owner", avatars: [1] }, { role: "Mobile Developers", avatars: [2] }, { role: "Web Developer", avatars: [3] }, { role: "QA Tester", avatars: [1] },],
+        duration: "6 months",
+        modules: ["Payslip Access", "Leave Application", "Attendance View"],
+        status: "At Risk", // ⭐ NEW
+        kpis: {
+            "Sprints Completed": "2/6",
+            "Mobile App Rating": "3.5/5",
+            "User Adoption": "40%"
+        },
+        managerContact: { email: "po@abc.com", phone: "+919999999999" }
     },
     {
         name: "Payroll Automation",
+        description:  "Payroll Automation",
+
         description: "The Payroll Automation system is designed to streamline and automate the entire payroll process, ensuring accurate, timely, and compliant salary disbursements. It eliminates manual calculations and reduces errors by integrating attendance, leaves, tax regulations, and employee benefits into a seamless payroll workflow",
-        team: [
-            { role: "Lead Developer", avatars: [1] },
-            { role: "Backend Developers", avatars: [3] },
-            { role: "QA Engineer", avatars: [1] },
-            { role: "Business Analyst", avatars: [1] },
-        ],
-        duration: "9 months"
+        team: [{ role: "Lead Developer", avatars: [1] }, { role: "Backend Developers", avatars: [3] }, { role: "QA Engineer", avatars: [1] }, { role: "Business Analyst", avatars: [1] },
+
+],
+        duration: "9 months",
+        modules: ["Tax Compliance", "Benefit Integration", "Automated Disbursement"],
+        status: "Completed", // ⭐ NEW
+        kpis: {
+            "Time Saved (Hrs/Month)": "80",
+            "Error Rate": "0.1%",
+            "Compliance Score": "99%"
+        },
+        managerContact: { email: "leaddev@abc.com", phone: "+918888888888" }
     },
     {
         name: "Attendance System Upgrade",
+        description:"Attendance System Upgrade",
+
         description: "The Attendance System Upgrade modernizes and enhances the organization’s time-tracking infrastructure. It introduces advanced features like biometric integration, real-time monitoring, geo-tagging, and seamless syncing with payroll and HR modules—ensuring higher accuracy, reduced time theft, and improved workforce accountability.",
-        
-        team: [
-            { role: "System Architect", avatars: [1] },
-            { role: "Software Engineers", avatars: [2] },
-            { role: "Hardware Integration Specialist", avatars: [1] },
-            { role: "QA Tester", avatars: [1] },
-        ],
-        duration: "7 months"
+        team: [  { role: "System Architect", avatars: [1] }, { role: "Software Engineers", avatars: [2] }, { role: "Hardware Integration Specialist", avatars: [1] }, { role: "QA Tester", avatars: [1] }, ],
+        duration: "7 months",
+        modules: ["Biometric", "Geo-Tagging", "Real-time Monitoring"],
+        status: "On Track",
+        kpis: {
+            "Biometric Failure Rate": "1%",
+            "Integration Progress": "70%",
+            "Devices Deployed": "150"
+        },
+        managerContact: { email: "arch@abc.com", phone: "+917777777777" }
     },
     {
         name: "AI-Based Recruitment Tool",
         description: " The AI-Based Recruitment Tool is an intelligent hiring platform that leverages machine learning and natural language processing to automate and optimize the recruitment lifecycle. From resume screening to candidate ranking and interview scheduling, it reduces time-to-hire, eliminates bias, and enhances talent acquisition efficiency.",
-       
-        team: [
-            { role: "AI/ML Engineer", avatars: [1] },
-            { role: "Data Scientists", avatars: [1] },
-            { role: "Full-stack Developers", avatars: [1] },
-            { role: "UX Designer", avatars: [1] },
-        ],
-        duration: "10 months"
+        team: [ { role: "AI/ML Engineer", avatars: [1] },{ role: "Data Scientists", avatars: [1] },{ role: "Full-stack Developers", avatars: [1] },{ role: "UX Designer", avatars: [1] },],
+        duration: "10 months",
+        modules: ["Resume Screening", "Candidate Ranking", "Interview Scheduling"],
+        status: "At Risk",
+        kpis: {
+            "Time-to-Hire Reduction": "15%",
+            "Bias Score": "Low",
+            "Algorithm Accuracy": "75%"
+        },
+        managerContact: { email: "aieng@abc.com", phone: "+916666666666" }
     },
     {
         name: "Internal Chatbot System",
-        description: "The Internal Chatbot System is an AI-driven virtual assistant designed to support employees with instant responses to HR, IT, and general organizational queries. Integrated within the company’s intranet or collaboration tools, it enhances internal communication, reduces manual support workload, and provides 24/7 self-service access to information.",
-       
-        team: [
-            { role: "AI Chatbot Developer", avatars: [1] },
-            { role: "Content Specialist", avatars: [1] },
-            { role: "Integration Engineer", avatars: [1] },
-            { role: "QA Tester", avatars: [1] },
-        ],
-        duration: "5 months"
+        description:  "The Internal Chatbot System is an AI-driven virtual assistant designed to support employees with instant responses to HR, IT, and general organizational queries. Integrated within the company’s intranet or collaboration tools, it enhances internal communication, reduces manual support workload, and provides 24/7 self-service access to information.",
+        team: [  { role: "AI Chatbot Developer", avatars: [1] },{ role: "Content Specialist", avatars: [1] },{ role: "Integration Engineer", avatars: [1] },{ role: "QA Tester", avatars: [1] }, ],
+        duration: "5 months",
+        modules: ["24/7 Support", "IT Queries", "HR Policy Lookup"],
+        status: "Completed",
+        kpis: {
+            "Resolution Rate": "90%",
+            "User Satisfaction": "4.5/5",
+            "Query Volume": "500/day"
+        },
+        managerContact: { email: "chatbotdev@abc.com", phone: "+915555555555" }
     }
 ];
+
+
 const projectData = {
     projectDetails: {
       client: "ABC Enterprises",
@@ -96,22 +125,16 @@ const projectData = {
       },
       priority: "High"
     },
-  };
- 
-  
-    const firstColumnData = {
-        Manager: projectData.projectDetails.Manager,
-    
-    };
-
-    const secondColumnData = {
-        client: projectData.projectDetails.client,
-        totalCost: projectData.projectDetails.totalCost,
-        DaysToWork: projectData.projectDetails.DaysToWork,
-        priority: projectData.projectDetails.priority,
-        startedOn:projectData.projectDetails.startedOn,
-        endDate:projectData.projectDetails.endDate
-    };
+};
+const firstColumnData = { Manager: projectData.projectDetails.Manager };
+const secondColumnData = {
+    client: projectData.projectDetails.client,
+    totalCost: projectData.projectDetails.totalCost,
+    DaysToWork: projectData.projectDetails.DaysToWork,
+    priority: projectData.projectDetails.priority,
+    startedOn: projectData.projectDetails.startedOn,
+    endDate: projectData.projectDetails.endDate
+};
 const projectIconMap = {
     "HRMS Project": { icon: "👥", color: "text-indigo-500" },
     "Employee Self-Service App": { icon: "📱", color: "text-green-500" },
@@ -120,11 +143,39 @@ const projectIconMap = {
     "AI-Based Recruitment Tool": { icon: "🤖", color: "text-pink-500" },
     "Internal Chatbot System": { icon: "💬", color: "text-teal-500" },
 };
+const calculateProgress = (startDateStr, endDateStr) => {
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    const today = new Date();
+
+    start.setHours(0,0,0,0);
+    end.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+
+    const totalDuration = end.getTime() - start.getTime();
+    const elapsedDuration = today.getTime() - start.getTime();
+
+    if (totalDuration <= 0 || elapsedDuration < 0) return 0;
+    if (elapsedDuration >= totalDuration) return 100;
+
+    return Math.min(100, Math.round((elapsedDuration / totalDuration) * 100));
+};
+
 const ProjectCard = () => {
-    const {theme}=useContext(Context);
+    const {theme} = useContext(Context); 
+    const motion = { 
+        div: ({ children, ...props }) => <div {...props}>{children}</div>,
+        button: ({ children, ...props }) => <button {...props}>{children}</button>,
+        span: ({ children, ...props }) => <span {...props}>{children}</span>,
+        h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
+        p: ({ children, ...props }) => <p {...props}>{children}</p>,
+    };
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const currentProject = projects[currentIndex];
     const { icon, color } = projectIconMap[currentProject.name] || { icon: null, color: "" };
+    const progressPercent = calculateProgress(projectData.projectDetails.startedOn, projectData.projectDetails.endDate);
+
     const goToNextProject = () => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % projects.length);
     };
@@ -133,26 +184,36 @@ const ProjectCard = () => {
         setCurrentIndex((prevIndex) => (prevIndex - 1 + projects.length) % projects.length);
     };
     const getAvatarUrl = (index) => `https://i.pravatar.cc/40?img=${index + 1}`;
+    const getStatusClasses = (status) => {
+        switch (status) {
+            case 'On Track':
+                return 'bg-green-100 text-green-800 ring-green-500';
+            case 'At Risk':
+                return 'bg-yellow-100 text-yellow-800 ring-yellow-500';
+            case 'Completed':
+                return 'bg-blue-100 text-blue-800 ring-blue-500';
+            default:
+                return 'bg-gray-100 text-gray-800 ring-gray-500';
+        }
+    };
+
     return (
         <motion.div
-            className={`relative p-6  rounded-lg shadow-xl mx-auto border border-gray-200  ${theme==='dark' ? 'bg-gray-700':'bg-stone-100'}`}
-            key={currentIndex} // Key is important for Framer Motion to re-animate on state change
+            className={`relative p-6 rounded-xl shadow-2xl mx-auto border border-orange-400  ${theme==='dark' ? 'bg-gray-700':'bg-white'}`}
+            key={currentIndex} 
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            
         >
-            {/* Duration Button */}
-            <motion.button
-                className="absolute top-4 right-4 bg-red-500 text-white text-sm font-semibold py-1 px-3 rounded-full shadow-md"
-                whileHover={{ scale: 1.1, backgroundColor: "#ef4444" }}
-                whileTap={{ scale: 0.9 }}
+            <motion.span
+                className={`absolute top-4 right-4 text-sm font-bold py-1 px-3 rounded-full shadow-md ring-2 ${getStatusClasses(currentProject.status)}`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5, type: "spring" }}
             >
-                Duration: {currentProject.duration}
-            </motion.button>
-
-            {/* Project Header */}
+                {currentProject.status}
+            </motion.span>
             <div className="flex items-center mb-6 flex-wrap">
                 <motion.span
                     className={`text-5xl mr-4 ${color}`}
@@ -171,78 +232,139 @@ const ProjectCard = () => {
                     {currentProject.name}
                 </motion.h2>
             </div>
-
-            {/* Description */}
             <motion.p
-                className={`text-gray-700 text-base sm:text-lg mb-8 leading-relaxed ${theme==='dark' ? 'text-white':''}`}
+                className={`text-base sm:text-lg mb-6 leading-relaxed ${theme==='dark' ? 'text-gray-200':'text-gray-700'}`}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
             >
                 {currentProject.description}
             </motion.p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2 ">
-                {/* Highlights */}
-                 
-                 <motion.div
-            className={`p-1 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-10 to-blue-50'}`}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
-        >
-            <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Details</h2>
-            <div className="flex flex-col md:flex-row gap-6">
-                {/* First Column */}
-                <div className="md:w-1/2 flex flex-col justify-center items-center p-2 border border-dashed rounded-lg">
-                    <img src={getAvatarUrl(0)} alt={firstColumnData.Manager.name} className="w-28 h-28 rounded-full mb-2" />
-                    <p className="text-lg font-semibold">{firstColumnData.Manager.name}</p>
-                    <p className="text-sm text-gray-500">Reported By</p>
+            <motion.div
+                className={`mb-6 p-3 rounded-lg border border-indigo-200 shadow-inner ${theme === 'dark' ? 'bg-gray-800' : 'bg-stone-100'}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+            >
+                <h4 className={`text-sm font-bold mb-3 uppercase ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-700'}`}>Key Modules</h4>
+                <div className="flex flex-wrap gap-2">
+                    {currentProject.modules && currentProject.modules.map((module, i) => (
+                        <span
+                            key={i}
+                            className={`px-3 py-1 text-sm font-medium rounded-full shadow-sm ${theme === 'dark' ? 'text-teal-300 bg-teal-900' : 'text-indigo-800 bg-indigo-100'}`}
+                        >
+                            {module}
+                        </span>
+                    ))}
                 </div>
+            </motion.div>
 
-                {/* Second Column with four side-by-side items */}
-                <div className="md:w-1/2 grid grid-cols-2 gap-4">
-                    {Object.entries(secondColumnData).map(([key, value]) => {
-                        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                        return (
-                            <div key={key} className={` ${theme === 'dark' ? 'bg-gray-800' : ''}`}>
-                                <dt className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} text-xs font-medium uppercase`}>{label}</dt>
-                                <dd className={`mt-1 text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>{value}</dd>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </motion.div>
-               
-
-               
-                
-
-                {/* Team */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2 ">
                 <motion.div
-                    className={` p-1 rounded-lg shadow-sm border border-gray-100 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-10 to-indigo-50'}`}
+                    className={`p-4 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-yellow-50 to-white'}`}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                >
+                    <h2 className="text-xl font-bold mb-4 border-b pb-2 text-yellow-600">Key Metrics (KPIs)</h2>
+                    <dl className="space-y-3">
+                        {Object.entries(currentProject.kpis).map(([key, value]) => (
+                            <div key={key} className="flex justify-between border-b border-gray-100 pb-2">
+                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{key}</dt>
+                                <dd className="text-md font-semibold text-gray-500 dark:text-gray-400">{value}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                </motion.div>
+
+                {/* Project Details / Progress Column (Combined from previous) */}
+                <motion.div
+                    className={`p-4 rounded-lg shadow-lg border border-gray-200 col-span-1 lg:col-span-2 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-50 to-white'}`}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                    <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Overview</h2>
+                    
+                    {/* Project Progress Bar */}
+                    <div className="mb-6">
+                        <h3 className={`text-sm font-semibold uppercase ${color} mb-1`}>Timeline Progress</h3>
+                        <div className="w-full bg-gray-300 rounded-full h-2.5 dark:bg-gray-700">
+                            <motion.div 
+                                className={`h-2.5 rounded-full ${color.replace('text', 'bg')}`} 
+                                style={{ width: `${progressPercent}%` }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressPercent}%` }}
+                                transition={{ duration: 1.5 }}
+                            />
+                        </div>
+                        <p className="text-right text-sm font-medium mt-1">{progressPercent}% Complete</p>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-6">
+                        <div className="md:w-1/3 flex flex-col justify-center items-center p-2 border border-dashed rounded-lg   group hover:ring-2 ring-blue-500 transition cursor-pointer">
+                            <img src={getAvatarUrl(0)} alt={firstColumnData.Manager.name} className="w-20 h-20 rounded-full mb-2 object-cover ring-2 ring-blue-500" />
+                            <p className="text-lg font-semibold ">{firstColumnData.Manager.name}</p>
+                            <p className="text-sm text-gray-500">Project Manager</p>
+                            <div className="flex gap-2 mt-2 text-sm">
+                                <a href={`mailto:${currentProject.managerContact.email}`} className="text-blue-500 hover:underline">📧 Email</a>
+                                <a href={`tel:${currentProject.managerContact.phone}`} className="text-green-500 hover:underline">📞 Call</a>
+                            </div>
+                        </div>
+
+                        {/* Project Details Grid */}
+                        <div className="md:w-2/3 grid grid-cols-2 gap-y-4 gap-x-2">
+                            {Object.entries(secondColumnData).map(([key, value]) => {
+                                const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                                return (
+                                    <div key={key} className="p-1">
+                                        <dt className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} text-xs font-medium uppercase`}>{label}</dt>
+                                        <dd className={`mt-1 text-md font-bold ${key === 'priority' ? 'text-red-500' : theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>{value}</dd>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </motion.div>
+                <motion.div
+                    className={`p-4 rounded-lg shadow-lg border border-gray-100 col-span-1 lg:col-span-3 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-white'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
-                    whileHover={{ translateY: -5, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
+                    whileHover={{ translateY: -3, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
-                    <h3 className={`text-xl sm:text-2xl font-semibold  mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>Team</h3>
-                    <div className="space-y-2">
+                    <h3 className={`text-xl sm:text-2xl font-bold mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>Team Allocation</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
                         {currentProject.team.map((teamMember, index) => (
                             <motion.div
                                 key={index}
-                                className="flex flex-col items-start"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-md  dark:hover:bg-gray-200 transition border-l-4 border-indigo-400" 
                                 initial={{ x: -20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: 0.7 + index * 0.1 }}
+                                transition={{ delay: 0.7 + index * 0.05 }}
                             >
-                                <p className={`font-medium  text-base sm:text-lg mb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>
-                                    <div className="flex flex-wrap gap-2">
-                                        {teamMember.role}: {teamMember.avatars}
-                                    </div>
+                                <p className={`font-semibold text-base ${theme === 'dark' ? 'text-white' : 'text-gray-800'} mb-1 sm:mb-0`}>
+                                    {teamMember.role}
                                 </p>
+                                <div className="flex items-center">
+                                    <span className="text-sm font-bold mr-3">{teamMember.avatars[0]}</span>
+                                    <div className="flex -space-x-2 overflow-hidden">
+                                        {Array.from({ length: Math.min(teamMember.avatars[0], 4) }).map((_, avatarIndex) => (
+                                            <img 
+                                                key={avatarIndex}
+                                                className={`inline-block h-8 w-8 rounded-full ring-2 ${theme === 'dark' ? 'ring-gray-800' : 'ring-white'} object-cover`}
+                                                src={getAvatarUrl(avatarIndex + 1 + index * 5)} 
+                                                alt={`Avatar ${avatarIndex + 1}`}
+                                                title={`${teamMember.role} Member ${avatarIndex + 1}`}
+                                            />
+                                        ))}
+                                        {teamMember.avatars[0] > 4 && (
+                                            <span className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 text-xs font-medium text-gray-700 ring-2 ring-white dark:bg-gray-600 dark:text-white">
+                                                +{teamMember.avatars[0] - 4}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </motion.div>
                         ))}
                     </div>
@@ -251,71 +373,69 @@ const ProjectCard = () => {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 flex-wrap gap-4">
-               
-<div class="relative inline-flex items-center justify-center gap-4 group">
-  <div
-    class="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
-  ></div>
-  <a
-    role="button"
-    class="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
-    title="payment"
-    onClick={goToPreviousProject}
-    href="#"
-    >Previous Project<svg
-      aria-hidden="true"
-      viewBox="0 0 10 10"
-      height="10"
-      width="10"
-      fill="none"
-      class="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
-    >
-      <path
-        d="M0 5h7"
-        class="transition opacity-0 group-hover:opacity-100"
-      ></path>
-      <path
-        d="M1 1l4 4-4 4"
-        class="transition group-hover:translate-x-[3px]"
-      ></path>
-    </svg>
-  </a>
-</div>
+                <div className="relative inline-flex items-center justify-center gap-4 group">
+                <div
+                    className="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
+                ></div>
+                <a
+                    role="button"
+                    className="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
+                    title="Previous Project"
+                    onClick={goToPreviousProject}
+                    href="#"
+                    >Previous Project<svg
+                        aria-hidden="true"
+                        viewBox="0 0 10 10"
+                        height="10"
+                        width="10"
+                        fill="none"
+                        className="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
+                    >
+                        <path
+                            d="M0 5h7"
+                            className="transition opacity-0 group-hover:opacity-100"
+                        ></path>
+                        <path
+                            d="M1 1l4 4-4 4"
+                            className="transition group-hover:translate-x-[3px]"
+                        ></path>
+                    </svg>
+                </a>
+                </div>
 
-                <div class="relative inline-flex items-center justify-center gap-4 group">
-  <div
-    class="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
-  ></div>
-  <a
-    role="button"
-    class="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
-    title="payment"
-    onClick={goToNextProject}
-    href="#"
-    >Next Project<svg
-      aria-hidden="true"
-      viewBox="0 0 10 10"
-      height="10"
-      width="10"
-      fill="none"
-      class="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
-    >
-      <path
-        d="M0 5h7"
-        class="transition opacity-0 group-hover:opacity-100"
-      ></path>
-      <path
-        d="M1 1l4 4-4 4"
-        class="transition group-hover:translate-x-[3px]"
-      ></path>
-    </svg>
-  </a>
-</div>
+                <div className="relative inline-flex items-center justify-center gap-4 group">
+                    <div
+                        className="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
+                    ></div>
+                    <a
+                        role="button"
+                        className="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
+                        title="Next Project"
+                        onClick={goToNextProject}
+                        href="#"
+                        >Next Project<svg
+                            aria-hidden="true"
+                            viewBox="0 0 10 10"
+                            height="10"
+                            width="10"
+                            fill="none"
+                            className="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
+                        >
+                            <path
+                                d="M0 5h7"
+                                className="transition opacity-0 group-hover:opacity-100"
+                            ></path>
+                            <path
+                                d="M1 1l4 4-4 4"
+                                className="transition group-hover:translate-x-[3px]"
+                            ></path>
+                        </svg>
+                    </a>
+                </div>
             </div>
         </motion.div>
     );
 };
-
 // --- MyTeam Data and Component ---
 const MyTeam = () => {
     const { userData,theme } = useContext(Context);
@@ -864,7 +984,18 @@ const handleRowClick = (proj) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
                     Project Overview</h2>
-                    <div className=" absolute right-52 gap-2">
+                    {showSidebar && (
+                    <motion.button
+                        className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
+                        onClick={() => setShowCreateForm(true)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <FaPlus className="mr-2" /> Create Project
+                    </motion.button>
+                )}
+                     </div>
+                    <div>
                     <select
                        value={statusFilter}
                        onChange={(e) => setStatusFilter(e.target.value)}
@@ -875,18 +1006,6 @@ const handleRowClick = (proj) => {
                      <option value="Upcoming" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Upcoming</option>
                      <option value="Completed"className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Completed</option>
                    </select>
-         
-            </div>
-                {showSidebar && (
-                    <motion.button
-                        className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
-                        onClick={() => setShowCreateForm(true)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <FaPlus className="mr-2" /> Create Project
-                    </motion.button>
-                )}
             </div>
             {/* Full-page overlay for the form */}
             <AnimatePresence>
@@ -1300,7 +1419,7 @@ const handleRowClick = (proj) => {
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.Priority} onChange={(e) => (proj.Priority = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                    <select value={proj.Priority} onChange={e => { e.stopPropagation(); proj.Priority = e.target.value}} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
                                           proj.Priority === "High"
                                             ? "bg-red-100 text-red-700"
                                             : proj.Priority === "Medium"
@@ -1314,7 +1433,7 @@ const handleRowClick = (proj) => {
                                  </select>
                                 </td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.status} onChange={(e) => (proj.status = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                    <select value={proj.status} onChange={e => { e.stopPropagation(); proj.status = e.target.value}}  className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
                                           proj.status === "Ongoing"
                                             ? "bg-blue-100 text-blue-700"
                                             : proj.status === "Upcoming"

@@ -81,6 +81,9 @@ const getStatusColor = (status) => {
             return 'bg-gray-400';
     }
 };
+const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
+  const backgroundColor = theme==='dark' ? "bg-gray-800" : "bg-white";
+  const barColor = "#ADD8E6";
 const handleCompleteTask = (taskId) => {
         setTasks(prevTasks => {
             const newTasks = [...prevTasks];
@@ -208,56 +211,131 @@ const StatusColorsMap={
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
+  // --- Mobile Layout Improvements ---
+  // Determine the dynamic top padding based on screen size (md is 768px in Tailwind)
+  // Main Header height: h-32 (p-6 + p-10) approx. ~130px. Top-16 makes it 16 + 130 = 146px.
+  // Mobile Nav Bar height: py-3 approx 40px. Positioned below header (at 210px in original code).
+  // New calculation for mobile: ~210px + ~40px + some margin = 260px.
+  // New calculation for desktop: 146px + some margin = 160px.
+  // Using a fixed padding that works for both.
+  const mainContentPaddingClass = "pt-[160px] md:pt-[120px] "; 
+
+
   return (
     <div className={` ${theme==='dark'?'bg-gray-800':'bg-gray-50'}  min-h-screen relative font-sans`}>
-      {/* Project Header - Fixed to top for full-width coverage */}
-      <div className={`fixed top-16  z-50 p-6 md:p-10 ${theme==='dark'?'bg-gray-600 ':' bg-gradient-to-r from-indigo-100 to-indigo-200 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
+      
+       <div>
+      
+      <div className={`fixed top-16 z-50 p-6 md:p-10 ${theme === 'dark' ? 'bg-gray-600 ' : ' bg-gradient-to-r from-indigo-50 to-indigo-100 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
         <div className="flex items-center gap-6">
-          <div className={`w-16 h-16 ${theme==='dark'?'bg-gray-800':'bg-white'} rounded-2xl flex items-center justify-center shadow-md`}>
+          <div className={`w-16 h-16  ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl flex items-center justify-center shadow-md`}>
             <span className="text-3xl font-bold text-indigo-600"><FaRegFolderOpen /></span>
           </div>
-          <div>
-            <h1 className={`text-3xl font-bold ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>{project.project_name}</h1>
-            <p className={`text-sm  ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Project ID: {project.project_id}</p>
+          <div className="ml-2">
+            <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>{project.project_name}</h1>
+            <p className={`text-sm ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>Project ID: {project.project_id}</p>
           </div>
         </div>
-        <div class="relative mr-52 inline-flex items-center justify-center gap-4 group">
-  <div
-    class="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
-  ></div>
-  <a
-    role="button"
-    class="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
-    title="payment"
-    onClick={() => navigate(`/projects/${userData?.employeeId}`)}
-    href="#"
-    >Back To Projects<svg
-      aria-hidden="true"
-      viewBox="0 0 10 10"
-      height="10"
-      width="10"
-      fill="none"
-      class="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
-    >
-      <path
-        d="M0 5h7"
-        class="transition opacity-0 group-hover:opacity-100"
-      ></path>
-      <path
-        d="M1 1l4 4-4 4"
-        class="transition group-hover:translate-x-[3px]"
-      ></path>
-    </svg>
-  </a>
-</div>
+        <div className="relative mr-52 inline-flex items-center justify-center gap-4 group">
+          {/* Back to Projects Button */}
+          <div
+            className="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
+          ></div>
+          <a
+            role="button"
+            className="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
+            title="payment"
+            onClick={() => navigate(`/projects/${userData?.employeeId}`)}
+            href="#"
+          >Back To Projects<svg
+              aria-hidden="true"
+              viewBox="0 0 10 10"
+              height="10"
+              width="10"
+              fill="none"
+              className="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
+            >
+              <path
+                d="M0 5h7"
+                className="transition opacity-0 group-hover:opacity-100"
+              ></path>
+              <path
+                d="M1 1l4 4-4 4"
+                className="transition group-hover:translate-x-[3px]"
+              ></path>
+            </svg>
+          </a>
+        </div>
       </div>
 
+      {/* 2. Mobile-Only Navigation Bar (Header Row Wise) */}
+      {/* 2. Mobile-Only Navigation Bar (Navbar Menu) */}
+       {/* The container is now positioned directly under the main header on small screens */}
+       <div className={`fixed top-[146px] md:hidden w-full px-4 py-3 border-b shadow-md z-40 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}`}>
+         <div className="flex justify-between items-center space-x-2">
+          {/* Buttons remain the same, ensuring `flex-shrink-0` keeps them visible in a scrollable container */}
+          <button
+            onClick={() => scrollToSection(overviewRef)}
+            className={`flex flex-col items-center p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} text-xs w-1/4 flex-shrink-0`}
+          >
+            
+            <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium mt-1`}>Overview</span>
+          </button>
+          <button
+            onClick={() => scrollToSection(teamRef)}
+            className={`flex flex-col items-center p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} text-xs w-1/4 flex-shrink-0`}
+          >
+            
+            <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium mt-1`}>Team</span>
+          </button>
+          <button
+            onClick={() => scrollToSection(Tasks)}
+            className={`flex flex-col items-center p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} text-xs w-1/4 flex-shrink-0`}
+          >
+            
+            <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium mt-1`}>Tasks</span>
+          </button>
+          <button
+            onClick={() => scrollToSection(reportsRef)}
+            className={`flex flex-col items-center p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} text-xs w-1/4 flex-shrink-0`}
+          >
+            
+            <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium mt-1`}>Reports</span>
+          </button>
+         </div>
+       </div>
+       {/* 3. Sidebar (Desktop-Only View) - Positioning is relative to the desktop header (top-16) */}
+       <div className={`fixed hidden md:block md:top-[210px] right-0 bottom-0 ${theme === 'dark' ? 'bg-gray-800 text-gray-200 ' : 'bg-stone-100 text-gray-800'} shadow-lg border-l transition-all duration-300 z-50 ${open ? "w-42" : "w-24"}`}>
+         <button onClick={() => setOpen(!open)} className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-blue-300 border shadow items-center justify-center hidden md:flex">
+          {open ? <FiChevronRight /> : <FiChevronLeft />}
+         </button>
+         <div className="mt-2 flex flex-col space-y-2 items-start">
+           {/* Menu Items */}
+           <button onClick={() => scrollToSection(overviewRef)} className={`flex items-start gap-1 px-3 py-2 rounded-xl ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} w-full justify-center`}>
+             <FaHome className={`text-xl w-6 h-6 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-600'}`} />
+             {open && <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium`}>Overview</span>}
+           </button>
+           <button onClick={() => scrollToSection(teamRef)} className={`flex items-start gap-1 px-3 py-2 rounded-xl ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} w-full justify-center`}>
+             <FaUsers className={`text-xl w-6 h-6 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-600'}`} />
+             {open && <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium`}>Team</span>}
+           </button>
+           <button onClick={() => scrollToSection(Tasks)} className={`flex items-start gap-1 px-3 py-2 rounded-xl ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} w-full justify-center`}>
+             <FaTasks className={`text-xl w-6 h-6 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-600'}`} />
+             {open && <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium`}>Tasks</span>}
+           </button>
+           <button onClick={() => scrollToSection(reportsRef)} className={`flex items-start gap-1 px-3 py-2 rounded-xl ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} w-full justify-center`}>
+             <FaChartBar className={`text-xl w-6m h-6 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-600'}`} />
+             {open && <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium`}>Reports</span>}
+           </button>
+         </div>
+       </div>
+    </div>
       {/* Main content container with dynamic right padding */}
-      <div className={`pt-[128px] transition-all duration-300 ${open ? 'pr-48' : 'pr-16'}`}>
+      <div className={`${mainContentPaddingClass} transition-all duration-300 ${open ? 'md:pr-48' : 'md:pr-16'}`}>
         <div className="p-3 md:p-5">
 
           {/* Overview Section */}
-          <section ref={overviewRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 scroll-mt-16">
+          <section ref={overviewRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 scroll-mt-28 md:scroll-mt-16">
             {/* Main Overview Card */}
             <div className={` ${theme==='dark'?'bg-gray-600':'bg-stone-100'} rounded-2xl shadow-lg border border-gray-200 p-3 space-y-6 col-span-1 lg:col-span-2`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -544,48 +622,20 @@ const StatusColorsMap={
                   ))}
                 </select>
               </div>
-              <div className={`p-4 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-blue-50 to-blue-100 '}  rounded-lg`}>
+              <div className={`p-2 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-blue-50 to-blue-100 '}  rounded-lg`}>
                 {isMounted &&  ( // Conditional rendering based on isMounted state
                   <ResponsiveContainer width="100%" height={350}>
                     <BarChart data={departmentData[selectedMonth]} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                      <XAxis dataKey="department" stroke="#fff"  />
-                      <YAxis domain={[0, 100]} stroke="#fff" />
-                      <Tooltip className={`  ${theme==='dark'?'bg-gray-600':'bg-gray-200'}`}formatter={(value) => `${value}%`} />
-                      <Legend wrapperStyle={{ color: "#fff" }} />
-                      <Bar dataKey="progress"fill={COLOR} barSize={40} radius={[5, 5, 0, 0]} barCategoryGap="20%" />
+                      <XAxis dataKey="department" stroke={textColor} tick={{ fill: textColor }}  />
+                      <YAxis domain={[0, 100]} stroke={textColor} tick={{ fill: textColor }} />
+                      <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }}formatter={(value) => `${value}%`} />
+                      <Bar dataKey="progress"fill={barColor}  barSize={40} radius={[5, 5, 0, 0]} barCategoryGap="20%" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
             </div>
           </section>
-        </div>
-      </div>
-
-      {/* Right Sidebar */}
-      <div className={`fixed top-[210px]  right-0 bottom-0 ${theme==='dark'?'bg-gray-800 text-gray-200 ':'bg-stone-100 text-gray-800'} shadow-lg border-l transition-all duration-300 z-50 ${open ? "w-42" : "w-16"}`}>
-        {/* Toggle Button */}
-        <button onClick={() => setOpen(!open)} className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-blue-300 border shadow flex items-center justify-center">
-          {open ? <FiChevronRight /> : <FiChevronLeft />}
-        </button>
-        {/* Menu Items */}
-        <div className="mt-5 flex flex-col space-y-6 items-start">
-          <button onClick={() => scrollToSection(overviewRef)} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
-            <FaHome className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
-            {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Overview</span>}
-          </button>
-          <button onClick={() => scrollToSection(teamRef)} className={`flex items-center gap-3 px-3 py-2 rounded-xl  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
-            <FaUsers className={ `text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
-            {open && <span className={`t${theme==='dark'?'text-gray-200':'text-gray-`00'} font-medium`}>Team</span>}
-          </button>
-          <button onClick={() => scrollToSection(Tasks)} className={`flex items-center gap-3 px-3 py-2 rounded-xl  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
-            <FaTasks className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
-            {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Tasks</span>}
-          </button>
-          <button onClick={() => scrollToSection(reportsRef)} className={`flex items-center gap-3 px-3 py-2 rounded-xl  ${theme==='dark'?'hover:bg-blue-800':'hover:bg-blue-100'} w-full justify-center`}>
-            <FaChartBar className={`text-xl ${theme==='dark'?'text-gray-200':'text-gray-600'}`} />
-            {open && <span className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium`}>Reports</span>}
-          </button>
         </div>
       </div>
     </div>

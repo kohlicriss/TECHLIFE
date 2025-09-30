@@ -16,8 +16,8 @@ import {
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import Calendar from "./Calender";
-import axios from "axios";
-import { useParams } from "react-router-dom";
+import axios from 'axios';
+import { Navigate, useParams } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import LeavesReports from "./LeavesReports";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -25,6 +25,7 @@ import LeaveDetails from "./LeaveDetails";
 import { FaFileAlt, FaRegFileAlt } from "react-icons/fa";
 import { LiaFileAlt, LiaFileAltSolid } from "react-icons/lia";
 import { IoPersonOutline } from "react-icons/io5";
+import { dashboardApi } from "../../../../axiosInstance";
 
 // AddLeaveForm component
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
@@ -175,7 +176,6 @@ const LeaveTypeCard = ({
     ];
     const COLORS = [color, "#E0E0E0"];
     const { theme } = useContext(Context);
-    const [isLoading, setIsLoading] = useState(true);
     return (
         <motion.div
             className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
@@ -194,11 +194,6 @@ const LeaveTypeCard = ({
                 alignItems="center"
                 className="w-full"
             >
-                {isLoading ? (
-                    <div className="items-center justify-center"> 
-                    <div className={`${theme==='dark' ? 'text-gray-200':'text-gray-700'} text-center w-full`}> <div className={`w-16 h-16  rounded-full mb-1 p-3`} ><LiaFileAltSolid className={ `w-8 h-8  ml-12  bg-yllow-500  text-yellow-400 rounded-full`} /></div>Leaves data loading...</div>
-                    </div>
-                ) : chartData > 0 ? (
                 <>
                 <ResponsiveContainer width={140} height={140}>
                     <PieChart>
@@ -250,11 +245,6 @@ const LeaveTypeCard = ({
                     </div>
                 </div>
                 </>
-                ):(
-                   <div className={` text-center w-full ${theme === 'dark' ? 'text-white' : 'text-gray-500'} italic`}>
-                        No leave data available.
-                    </div>
-                )}
                 
             </Box>
         </motion.div>
@@ -361,46 +351,69 @@ const LeaveType = () => {
 
 // WeeklyPattern component
 const WeeklyPattern = () => {
-    const { empID } = useParams();
+    
+    const { employeeId } = useParams(); 
+    // const { empID, employeeId } = useParams(); 
+    
     const { theme } = useContext(Context);
     const [selectedDay, setSelectedDay] = useState("All");
     const [rawData, setRawData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-  //const rawData = [
-  //  { Day: "Mon", Rate: 5 },
-  //  { Day: "Tues",Rate: 10 },
-  //  { Day: "Wed", Rate: 10 },
-  //  { Day: "Thu", Rate: 5 },
-  //  { Day: "Fri", Rate: 5 },
-  //  { Day: "Sat", Rate: 0 },
-  //  { Day: "Sun", Rate: 0 },
-  //];
+    const [error, setError] = useState(null); 
+
+   
+
     useEffect(() => {
-        axios
-            .get(
-                `http://192.168.0.123:8081/api/attendance/employee/${empID}/leavesbar-graph`
-            )
+       
+        if (!employeeId) {
+            console.error("Employee ID is missing from URL parameters.");
+            setIsLoading(false);
+            return;
+        }
+        
+        
+        setIsLoading(true);
+        setError(null);
+
+        
+        const url = `/attendance/employee/${employeeId}/leavesbar-graph`;
+
+        
+        dashboardApi.get(url)
             .then((response) => {
                 const formatted = response.data.map((item) => ({
+                  
                     Day: item.day,
                     Rate: item.rate,
                 }));
                 setRawData(formatted);
+                console.log("Give me Weekly pattern:",formatted)
             })
             .catch((error) => {
                 console.error("Error fetching leaves bar chart data:", error);
+              
+                const errorMessage = error.response 
+                    ? `Error: ${error.response.status} - ${error.response.statusText}` 
+                    : "Failed to load weekly leave pattern data.";
+                setError(errorMessage);
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [empID]);
 
+      
+        return () => {
+            // e.g., source.cancel() logic if you use axios.CancelToken.
+        };
+
+   
+    }, [employeeId]); 
     const isMobile = useMediaQuery("(max-width:768px)");
+    const dayOptions = ["All", ...new Set(rawData.map((d) => d.Day))];
     const filteredData =
         selectedDay === "All"
             ? rawData
             : rawData.filter((entry) => entry.Day === selectedDay);
-    const dayOptions = ["All", ...new Set(rawData.map((d) => d.Day))];
 
     return (
         <motion.div
@@ -412,13 +425,15 @@ const WeeklyPattern = () => {
             <h1 className={`text-2xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent border-gray-100':'text-gray-700 border-gray-200'} border-b pb-4`}>
                 Weekly Leave Pattern
             </h1>
+            
+            {/* Day Selector UI */}
             <div className="mb-4 text-center">
-                <label className={`mr-2 font-semibold  ${theme==='dark' ? 'text-white':'text-gray-700'}`}>Select
-                    Day:</label>
+                <label className={`mr-2 font-semibold  ${theme==='dark' ? 'text-white':'text-gray-700'}`}>Select Day:</label>
                 <select
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(e.target.value)}
                     className={`p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 ${theme==='dark' ? 'text-white':' text-gray-800 '}`}
+                    disabled={isLoading || error}
                 >
                     {dayOptions.map((day) => (
                         <option key={day} value={day}>
@@ -427,6 +442,8 @@ const WeeklyPattern = () => {
                     ))}
                 </select>
             </div>
+            
+            {/* Chart/Loading/Error Display Area */}
             <Box
                 display="flex"
                 flexDirection={isMobile ? "column" : "row"}
@@ -438,7 +455,9 @@ const WeeklyPattern = () => {
             >
                 {isLoading ? (
                     <div className="text-gray-500 text-center w-full">Loading...</div>
-                ) :filteredData.length > 0 ? (
+                ) : error ? (
+                    <div className="text-red-500 text-center w-full italic">Error: {error}</div>
+                ) : filteredData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={230}>
                         <BarChart
                             data={filteredData}
@@ -455,11 +474,11 @@ const WeeklyPattern = () => {
                             <Bar dataKey="Rate" fill="#4338CA" radius={[8, 8, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
-                
-                  ):(  <div className={` text-center w-full ${theme === 'dark' ? 'text-white' : 'text-gray-500'} italic`}>
+                ) : ( 
+                    <div className={` text-center w-full ${theme === 'dark' ? 'text-white' : 'text-gray-500'} italic`}>
                         No weekly leave pattern data available.
                     </div>
-                  )}
+                )}
             </Box>
         </motion.div>
     );
@@ -709,9 +728,8 @@ const UserGreeting = ({ handleRequestLeave }) => {
         >
             <div className="flex items-center space-x-4">
                 <motion.div
-                    className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden"
-                    whileHover={{ scale: 1.2 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                    className="w-16 h-16 bg-gray-300 rounded-full overflow-hidden"
+                    
                 >
                    {loggedInUserProfile.image ? (
                         <img
@@ -741,7 +759,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
             </div>
             <motion.button
                 onClick={handleRequestLeave}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+                className="px-3 py-2 bg-indigo-600 text-sm text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
             >
@@ -755,13 +773,14 @@ const UserGreeting = ({ handleRequestLeave }) => {
 const LeavesDashboard = () => {
     const { theme } = useContext(Context);
     const [leaveSummaryData, setLeaveSummaryData] = useState([]);
-    const { empID } = useParams();
+    const { empID,employeeId } = useParams();
     const { userData } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [showMain,setShowMain]=useState(false);
-    const [loading,setLoading]=useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+     const [error, setError] = useState(null);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
         {
@@ -870,44 +889,63 @@ const LeavesDashboard = () => {
     };
 
     useEffect(() => {
-        axios
-            .get(
-                `http://192.168.0.123:8081/api/attendance/employee/${empID}/leave-summary`
-            )
-            .then((response) => {
-                const typeMap = {
-                    Casual: "Casual Leave",
-                    Paid: "Paid Leave",
-                    Unpaid: "Unpaid Leave",
-                    sick: "Sick Leave",
-                    Sick: "Sick Leave",
-                };
-                const formattedData = response.data.map((item) => ({
-                    type: typeMap[item.type] || item.type,
-                    consumed: item.consumed,
-                    remaining: item.remaining,
-                    total: item.total,
-                }));
-                setLeaveSummaryData(formattedData);
-            })
-            .catch((error) => {
+    const source = axios.CancelToken.source(); 
+    // setIsLoading(true); 
+    
+   
+    const fetchLeaveSummary = async () => {
+        try {
+            
+            const response = await dashboardApi.get(
+                `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/leave-summary`,
+                { cancelToken: source.token } 
+            );
+
+            const typeMap = {
+                Casual: "Casual Leave",
+                Paid: "Paid Leave",
+                Unpaid: "Unpaid Leave",
+                sick: "Sick Leave",
+                Sick: "Sick Leave",
+            };
+
+            const formattedData = response.data.map((item) => ({
+                type: typeMap[item.type] || item.type,
+                consumed: item.consumed,
+                remaining: item.remaining,
+                total: item.total,
+            }));
+
+            setLeaveSummaryData(formattedData);
+            // setIsLoading(false); 
+
+        } catch (error) {
+           
+            if (axios.isCancel(error)) {
+                console.log('Request cancelled', error.message);
+            } else {
                 console.error("Error fetching line chart data:", error);
-            });
-    }, [empID]);
+                // setIsLoading(false);
+            }
+        }
+    };
+    
+    
+    fetchLeaveSummary();
+
+    
+    return () => {
+        source.cancel('Operation canceled by the user.');
+    };
+    
+}, [employeeId]);
 
     const [showAddLeaveForm, setShowAddLeaveForm] = useState(false);
-    const casualLeaveQuota = leaveSummaryData.find(
-        (item) => item.type === "Casual Leave"
-    );
-    const paidLeaveQuota = leaveSummaryData.find(
-        (item) => item.type === "Paid Leave"
-    );
-    const sickLeaveQuota = leaveSummaryData.find(
-        (item) => item.type === "Sick Leave"
-    );
-    const unpaidLeaveQuota = leaveSummaryData.find(
-        (item) => item.type === "Unpaid Leave"
-    );
+     const casualLeaveQuota = leaveSummaryData.find((item) => item.type === "Casual Leave");
+    const paidLeaveQuota = leaveSummaryData.find((item) => item.type === "Paid Leave");
+    const sickLeaveQuota = leaveSummaryData.find((item) => item.type === "Sick Leave");
+    const unpaidLeaveQuota = leaveSummaryData.find((item) => item.type === "Unpaid Leave");
+
 
     const handleRequestLeave = () => {
         setShowAddLeaveForm(true);
@@ -920,30 +958,31 @@ const LeavesDashboard = () => {
         setSidebarOpen(false);
     };
     const handleShowMain=()=>{
+        
         setShowMain(true);
         setSidebarOpen(false);
     }
     const handleGoBackToDashboard = () => {
         setShowReport(false);
     };
-    if (loading) {
-        return (
-          <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
-            <div className="min-h-screen flex items-center justify-center px-4">
-              <div className="text-center">
-                <div className="relative">
-                  <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <IoPersonOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-                  </div>
-                </div>
-                <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading Employee Directory</h2>
-                <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Discovering your colleagues...</p>
-              </div>
-            </div>
-          </div>
-        );
-      }
+    //if (isLoading) {
+    //    return (
+    //      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
+    //        <div className="min-h-screen flex items-center justify-center px-4">
+    //          <div className="text-center">
+    //            <div className="relative">
+    //              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+    //              <div className="absolute inset-0 flex items-center justify-center">
+    //                <IoPersonOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+    //              </div>
+    //            </div>
+    //            <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading Employee Leaves</h2>
+    //            <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Discovering your colleagues...</p>
+    //          </div>
+    //        </div>
+    //      </div>
+    //    );
+    //  }
 
     return (
         <div className={`min-h-screen p-2 sm:p-3 lg:p-4 font-sans ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}>
@@ -953,7 +992,7 @@ const LeavesDashboard = () => {
                     <motion.button
                         key="open-sidebar"
                         onClick={() => setSidebarOpen(true)}
-                        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-3 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
+                        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
                         aria-label="Open Sidebar"
                         initial={{ x: '100%' }}
                         animate={{ x: '0%' }}
@@ -968,7 +1007,7 @@ const LeavesDashboard = () => {
                 {showSidebar && sidebarOpen && (
                     <motion.div
                         key="sidebar"
-                        className={`fixed inset-y-0 right-0 w-60 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
+                        className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
                         initial={{ x: '100%' }}
                         animate={{ x: '0%' }}
                         exit={{ x: '100%' }}
@@ -992,7 +1031,7 @@ const LeavesDashboard = () => {
                         </motion.h3>
                         <button
                             onClick={() => setSidebarOpen(false)}
-                            className="self-start mb-4 bg-indigo-600 text-white p-2 mt-48 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+                            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
                             aria-label="Close Sidebar"
                             initial={{ x: '100%' }}
                             animate={{ x: '0%' }}
@@ -1039,10 +1078,20 @@ const LeavesDashboard = () => {
                                 <UserGreeting handleRequestLeave={handleRequestLeave} />
                             </header>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                                <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
-                                <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota}     color="#2196F3" />
-                                <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota}     color="#FFC107" />
-                                <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
+                                {isLoading ? (
+                                   <div className="items-center justify-center"> 
+                                      <div className={`${theme==='dark' ? 'text-gray-200':'text-gray-700'} text-center w-full`}> <div className={`w-16 h-16  rounded-full mb-1 p-3`} ><LiaFileAltSolid className={ `w-8 h-8  ml-12  bg-yllow-500  text-yellow-400 rounded-full`} /></div>Leaves data loading...</div>
+                                      </div> // Simple loading indicator
+                                ) : error ? (
+                                    <p className="text-red-500">{error}</p> // Simple error message
+                                ) : (
+                                    <>
+                                        <LeaveTypeCard title="Casual Leave" leaveData={casualLeaveQuota} color="#4CAF50" />
+                                        <LeaveTypeCard title="Paid Leave" leaveData={paidLeaveQuota} color="#2196F3" />
+                                        <LeaveTypeCard title="Sick Leave" leaveData={sickLeaveQuota} color="#FFC107" />
+                                        <LeaveTypeCard title="Unpaid Leave" leaveData={unpaidLeaveQuota} color="#EF5350" />
+                                    </>
+                                )}
                             </div>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                                 <LeaveType />

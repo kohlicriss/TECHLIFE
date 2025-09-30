@@ -3,11 +3,17 @@ import { CircleUserRound, TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import {BarChart,Bar,XAxis,YAxis,CartesianGrid,} from "recharts";
 import { FaFileAlt, FaRegUser, FaUserEdit, FaUsers } from 'react-icons/fa';
 import { FiUser } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import LeaveDetails from "./LeaveDetails";
 import { Context } from '../HrmsContext';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/solid'; // Using Heroicons for arrows
+
 
 // The following components are from your original code, with updated styling and layout.
 // They are re-ordered here for clarity.
@@ -35,7 +41,7 @@ const Attendance = () => {
 
     return (
         <motion.div
-            className={` p-6 rounded-xl shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
+            className={` p-2 rounded-xl shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -131,47 +137,291 @@ const Attendance = () => {
     );
 };
 
+
+// Mock imports for demonstration
+const ClockIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.87 14.13H11.5v-6h1.37v6zM12 5.5c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5 6.5-2.91 6.5-6.5-2.91-6.5-6.5-6.5zm.5 1.5h-1v5.25l4.5 2.62.75-1.35-3.5-2.02V7z"/></svg>;
+
+const onTimeDate = [
+  { Month: "Aug", Year: "25", NoofEmployee: 100 },
+  { Month: "Sept", Year:"25", NoofEmployee: 120 },
+  { Month: "Oct", Year: "25", NoofEmployee: 80 },
+  { Month: "Nov", Year: "25", NoofEmployee: 150 },
+  { Month: "Dec", Year: "25", NoofEmployee: 7 },
+];
+
+const EmployeeBarChart = () => {
+    const [selectedYear, setSelectedYear] = useState('This Year');
+    const { theme } = useContext(Context);
+    const filteredData = onTimeDate; 
+    const formattedData = filteredData.map((item) => ({
+      name: `${item.Month}-${item.Year}`,
+      employees: item.NoofEmployee,
+    }));
+    
+    const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
+    const barColor = "#ADD8E6"; // Light Blue
+    
+    const selectedBtnClass = "bg-blue-600 text-white shadow-md";
+    const unselectedBtnClass = theme === 'dark' ? "bg-gray-600 text-gray-200 hover:bg-gray-500" : "bg-white text-gray-700 hover:bg-gray-100";
+
+  return (
+    <motion.div
+            className={` rounded-xl  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-md p-4 w-full font-sans border border-gray-200 h-96 flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0.5,scale:1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
+      
+      <div className="flex justify-between items-center mb-4">
+  
+        <div className="flex items-center">
+            <ClockIcon className="w-6 h-6 text-blue-600 inline-block mr-2" /> 
+            <h2 className="text-xl font-semibold text-start">No of Leaves Taken</h2>
+        </div>
+        
+    
+        <div className="flex p-0.5 rounded-lg border border-gray-300">
+        
+            <button
+                className={`text-xs py-1 px-3 rounded-md transition-colors duration-200 ${selectedYear === 'This Year' ? selectedBtnClass : unselectedBtnClass}`}
+                onClick={() => setSelectedYear('This Year')}
+            >
+                This Year
+            </button>
+         
+            <button
+                className={`text-xs py-1 px-3 rounded-md transition-colors duration-200 ${selectedYear === 'Last Year' ? selectedBtnClass : unselectedBtnClass}`}
+                onClick={() => setSelectedYear('Last Year')}
+            >
+                Last Year
+            </button>
+        </div>
+      </div>
+
+      {/* Bar Chart Container */}
+      <ResponsiveContainer width="100%" height="90%">
+        <BarChart
+          data={formattedData}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+         
+        >
+          <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
+          <YAxis stroke={textColor} tick={{ fill: textColor }} hide/>
+          <Tooltip 
+             contentStyle={{ 
+                 backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", 
+                 border: theme ? "1px solid #4B5563" : "1px solid #ccc" 
+             }} 
+          />
+          <Bar dataKey="employees" fill={barColor} />
+        </BarChart>
+      </ResponsiveContainer>
+    </motion.div>
+  );
+};
+
+
+
+
+const getDaysInMonth = (year, month) => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+const getFirstDayOfMonth = (year, month) => {
+  return new Date(year, month, 1).getDay();
+};
+
+const Calendar = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [monthDirection, setMonthDirection] = useState(0); 
+  const {theme}=useContext(Context);
+  const month = currentDate.getMonth();
+  const year = currentDate.getFullYear();
+  const today = new Date();
+
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDay = getFirstDayOfMonth(year, month);
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+ 
+  const leadingEmptyCells = Array.from({ length: firstDay }, (_, i) => i);
+
+  
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const handlePrevMonth = () => {
+    setMonthDirection(-1);
+    setCurrentDate((prevDate) => {
+      const newDate = new Date(prevDate);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setMonthDirection(1);
+    setCurrentDate((prevDate) => {
+      const newDate = new Date(prevDate);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+
+  const calendarVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction) => ({
+      x: direction < 0 ? 300 : -300,
+      opacity: 0,
+    }),
+  };
+
+  return (
+    <div className={`flex justify-center rounded-xl items-center  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '} p-2`}>
+      <motion.div
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full h-96 transform transition-all"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0 }}
+      >
+        {/* Calendar Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handlePrevMonth}
+            className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            <ChevronLeftIcon className="h-5 w-5" />
+          </motion.button>
+          <motion.h2
+            key={month + '-' + year} 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+            className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex-grow text-center"
+          >
+            {monthNames[month]} {year}
+          </motion.h2>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleNextMonth}
+            className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            <ChevronRightIcon className="h-5 w-5" />
+          </motion.button>
+        </div>
+
+        {/* Day Names */}
+        <div className="grid grid-cols-7 gap-1 p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+          {dayNames.map((day, index) => (
+            <div key={index} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Days Grid */}
+        <AnimatePresence initial={false} custom={monthDirection}>
+          <motion.div
+            key={month + '-' + year} // Key for month animation
+            custom={monthDirection}
+            variants={calendarVariants}
+            initial="enter"
+            animate="center"
+          
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 }
+            }}
+            className="grid grid-cols-7 gap-1 p-4"
+          >
+            {/* Empty leading cells */}
+            {leadingEmptyCells.map((_, index) => (
+              <div key={`empty-${index}`} className="h-10"></div>
+            ))}
+
+            {/* Actual days */}
+            {days.map((day) => {
+              const isToday =
+                day === today.getDate() &&
+                month === today.getMonth() &&
+                year === today.getFullYear();
+              const isWeekend =
+                (firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6; // Sunday or Saturday
+
+              return (
+                <div
+                  key={day}
+                  className={`flex items-center justify-center h-10 w-10  rounded-full text-gray-800 dark:text-gray-200 cursor-pointer 
+                              ${isToday ? 'bg-blue-600 text-white font-bold shadow-md transform scale-110' : ''}
+                              ${!isToday && !isWeekend ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
+                              ${!isToday && isWeekend ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
+                              ${isToday ? 'relative z-10' : ''}
+                              transition-all duration-200 ease-in-out
+                              `}
+                >
+                  {day}
+                </div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+};
 const Data = [
     {
         title: "Total Present",
         value: "104/108",
-        trends: "up",
-        trendPercentage: "96.3",
-        trendPeriod: "This Week"
     },
     {
         title: "Paid Leaves",
         value: "10",
-        trends: "down",
-        trendPercentage: "10",
-        trendPeriod: "This Month"
     },
     {
         title: "Unpaid Leaves",
         value: "10",
-        trends: "down",
-        trendPercentage: "10",
-        trendPeriod: "This Month"
+    },
+    {
+        title: "Sick leaves",
+        value: "15",
     },
     {
         title: "Pending Request",
         value: "15",
-        trends: "up",
-        trendPercentage: "15",
-        trendPeriod: "This Month"
     }
 ];
 
-const ChartCard = ({ title, icontextcolor, value, icon, color, trends, trendPercentage, trendPeriod }) => {
-    const isUp = trends === 'up';
+const ChartCard = ({ title, icontextcolor, value, icon, color, }) => {
     const {theme} = useContext(Context);
     return (
         <motion.div
-            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl   transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
+            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl   transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-500 ':'bg-stone-100 '}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            whileHover={{ scale: 1.05 }}
+           
         >
             <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-3 ${color}  ${icontextcolor}`}>
                 {React.cloneElement(icon, { className: `w-8 h-8 rounded-full` })}
@@ -180,12 +430,7 @@ const ChartCard = ({ title, icontextcolor, value, icon, color, trends, trendPerc
                 <h3 className={`text-xl font-semibold  ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{title}</h3>
                 <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{value}</p>
             </div>
-            <div className="flex items-center mt-auto">
-                {isUp ? <TrendingUpIcon className="w-5 h-5 text-green-500" /> : <TrendingDownIcon className="w-5 h-5 text-red-500" />}
-                <span className={`ml-1 text-sm ${isUp ? 'text-green-500' : 'text-red-500'}`}>
-                    {trendPercentage}% {trendPeriod}
-                </span>
-            </div>
+    
         </motion.div>
     );
 };
@@ -198,14 +443,16 @@ const LeaveCharts = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-6 gap-6 h-full">
                 <AnimatePresence>
+                    <EmployeePieChart/>
                     {Data.map((data, index) => {
                         let icon, icontextcolor, colorHandler;
                         switch (data.title) {
                             case "Total Present": icon = <FaUsers className="w-4 h-4 text-white" />; colorHandler = "bg-green-100"; icontextcolor = "text-green-300"; break;
                             case "Paid Leaves": icon = <FaRegUser className="w-4 h-4 text-white" />; colorHandler = "bg-pink-100";  icontextcolor = "text-pink-300"; break;
                             case "Unpaid Leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-300"; break;
+                            case "Sick leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-purple-100"; icontextcolor = "text-purple-300"; break;
                             case "Pending Request": icon = <FaUserEdit className="w-4 h-4 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-300"; break;
                             default: icon = <CircleUserRound className="w-4 h-4 text-white" />; colorHandler = "bg-gray-100";
                         }
@@ -217,6 +464,43 @@ const LeaveCharts = () => {
             </div>
         </motion.div>
     );
+};
+const piechartData = [
+  { title: "Total Present", value: 104 },
+  { title: "Paid Leaves ", value: 10 },
+  { title: "Unpaid Leaves", value: 6 },
+  { title:"Sick leaves", value: 5 },
+  { title: "Pending Request", value: 10 },
+];
+
+const COLORS = ["#3B82F6", "#F59E0B", "#EF4444", "#84CC16", "#6B7280"];
+
+const EmployeePieChart = () => {
+    const {theme}=useContext(Context);
+    const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
+  return (
+    <div className="flex justify-center items-center">
+      {/* Chart container */}
+      <PieChart width={180} height={180}>
+        <Pie data={piechartData} dataKey="value" nameKey="title" cx="50%" cy="50%" innerRadius={50}  outerRadius={80} >
+          {piechartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <text
+            x="50%"
+            y="50%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className={`text-lg font-small `}
+            stroke={textColor}
+        >
+            Leaves
+        </text>
+        <Tooltip />
+      </PieChart>
+    </div>
+  );
 };
 //const currentLeaveHistoryData = [
 //    {
@@ -644,12 +928,12 @@ function LeavesReports({ onBack, leaveHistoryData,setLeaveHistoryData }) {
     return (
         
         <motion.div
-            className={`p-4 sm:p-8 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
+            className={`p-2 sm:p-2 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <header className="flex flex-col sm:flex-row items-center justify-between pb-6 mb-6 border-b border-gray-200">
+            <header className="flex flex-col sm:flex-row items-center justify-between pb-6 mb-2 border-b border-gray-200">
                 <h1 className={`text-3xl sm:text-4xl font-extrabold  mb-4 sm:mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                     Leaves Report
                 </h1>
@@ -665,9 +949,14 @@ function LeavesReports({ onBack, leaveHistoryData,setLeaveHistoryData }) {
                     Back to Dashboard
                 </motion.button>
             </header>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <Attendance />
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2">
+                
                 <LeaveCharts />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+                <Attendance />
+                <EmployeeBarChart/>
+                <Calendar/>
             </div>
             <div className="w-full">
                 <LeaveHistory leaveHistoryData={leaveHistoryData} setLeaveHistoryData={setLeaveHistoryData} />
