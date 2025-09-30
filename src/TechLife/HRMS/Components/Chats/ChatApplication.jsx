@@ -888,7 +888,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             return;
         }
 
-        const brokerURL = `ws://192.168.0.244:8083/api/chat?employeeId=${currentUser.id}`;
+        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
