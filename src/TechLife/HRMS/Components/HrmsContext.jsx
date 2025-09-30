@@ -39,7 +39,7 @@ const HrmsContext = ({ children }) => {
     useEffect(() => {
         let permissionfetcher = async () => {
             try {
-                let response = await authApi.get(`/role-access`);
+                let response = await authApi.get(`/role-access/all`);
                 console.log("Original Permissions data from API:", response.data);
                 
                 // Remove ROLE_ prefix from roleName in each permission object
@@ -164,7 +164,7 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata
+                permissionsdata,setPermissionsData
             }}
         >
             {children}
