@@ -6,10 +6,6 @@ terraform/webhosting/.terraform.lock.hcl
 /.pnp
 .pnp.js
 
-# testing
-/coverage
-
-# production
 /build
 
 # misc

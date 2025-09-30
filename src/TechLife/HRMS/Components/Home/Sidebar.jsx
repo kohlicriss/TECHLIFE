@@ -41,7 +41,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         "emppayload",
         "logedempid",
         "logedemprole",
-        "loggedInUserImage"
+        "loggedInUserImage",
+        "employeeFormData",
+        "aboutResponses",
+        "loggedUserImage",
+        "permissionsData"
       ];
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);

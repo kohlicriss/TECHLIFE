@@ -1,11 +1,13 @@
 import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
+import { authApi } from "../../../axiosInstance";
 
 export const Context = createContext();
 
 const HrmsContext = ({ children }) => {
     const [gdata, setGdata] = useState([]);
+    const [permissionsdata, setPermissionsData] = useState([]);
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem("theme");
         return savedTheme ? savedTheme : "light";
@@ -31,6 +33,28 @@ const HrmsContext = ({ children }) => {
         if (storedRefreshToken) {
             setRefreshToken(storedRefreshToken);
         }
+    }, []);
+
+    // ✅ Updated permissions fetcher with ROLE_ prefix removal
+    useEffect(() => {
+        let permissionfetcher = async () => {
+            try {
+                let response = await authApi.get(`/role-access/all`);
+                console.log("Original Permissions data from API:", response.data);
+                
+                // Remove ROLE_ prefix from roleName in each permission object
+                const processedPermissions = response.data.map(roleData => ({
+                    ...roleData,
+                    roleName: roleData.roleName.replace(/^ROLE_/, '') // Remove ROLE_ prefix
+                }));
+                
+                console.log("Processed Permissions data (ROLE_ prefix removed):", processedPermissions);
+                setPermissionsData(processedPermissions);
+            } catch (error) {
+                console.log("Permission error:", error);
+            }
+        }
+        permissionfetcher();
     }, []);
 
     useEffect(() => {
@@ -140,6 +164,7 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
+                permissionsdata,setPermissionsData
             }}
         >
             {children}
