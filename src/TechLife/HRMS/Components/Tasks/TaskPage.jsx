@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useContext } from "re
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle, ChevronDown, Search } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { publicinfoApi, tasksApi } from '../../../../axiosInstance';
+import { authApi, publicinfoApi, tasksApi } from '../../../../axiosInstance';
 
 const CalendarIcon = ({ theme }) => (
     <svg
@@ -341,6 +341,8 @@ const TasksPage = () => {
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState("MY_TASKS");
     const [projects, setProjects] = useState([]);
+      const [matchedArray,setMatchedArray]=useState(null);
+    
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -384,6 +386,31 @@ const TasksPage = () => {
         const value = parseInt(event.target.value, 10);
         setDropdownValue(value);
     };
+
+
+              useEffect(()=>{
+                let fetchForPermissionArray=async()=>{
+                    try {
+                        let response=await authApi.get(`role-access/${loggedinuserRole}`);
+                        console.log("Response From AllTeams for Fetching Permissions Array from TAsks PAge:",response.data);
+                        setMatchedArray(response?.data?.permissions);
+                    } catch (error) {
+                        console.log("error from Fetching Error matching Objects:",error);
+                    }
+                }
+                fetchForPermissionArray();
+              },[])
+            
+            
+            
+               const loggedinuserRole = userData?.roles[0] 
+              ? `ROLE_${userData.roles[0]}` 
+              : null;
+
+
+
+
+
 
     const fetchTasks = useCallback(async () => {
         if (!userData) {
@@ -1271,7 +1298,7 @@ const TasksPage = () => {
 
     return (
         <div className={`flex min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
-            {isTeamLead && !isRightSidebarOpen && (
+            { matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR") && !isRightSidebarOpen && (
                 <button
                     onClick={() => setIsRightSidebarOpen(true)}
                     className="fixed right-0 top-1/2 -translate-y-1/2 p-2 rounded-l-lg bg-indigo-600 text-white shadow-lg z-50 hover:bg-indigo-700 transition-colors"
@@ -1290,7 +1317,7 @@ const TasksPage = () => {
                             <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Task Dashboard</h1>
                         </div>
                         <div className="mt-4 sm:mt-0 flex gap-4">
-                            {hasAccess.includes("CREATE_TASK") && (
+                            {matchedArray.includes("CREATE_TASK") && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="flex cursor-pointer items-center justify-center bg-indigo-600 text-white font-semibold py-2.5 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500/20"

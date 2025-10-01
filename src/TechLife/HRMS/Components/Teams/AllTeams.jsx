@@ -350,6 +350,26 @@ const AllTeams = () => {
   };
 
 
+
+           useEffect(() => {
+  const adminTotalTeams = async () => {
+    try {
+      if (matchedArray.includes("ADMIN_FETCHING_ALLTEAMS")) {
+        let response = await publicinfoApi.get(
+          "employee/0/19/employeeId/asc/teams"
+        );
+        console.log("Admin Fetched Teams ✅", response.data);
+      }
+    } catch (error) {
+      console.log("Error From Admin Fetching All Teams ❌", error);
+    }
+  };
+
+  adminTotalTeams();
+}, [matchedArray]); // dependency add cheyyadam better
+
+
+
   useEffect(()=>{
     let fetchForPermissionArray=async()=>{
         try {
