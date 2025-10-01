@@ -4,10 +4,9 @@ import { Context } from '../HrmsContext';
 import { Client } from '@stomp/stompjs';
 import {
     FaMicrophone, FaPaperclip, FaSmile, FaPaperPlane, FaArrowLeft, FaStop,
-    FaFileAlt, FaDownload, FaPlay, FaPause,
-    FaVideo, FaPhone, FaReply, FaEdit, FaThumbtack, FaShare, FaTrash, FaTimes, FaCheck,
-    FaChevronDown, FaImage, FaFileAudio, FaEye, FaAngleDoubleRight, FaCamera, FaPen, FaUsers, FaUser,
-    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive
+    FaFileAlt, FaDownload, FaPlay, FaPause, FaReply, FaEdit, FaThumbtack, FaShare, FaTrash, FaTimes, FaCheck,
+    FaChevronDown, FaImage, FaFileAudio, FaAngleDoubleRight, FaUsers, FaUser,
+    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp
 } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
@@ -23,9 +22,13 @@ import {
     unpinMessage,
     clearChatHistory,
     uploadVoiceMessage,
-    getGroupMembers
+    getGroupMembers,
+    searchMessages,
+    getMessageContext,
+    getChatAttachments,
+    searchChatOverview
 } from '../../../../services/apiService';
-import { transformMessageDTOToUIMessage, generateChatListPreview } from '../../../../services/dataTransformer';
+import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
 
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -254,7 +257,6 @@ const ContactProfileModal = ({ chat, onClose, theme }) => {
     }
 
     return (
-        // THIS IS THE ONLY LINE WE ARE CHANGING
         <div
             className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-[110] md:hidden"
             onClick={onClose}
@@ -324,6 +326,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const [newMessagesCount, setNewMessagesCount] = useState(0);
     const [viewingProfile, setViewingProfile] = useState(null);
+    const [searchChatResults, setSearchChatResults] = useState(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [groupMedia, setGroupMedia] = useState([]);
+    const [groupFiles, setGroupFiles] = useState([]);
+    const [groupLinks, setGroupLinks] = useState([]);
+    const [isAttachmentLoading, setIsAttachmentLoading] = useState(false);
+    const [isSearchVisible, setIsSearchVisible] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [currentResultIndex, setCurrentResultIndex] = useState(-1);
     const { setIsChatWindowVisible } = useContext(Context);
 
     useEffect(() => {
@@ -360,6 +372,78 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
         return null;
     }, []);
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setSearchResults([]);
+            setCurrentResultIndex(-1);
+            return;
+        }
+
+        const timerId = setTimeout(() => {
+            if (selectedChat) {
+                searchMessages(currentUser.id, selectedChat.chatId, searchQuery).then(results => {
+                    setSearchResults(results);
+                    setCurrentResultIndex(results.length > 0 ? 0 : -1);
+                });
+            }
+        }, 500);
+
+        return () => clearTimeout(timerId);
+    }, [searchQuery, selectedChat, currentUser.id]);
+
+    const handleNextResult = () => {
+        if (currentResultIndex < searchResults.length - 1) {
+            setCurrentResultIndex(prev => prev + 1);
+        }
+    };
+
+    const handlePrevResult = () => {
+        if (currentResultIndex > 0) {
+            setCurrentResultIndex(prev => prev - 1);
+        }
+    };
+
+    useEffect(() => {
+        if (currentResultIndex !== -1 && searchResults[currentResultIndex]) {
+            const messageId = searchResults[currentResultIndex].messageId;
+            const messageElement = document.getElementById(`msg-${messageId}`);
+            if (messageElement) {
+                messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [currentResultIndex, searchResults]);
+
+    const handleJumpToMessage = async (message) => {
+        setIsSearchVisible(false);
+        setSearchQuery('');
+        setSearchResults([]);
+
+        const contextMessagesRaw = await getMessageContext(message.messageId, currentUser.id, selectedChat.chatId);
+        if (contextMessagesRaw && contextMessagesRaw.length > 0) {
+            const transformedContext = contextMessagesRaw.map(transformMessageDTOToUIMessage);
+
+            setMessages(prev => ({
+                ...prev,
+                [selectedChat.chatId]: transformedContext
+            }));
+
+            setTimeout(() => {
+                const element = document.getElementById(`msg-${message.messageId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.classList.add('bg-blue-200', 'transition-all', 'duration-1000');
+                    setTimeout(() => {
+                        element.classList.remove('bg-blue-200');
+                    }, 2000);
+                }
+            }, 100);
+        }
+    };
 
     const handleSidebarScroll = () => {
         const container = sidebarScrollRef.current;
@@ -407,6 +491,28 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
         setNewMessagesCount(0);
     };
+
+    useEffect(() => {
+        if (searchTerm.trim() === '') {
+            setSearchChatResults(null);
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        const debounceTimer = setTimeout(() => {
+            searchChatOverview(currentUser.id, searchTerm)
+                .then(rawResults => {
+                    const formattedResults = transformOverviewToChatList(rawResults, currentUser.id);
+                    const combinedResults = [...formattedResults.privateChatsWith, ...formattedResults.groups]
+                        .sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp));
+                    setSearchChatResults(combinedResults);
+                })
+                .finally(() => setIsSearching(false));
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchTerm, currentUser.id]);
 
     useEffect(() => {
         if (initialChats) {
@@ -912,18 +1018,30 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     }, [selectedChat, currentUser.id, navigate]);
 
     const handleChatSelect = useCallback((chat) => {
-        if ((chat.unreadMessageCount || 0) > 0) {
-            setChatData(prev => ({
-                ...prev,
-                groups: prev.groups.map(g => g.chatId === chat.chatId ? { ...g, unreadMessageCount: 0 } : g),
-                privateChatsWith: prev.privateChatsWith.map(p => p.chatId === chat.chatId ? { ...p, unreadMessageCount: 0 } : p),
-            }));
-        }
+        setChatData(prev => {
+            const isGroup = chat.type === 'group';
+            const list = isGroup ? prev.groups : prev.privateChatsWith;
+            const exists = list.some(c => c.chatId === chat.chatId);
 
-        if (selectedChat && selectedChat.chatId !== chat.chatId) {
-        }
+            if (exists) {
+                const updatedList = list.map(c =>
+                    c.chatId === chat.chatId ? { ...c, unreadMessageCount: 0 } : c
+                );
+                return isGroup
+                    ? { ...prev, groups: updatedList }
+                    : { ...prev, privateChatsWith: updatedList };
+            }
+            else {
+                const newChat = { ...chat, unreadMessageCount: 0 };
+                return isGroup
+                    ? { ...prev, groups: [newChat, ...prev.groups] }
+                    : { ...prev, privateChatsWith: [newChat, ...prev.privateChatsWith] };
+            }
+        });
         openChat(chat);
-    }, [selectedChat, openChat]);
+        setSearchTerm('');
+
+    }, [openChat]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -942,38 +1060,34 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 return;
             }
 
-            console.log("Group Info useEffect running. Tab:", activeGroupInfoTab, "Current members count:", groupMembers.length);
+            setIsGroupDataLoading(true);
+            setIsAttachmentLoading(true);
 
-            if (activeGroupInfoTab === 'Members' && groupMembers.length === 0) {
-                try {
-                    setIsGroupDataLoading(true);
-                    console.log("Fetching members for team ID:", selectedChat.chatId);
-
+            try {
+                if (activeGroupInfoTab === 'Members' && groupMembers.length === 0) {
                     const teamDetailsResponse = await getGroupMembers(selectedChat.chatId);
-                    console.log("API response from getGroupMembers:", teamDetailsResponse);
-
-                    const teamDetails = Array.isArray(teamDetailsResponse) && teamDetailsResponse.length > 0
-                        ? teamDetailsResponse[0]
-                        : null;
-
-                    if (teamDetails && teamDetails.employees) {
-                        console.log("Setting group members state with:", teamDetails.employees);
-                        setGroupMembers(teamDetails.employees);
-                    } else {
-                        console.log("No 'employees' array found in the final object. Setting empty array.");
-                        setGroupMembers([]);
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch group members:", error);
-                    setGroupMembers([]);
-                } finally {
-                    setIsGroupDataLoading(false);
+                    const teamDetails = Array.isArray(teamDetailsResponse) && teamDetailsResponse.length > 0 ? teamDetailsResponse[0] : null;
+                    setGroupMembers(teamDetails?.employees || []);
+                } else if (activeGroupInfoTab === 'Media' && groupMedia.length === 0) {
+                    const media = await getChatAttachments(selectedChat.chatId, 'media');
+                    setGroupMedia(media.map(transformMessageDTOToUIMessage));
+                } else if (activeGroupInfoTab === 'Files' && groupFiles.length === 0) {
+                    const files = await getChatAttachments(selectedChat.chatId, 'files');
+                    setGroupFiles(files.map(transformMessageDTOToUIMessage));
+                } else if (activeGroupInfoTab === 'Links' && groupLinks.length === 0) {
+                    const links = await getChatAttachments(selectedChat.chatId, 'links');
+                    setGroupLinks(links);
                 }
+            } catch (error) {
+                console.error("Failed to fetch group data for tab:", activeGroupInfoTab, error);
+            } finally {
+                setIsGroupDataLoading(false);
+                setIsAttachmentLoading(false);
             }
         };
 
         fetchGroupData();
-    }, [isGroupInfoModalOpen, activeGroupInfoTab, selectedChat, groupMembers.length]);
+    }, [isGroupInfoModalOpen, activeGroupInfoTab, selectedChat]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -1413,7 +1527,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
-    const filteredChats = allChats.filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const chatsToDisplay = searchChatResults !== null ? searchChatResults : allChats;
 
     useEffect(() => {
         if (isManuallyClosing.current) {
@@ -1543,41 +1657,45 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className={`w-full p-3 rounded-lg border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 border-gray-300'}`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                     <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
-                        {filteredChats.map(chat => (
-                            <div key={chat.chatId} onClick={() => handleChatSelect(chat)} className={`p-3 flex items-center rounded-lg cursor-pointer group ${selectedChat?.chatId === chat.chatId ? 'bg-blue-100 dark:bg-blue-900/30' : (theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-blue-50')}`}>
-                                <div className="relative flex-shrink-0">
-                                    {chat.type === 'group' ? (
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setViewingProfile(chat);
-                                            }}
-                                            className={`w-11 h-11 rounded-full flex items-center justify-center cursor-pointer md:cursor-default ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}
-                                        >
-                                            <FaUsers className={`text-gray-500`} size={24} />
-                                        </div>
-                                    ) : chat.profile ? (
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setViewingProfile(chat);
-                                            }}
-                                            className="w-11 h-11 rounded-full cursor-pointer md:cursor-default"
-                                        >
-                                            <img src={chat.profile} alt={chat.name} className="w-full h-full rounded-full object-cover" />
-                                        </div>
-                                    ) : (
-                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                            <FaUser className={`text-gray-500`} size={24} />
-                                        </div>
-                                    )}
-                                    {chat.isOnline && (<span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-500"></span>)}
+                        {isSearching ? (
+                            <div className="text-center p-4 text-gray-500">Searching...</div>
+                        ) : (
+                            chatsToDisplay.map(chat => (
+                                <div key={chat.chatId} onClick={() => handleChatSelect(chat)} className={`p-3 flex items-center rounded-lg cursor-pointer group ${selectedChat?.chatId === chat.chatId ? 'bg-blue-100 dark:bg-blue-900/30' : (theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-blue-50')}`}>
+                                    <div className="relative flex-shrink-0">
+                                        {chat.type === 'group' ? (
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setViewingProfile(chat);
+                                                }}
+                                                className={`w-11 h-11 rounded-full flex items-center justify-center cursor-pointer md:cursor-default ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}
+                                            >
+                                                <FaUsers className={`text-gray-500`} size={24} />
+                                            </div>
+                                        ) : chat.profile ? (
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setViewingProfile(chat);
+                                                }}
+                                                className="w-11 h-11 rounded-full cursor-pointer md:cursor-default"
+                                            >
+                                                <img src={chat.profile} alt={chat.name} className="w-full h-full rounded-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <div className={`w-11 h-11 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                <FaUser className={`text-gray-500`} size={24} />
+                                            </div>
+                                        )}
+                                        {chat.isOnline && (<span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-500"></span>)}
+                                    </div>
+                                    <div className="flex-1 min-w-0 mx-3"><p className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{chat.name}</p><p className={`text-sm truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{chat.lastMessage || 'No messages yet'}</p></div>
+                                    {(chat.unreadMessageCount || 0) > 0 && (<div className="flex-shrink-0"><span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">{chat.unreadMessageCount}</span></div>)}
                                 </div>
-                                <div className="flex-1 min-w-0 mx-3"><p className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{chat.name}</p><p className={`text-sm truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{chat.lastMessage || 'No messages yet'}</p></div>
-                                {(chat.unreadMessageCount || 0) > 0 && (<div className="flex-shrink-0"><span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">{chat.unreadMessageCount}</span></div>)}
-                            </div>
-                        ))}
-                        {isFetchingMore && (
+                            ))
+                        )}
+                        {searchTerm === '' && isFetchingMore && (
                             <div className="flex justify-center items-center p-4">
                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                             </div>
@@ -1633,8 +1751,30 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2"><button className={`p-2 rounded-full hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}><FaVideo size={20} /></button><button className={`p-2 rounded-full hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`}><FaPhone size={20} /></button><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className={`p-2 rounded-full hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600'}`}><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
+                                <div className="flex items-center space-x-2"><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className={`p-2 rounded-full hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600'}`}><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={() => { setIsSearchVisible(true); setShowChatMenu(false); }}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Search</button><button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
                             </div>
+
+                            {isSearchVisible && (
+                                <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search messages..."
+                                        className={`w-full p-2 border rounded-lg ${theme === 'dark' ? 'bg-gray-700 text-white' : ''}`}
+                                        value={searchQuery}
+                                        onChange={handleSearchChange}
+                                        autoFocus
+                                    />
+                                    {searchResults.length > 0 && (
+                                        <span className="mx-2 text-sm">{currentResultIndex + 1} of {searchResults.length}</span>
+                                    )}
+                                    <div className="flex">
+                                        <button onClick={handlePrevResult} disabled={currentResultIndex <= 0} className="p-2 disabled:opacity-50"><FaChevronUp /></button>
+                                        <button onClick={handleNextResult} disabled={currentResultIndex >= searchResults.length - 1} className="p-2 disabled:opacity-50"><FaChevronDown /></button>
+                                        <button onClick={() => { setIsSearchVisible(false); setSearchQuery(''); setSearchResults([]); }} className="p-2"><FaTimes /></button>
+                                    </div>
+                                </div>
+                            )}
 
                             {pinnedMessage && (
                                 <div className={`flex-shrink-0 flex items-center justify-between p-2 border-b bg-gray-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-700' : 'border-gray-200'}`}>
@@ -1669,124 +1809,152 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                             )}
 
                             <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-                                {isFetchingMoreMessages && (
-                                    <div className="flex justify-center items-center py-4">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                    </div>
-                                )}
-                                {isMessagesLoading ? (
-                                    <MessageSkeleton theme={theme} />
-                                ) : (
+                                {isSearchVisible ? (
                                     <div className="space-y-2">
-                                        {chatMessages.map((msg, index) => {
-                                            const isMyMessage = msg.sender === currentUser?.id;
-                                            const msgDate = new Date(msg.timestamp).toDateString();
-                                            const showDateHeader = lastMessageDate !== msgDate;
-                                            if (showDateHeader) {
-                                                lastMessageDate = msgDate;
-                                            }
-                                            const senderInfo = !isMyMessage ? getSenderInfo(msg.sender) : null;
+                                        {searchResults.length > 0 ? (
+                                            searchResults.map(msg => (
+                                                <div
+                                                    key={msg.messageId}
+                                                    onClick={() => handleJumpToMessage(msg)}
+                                                    className={`p-3 rounded-lg cursor-pointer ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                                                >
+                                                    <div className="flex justify-between text-xs mb-1">
+                                                        <span className="font-bold">{getSenderInfo(msg.sender).name}</span>
+                                                        <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                            {new Date(msg.timestamp).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                        {msg.fileName ? `📎 ${msg.fileName}` : msg.content}
+                                                    </p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center text-gray-500 mt-10">No results found for "{searchQuery}"</div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    isMessagesLoading ? (
+                                        <MessageSkeleton theme={theme} />
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {chatMessages.map((msg, index) => {
+                                                const isMyMessage = msg.sender === currentUser?.id;
+                                                const msgDate = new Date(msg.timestamp).toDateString();
+                                                const showDateHeader = lastMessageDate !== msgDate;
+                                                if (showDateHeader) {
+                                                    lastMessageDate = msgDate;
+                                                }
+                                                const senderInfo = !isMyMessage ? getSenderInfo(msg.sender) : null;
 
-                                            const fileUrl = getFileUrl(msg);
+                                                const fileUrl = getFileUrl(msg);
 
-                                            return (
-                                                <React.Fragment key={msg.messageId || msg.id}>
-                                                    {showDateHeader && (
-                                                        <div className="text-center my-4">
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>{formatDateHeader(msg.timestamp)}</span>
-                                                        </div>
-                                                    )}
-                                                    <div data-message-index={index} className={`flex items-end gap-2 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                                                        {!isMyMessage && (() => {
-                                                            const profileSrc = currentChatInfo.type === 'group' ? senderInfo?.profile : currentChatInfo.profile;
-                                                            const profileName = currentChatInfo.type === 'group' ? senderInfo?.name : currentChatInfo.name;
-                                                            return profileSrc ? (
-                                                                <img src={profileSrc} alt={profileName} className="w-8 h-8 rounded-full object-cover self-start flex-shrink-0" />
-                                                            ) : (
-                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center self-start flex-shrink-0 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                                    <FaUser className="text-gray-500" size={18} />
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                        <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
-                                                            {currentChatInfo.type === 'group' && !isMyMessage && (
-                                                                <p className={`text-xs text-gray-500 mb-1 ml-2 font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{senderInfo?.name}</p>
-                                                            )}
-                                                            <div onContextMenu={(e) => handleContextMenu(e, msg, index)} className={`rounded-lg max-w-xs md:max-w-md group relative
+                                                return (
+                                                    <React.Fragment key={msg.messageId || msg.id}>
+                                                        {showDateHeader && (
+                                                            <div className="text-center my-4">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>{formatDateHeader(msg.timestamp)}</span>
+                                                            </div>
+                                                        )}
+                                                        <div
+                                                            id={`msg-${msg.messageId}`}
+                                                            data-message-index={index}
+                                                            className={`flex items-end gap-2 p-1 rounded-lg transition-all
+                                                            ${isMyMessage ? 'justify-end' : 'justify-start'}
+                                                            ${searchResults[currentResultIndex]?.messageId === msg.messageId ? 'bg-yellow-400/30' : ''}
+                                                        `}
+                                                        >
+                                                            {!isMyMessage && (() => {
+                                                                const profileSrc = currentChatInfo.type === 'group' ? senderInfo?.profile : currentChatInfo.profile;
+                                                                const profileName = currentChatInfo.type === 'group' ? senderInfo?.name : currentChatInfo.name;
+                                                                return profileSrc ? (
+                                                                    <img src={profileSrc} alt={profileName} className="w-8 h-8 rounded-full object-cover self-start flex-shrink-0" />
+                                                                ) : (
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center self-start flex-shrink-0 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                                        <FaUser className="text-gray-500" size={18} />
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                            <div className={`flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
+                                                                {currentChatInfo.type === 'group' && !isMyMessage && (
+                                                                    <p className={`text-xs text-gray-500 mb-1 ml-2 font-semibold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{senderInfo?.name}</p>
+                                                                )}
+                                                                <div onContextMenu={(e) => handleContextMenu(e, msg, index)} className={`rounded-lg max-w-xs md:max-w-md group relative
                                                                 ${(msg.type === 'image' || msg.type === 'deleted') ? 'p-0 bg-transparent' : ''}
                                                                 ${(msg.type === 'text') ? (isMyMessage ? 'bg-blue-600 text-white p-3' : (theme === 'dark' ? 'bg-gray-700 text-white p-3' : 'bg-gray-200 text-gray-800 p-3')) : ''}
                                                                 ${(msg.type === 'audio' || msg.type === 'file') ? (isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')) : ''}
                                                                 `}>
-                                                                {msg.type === 'deleted' ? (
-                                                                    <div className="flex items-center gap-2 italic text-sm opacity-70 p-3">
-                                                                        <span>This message was deleted</span>
-                                                                        {lastDeleted?.index === index && <button onClick={handleUndoDelete} className="font-semibold hover:underline">Undo</button>}
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        {msg.isForwarded && <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 font-semibold"><FaShare /> Forwarded</div>}
+                                                                    {msg.type === 'deleted' ? (
+                                                                        <div className="flex items-center gap-2 italic text-sm opacity-70 p-3">
+                                                                            <span>This message was deleted</span>
+                                                                            {lastDeleted?.index === index && <button onClick={handleUndoDelete} className="font-semibold hover:underline">Undo</button>}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            {msg.isForwarded && <div className="flex items-center gap-1.5 text-xs opacity-70 mb-1 font-semibold"><FaShare /> Forwarded</div>}
 
-                                                                        {msg.replyTo && (
-                                                                            <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : (theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300')}`}>
-                                                                                <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
-                                                                                <p className="opacity-80 truncate">
-                                                                                    {['image', 'audio', 'file'].includes(msg.replyTo.type) ? msg.replyTo.content : msg.replyTo.content}
-                                                                                </p>
-                                                                            </div>
-                                                                        )}
+                                                                            {msg.replyTo && (
+                                                                                <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : (theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300')}`}>
+                                                                                    <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
+                                                                                    <p className="opacity-80 truncate">
+                                                                                        {['image', 'audio', 'file'].includes(msg.replyTo.type) ? msg.replyTo.content : msg.replyTo.content}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
 
-                                                                        {msg.type === 'image' ? (
-                                                                            <div className="relative">
-                                                                                <button onClick={() => setImageInView(fileUrl)}>
-                                                                                    <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{ maxHeight: '300px' }} />
-                                                                                </button>
-                                                                                {!isMyMessage && (
-                                                                                    <a href={fileUrl} download={msg.fileName} onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                        <FaDownload />
-                                                                                    </a>
-                                                                                )}
-                                                                            </div>
-                                                                        ) : msg.type === 'audio' ? (
-                                                                            <div className={`${isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')} rounded-lg`}>
-                                                                                <AudioPlayer src={fileUrl} fileUrl={fileUrl} isSender={isMyMessage} initialDuration={msg.duration} fileSize={msg.fileSize} theme={theme} />
-                                                                            </div>
-                                                                        ) : msg.type === 'file' ? (
-                                                                            <FileMessage msg={msg} isMyMessage={isMyMessage} theme={theme} />
-                                                                        ) : (
-                                                                            <p className="text-sm break-words">{msg.content}</p>
-                                                                        )}
-                                                                    </>
-                                                                )}
+                                                                            {msg.type === 'image' ? (
+                                                                                <div className="relative">
+                                                                                    <button onClick={() => setImageInView(fileUrl)}>
+                                                                                        <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{ maxHeight: '300px' }} />
+                                                                                    </button>
+                                                                                    {!isMyMessage && (
+                                                                                        <a href={fileUrl} download={msg.fileName} onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                            <FaDownload />
+                                                                                        </a>
+                                                                                    )}
+                                                                                </div>
+                                                                            ) : msg.type === 'audio' ? (
+                                                                                <div className={`${isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')} rounded-lg`}>
+                                                                                    <AudioPlayer src={fileUrl} fileUrl={fileUrl} isSender={isMyMessage} initialDuration={msg.duration} fileSize={msg.fileSize} theme={theme} />
+                                                                                </div>
+                                                                            ) : msg.type === 'file' ? (
+                                                                                <FileMessage msg={msg} isMyMessage={isMyMessage} theme={theme} />
+                                                                            ) : (
+                                                                                <p className="text-sm break-words">{msg.content}</p>
+                                                                            )}
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                                <span className={`text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
                                                             </div>
-                                                            <span className={`text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
+                                                            {isMyMessage && (
+                                                                <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
+                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className={`w-full h-full rounded-full object-cover ring-2 ${getStatusRingColor(msg.status)}`} />
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        {isMyMessage && (
-                                                            <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
-                                                                <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className={`w-full h-full rounded-full object-cover ring-2 ${getStatusRingColor(msg.status)}`} />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </React.Fragment>
-                                            );
-                                        })}
+                                                    </React.Fragment>
+                                                );
+                                            })}
 
-                                        {typingUsers[selectedChat.chatId] && (
-                                            <div className="flex items-end gap-2 justify-start">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center self-start flex-shrink-0 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                    <FaUser className="text-gray-500" size={18} />
-                                                </div>
-                                                <div className="flex flex-col items-start">
-                                                    <div className={`p-3 rounded-lg text-gray-800 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                        <div className="flex items-center justify-center gap-1.5">
-                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                                            <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></span>
+                                            {typingUsers[selectedChat.chatId] && (
+                                                <div className="flex items-end gap-2 justify-start">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center self-start flex-shrink-0 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                        <FaUser className="text-gray-500" size={18} />
+                                                    </div>
+                                                    <div className="flex flex-col items-start">
+                                                        <div className={`p-3 rounded-lg text-gray-800 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                            <div className="flex items-center justify-center gap-1.5">
+                                                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                                                <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                            )}
+                                        </div>
+                                    )
                                 )}
                             </div>
 
@@ -1952,57 +2120,52 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 </div>
                             )}
                             {activeGroupInfoTab === 'Media' && (
-                                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                                    {chatMessages.filter(msg => ['image', 'video'].includes(msg.type)).map((msg, i) => (
-                                        <button key={i} onClick={() => setImageInView(getFileUrl(msg))}>
-                                            <img src={getFileUrl(msg)} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
-                                        </button>
-                                    ))}
-                                </div>
+                                isAttachmentLoading ? <p className="text-center p-4 text-gray-500">Loading Media...</p> :
+                                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                                        {groupMedia.length > 0 ? groupMedia.map((msg, i) => (
+                                            <button key={i} onClick={() => setImageInView(getFileUrl(msg))}>
+                                                <img src={getFileUrl(msg)} alt={msg.fileName} className="w-full h-24 object-cover rounded-md cursor-pointer hover:opacity-80" />
+                                            </button>
+                                        )) : <p className="col-span-full text-center p-4 text-gray-500">No media found.</p>}
+                                    </div>
                             )}
 
                             {activeGroupInfoTab === 'Files' && (
-                                <div className="space-y-3">
-                                    {(() => {
-                                        const files = chatMessages.filter(msg => msg.type === 'file');
-                                        return files.length > 0 ? (
-                                            files.map(fileMsg => (
-                                                <FileMessage key={fileMsg.id} msg={fileMsg} isMyMessage={false} theme={theme} />
-                                            ))
-                                        ) : (
-                                            <p className={`text-center p-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No files found in this chat.</p>
-                                        );
-                                    })()}
-                                </div>
+                                isAttachmentLoading ? <p className="text-center p-4 text-gray-500">Loading Files...</p> :
+                                    <div className="space-y-3">
+                                        {groupFiles.length > 0 ? groupFiles.map(fileMsg => (
+                                            <FileMessage key={fileMsg.id} msg={fileMsg} isMyMessage={false} theme={theme} />
+                                        )) : <p className="text-center p-4 text-gray-500">No files found in this chat.</p>}
+                                    </div>
                             )}
 
                             {activeGroupInfoTab === 'Links' && (
-                                <div className="space-y-3">
-                                    {(() => {
-                                        const linkMessages = chatMessages.filter(msg => msg.type === 'text' && (msg.content.includes('http://') || msg.content.includes('https://')));
-                                        const allLinks = linkMessages.flatMap(linkMsg => {
-                                            const linkRegex = /(https?:\/\/[^\s]+)/g;
-                                            const links = linkMsg.content.match(linkRegex);
-                                            return links ? links.map(link => ({
-                                                id: linkMsg.id,
-                                                url: link,
-                                                sender: getSenderInfo(linkMsg.sender).name,
-                                                timestamp: linkMsg.timestamp
-                                            })) : [];
-                                        });
+                                isAttachmentLoading ? <p className="text-center p-4 text-gray-500">Loading Links...</p> :
+                                    <div className="space-y-3">
+                                        {(() => {
+                                            const allLinks = groupLinks.flatMap(linkMsg => {
+                                                const linkRegex = /(https?:\/\/[^\s]+)/g;
+                                                const links = linkMsg.content.match(linkRegex);
+                                                return links ? links.map(link => ({
+                                                    id: linkMsg.id,
+                                                    url: link,
+                                                    sender: getSenderInfo(linkMsg.sender).name,
+                                                    timestamp: linkMsg.timestamp
+                                                })) : [];
+                                            });
 
-                                        return allLinks.length > 0 ? (
-                                            allLinks.map((link, index) => (
-                                                <div key={`${link.id}-${index}`} className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{link.url}</a>
-                                                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Shared by {link.sender} on {new Date(link.timestamp).toLocaleDateString()}</p>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className={`text-center p-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No links found in this chat.</p>
-                                        );
-                                    })()}
-                                </div>
+                                            return allLinks.length > 0 ? (
+                                                allLinks.map((link, index) => (
+                                                    <div key={`${link.id}-${index}`} className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{link.url}</a>
+                                                        <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Shared by {link.sender} on {new Date(link.timestamp).toLocaleDateString()}</p>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className={`text-center p-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No links found in this chat.</p>
+                                            );
+                                        })()}
+                                    </div>
                             )}
                         </div>
                     </div>

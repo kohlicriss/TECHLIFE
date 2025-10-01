@@ -262,3 +262,52 @@ export const getGroupMembers = async (teamId) => {
     return null;
   }
 };
+
+export const searchMessages = async (userId, chatId, query) => {
+  try {
+    const response = await chatApi.get(`/chat/search`, {
+      params: { userId, chatId, query }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to search messages in chat ${chatId}:`, error);
+    return [];
+  }
+};
+
+export const getMessageContext = async (messageId, userId, chatId) => {
+  try {
+    const response = await chatApi.get(`/chat/context`, {
+      params: { messageId, userId, chatId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch message context for message ${messageId}:`, error);
+    return [];
+  }
+};
+
+export const getChatAttachments = async (chatId, type) => {
+  try {
+    const response = await chatApi.get(`/chat/${chatId}/attachments`, {
+      params: { type }
+    });
+    console.log(`Response for ${type}:`, response.data);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch ${type} for chat ${chatId}:`, error);
+    return [];
+  }
+};
+
+export const searchChatOverview = async (employeeId, query) => {
+  try {
+    const response = await chatApi.get(`/chat/overview/search`, {
+      params: { employeeId, query }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to search chat overview:", error);
+    return [];
+  }
+};
