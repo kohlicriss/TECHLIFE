@@ -30,7 +30,7 @@ const Header = () => {
                 <motion.button
                     className="relative flex items-center space-x-2 border px-3 py-1 rounded-md text-sm text-gray-700 bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
                     onClick={() => setShowFromCalendar(!showFromCalendar)}
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1 }}
                     whileTap={{ scale: 0.95 }}
                 >
                     <input
@@ -46,7 +46,7 @@ const Header = () => {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.2 }}
-                                className="absolute top-full right-0 mt-2 z-50"
+                                className="absolute w-full top-full right-0 mt-2 z-50"
                             >
                                 <Calendar
                                     selectedDate={fromDate}
@@ -98,7 +98,6 @@ const UserGreeting = () => {
             <div className="flex items-center space-x-4">
                 <motion.div
                     className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center font-bold text-2xl"
-                    whileHover={{ scale: 1.1 }}
                     transition={{ type: "spring", stiffness: 300, damping: 10 }}
                 >
                     {loggedInUserProfile.image ? (
@@ -132,7 +131,7 @@ const StatCard = ({ title, value,color, total, titlecolor, icon, onViewAll }) =>
   return(
     <motion.div
         className={`flex flex-col p-4 ${theme==='dark'?'bg-gray-500':'bg-stone-100'}  rounded-lg shadow-md border border-gray-200 cursor-pointer`}
-        whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
+        whileHover={{  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
         whileTap={{ scale: 0.98 }}
     >
         <div className="flex items-center justify-between">

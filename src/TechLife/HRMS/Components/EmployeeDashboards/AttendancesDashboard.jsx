@@ -1098,7 +1098,7 @@ const handleLogin = (index) => {
                                                             exit={{ opacity: 0, y: -20, scale: 0.9 }}
                                                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                                         >
-                                                            <p className="text-gray-700 font-medium text-sm mb-3 text-center">
+                                                            <p className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium text-sm mb-3 text-center`}>
                                                                 Switch to {mode === "office" ? "Remote" : "Office"} mode?
                                                             </p>
                                                             <div className="flex space-x-2">
@@ -1443,7 +1443,7 @@ const handleLogin = (index) => {
                                                         paginatedData.map((entry, idx) => (
                                                             <motion.tr
                                                                 key={idx}
-                                                                className="hover:bg-indigo-200 transition-colors duration-150"
+                                                                className="hover:bg-indigo-100 transition-colors duration-150"
                                                                 initial={{ opacity: 0, y: 20 }}
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 exit={{ opacity: 0, y: -20 }}

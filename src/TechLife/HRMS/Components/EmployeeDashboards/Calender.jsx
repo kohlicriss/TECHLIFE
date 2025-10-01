@@ -43,7 +43,7 @@ const Calendar = ({ selectedDate, onSelectDate, onClose }) => {
         <button
           key={`day-${i}`}
           onClick={() => onSelectDate(day)}
-          className={`p-2 rounded-full text-center hover:bg-gray-200 transition-colors ${
+          className={`p-1 rounded-full text-center hover:bg-gray-200 transition-colors ${
             isToday ? "bg-orange-500 text-white font-bold" : ""
           } ${
             isSelected && !isToday
@@ -126,7 +126,7 @@ const Calendar = ({ selectedDate, onSelectDate, onClose }) => {
   };
 
   return (
-    <div className="absolute z-10 bg-white shadow-lg rounded-lg p-4 mt-2 border border-gray-300">
+    <div className="absolute z-10 bg-white shadow-lg rounded-lg w-full p-4 mt-2 border border-gray-300">
       <div className="flex justify-between items-center mb-4">
         {showSelector === "calendar" && (
           <button
