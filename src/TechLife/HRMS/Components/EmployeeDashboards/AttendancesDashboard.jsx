@@ -10,7 +10,7 @@ import { useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, SidebarOpen } from "lucide-react";
 import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
-import { dashboardApi, publicinfoApi } from "../../../../axiosInstance";
+import { authApi, dashboardApi, publicinfoApi } from "../../../../axiosInstance";
 import { IoPersonOutline } from "react-icons/io5";
 
 // --- Constants and Helper Functions ---
@@ -525,6 +525,33 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const rowsPerPageOptions = [10, 25, 50, 100];
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
     const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
+     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+              const [matchedArray,setMatchedArray]=useState(null);
+               const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+        
+        
+               useEffect(()=>{
+                 let fetchedData=async()=>{
+                         let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                         console.log("from Projects :",response.data);
+                         setLoggedPermissionData(response.data);
+                 }
+                 fetchedData();
+                 },[])
+            
+                 useEffect(()=>{
+                 if(loggedPermissiondata){
+                     setMatchedArray(loggedPermissiondata?.permissions)
+                 }
+                 },[loggedPermissiondata]);
+                 console.log(matchedArray);
+    
+        const [hasAccess,setHasAccess]=useState([])
+            useEffect(()=>{
+                setHasAccess(userData?.permissions)
+            },[userData])
+            console.log("permissions from userdata:",hasAccess)
+    
 
    // const [barChartData, setBarChartData] = useState([]);
    // const [rawPieData, setRawPieData] = useState([]);
@@ -838,7 +865,7 @@ const handleLogin = (index) => {
         <div className={`min-h-screen ${theme === 'dark'? 'bg-gray-900': 'bg-gray-50'} font-sans text-gray-800 relative`}>
             {/* Sidebar */}
              <AnimatePresence>
-            {showSidebar && !isSidebarOpen && (
+            {(matchedArray || []).includes("VIEW_ATTENDANCE_REPORTS") && !isSidebarOpen && (
               
                     <motion.button onClick={() => setIsSidebarOpen(true)}  className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
                         aria-label="Open Sidebar"

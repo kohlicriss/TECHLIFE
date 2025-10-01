@@ -621,39 +621,7 @@ function Project() {
         Gayatri: "https://i.pravatar.cc/40?img=6"
     };
 
-    const teamImagesMap = {
-        P_01: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        P_02: [
-            "https://randomuser.me/api/portraits/men/15.jpg",
-            "https://randomuser.me/api/portraits/women/22.jpg"
-        ],
-        P_03: [
-            "https://randomuser.me/api/portraits/men/11.jpg"
-        ],
-        P_04: [
-            "https://randomuser.me/api/portraits/men/55.jpg",
-            "https://randomuser.me/api/portraits/women/88.jpg",
-            "https://randomuser.me/api/portraits/men/99.jpg",
-            "https://randomuser.me/api/portraits/women/78.jpg"
-        ],
-        P_05: [
-            "https://randomuser.me/api/portraits/men/66.jpg",
-            "https://randomuser.me/api/portraits/women/77.jpg",
-            "https://randomuser.me/api/portraits/men/12.jpg",
-            "https://randomuser.me/api/portraits/women/23.jpg",
-            "https://randomuser.me/api/portraits/men/45.jpg"
-        ],
-        P06: [
-            "https://randomuser.me/api/portraits/men/21.jpg",
-            "https://randomuser.me/api/portraits/women/43.jpg",
-            "https://randomuser.me/api/portraits/men/87.jpg"
-        ]
-    };
-
+    
     const getPriorityColor = (priority) => {
         switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
     const getStatusColor = (status) => {
@@ -764,10 +732,7 @@ const handleRowClick = (proj) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
-            <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
-                    Project Overview</h2>
-                    <div className=" absolute right-52 gap-2">
+            <div className="absolute right-5 gap-2 justify-end items-end">
                     <select
                        value={statusFilter}
                        onChange={(e) => setStatusFilter(e.target.value)}
@@ -780,386 +745,12 @@ const handleRowClick = (proj) => {
                    </select>
          
             </div>
-                {showSidebar && (
-                    <motion.button
-                        className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
-                        onClick={() => setShowCreateForm(true)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <FaPlus className="mr-2" /> Create Project
-                    </motion.button>
-                )}
+            <div className="flex justify-between items-center mb-4">
+                <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
+                    Project Overview</h2>
+                    
             </div>
             {/* Full-page overlay for the form */}
-            <AnimatePresence>
-                {showCreateForm && (
-                    <motion.div
-                        className="fixed backdrop-blur-sm bg-opacity-30 inset-0 z-50 flex items-center justify-center "
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                         <motion.div className="relative  w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
-                        <motion.form
-                            className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
-                            onSubmit={handleCreateProject}
-                            initial={{ scale: 0.9, y: 50 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 50 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            <div className="  mb-4 text-start rounded-t bg-gradient-to-br from-purple-400 to-purple-700">
-                                 
-                                           
-                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6 ml-10   border-lg pb-8 ${theme === 'dark' ? 'text-gray-200 ' : 'text-gray-800 '}`}>Create New Project</h3>
-                            </div>
-                            <div className="space-y-4 p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Project Name</label>
-                                 
-                                <input
-                                    type="text"
-                                    placeholder="Project Name"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.project_name}
-                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                    required
-                                />
-                                </div>
-                                 <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Team Lead</label>
-                                 
-                                <input
-                                    type="text"
-                                    placeholder="Team Lead + Profile image URl"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.project_name}
-                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                    required 
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
-                                 
-                                <select
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
-                                    value={newProject.status}
-                                    onChange={e => setNewProject({ ...newProject, status: e.target.value })}
-                                >
-                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
-                                    <option value="Ongoing"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
-                                    <option value="Upcoming"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
-                                    <option value="Completed"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
-                                </select>
-                                </div>
-                                <div className="relative mt-1">
-                                    <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
-                                <input
-                                    type="date"
-                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.start_date}
-                                    onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
-                                    required
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                    <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
-                                <input
-                                    type="date"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.end_date}
-                                    onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
-                                    required
-                                />
-                                </div>
-                                   <div className="relative mt-1">
-                                <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
-                             
-                                <select
-                                   className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
-                                    value={newProject.Priority}
-                                    onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
-                                >
-                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
-                                    <option value="High"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
-                                    <option value="Medium"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
-                                    <option value="Low"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
-                                </select>
-                                </div>
-                                 <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Open Tasks</label>
-                               
-                                <input
-                                    type="number"
-                                    placeholder="Open Tasks"
-                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.Open_task}
-                                    onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Closed Tasks</label>
-                                <input
-                                    type="number"
-                                    placeholder="Closed Tasks"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.Closed_task}
-                                    onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Rating</label>
-                                <input
-                                    type="number"
-                                    placeholder="Rating (1-5)"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    min="1"
-                                    max="5"
-                                    value={newProject.rating}
-                                    onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
-                                />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
-                                    <textarea
-                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                        value={newProject.Employee_team}
-                                        onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
-                                    />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
-                                    <textarea
-                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                        value={newProject.remark}
-                                        onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
-                                    />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
-                                    <textarea
-                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                        value={newProject.completionNote}
-                                        onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
-                                    />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                        Related Links:</label>
-                                    {newProject.relatedLinks.map((link, index) => (
-                                        <div key={index} className="flex gap-2 mb-0">
-                                            <input
-                                                type="url"
-                                                value={link}
-                                                onChange={e => handleRelatedLinkChange(index, e.target.value)}
-                                                className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                                placeholder="Enter related link URL"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => removeRelatedLink(index)}
-                                                className="px-3 py-2 text-red-600 hover:text-red-800"
-                                                disabled={newProject.relatedLinks.length === 1}
-                                            >
-                                                <FaTrashAlt />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addRelatedLink}
-                                        className="flex items-center text-indigo-600 hover:text-indigo-800"
-                                    >
-                                        <FaPlus className="mr-1" />
-                                        Add Related Link
-                                    </button>
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                        Attach Files</label>
-                                    <div className="flex items-center">
-                                        <label className="flex items-center cursor-pointer">
-                                            <FaPaperclip className="mr-2" />
-                                            <span className={`text-sm  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Attach</span>
-                                            <input
-                                                type="file"
-                                                multiple
-                                                onChange={handleFileChange}
-                                                className="hidden"
-                                            />
-                                        </label>
-                                    </div>
-                                    {files.length > 0 && (
-                                        <div className="mt-2">
-                                            <ul className="space-y-2">
-                                                {files.map((file, index) => (
-                                                    <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
-                                                        <span className="text-sm text-gray-800 truncate" title={file.name}>{file.name}</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeFile(index)}
-                                                            className="text-red-500 hover:text-red-700 ml-4"
-                                                            aria-label={`Remove ${file.name}`}
-                                                        >
-                                                            <FaTrashAlt />
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex mt-2 gap-4 justify-center">
-                                <motion.button
-                                    type="submit"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    Add Project
-                                </motion.button>
-                                <motion.button
-                                    type="button"
-                                    className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
-                                    onClick={() => setShowCreateForm(false)}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    Cancel
-                                </motion.button>
-                            </div>
-                            </div>
-                        </motion.form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-    {showEditForm && (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            <motion.form
-                className={`w-full max-w-3xl rounded-lg shadow-2xl relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
-                onSubmit={handleUpdateProject}
-                initial={{ scale: 0.9, y: 50 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ duration: 0.3 }}
-            >
-                <div className="mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
-                    <h3 className={`text-2xl font-bold pt-6 pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Edit Project</h3>
-                </div>
-                <div className="space-y-4 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <input
-                            type="text"
-                            placeholder="Project Name"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.project_name || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
-                            required
-                        />
-                        <select
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.status || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
-                        >
-                            <option value="">Select Status</option>
-                            <option value="Ongoing">Ongoing</option>
-                            <option value="Upcoming">Upcoming</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                        <input
-                            type="date"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.start_date || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
-                            required
-                        />
-                        <input
-                            type="date"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.end_date || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
-                            required
-                        />
-                        <select
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.Priority || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
-                        >
-                            <option value="">Select Priority</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                        </select>
-                        <input
-                            type="number"
-                            placeholder="Open Tasks"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.Open_task || 0}
-                            onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
-                        />
-                        <input
-                            type="number"
-                            placeholder="Closed Tasks"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.Closed_task || 0}
-                            onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
-                        />
-                    </div>
-                    {/* Add more fields as needed */}
-                    <div className="flex mt-2 gap-4 justify-center">
-                        <motion.button
-                            type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Update Project
-                        </motion.button>
-                        <motion.button
-                            type="button"
-                            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
-                            onClick={() => setShowEditForm(false)}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Cancel
-                        </motion.button>
-                    </div>
-                </div>
-            </motion.form>
-        </motion.div>
-    )}
-</AnimatePresence>
           <div className="overflow-x-auto rounded-xl  ">
             <table className="min-w-full bg-white  ">
                 <thead className={` text-left uppercase tracking-wider border border-purple-500 ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
@@ -1173,7 +764,7 @@ const handleRowClick = (proj) => {
                         <th className="p-3 text-sm md:text-base">Open Task</th>
                         <th className="p-3 text-sm md:text-base">Closed Task</th>
                         <th className="p-3 text-sm md:text-base">Details</th>
-                        {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
+                       {/* {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}*/}
                     </tr>
                 </thead>
                 <tbody  className="bg-white   ">
@@ -1233,7 +824,7 @@ const handleRowClick = (proj) => {
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
                              <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
-                            {showSidebar && (
+                          { /*  {showSidebar && (
                                 <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}
@@ -1248,8 +839,8 @@ const handleRowClick = (proj) => {
                                     >
                                         <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
                                     </motion.button>
-                                </td>
-                            )}
+                                </td> 
+                            )} */}
                             </motion.tr>
                             ))}
                     </AnimatePresence>

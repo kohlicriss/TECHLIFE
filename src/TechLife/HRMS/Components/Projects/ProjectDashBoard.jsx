@@ -8,6 +8,7 @@ import axios from 'axios';
 import { Context } from '../HrmsContext';
 import classNames from 'classnames';
 import { FiDelete, FiEdit } from "react-icons/fi";
+import { authApi } from '../../../../axiosInstance';
 
 // --- ProjectCard Data and Component ---
 const projects = [
@@ -199,7 +200,7 @@ const ProjectCard = () => {
 
     return (
         <motion.div
-            className={`relative p-6 rounded-xl shadow-2xl mx-auto border border-orange-400  ${theme==='dark' ? 'bg-gray-700':'bg-white'}`}
+            className={`relative p-6 rounded-xl shadow-2xl mx-auto border border-orange-400  ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-r from-orange-10 to-orange-50'}`}
             key={currentIndex} 
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -441,6 +442,33 @@ const MyTeam = () => {
     const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
+    
+    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+    
+    
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from MyTeam :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
+
+             const [hasAccess,setHasAccess]=useState([])
+                   useEffect(()=>{
+                       setHasAccess(userData?.permissions)
+                   },[userData])
+                   console.log("permissions from userdata:",hasAccess)
 
     const initialEmployeeData = [
         { name: "Rajesh",   employee_id: "E_01", date: "2025-06-30",role:"Full stack Developer", login_time: "10:00 AM", logout_time: "07:00 PM" },
@@ -450,15 +478,6 @@ const MyTeam = () => {
         { name: "Rohit",    employee_id: "E_09", date: "2025-06-30",role:"Tester", login_time: null, logout_time: null },
         { name: "Deepika", employee_id: "E_11", date: "2025-06-30",role:"Designer", login_time: "10:00 AM", logout_time: "07:00 PM" },
     ];
-    
-    const ImageMap={
-        "Rajesh":"https://randomuser.me/api/portraits/men/32.jpg" , 
-        "Ramesh": "https://randomuser.me/api/portraits/men/32.jpg" ,  
-        "Ramya": "https://randomuser.me/api/portraits/women/65.jpg",  
-        "Swetha": "https://randomuser.me/api/portraits/women/65.jpg",  
-        "Rohit": "https://randomuser.me/api/portraits/men/32.jpg",     
-        "Deepika": "https://randomuser.me/api/portraits/women/65.jpg",
-    }
 
     const [employeeData, setEmployeeData] = useState(initialEmployeeData);
     const [showForm, setShowForm] = useState(false);
@@ -501,7 +520,7 @@ const MyTeam = () => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className={`text-2xl font-bold text-blue-800 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-400 bg-clip-text text-transparent ':''}`}>
                     My Team</h2>
-                {showSidebar && (
+                {(matchedArray || []).includes("CREATE_PROJTEAM") && (
                     <motion.button
                         className={`flex items-center ${theme==='dark'?'bg-gray-500 text-blue-500':'bg-blue-50 text-blue-700'} border border-blue-500 font-bold py-2 px-4 rounded-xl shadow transition`}
                         onClick={() => { setShowForm(true); setFormData({ name: "", employee_id: "", date: "", role: "", login_time: "", logout_time: "" }); setEditIndex(null); }}
@@ -583,8 +602,8 @@ const MyTeam = () => {
                             <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Date</th>
                             <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Role</th>
                             <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
-                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
-                            {showSidebar && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
+                            {(hasAccess || []).includes("EDIT_PROJTEAM") && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
+                            {(hasAccess || []).includes("DELETE_PROJTEAM") && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
                         </tr>
                     </thead>
                     <tbody  className="bg-white divide-y divide-gray-500">
@@ -614,12 +633,12 @@ const MyTeam = () => {
                                         <td className={`px-4 py-2 whitespace-nowrap text-sm  ${status.color} ${theme==='dark' ? 'bg-gray-500 ':''} `}>{status.label}</td>
                                        <td className={`px-4  py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             
-                                            {showSidebar && (
+                                            {(hasAccess || []).includes("EDIT_PROJTEAM") && (
                                                 <button className={ `${theme==='dark'?'text-indigo-200':'text-indigo-600'}  hover:text-indigo-800 font-bold`} onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                             )}
                                         </td>
                                         <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                            {showSidebar && (
+                                            {(hasAccess || []).includes("DELETE_PROJTEAM") && (
                                                 <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-bold`} onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                             )}
                                         </td>
@@ -640,6 +659,33 @@ function ProjectStatus() {
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
+
+    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+    
+    
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from Project Status :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
+
+    const [hasAccess,setHasAccess]=useState([])
+        useEffect(()=>{
+            setHasAccess(userData?.permissions)
+        },[userData])
+        console.log("permissions from userdata:",hasAccess)
 
     const projectstatusData = [
         { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
@@ -688,7 +734,7 @@ function ProjectStatus() {
         >
             <div className="flex justify-between items-center mb-4">
                 <h2 className={`text-2xl font-bold text-green-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
-                {showSidebar && (
+                {(matchedArray || []).includes("UPDATE_PROJSTATUS") && (
                     <motion.button
                         className={`flex items-center ${theme==='dark'?'bg-gray-500 text-green-500':'bg-green-50 text-green-700'} border border-green-500 font-bold py-2 px-4 rounded-xl shadow transition`}
                         onClick={() => { setShowForm(true); setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" }); setEditIndex(null); }}
@@ -760,8 +806,8 @@ function ProjectStatus() {
                     <th className="py-2 px-4 font-semibold">Project Name</th>
                     <th className="py-2 px-4 font-semibold">Duration</th>
                     <th className="py-2 px-4 font-semibold">Status</th>
-                    {showSidebar && <th className="py-2 px-4 ">Edit</th>}
-                    {showSidebar && <th className="py-2 px-4 ">Delete</th>}
+                    {(hasAccess || []).includes("EDIT_PROJSTATUS") && <th className="py-2 px-4 ">Edit</th>}
+                    {(hasAccess || []).includes("DELETE_PROJSTATUS") && <th className="py-2 px-4 ">Delete</th>}
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-500">
@@ -795,12 +841,12 @@ function ProjectStatus() {
                                 </ResponsiveContainer>
                                 <span className={`text-xs  ml-2 ${theme==='dark' ? 'text-gray-200':'text-gray-600'}`}>{project.Status}%</span>
                             </td>
-                            {showSidebar && (
+                            {(hasAccess || []).includes("EDIT_PROJSTATUS") && (
                                 <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                     <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small`}  onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                 </td>
                             )}
-                            {showSidebar && (
+                            {(hasAccess || []).includes("DELETE_PROJSTATUS") && (
                                 <td className={`py-2 px-4  whitespace-nowrap  ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                     <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small`}   onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                 </td>
@@ -820,6 +866,33 @@ function Project() {
     const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
+
+    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+    
+    
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from Projects :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
+
+    const [hasAccess,setHasAccess]=useState([])
+        useEffect(()=>{
+            setHasAccess(userData?.permissions)
+        },[userData])
+        console.log("permissions from userdata:",hasAccess)
 
     const [projectTableData, setProjectTableData] = useState([
         {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
@@ -984,7 +1057,7 @@ const handleRowClick = (proj) => {
             <div className="flex justify-between items-center mb-4">
                 <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
                     Project Overview</h2>
-                    {showSidebar && (
+                    {(matchedArray || []).includes("CREATE_PROJECT") && (
                     <motion.button
                         className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
                         onClick={() => setShowCreateForm(true)}
@@ -1389,7 +1462,7 @@ const handleRowClick = (proj) => {
                         <th className="p-3 text-sm md:text-base">Open Task</th>
                         <th className="p-3 text-sm md:text-base">Closed Task</th>
                         <th className="p-3 text-sm md:text-base">Details</th>
-                        {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}
+                        {(hasAccess || []).includes("DELETE_PROJECT") &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
                 <tbody  className="bg-white ">
@@ -1449,7 +1522,7 @@ const handleRowClick = (proj) => {
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
                              <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
-                            {showSidebar && (
+                            {(hasAccess || []).includes("DELETE_PROJECT") && (
                                 <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}

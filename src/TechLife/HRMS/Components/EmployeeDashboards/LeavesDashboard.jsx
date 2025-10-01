@@ -25,7 +25,7 @@ import LeaveDetails from "./LeaveDetails";
 import { FaFileAlt, FaRegFileAlt } from "react-icons/fa";
 import { LiaFileAlt, LiaFileAltSolid } from "react-icons/lia";
 import { IoPersonOutline } from "react-icons/io5";
-import { dashboardApi } from "../../../../axiosInstance";
+import { authApi, dashboardApi } from "../../../../axiosInstance";
 
 // AddLeaveForm component
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
@@ -845,6 +845,33 @@ const LeavesDashboard = () => {
             Action: "https://icons8.com/icon/36944/ellipsis",
         },
     ]);
+     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+              const [matchedArray,setMatchedArray]=useState(null);
+               const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+        
+        
+               useEffect(()=>{
+                 let fetchedData=async()=>{
+                         let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                         console.log("from Employee :",response.data);
+                         setLoggedPermissionData(response.data);
+                 }
+                 fetchedData();
+                 },[])
+            
+                 useEffect(()=>{
+                 if(loggedPermissiondata){
+                     setMatchedArray(loggedPermissiondata?.permissions)
+                 }
+                 },[loggedPermissiondata]);
+                 console.log(matchedArray);
+    
+        const [hasAccess,setHasAccess]=useState([])
+            useEffect(()=>{
+                setHasAccess(userData?.permissions)
+            },[userData])
+            console.log("permissions from userdata:",hasAccess)
+    
  //useEffect(() => {
 //  const fetchLeaveData = async () => {
 //    setIsLoading(true);
@@ -1004,7 +1031,7 @@ const LeavesDashboard = () => {
                 )}
 
                 {/* Sidebar */}
-                {showSidebar && sidebarOpen && (
+                {(matchedArray || []).includes("VIEW_LEAVES_REPORTS") && sidebarOpen && (
                     <motion.div
                         key="sidebar"
                         className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}

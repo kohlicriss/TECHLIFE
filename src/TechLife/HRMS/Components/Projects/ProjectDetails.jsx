@@ -337,7 +337,7 @@ const StatusColorsMap={
           {/* Overview Section */}
           <section ref={overviewRef} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-2 scroll-mt-28 md:scroll-mt-16">
             {/* Main Overview Card */}
-            <div className={` ${theme==='dark'?'bg-gray-600':'bg-stone-100'} rounded-2xl shadow-lg border border-gray-200 p-3 space-y-6 col-span-1 lg:col-span-2`}>
+            <div className={` ${theme==='dark'?'bg-gray-600':'bg-gradient-to-r from-white to-blue-50'} rounded-2xl shadow-lg border border-gray-200 p-3 space-y-6 col-span-1 lg:col-span-2`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className={`text-2xl ${theme==='dark'?'text-white':'text-gray-800'} font-bold`}>{project.project_name}</h2>
@@ -416,7 +416,7 @@ const StatusColorsMap={
             {/* Right Column Details */}
             <div className="space-y-6 col-span-1">
               {/* Project Details */}
-              <div className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6`}>
+              <div className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6`}>
                 <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Details</h2>
                 <dl className="divide-y divide-gray-200">
                   {Object.entries(projectData.projectDetails).map(([key, value,index]) => {
@@ -462,7 +462,7 @@ const StatusColorsMap={
               </div>
 
               {/* Tasks Details */}
-              <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6 h-auto`}>
+              <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} rounded-xl shadow-lg border border-gray-200 p-6 h-auto`}>
                 <h2 className="text-xl font-bold mb-4 border-b pb-2">Tasks Details</h2>
                 <div>
                   <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'} text-sm`}>Tasks Done</p>
@@ -481,7 +481,7 @@ const StatusColorsMap={
           {/* Team Section */}
           <section ref={teamRef} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 scroll-mt-24">
             {/* Team Members List */}
-            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-6">Team Members</h2>
               <div className="space-y-4">
                 {projectInfo.team.map((member, index) => (
@@ -517,7 +517,7 @@ const StatusColorsMap={
             </div>
 
             {/* Selected Member Details */}
-            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-6">Member Details</h2>
               {selectedMember ? (
                 
@@ -548,7 +548,7 @@ const StatusColorsMap={
           {/* Tasks Section */}
           <section ref={Tasks} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10 scroll-mt-24">
             {/* Task List */}
-            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold">Project Tasks</h2>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -587,7 +587,7 @@ const StatusColorsMap={
             </div>
 
             {/* Task Progress Timeline */}
-            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} p-6 rounded-xl shadow-md`}>
               <h2 className="text-2xl font-bold mb-2">Task Progress</h2>
               <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'} mb-6`}>This month <span className="text-green-600 font-semibold">+20%</span></p>
               <ul className="relative border-l border-gray-200 ml-4 pl-6 space-y-6">
@@ -622,7 +622,7 @@ const StatusColorsMap={
                   ))}
                 </select>
               </div>
-              <div className={`p-2 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-blue-50 to-blue-100 '}  rounded-lg`}>
+              <div className={`p-2 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-white to-blue-50 '}  rounded-lg`}>
                 {isMounted &&  ( // Conditional rendering based on isMounted state
                   <ResponsiveContainer width="100%" height={350}>
                     <BarChart data={departmentData[selectedMonth]} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
