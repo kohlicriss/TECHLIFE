@@ -6,7 +6,6 @@ terraform/webhosting/.terraform.lock.hcl
 /.pnp
 .pnp.js
 
-/build
 
 # misc
 .DS_Store
