@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, useContext } from "react";
+import React, { useState, useEffect, lazy, Suspense, useContext, useMemo } from "react";
 import ErrorBoundary from "../../../ErrorBoundary";
 import {
     BrowserRouter as Router,
@@ -8,7 +8,8 @@ import {
     Outlet,
 } from "react-router-dom";
 import logo from "./assets/anasol-logo.png";
-import HrmsContext, { Context } from "./HrmsContext";
+// FIX 1: UISidebarContext ను ఇంపోర్ట్ చేయండి
+import HrmsContext, { Context, UISidebarContext } from "./HrmsContext"; 
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
@@ -197,69 +198,89 @@ const RouteWrapper = ({ children, moduleName }) => (
     </ErrorBoundary>
 );
 
-// Main Layout with error boundaries for sidebar and navbar
-const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isChatWindowVisible }) => (
-    <div className="flex flex-col h-screen bg-gray-50">
-        <ErrorBoundary 
-            fallback={() => (
-                <div className="h-16 bg-red-100 border-b border-red-200 flex items-center px-4">
-                    <span className="text-red-700">Navigation error - please refresh page</span>
-                </div>
-            )}
-        >
-            <Navbar setSidebarOpen={setSidebarOpen} currentUser={currentUser} onLogout={onLogout} />
-        </ErrorBoundary>
-        
-        <div className={`flex flex-1 overflow-hidden ${isChatWindowVisible ? 'pt-0 md:pt-16' : 'pt-16'}`}>
+const MainLayout = React.memo(({ currentUser, onLogout, isChatWindowVisible }) => {
+    const { isSidebarOpen, setSidebarOpen } = useContext(UISidebarContext);
+    
+    return (
+        <div className="flex flex-col h-screen bg-gray-50">
             <ErrorBoundary 
                 fallback={() => (
-                    <div className="w-64 bg-red-100 border-r border-red-200 flex items-center justify-center">
-                        <span className="text-red-700 text-sm">Sidebar error</span>
+                    <div className="h-16 bg-red-100 border-b border-red-200 flex items-center px-4">
+                        <span className="text-red-700">Navigation error - please refresh page</span>
                     </div>
                 )}
             >
-                <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} />
+                <Navbar setSidebarOpen={setSidebarOpen} currentUser={currentUser} onLogout={onLogout} />
             </ErrorBoundary>
             
-            <main className="flex-1 overflow-y-auto">
-                <ErrorBoundary
-                    fallback={(error, resetError) => (
-                        <div className="flex h-full items-center justify-center bg-red-50">
-                            <div className="text-center max-w-md">
-                                <div className="text-red-500 mb-4">
-                                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                </div>
-                                <h2 className="text-xl font-semibold text-red-700 mb-2">Page Error</h2>
-                                <p className="text-red-600 mb-4">
-                                    This page encountered an error. The navigation and sidebar are still working.
-                                </p>
-                                <button
-                                    onClick={resetError}
-                                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                >
-                                    Reload Page
-                                </button>
-                            </div>
+            <div className={`flex flex-1 overflow-hidden ${isChatWindowVisible ? 'pt-0 md:pt-16' : 'pt-16'}`}>
+                <ErrorBoundary 
+                    fallback={() => (
+                        <div className="w-64 bg-red-100 border-r border-red-200 flex items-center justify-center">
+                            <span className="text-red-700 text-sm">Sidebar error</span>
                         </div>
                     )}
                 >
-                    <Outlet />
+                    <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} />
                 </ErrorBoundary>
-            </main>
+                
+                <main className="flex-1 overflow-y-auto">
+                    <ErrorBoundary
+                        fallback={(error, resetError) => (
+                            <div className="flex h-full items-center justify-center bg-red-50">
+                                <div className="text-center max-w-md">
+                                    <div className="text-red-500 mb-4">
+                                        <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <h2 className="text-xl font-semibold text-red-700 mb-2">Page Error</h2>
+                                    <p className="text-red-600 mb-4">
+                                        This page encountered an error. The navigation and sidebar are still working.
+                                    </p>
+                                    <button
+                                        onClick={resetError}
+                                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        Reload Page
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    >
+                        <Outlet /> 
+                    </ErrorBoundary>
+                </main>
+            </div>
         </div>
-    </div>
-);
+    );
+}, (prevProps, nextProps) => {
+    return prevProps.currentUser === nextProps.currentUser &&
+           prevProps.onLogout === nextProps.onLogout &&
+           prevProps.isChatWindowVisible === nextProps.isChatWindowVisible;
+});
 
 const MainLayoutWrapper = (props) => {
     const { isChatWindowVisible } = useContext(Context);
     return <MainLayout {...props} isChatWindowVisible={isChatWindowVisible} />;
 };
 
+const UISidebarContextProvider = ({ children }) => {
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    
+    const contextValue = useMemo(() => ({ isSidebarOpen, setSidebarOpen }), [isSidebarOpen]);
+    
+    return (
+        <UISidebarContext.Provider value={contextValue}>
+            {children}
+        </UISidebarContext.Provider>
+    );
+};
+
+
 const HrmsApp = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("accessToken"));
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    
     const [currentUser] = useState({
         name: "Johnes",
         designation: " Associate Software Engineer",
@@ -279,7 +300,6 @@ const HrmsApp = () => {
     const loggedInEmpId = localStorage.getItem("logedempid");
 
     return (
-        // Top-level error boundary for entire app
         <ErrorBoundary
             fallback={(error, resetError) => (
                 <div className="min-h-screen bg-red-50 flex items-center justify-center">
@@ -356,14 +376,15 @@ const HrmsApp = () => {
                                     ) : (
                                         <Route
                                             element={
-                                                <MainLayoutWrapper
-                                                    isSidebarOpen={isSidebarOpen}
-                                                    setSidebarOpen={setSidebarOpen}
-                                                    currentUser={currentUser}
-                                                    onLogout={handleLogout}
-                                                />
+                                                <UISidebarContextProvider>
+                                                    <MainLayoutWrapper
+                                                        currentUser={currentUser}
+                                                        onLogout={handleLogout}
+                                                    />
+                                                </UISidebarContextProvider>
                                             }
                                         >
+                                            {/* Nested Protected Routes */}
                                             <Route 
                                                 path="/admin-dashboard/:empId/*" 
                                                 element={
@@ -515,7 +536,6 @@ const HrmsApp = () => {
                                                 } 
                                             />
                                             <Route path="/project-details/:project_id/*" element={<ProtectedRoute><ProjectDetails /></ProtectedRoute>} />
--                                <Route path="/projects/:project_id/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
                                             <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                                         </Route>
                                     )}

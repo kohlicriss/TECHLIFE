@@ -400,7 +400,7 @@ const TasksPage = () => {
                 }
                 fetchForPermissionArray();
               },[])
-            
+
             
             
                const loggedinuserRole = userData?.roles[0] 
@@ -446,10 +446,13 @@ const TasksPage = () => {
     }, [userData, employeeId, currentNumber, dropdownValue]);
 
     const fetchTasksAssignedByMe = useCallback(async () => {
-        if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
+        // 1. Initial Role and Permission Check
+        if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId || !matchedArray || !matchedArray.includes("TASK_TEAMLEAD_SIDEBAR")) {
             setAssignedByMeTasks([]);
             return;
         }
+
+        // API HIT logic
         try {
             const tlId = userData.employeeId;
             const url = `/${currentNumber}/${dropdownValue}/id/asc/${tlId}`;
@@ -468,7 +471,7 @@ const TasksPage = () => {
                 setAssignedByMeTasks([]);
             }
         }
-    }, [userData, currentNumber, dropdownValue]);
+    }, [userData, currentNumber, dropdownValue, matchedArray]); // matchedArray is a dependency
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -484,13 +487,17 @@ const TasksPage = () => {
     }, []);
 
     useEffect(() => {
-        if (userData) {
-            fetchTasks();
-            if (userData.roles[0] === "TEAM_LEAD") {
-                fetchTasksAssignedByMe();
-            }
+        if (!userData) return;
+        
+        if (displayMode === "MY_TASKS") {
+            // Fetch tasks assigned TO the user
+            fetchTasks(); 
+        } else if (displayMode === "ASSIGNED_BY_ME") {
+            // Fetch tasks assigned BY the user (will run inner checks for role/permission)
+            fetchTasksAssignedByMe(); 
         }
-    }, [fetchTasks, fetchTasksAssignedByMe, userData]);
+        // fetchTasks and fetchTasksAssignedByMe are already memoized by useCallback
+    }, [userData, displayMode, fetchTasks, fetchTasksAssignedByMe]); // Trigger fetch when mode changes
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1296,9 +1303,13 @@ const TasksPage = () => {
     const isMyTasksActive = displayMode === "MY_TASKS";
     const isAssignedByMeActive = displayMode === "ASSIGNED_BY_ME";
 
+    const teamLeadSidebarPermission = matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR");
+
     return (
         <div className={`flex min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
-            { matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR") && !isRightSidebarOpen && (
+            
+            {/* Toggle Button for Sidebar - Visible only with permission and when sidebar is closed */}
+            { teamLeadSidebarPermission && !isRightSidebarOpen && (
                 <button
                     onClick={() => setIsRightSidebarOpen(true)}
                     className="fixed right-0 top-1/2 -translate-y-1/2 p-2 rounded-l-lg bg-indigo-600 text-white shadow-lg z-50 hover:bg-indigo-700 transition-colors"
@@ -1308,8 +1319,10 @@ const TasksPage = () => {
                 </button>
             )}
 
-            <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen ? 'md:mr-80' : 'mr-0'} p-4 sm:p-6 lg:p-8`}>
-                {isRightSidebarOpen && isTeamLead && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsRightSidebarOpen(false)}></div>}
+            <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen && teamLeadSidebarPermission ? 'md:mr-80' : 'mr-0'} p-4 sm:p-6 lg:p-8`}>
+                
+                {/* Mobile Overlay - Visible only with permission and when sidebar is open */}
+                {isRightSidebarOpen && teamLeadSidebarPermission && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsRightSidebarOpen(false)}></div>}
 
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
@@ -1317,7 +1330,7 @@ const TasksPage = () => {
                             <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Task Dashboard</h1>
                         </div>
                         <div className="mt-4 sm:mt-0 flex gap-4">
-                            {matchedArray.includes("CREATE_TASK") && (
+                            {matchedArray?.includes("CREATE_TASK") && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="flex cursor-pointer items-center justify-center bg-indigo-600 text-white font-semibold py-2.5 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
@@ -1402,15 +1415,21 @@ const TasksPage = () => {
                 </div>
             </div>
 
-            {isTeamLead && (
+            {/* Right Sidebar - Conditionally rendered based on permission */}
+            {teamLeadSidebarPermission && (
                 <div className={`fixed inset-y-0 right-0 w-80 shadow-xl transform transition-transform duration-300 z-40 ${isRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-                    <button
-                        onClick={() => setIsRightSidebarOpen(false)}
-                        className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
-                        aria-label="Close Team Sidebar"
-                    >
-                        <ChevronRight size={24} />
-                    </button>
+                    
+                    {/* Sticky Close Button (Arrow) on the side */}
+                    {isRightSidebarOpen && (
+                        <button
+                            onClick={() => setIsRightSidebarOpen(false)}
+                            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
+                            aria-label="Close Team Sidebar"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    )}
+                    
                     <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Team Dashboard</h3>
                     </div>

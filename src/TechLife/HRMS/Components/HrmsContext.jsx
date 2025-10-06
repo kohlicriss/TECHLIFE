@@ -4,6 +4,7 @@ import logo from "./assets/anasol-logo.png";
 import { authApi } from "../../../axiosInstance";
 
 export const Context = createContext();
+export const UISidebarContext = createContext();
 
 const HrmsContext = ({ children }) => {
     const [gdata, setGdata] = useState([]);
@@ -13,6 +14,7 @@ const HrmsContext = ({ children }) => {
         return savedTheme ? savedTheme : "light";
     });
     const [lastSseMsgId, setLastSseMsgId] = useState(null);
+    const [globalSearch,setGlobalSearch]=useState("")
     const [unreadCount, setUnreadCount] = useState(0);
     const [userprofiledata, setUserProfileData] = useState(null);
     const [userData, setUserData] = useState(null);
@@ -35,7 +37,7 @@ const HrmsContext = ({ children }) => {
         }
     }, []);
 
-    // ✅ Updated permissions fetcher with ROLE_ prefix removal
+    // ✅ Permissions fetcher
     useEffect(() => {
         let permissionfetcher = async () => {
             try {
@@ -164,9 +166,10 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch
             }}
         >
+            {/* UISidebarContext will be provided in HrmsApp */}
             {children}
         </Context.Provider>
     );
