@@ -18,3 +18,27 @@ font-family: "Dancing Script", cursive;
   font-weight: 700;
   font-style: normal;
 } */
+
+
+
+
+
+
+/* 
+::-webkit-scrollbar {
+  width: 500px;
+} */
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4facfe, #00f2fe);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #43e97b, #38f9d7);
+}
