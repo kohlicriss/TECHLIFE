@@ -121,7 +121,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
         setLoading(true);
         try {
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/public/employees`);
-            const newEmployees = response.data || [];
+            const newEmployees = response.data.content || [];
             
             const filteredNewEmployees = newEmployees.filter(emp => emp.employeeId !== userData?.employeeId);
             
@@ -408,9 +408,18 @@ const TasksPage = () => {
               : null;
 
 
-
-
-
+    // ✅ FIX: Extract 'content' property from API response for projects
+    const fetchProjects = async () => {
+        try {
+            const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
+            console.log("API Response for fetchProjects:", response.data);
+            
+            // FIX IS HERE: Ensure projects is always an array by checking for 'content'
+            setProjects(Array.isArray(response.data) ? response.data : response.data?.content || []); 
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
+    };
 
     const fetchTasks = useCallback(async () => {
         if (!userData) {
@@ -474,17 +483,8 @@ const TasksPage = () => {
     }, [userData, currentNumber, dropdownValue, matchedArray]); // matchedArray is a dependency
 
     useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
-                setProjects(response.data);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
         fetchProjects();
-    }, []);
+    }, []); // Only runs on component mount
 
     useEffect(() => {
         if (!userData) return;
@@ -800,6 +800,61 @@ const TasksPage = () => {
                         error={isError}
                         disabled={isDisabled}
                     />
+                    {isError && (
+                        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p className="text-sm font-medium">{isError}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        if (name === 'projectId') {
+            return (
+                <div className="group relative" key={name}>
+                    <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                        {label}
+                        {required && <span className="text-red-500 ml-1 text-base">*</span>}
+                        {isDisabled && (
+                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                                theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                Read Only
+                            </span>
+                        )}
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={fieldValue}
+                            onChange={(e) => handleLocalFieldChange(e.target.value)}
+                            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none
+                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                                ${isError 
+                                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                    : theme === 'dark'
+                                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                                }
+                                ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            disabled={isDisabled}
+                        >
+                            <option value="">Choose Project</option>
+                            {/* Project structure is directly from API: {projectId, title} */}
+                            {projects.map((proj) => (
+                                <option key={proj.projectId} value={proj.projectId}>
+                                    ({proj.projectId}) {proj.title}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                     {isError && (
                         <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
                             <AlertCircle className="w-4 h-4 flex-shrink-0" />

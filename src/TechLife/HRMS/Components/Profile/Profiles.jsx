@@ -107,9 +107,9 @@ const Profiles = () => {
             console.log("Department Response:", response.data);
             
             if (reset) {
-                setAllDepartments(response.data);
+                setAllDepartments(response.data.content);
             } else {
-                setAllDepartments(prev => [...prev, ...response.data]);
+                setAllDepartments(prev => [...prev, ...response.data.content]);
             }
             
             setDepartmentHasMore(response.data.length === 10);

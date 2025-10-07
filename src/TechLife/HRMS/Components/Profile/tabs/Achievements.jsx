@@ -144,7 +144,7 @@ const Achievements = () => {
     if (achievementFile) {
       submissionData.append('achievementFile', achievementFile);
     }
-    submissionData.append('achievementDTO', new Blob([JSON.stringify(achievementDTO)], { type: 'application/json' }));
+    submissionData.append('achievementsDTO', new Blob([JSON.stringify(achievementDTO)], { type: 'application/json' }));
 
     try {
         let response;

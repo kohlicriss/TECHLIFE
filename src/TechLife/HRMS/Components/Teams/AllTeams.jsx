@@ -1,69 +1,116 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { publicinfoApi ,authApi} from '../../../../axiosInstance';
+import { publicinfoApi, authApi } from '../../../../axiosInstance';
 import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; 
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
 import ConfirmationModal from './ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Project Dropdown with Infinite Scroll (UPDATED WITH PAGINATION SUPPORT) ---
+// Utility Hook for Outside Click
+const useOutsideClick = (handler, ignoreRefs = []) => {
+    const ref = useRef(null);
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const isIgnored = ignoreRefs.some(
+                (r) => r.current && r.current.contains(event.target)
+            );
+            if (ref.current && !ref.current.contains(event.target) && !isIgnored) {
+                handler(event);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [handler, ignoreRefs]);
+    return ref;
+};
+
+// Project Dropdown with Infinite Scroll
 const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMoreData, setHasMoreData] = useState(true);
+    
+    // Pagination States
     const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [allDataLoaded, setAllDataLoaded] = useState(false);
+    const PAGE_SIZE = 10; 
     
     const isFetchingRef = useRef(false);
+    const scrollAreaRef = useRef(null);
+    const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
 
-    const PAGE_SIZE = 10;
-
-    const loadProjects = useCallback(async (page = 0, reset = false) => {
-        if (isFetchingRef.current) return;
-        if (!reset && !hasMore) return; 
+    // Load projects for the current page
+    const loadProjects = useCallback(async (page = 0, append = false) => {
+        if (isFetchingRef.current || (page > 0 && !hasMoreData)) return;
 
         isFetchingRef.current = true;
         setLoading(true);
         
         try {
+            console.log(`[API CALL - ProjectDropdown] Fetching projects: Page ${page}, Size ${PAGE_SIZE}`);
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/projectId/asc/projects`);
+            console.log(`[API SUCCESS - ProjectDropdown] Projects fetched for page ${page}:`, response.data);
             
-            // ✅ UPDATED: Use response.data.content for data and response.data.last for pagination
             const fetchedProjects = response.data?.content || [];
             const newProjects = Array.isArray(fetchedProjects) ? fetchedProjects : [];
-            const isLastPage = response.data?.last || false; // Check if this is the last page
             
-            setProjects(prev => {
-                const prevArray = Array.isArray(prev) ? prev : [];
-                return reset ? newProjects : [...prevArray, ...newProjects];
-            });
+            if (append) {
+                setProjects(prev => [...prev, ...newProjects]);
+            } else {
+                setProjects(newProjects);
+            }
             
             setCurrentPage(page);
-            // ✅ UPDATED: Use response.data.last to determine if there are more pages
-            setHasMore(!isLastPage);
+            setTotalPages(response.data?.totalPages || 1);
+            
+            // Check if we've reached the end using response.data.last
+            if (response.data?.last === true) {
+                setHasMoreData(false);
+                setAllDataLoaded(true);
+            } else {
+                setHasMoreData(true);
+            }
         } catch (error) {
-            console.error('Error fetching projects:', error);
-            setHasMore(false);
+            console.error('[API ERROR - ProjectDropdown] Error fetching projects:', error.response?.data || error.message);
+            if (!append) {
+                setProjects([]);
+                setTotalPages(1);
+            }
+            setHasMoreData(false);
         } finally {
             setLoading(false);
             isFetchingRef.current = false;
         }
-    }, [hasMore]);
+    }, [hasMoreData]);
+
+    // Handle scroll event for infinite loading
+    const handleScroll = useCallback((e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        
+        // Check if user scrolled near bottom (within 50px)
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            if (hasMoreData && !loading && !isFetchingRef.current) {
+                loadProjects(currentPage + 1, true);
+            }
+        }
+    }, [currentPage, hasMoreData, loading, loadProjects]);
 
     useEffect(() => {
         if (isOpen) {
-            loadProjects(0, true);
+            setSearchTerm('');
+            setProjects([]);
+            setCurrentPage(0);
+            setHasMoreData(true);
+            setAllDataLoaded(false);
+            loadProjects(0, false); 
         }
     }, [isOpen, loadProjects]);
-
-    const handleScroll = (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.target;
-        if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !isFetchingRef.current) {
-            loadProjects(currentPage + 1);
-        }
-    };
 
     const handleSelect = (project) => {
         onChange({ value: project.projectId, label: `${project.projectId}(${project.title})` });
@@ -82,7 +129,7 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <div 
                 onClick={toggleDropdown} 
                 className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${
@@ -120,39 +167,58 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                                 />
                             </div>
                         </div>
-                        <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-                            {filteredProjects.map(project => {
-                                const isSelected = value?.value === project.projectId;
-                                return (
-                                    <div 
-                                        key={project.projectId} 
-                                        onClick={() => handleSelect(project)} 
-                                        className={`p-3 cursor-pointer flex items-center justify-between ${
-                                            isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`
-                                        }`}
-                                    >
-                                        <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
-                                            <div className="font-medium">{project.projectId}({project.title})</div>
-                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                Client: {project.client} • Status: {project.projectStatus}
+                        <div 
+                            className="max-h-60 overflow-y-auto" 
+                            ref={scrollAreaRef}
+                            onScroll={handleScroll}
+                        >
+                            {filteredProjects.length > 0 ? (
+                                filteredProjects.map(project => {
+                                    const isSelected = value?.value === project.projectId;
+                                    return (
+                                        <div 
+                                            key={project.projectId} 
+                                            onClick={() => handleSelect(project)} 
+                                            className={`p-3 cursor-pointer flex items-center justify-between ${
+                                                isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`
+                                            }`}
+                                        >
+                                            <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                                                <div className="font-medium">{project.projectId}({project.title})</div>
+                                                <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    Client: {project.client} • Status: {project.projectStatus}
+                                                </div>
                                             </div>
+                                            {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
                                         </div>
-                                        {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
-                                    </div>
-                                );
-                            })}
-                            {loading && (
+                                    );
+                                })
+                            ) : searchTerm ? (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No projects matching "{searchTerm}"
+                                </div>
+                            ) : loading && projects.length === 0 ? (
                                 <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading projects...
+                                </div>
+                            ) : (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No projects found.
+                                </div>
+                            )}
+                            
+                            {loading && projects.length > 0 && (
+                                <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Loading more projects...
                                 </div>
                             )}
-                            {/* ✅ UPDATED: Show "End of projects" message when no more data */}
-                            {!hasMore && projects.length > 0 && (
-                                <div className={`p-4 text-center text-sm font-medium ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                                    🎯 End of projects
-                                </div>
-                            )}
                         </div>
+                        
+                        {allDataLoaded && projects.length > 0 && (
+                            <div className={`p-2 border-t text-center text-sm font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
+                                🎯 All projects loaded
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -160,78 +226,104 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 };
 
-// --- Employee Dropdown with Infinite Scroll (UPDATED WITH PAGINATION SUPPORT) ---
+// Employee Dropdown with Infinite Scroll
 const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = false, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMoreData, setHasMoreData] = useState(true);
+    
+    // Pagination States
     const [currentPage, setCurrentPage] = useState(0);
-    const { userData } = useContext(Context);
+    const [totalPages, setTotalPages] = useState(1);
+    const [allDataLoaded, setAllDataLoaded] = useState(false);
+    const PAGE_SIZE = 15;
     
     const isFetchingRef = useRef(false);
+    const scrollAreaRef = useRef(null);
+    const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
     
-    const PAGE_SIZE = 15;
-
-    const loadEmployees = useCallback(async (page = 0, reset = false) => {
-        if (isFetchingRef.current) return;
-        if (!reset && !hasMore) return;
+    // Load employees for the current page
+    const loadEmployees = useCallback(async (page = 0, append = false) => {
+        if (isFetchingRef.current || (page > 0 && !hasMoreData)) return;
 
         isFetchingRef.current = true;
         setLoading(true);
         
         try {
+            console.log(`[API CALL - EmployeeDropdown] Fetching employees: Page ${page}, Size ${PAGE_SIZE}`);
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/employees`);
+            console.log(`[API SUCCESS - EmployeeDropdown] Employees fetched for page ${page}:`, response.data);
             
-            // ✅ UPDATED: Use response.data.content for data and response.data.last for pagination
             const responseData = response.data || {};
             const fetchedEmployees = responseData.content || []; 
             const newEmployees = Array.isArray(fetchedEmployees) ? fetchedEmployees : [];
-            const isLastPage = responseData.last || false; // Check if this is the last page
             
-            setEmployees(prev => {
-                const prevArray = Array.isArray(prev) ? prev : [];
-                return reset ? newEmployees : [...prevArray, ...newEmployees];
-            });
+            if (append) {
+                setEmployees(prev => [...prev, ...newEmployees]);
+            } else {
+                setEmployees(newEmployees);
+            }
             
             setCurrentPage(page);
-            // ✅ UPDATED: Use response.data.last to determine if there are more pages
-            setHasMore(!isLastPage);
+            setTotalPages(responseData.totalPages || 1);
+            
+            // Check if we've reached the end using response.data.last
+            if (responseData.last === true) {
+                setHasMoreData(false);
+                setAllDataLoaded(true);
+            } else {
+                setHasMoreData(true);
+            }
         } catch (error) {
-            console.error('Error fetching employees:', error);
-            setHasMore(false);
+            console.error('[API ERROR - EmployeeDropdown] Error fetching employees:', error.response?.data || error.message);
+            if (!append) {
+                setEmployees([]);
+                setTotalPages(1);
+            }
+            setHasMoreData(false);
         } finally {
             setLoading(false);
             isFetchingRef.current = false; 
         }
-    }, [hasMore]);
+    }, [hasMoreData]);
+
+    // Handle scroll event for infinite loading
+    const handleScroll = useCallback((e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        
+        // Check if user scrolled near bottom (within 50px)
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            if (hasMoreData && !loading && !isFetchingRef.current) {
+                loadEmployees(currentPage + 1, true);
+            }
+        }
+    }, [currentPage, hasMoreData, loading, loadEmployees]);
 
     useEffect(() => {
         if (isOpen) {
-            loadEmployees(0, true);
+            setSearchTerm('');
+            setEmployees([]);
+            setCurrentPage(0);
+            setHasMoreData(true);
+            setAllDataLoaded(false);
+            loadEmployees(0, false);
         }
     }, [isOpen, loadEmployees]);
 
-    const handleScroll = (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.target;
-        
-        if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !isFetchingRef.current) {
-            loadEmployees(currentPage + 1);
-        }
-    };
-
     const handleSelect = (employee) => {
+        const employeeLabel = `${employee.displayName || employee.firstName + ' ' + employee.lastName} (${employee.employeeId})`;
         if (isMulti) {
             const currentValues = Array.isArray(value) ? value : [];
             const isSelected = currentValues.some(item => item.value === employee.employeeId);
             if (isSelected) {
                 onChange(currentValues.filter(item => item.value !== employee.employeeId));
             } else {
-                onChange([...currentValues, { value: employee.employeeId, label: `${employee.displayName} (${employee.employeeId})` }]);
+                onChange([...currentValues, { value: employee.employeeId, label: employeeLabel }]);
             }
         } else {
-            onChange({ value: employee.employeeId, label: `${employee.displayName} (${employee.employeeId})` });
+            onChange({ value: employee.employeeId, label: employeeLabel });
             setIsOpen(false);
         }
     };
@@ -242,15 +334,20 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
 
     const safeEmployees = Array.isArray(employees) ? employees : [];
     
-    const filteredEmployees = safeEmployees.filter(emp => 
-        emp.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredEmployees = safeEmployees.filter(emp => {
+        const displayName = emp.displayName || (emp.firstName + ' ' + emp.lastName);
+        return (
+            displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     const renderSelectedValue = () => {
+        const defaultPlaceholder = isMulti ? 'Select team members...' : 'Select a team lead...';
+        
         if (isMulti) {
             const currentValues = Array.isArray(value) ? value : [];
-            if (currentValues.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Select team members...</span>;
+            if (currentValues.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
             return (
                 <div className="flex flex-wrap gap-1">
                     {currentValues.map(item => (
@@ -261,13 +358,13 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                 </div>
             );
         } else {
-            if (!value) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Select a team lead...</span>;
+            if (!value) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
             return <span>{value.label}</span>;
         }
     };
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <div onClick={toggleDropdown} className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${error ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-200')} ${disabled ? 'opacity-50' : ''} ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}>
                 <div className="flex-1">{renderSelectedValue()}</div>
                 <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
@@ -281,28 +378,51 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                 <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`} />
                             </div>
                         </div>
-                        <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-                            {filteredEmployees.map(employee => {
-                                const isSelected = isMulti ? (Array.isArray(value) && value.some(item => item.value === employee.employeeId)) : value?.value === employee.employeeId;
-                                return (
-                                    <div key={employee.employeeId} onClick={() => handleSelect(employee)} className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
-                                        <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
-                                            <div className="font-medium">{employee.displayName}</div>
-                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
+                        <div 
+                            className="max-h-60 overflow-y-auto" 
+                            ref={scrollAreaRef}
+                            onScroll={handleScroll}
+                        >
+                            {filteredEmployees.length > 0 ? (
+                                filteredEmployees.map(employee => {
+                                    const isSelected = isMulti ? (Array.isArray(value) && value.some(item => item.value === employee.employeeId)) : value?.value === employee.employeeId;
+                                    const displayName = employee.displayName || (employee.firstName + ' ' + employee.lastName);
+                                    return (
+                                        <div key={employee.employeeId} onClick={() => handleSelect(employee)} className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
+                                            <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                                                <div className="font-medium">{displayName}</div>
+                                                <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
+                                            </div>
+                                            {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
                                         </div>
-                                        {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
-                                    </div>
-                                );
-                            })}
-                            {loading && <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Loading more employees...</div>}
+                                    );
+                                })
+                            ) : searchTerm ? (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No employees matching "{searchTerm}"
+                                </div>
+                            ) : loading && employees.length === 0 ? (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading employees...
+                                </div>
+                            ) : (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No employees found.
+                                </div>
+                            )}
                             
-                            {/* ✅ UPDATED: Show "End of employees" message when no more data */}
-                            {!hasMore && employees.length > 0 && (
-                                <div className={`p-4 text-center text-sm font-medium ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                                    👥 End of employees
+                            {loading && employees.length > 0 && (
+                                <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading more employees...
                                 </div>
                             )}
                         </div>
+                        
+                        {allDataLoaded && employees.length > 0 && (
+                            <div className={`p-2 border-t text-center text-sm font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
+                                👥 All employees loaded
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -310,6 +430,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
     );
 };
 
+// Loading and Error Components
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center h-64">
     <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-t-2 border-b-2 border-blue-500"></div>
@@ -323,6 +444,7 @@ const ErrorDisplay = ({ message }) => (
   </div>
 );
 
+// Main AllTeams Component
 const AllTeams = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -330,12 +452,12 @@ const AllTeams = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
-  const [expandedTeams, setExpandedTeams] = useState(new Set()); // Fixed initialization
+  const [expandedTeams, setExpandedTeams] = useState(new Set()); 
   const [searchTerm, setSearchTerm] = useState('');
-  const [matchedArray,setMatchedArray]=useState(null);
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); // New State
-  const [displayMode, setDisplayMode] = useState('MY_TEAMS'); // New state for view mode: 'MY_TEAMS' or 'ALL_TEAMS'
-  const [adminallteams, setAdminAllTeams] = useState([]); // State for ALL_TEAMS data
+  const [matchedArray, setMatchedArray] = useState(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); 
+  const [displayMode, setDisplayMode] = useState('MY_TEAMS'); 
+  const [adminallteams, setAdminAllTeams] = useState([]); 
 
   // Form state
   const [teamName, setTeamName] = useState('');
@@ -382,20 +504,21 @@ const AllTeams = () => {
         return;
       }
 
-      // Fetch teams based on the logged-in/target employee
+      console.log(`[API CALL - fetchTeams] Fetching teams for employee: ${employeeIdToFetch}`);
       const response = await publicinfoApi.get(`employee/team/${employeeIdToFetch}`);
+      console.log('[API SUCCESS - fetchTeams] Teams fetched:', response.data);
       
       const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
       setTeams(teamsArray || []);
       setError(null);
     } catch (err) {
+      console.error('[API ERROR - fetchTeams] Error fetching teams:', err.response?.data || err.message);
       setError(`Could not fetch teams data for employee ${employeeIdToFetch}.`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to fetch or load All Teams data, using the API endpoint directly
   const fetchAdminAllTeams = async () => {
     if (!matchedArray || !matchedArray.includes("ADMIN_FETCHING_ALLTEAMS")) {
       setAdminAllTeams([]);
@@ -404,20 +527,20 @@ const AllTeams = () => {
     }
     
     setLoading(true);
-    setAdminAllTeams([]); // Clear previous state
+    setAdminAllTeams([]);
     
     try {
-      // Use the actual API endpoint
+      console.log("[API CALL - fetchAdminAllTeams] Fetching all teams for admin view.");
       let response = await publicinfoApi.get(
-        "employee/0/19/employeeId/asc/teams"
+        "employee/0/19/teamId/asc/teams"
       );
       
-      const teamsData = response.data;
+      const teamsData = response.data.content;
       setAdminAllTeams(teamsData);
       console.log("Admin Fetched Teams (ALL_TEAMS view) ✅", teamsData);
       setError(null);
     } catch (error) {
-      console.log("Error From Admin Fetching All Teams ❌", error);
+      console.error("[API ERROR - fetchAdminAllTeams] Error From Admin Fetching All Teams ❌", error.response?.data || error.message);
       setAdminAllTeams([]); 
       setError('Failed to load all teams directory.');
     } finally {
@@ -425,15 +548,16 @@ const AllTeams = () => {
     }
   };
 
-
-   useEffect(() => {
+  useEffect(() => {
     if(loggedinuserRole) {
-        let fetchForPermissionArray=async()=>{
+        let fetchForPermissionArray = async () => {
             try {
-                let response=await authApi.get(`role-access/${loggedinuserRole}`);
+                console.log(`[API CALL - fetchForPermissionArray] Fetching role access for role: ${loggedinuserRole}`);
+                let response = await authApi.get(`role-access/${loggedinuserRole}`);
+                console.log('[API SUCCESS - fetchForPermissionArray] Role permissions fetched:', response.data);
                 setMatchedArray(response?.data?.permissions);
             } catch (error) {
-                console.log("error from Fetching Error matching Objects:",error);
+                console.error("[API ERROR - fetchForPermissionArray] Error from Fetching Error matching Objects:", error.response?.data || error.message);
             }
         }
         fetchForPermissionArray();
@@ -444,16 +568,12 @@ const AllTeams = () => {
     if (displayMode === 'MY_TEAMS') {
         fetchTeams();
     } else if (displayMode === 'ALL_TEAMS') {
-        // Run admin fetch when switching to ALL_TEAMS mode
         fetchAdminAllTeams();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMode, canCreateTeam, employeeIdToFetch, matchedArray]);
   
-  // Determine the current data source based on displayMode
   const currentDataSource = displayMode === 'MY_TEAMS' ? teams : adminallteams;
 
-  // Filter current data source based on search term
   const filteredCurrentTeams = (Array.isArray(currentDataSource) ? currentDataSource : []).filter(team =>
     team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -479,18 +599,18 @@ const AllTeams = () => {
         teamName,
         teamDescription: "Default Description",
         employeeIds: [teamLead?.value, ...teamMembers.map(member => member.value)].filter(Boolean),
-        projectId: selectedProject?.value // Send only the project ID
+        projectId: selectedProject?.value
     };
 
     try {
+        console.log('[API CALL - handleCreateTeam] Creating new team with data:', newTeamData);
         await publicinfoApi.post('employee/team', newTeamData);
+        console.log('[API SUCCESS - handleCreateTeam] Team created successfully.');
         
-        // Refresh My Teams list after creation
         if (displayMode === 'MY_TEAMS') {
             await fetchTeams();
         }
 
-        // Reset form
         setIsCreateModalOpen(false);
         setTeamName('');
         setTeamLead(null);
@@ -498,6 +618,7 @@ const AllTeams = () => {
         setSelectedProject(null);
         alert('Team created successfully!');
     } catch (err) {
+        console.error('[API ERROR - handleCreateTeam] Failed to create team:', err.response?.data || err.message);
         setFormErrors({ general: err.response?.data?.message || 'Failed to create team. Please check the data and try again.' });
     } finally {
         setIsSubmitting(false);
@@ -515,12 +636,13 @@ const AllTeams = () => {
     setIsSubmitting(true);
     
     try {
+        console.log(`[API CALL - confirmDelete] Deleting team with ID: ${selectedTeam.teamId}`);
         await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
+        console.log('[API SUCCESS - confirmDelete] Team deleted successfully.');
         
         if (displayMode === 'MY_TEAMS') {
             setTeams(teams.filter(t => t.teamId !== selectedTeam.teamId));
         } else if (displayMode === 'ALL_TEAMS') {
-            // Update the ALL TEAMS list if we are viewing it
             setAdminAllTeams(adminallteams.filter(t => t.teamId !== selectedTeam.teamId));
         }
         
@@ -528,6 +650,7 @@ const AllTeams = () => {
         setSelectedTeam(null);
         alert('Team deleted successfully!');
     } catch (err) {
+        console.error('[API ERROR - confirmDelete] Failed to delete team:', err.response?.data || err.message);
         alert('Failed to delete team.');
     } finally {
         setIsSubmitting(false);
@@ -555,7 +678,6 @@ const AllTeams = () => {
                         </div>
                         <button onClick={() => {
                             setIsCreateModalOpen(false);
-                            // Reset form
                             setTeamName('');
                             setTeamLead(null);
                             setTeamMembers([]);
@@ -603,7 +725,7 @@ const AllTeams = () => {
                                 <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
                                     Team Lead <span className="text-red-500">*</span>
                                 </label>
-                                <EmployeeDropdown value={teamLead} onChange={setTeamLead} theme={theme} error={formErrors.teamLead} />
+                                <EmployeeDropdown value={teamLead} onChange={setTeamLead} theme={theme} error={formErrors.teamLead} isMulti={false}/>
                                 {formErrors.teamLead && <p className="text-red-500 text-xs mt-1">{formErrors.teamLead}</p>}
                             </div>
                             <div>
@@ -630,7 +752,6 @@ const AllTeams = () => {
                         type="button" 
                         onClick={() => {
                             setIsCreateModalOpen(false);
-                            // Reset form
                             setTeamName('');
                             setTeamLead(null);
                             setTeamMembers([]);
@@ -675,34 +796,25 @@ const AllTeams = () => {
   const handleAllTeamsClick = () => {
     setDisplayMode('ALL_TEAMS');
     setIsRightSidebarOpen(false);
-    
-    // Logic to run when All Teams is clicked (runs the fetch which populates adminallteams)
     fetchAdminAllTeams();
   };
 
-  // Render content based on displayMode
   const renderContent = () => {
-    // Determine the current data source and title
     const isMyTeamsMode = displayMode === 'MY_TEAMS';
-    const teamsToRender = isMyTeamsMode ? teams : adminallteams;
     const teamTitle = isMyTeamsMode ? 'My Teams' : 'All Teams';
 
-    // Show loading spinner if currently loading data
     if (loading) {
         return <LoadingSpinner />;
     }
 
-    // Show error only if there is a general error on the page
     if (error && isMyTeamsMode) {
         return <ErrorDisplay message={error} />;
     }
     
-    // Filter the current list of teams
     const teamsToRenderAfterSearch = (Array.isArray(currentDataSource) ? currentDataSource : []).filter(team =>
         team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    // Check if loading has finished and the array is empty (for both modes)
     if (teamsToRenderAfterSearch.length === 0) {
         return (
             <div className="text-center py-12 sm:py-16 px-4">
@@ -724,17 +836,21 @@ const AllTeams = () => {
         );
     }
     
-    // Render Team Cards
     return (
         <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mx-4 sm:mx-0">
                 {teamsToRenderAfterSearch.map((team, index) => {
                     const teamId = team.teamId || index;
                     const isExpanded = isTeamExpanded(teamId);
-                    const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
-                    const hasMoreMembers = team.employees?.length > 5;
-                    // The teamLead variable is still optional and depends on data structure
-                    const teamLead = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD');
+                    
+                    const leadOrManager = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD' || emp.jobTitlePrimary === 'MANAGER');
+                    const otherMembers = team.employees?.filter(emp => emp !== leadOrManager) || [];
+                    
+                    const membersToShow = isExpanded ? otherMembers : otherMembers.slice(0, 4);
+                    const hasMoreMembers = otherMembers.length > 4;
+                    
+                    const membersToDisplay = leadOrManager ? [leadOrManager, ...membersToShow] : membersToShow;
+                    const teamLead = leadOrManager?.jobTitlePrimary === 'TEAM_LEAD' ? leadOrManager : null;
 
                     return (
                         <div key={teamId} className={`rounded-none sm:rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
@@ -744,10 +860,10 @@ const AllTeams = () => {
                                         <h2 className={`text-lg sm:text-xl font-bold break-words ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                             {team.teamName}
                                         </h2>
-                                        {teamLead && (
+                                        {leadOrManager && (
                                             <div className={`flex items-center text-sm sm:text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                                                 <FaUserShield className="mr-2 text-green-500 flex-shrink-0" />
-                                                <strong>Lead:</strong><span className="ml-1 break-words">{teamLead.displayName}</span>
+                                                <strong>{leadOrManager.jobTitlePrimary}:</strong><span className="ml-1 break-words">{leadOrManager.displayName || leadOrManager.firstName + ' ' + leadOrManager.lastName}</span>
                                             </div>
                                         )}
                                     </div>
@@ -755,7 +871,7 @@ const AllTeams = () => {
                                         <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
                                             <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
                                         </Link>
-                                        { matchedArray?.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
+                                        {matchedArray?.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
                                             <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
                                                 <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
                                             </button>
@@ -769,16 +885,28 @@ const AllTeams = () => {
                                 </h3>
                                 <div className="space-y-2">
                                     <div className="flex flex-wrap gap-1 sm:gap-2">
-                                        {membersToShow?.map(member => (
-                                            <span key={member.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full break-words ${
-                                                member.employeeId === employeeIdToFetch 
-                                                    ? theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800'
-                                                    : theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                                {member.displayName}
-                                                {member.employeeId === employeeIdToFetch && ' (You)'}
-                                            </span>
-                                        ))}
+                                        {membersToDisplay?.map(member => {
+                                                const displayName = member.displayName || (member.firstName + ' ' + member.lastName);
+                                                const isYou = member.employeeId === employeeIdToFetch;
+                                                const isLead = member.jobTitlePrimary === 'TEAM_LEAD' || member.jobTitlePrimary === 'MANAGER';
+                                                
+                                                let tagClass;
+                                                if (isYou) {
+                                                    tagClass = theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800';
+                                                } else if (isLead) {
+                                                    tagClass = theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-indigo-100 text-indigo-800';
+                                                } else {
+                                                    tagClass = theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800';
+                                                }
+
+                                            return (
+                                                <span key={member.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full break-words ${tagClass}`}>
+                                                    {displayName}
+                                                    {isYou && ' (You)'}
+                                                    {isLead && !isYou && ` (${member.jobTitlePrimary})`}
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                     {hasMoreMembers && (
                                         <button
@@ -788,7 +916,7 @@ const AllTeams = () => {
                                             {isExpanded ? (
                                                 <><span>Show Less</span><FaChevronUp className="w-3 h-3" /></>
                                             ) : (
-                                                <><span>+{team.employees.length - 5} more</span><FaChevronDown className="w-3 h-3" /></>
+                                                <><span>+{otherMembers.length - 4} more</span><FaChevronDown className="w-3 h-3" /></>
                                             )}
                                         </button>
                                     )}
@@ -798,7 +926,6 @@ const AllTeams = () => {
                     );
                 })}
             </div>
-            
         </>
     );
   };
@@ -808,7 +935,6 @@ const AllTeams = () => {
   return (
     <div className={`relative flex min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         
-        {/* Sticky Open Sidebar Button - Visible only if user has admin permission and sidebar is closed */}
         {hasAdminPermissions && !isRightSidebarOpen && (
             <button
                 onClick={() => setIsRightSidebarOpen(true)}
@@ -820,10 +946,8 @@ const AllTeams = () => {
             </button>
         )}
 
-        {/* Main Content Area - adjust margin based on sidebar state */}
         <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen ? 'lg:mr-60' : 'mr-0'}`}>
             <div className={`px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8`}>
-                {/* Existing content starts here */}
                 {fromContextMenu && targetEmployeeId && (
                     <div className={`mb-4 sm:mb-6 p-3 sm:p-4 mx-4 sm:mx-0 rounded-none sm:rounded-xl border-l-4 border-blue-500 shadow-md flex items-center space-x-3 ${theme === 'dark' ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
                         <FaEye className="flex-shrink-0" />
@@ -862,7 +986,6 @@ const AllTeams = () => {
 
                 {renderContent()}
 
-                {/* Existing Modals remain here */}
                 {renderCreateTeamModal()}
                 
                 <ConfirmationModal
@@ -877,15 +1000,12 @@ const AllTeams = () => {
             </div>
         </div>
 
-        {/* Right Sidebar - Desktop and Mobile (Navigation Sidebar) - Conditionally Rendered */}
         {hasAdminPermissions && (
             <aside
-                // Modified top and height to start below the fixed Navbar (h-16 or 64px)
                 className={`fixed top-16 right-0 h-[calc(100vh-4rem)] border-l transition-all duration-300 z-50 flex flex-col ${
                     isRightSidebarOpen ? 'w-60 translate-x-0' : 'w-0 translate-x-full'
                 } ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
             >
-                {/* Sticky Close Sidebar Button on the side (Desktop only) */}
                 {isRightSidebarOpen && (
                     <button
                         onClick={() => setIsRightSidebarOpen(false)}
@@ -899,7 +1019,6 @@ const AllTeams = () => {
 
                 <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
                     <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Navigation</h3>
-                    {/* FaTimes is kept for mobile close functionality inside the panel */}
                     <button
                         onClick={() => setIsRightSidebarOpen(false)}
                         className={`p-1 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
@@ -909,7 +1028,6 @@ const AllTeams = () => {
                     </button>
                 </div>
                 <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {/* My Teams button (Default Active) */}
                     <button
                         onClick={handleMyTeamsClick}
                         className={`w-full text-left py-2 px-3 rounded-lg font-medium flex items-center transition-colors ${
@@ -923,7 +1041,6 @@ const AllTeams = () => {
                         <FaUsers className="mr-2" size={16} />
                         My Teams
                     </button>
-                    {/* All Teams button (Displays "Under Progress" / Runs Admin Fetch) */}
                     <button
                         onClick={handleAllTeamsClick}
                         className={`w-full text-left py-2 px-3 rounded-lg font-medium flex items-center transition-colors ${
@@ -941,7 +1058,6 @@ const AllTeams = () => {
             </aside>
         )}
 
-        {/* Overlay for mobile view */}
         {isRightSidebarOpen && (
             <div
                 className="fixed inset-0 bg-black/50 z-40 lg:hidden"
