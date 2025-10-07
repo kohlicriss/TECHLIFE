@@ -22,7 +22,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
         setLoading(true);
         try {
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/employees`);
-            const newEmployees = response.data || [];
+            const newEmployees = response.data.content || [];
             
             setEmployees(prev => reset ? newEmployees : [...prev, ...newEmployees]);
             setCurrentPage(page);

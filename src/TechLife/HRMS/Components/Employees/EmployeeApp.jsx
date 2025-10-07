@@ -134,7 +134,7 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
       const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/departmentId/asc/all/departments`);
       console.log("Departments Response:", response.data);
       
-      const newDepartments = response.data || [];
+      const newDepartments = response.data.content || [];
       
       setDepartments(prev => reset ? newDepartments : [...prev, ...newDepartments]);
       setCurrentPage(page);
@@ -534,8 +534,8 @@ function EmployeeApp() {
       try {
         setLoading(true);
         const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
-        console.log("Employees Data from API:", response.data);
-        setEmployeeData(response.data);
+        console.log("Employees Data from API:", response.data.content);
+        setEmployeeData(response.data.content);
       } catch (err) {
         console.error("Error fetching employees:", err);
       } finally {
@@ -902,7 +902,7 @@ function EmployeeApp() {
       const response = await publicinfoApi.get(`employee/${page}/${TERMINATED_PAGE_SIZE}/employeeId/asc/terminated/employees`);
       console.log("Terminated Employees Response:", response.data);
       
-      const newEmployees = response.data || [];
+      const newEmployees = response.data.content || [];
       
       setTerminatedEmployeesData(prev => reset ? newEmployees : [...prev, ...newEmployees]);
       setTerminatedCurrentPage(page);
@@ -1490,7 +1490,7 @@ function EmployeeApp() {
                               </button>
                             )}
 
-                            <button
+                           {  matchedArray.includes("EMPLOYEE_VIEW_DOCS") && <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDocumentsClick(employee);
@@ -1503,10 +1503,10 @@ function EmployeeApp() {
                             >
                               <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" />
                               <span className="font-medium">Documents</span>
-                            </button>
+                            </button>}
 
                             {/* View Teams Button */}
-                            <button
+                           {  matchedArray.includes("VIEW_TEAM") && <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleViewTeamsClick(employee);
@@ -1519,7 +1519,7 @@ function EmployeeApp() {
                             >
                               <IoPeopleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
                               <span className="font-medium">View Teams</span>
-                            </button>
+                            </button>}
 
                             {hasAccess.includes("DELETE_USER") && (
                               <button
