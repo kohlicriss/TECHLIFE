@@ -347,10 +347,9 @@ const Profiles = () => {
                 )}
                 
                 {/* Name on top */}
-                <div className={`font-bold text-lg text-right mb-2 pr-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                <div className={`font-bold text-lg text-center mb-2 mx-auto ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
     {displayHeader?.name || display?.displayName}
 </div>
-
                 {/* Table-like layout: 3 columns without borders */}
                 <div className={`grid grid-cols-3 gap-x-2 text-xs ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
     
