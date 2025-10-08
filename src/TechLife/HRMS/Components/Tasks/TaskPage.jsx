@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useContext } from "re
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle, ChevronDown, Search } from "lucide-react";
 import { Context } from "../HrmsContext";
-import { publicinfoApi, tasksApi } from '../../../../axiosInstance';
+import { authApi, publicinfoApi, tasksApi } from '../../../../axiosInstance';
 
 const CalendarIcon = ({ theme }) => (
     <svg
@@ -121,7 +121,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
         setLoading(true);
         try {
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/public/employees`);
-            const newEmployees = response.data || [];
+            const newEmployees = response.data.content || [];
             
             const filteredNewEmployees = newEmployees.filter(emp => emp.employeeId !== userData?.employeeId);
             
@@ -341,6 +341,8 @@ const TasksPage = () => {
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState("MY_TASKS");
     const [projects, setProjects] = useState([]);
+      const [matchedArray,setMatchedArray]=useState(null);
+    
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -385,6 +387,40 @@ const TasksPage = () => {
         setDropdownValue(value);
     };
 
+
+              useEffect(()=>{
+                let fetchForPermissionArray=async()=>{
+                    try {
+                        let response=await authApi.get(`role-access/${loggedinuserRole}`);
+                        console.log("Response From AllTeams for Fetching Permissions Array from TAsks PAge:",response.data);
+                        setMatchedArray(response?.data?.permissions);
+                    } catch (error) {
+                        console.log("error from Fetching Error matching Objects:",error);
+                    }
+                }
+                fetchForPermissionArray();
+              },[])
+
+            
+            
+               const loggedinuserRole = userData?.roles[0] 
+              ? `ROLE_${userData.roles[0]}` 
+              : null;
+
+
+    // ✅ FIX: Extract 'content' property from API response for projects
+    const fetchProjects = async () => {
+        try {
+            const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
+            console.log("API Response for fetchProjects:", response.data);
+            
+            // FIX IS HERE: Ensure projects is always an array by checking for 'content'
+            setProjects(Array.isArray(response.data) ? response.data : response.data?.content || []); 
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
+    };
+
     const fetchTasks = useCallback(async () => {
         if (!userData) {
             setLoading(false);
@@ -419,10 +455,13 @@ const TasksPage = () => {
     }, [userData, employeeId, currentNumber, dropdownValue]);
 
     const fetchTasksAssignedByMe = useCallback(async () => {
-        if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
+        // 1. Initial Role and Permission Check
+        if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId || !matchedArray || !matchedArray.includes("TASK_TEAMLEAD_SIDEBAR")) {
             setAssignedByMeTasks([]);
             return;
         }
+
+        // API HIT logic
         try {
             const tlId = userData.employeeId;
             const url = `/${currentNumber}/${dropdownValue}/id/asc/${tlId}`;
@@ -441,29 +480,24 @@ const TasksPage = () => {
                 setAssignedByMeTasks([]);
             }
         }
-    }, [userData, currentNumber, dropdownValue]);
+    }, [userData, currentNumber, dropdownValue, matchedArray]); // matchedArray is a dependency
 
     useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
-                setProjects(response.data);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
         fetchProjects();
-    }, []);
+    }, []); // Only runs on component mount
 
     useEffect(() => {
-        if (userData) {
-            fetchTasks();
-            if (userData.roles[0] === "TEAM_LEAD") {
-                fetchTasksAssignedByMe();
-            }
+        if (!userData) return;
+        
+        if (displayMode === "MY_TASKS") {
+            // Fetch tasks assigned TO the user
+            fetchTasks(); 
+        } else if (displayMode === "ASSIGNED_BY_ME") {
+            // Fetch tasks assigned BY the user (will run inner checks for role/permission)
+            fetchTasksAssignedByMe(); 
         }
-    }, [fetchTasks, fetchTasksAssignedByMe, userData]);
+        // fetchTasks and fetchTasksAssignedByMe are already memoized by useCallback
+    }, [userData, displayMode, fetchTasks, fetchTasksAssignedByMe]); // Trigger fetch when mode changes
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -766,6 +800,61 @@ const TasksPage = () => {
                         error={isError}
                         disabled={isDisabled}
                     />
+                    {isError && (
+                        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p className="text-sm font-medium">{isError}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        if (name === 'projectId') {
+            return (
+                <div className="group relative" key={name}>
+                    <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                        {label}
+                        {required && <span className="text-red-500 ml-1 text-base">*</span>}
+                        {isDisabled && (
+                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                                theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                Read Only
+                            </span>
+                        )}
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={fieldValue}
+                            onChange={(e) => handleLocalFieldChange(e.target.value)}
+                            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none
+                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                                ${isError 
+                                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                    : theme === 'dark'
+                                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                                }
+                                ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            disabled={isDisabled}
+                        >
+                            <option value="">Choose Project</option>
+                            {/* Project structure is directly from API: {projectId, title} */}
+                            {projects.map((proj) => (
+                                <option key={proj.projectId} value={proj.projectId}>
+                                    ({proj.projectId}) {proj.title}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                     {isError && (
                         <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
                             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -1269,9 +1358,13 @@ const TasksPage = () => {
     const isMyTasksActive = displayMode === "MY_TASKS";
     const isAssignedByMeActive = displayMode === "ASSIGNED_BY_ME";
 
+    const teamLeadSidebarPermission = matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR");
+
     return (
         <div className={`flex min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
-            {isTeamLead && !isRightSidebarOpen && (
+            
+            {/* Toggle Button for Sidebar - Visible only with permission and when sidebar is closed */}
+            { teamLeadSidebarPermission && !isRightSidebarOpen && (
                 <button
                     onClick={() => setIsRightSidebarOpen(true)}
                     className="fixed right-0 top-1/2 -translate-y-1/2 p-2 rounded-l-lg bg-indigo-600 text-white shadow-lg z-50 hover:bg-indigo-700 transition-colors"
@@ -1281,8 +1374,10 @@ const TasksPage = () => {
                 </button>
             )}
 
-            <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen ? 'md:mr-80' : 'mr-0'} p-4 sm:p-6 lg:p-8`}>
-                {isRightSidebarOpen && isTeamLead && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsRightSidebarOpen(false)}></div>}
+            <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen && teamLeadSidebarPermission ? 'md:mr-80' : 'mr-0'} p-4 sm:p-6 lg:p-8`}>
+                
+                {/* Mobile Overlay - Visible only with permission and when sidebar is open */}
+                {isRightSidebarOpen && teamLeadSidebarPermission && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsRightSidebarOpen(false)}></div>}
 
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
@@ -1290,7 +1385,7 @@ const TasksPage = () => {
                             <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Task Dashboard</h1>
                         </div>
                         <div className="mt-4 sm:mt-0 flex gap-4">
-                            {hasAccess.includes("CREATE_TASK") && (
+                            {matchedArray?.includes("CREATE_TASK") && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="flex cursor-pointer items-center justify-center bg-indigo-600 text-white font-semibold py-2.5 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
@@ -1375,15 +1470,21 @@ const TasksPage = () => {
                 </div>
             </div>
 
-            {isTeamLead && (
+            {/* Right Sidebar - Conditionally rendered based on permission */}
+            {teamLeadSidebarPermission && (
                 <div className={`fixed inset-y-0 right-0 w-80 shadow-xl transform transition-transform duration-300 z-40 ${isRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-                    <button
-                        onClick={() => setIsRightSidebarOpen(false)}
-                        className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
-                        aria-label="Close Team Sidebar"
-                    >
-                        <ChevronRight size={24} />
-                    </button>
+                    
+                    {/* Sticky Close Button (Arrow) on the side */}
+                    {isRightSidebarOpen && (
+                        <button
+                            onClick={() => setIsRightSidebarOpen(false)}
+                            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
+                            aria-label="Close Team Sidebar"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    )}
+                    
                     <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Team Dashboard</h3>
                     </div>

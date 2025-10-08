@@ -1,54 +1,116 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { publicinfoApi ,authApi} from '../../../../axiosInstance';
-import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch } from 'react-icons/fa';
+import { publicinfoApi, authApi } from '../../../../axiosInstance';
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; 
 import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { Context } from '../HrmsContext';
 import ConfirmationModal from './ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Project Dropdown with Infinite Scroll ---
+// Utility Hook for Outside Click
+const useOutsideClick = (handler, ignoreRefs = []) => {
+    const ref = useRef(null);
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const isIgnored = ignoreRefs.some(
+                (r) => r.current && r.current.contains(event.target)
+            );
+            if (ref.current && !ref.current.contains(event.target) && !isIgnored) {
+                handler(event);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [handler, ignoreRefs]);
+    return ref;
+};
+
+// Project Dropdown with Infinite Scroll
 const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const [currentPage, setCurrentPage] = useState(0);
+    const [hasMoreData, setHasMoreData] = useState(true);
     
-    const PAGE_SIZE = 10;
+    // Pagination States
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [allDataLoaded, setAllDataLoaded] = useState(false);
+    const PAGE_SIZE = 10; 
+    
+    const isFetchingRef = useRef(false);
+    const scrollAreaRef = useRef(null);
+    const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
 
-    const loadProjects = useCallback(async (page = 0, reset = false) => {
-        if (loading || (!hasMore && !reset)) return;
-        
+    // Load projects for the current page
+    const loadProjects = useCallback(async (page = 0, append = false) => {
+        if (isFetchingRef.current || (page > 0 && !hasMoreData)) return;
+
+        isFetchingRef.current = true;
         setLoading(true);
+        
         try {
+            console.log(`[API CALL - ProjectDropdown] Fetching projects: Page ${page}, Size ${PAGE_SIZE}`);
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/projectId/asc/projects`);
-            const newProjects = response.data || [];
+            console.log(`[API SUCCESS - ProjectDropdown] Projects fetched for page ${page}:`, response.data);
             
-            setProjects(prev => reset ? newProjects : [...prev, ...newProjects]);
+            const fetchedProjects = response.data?.content || [];
+            const newProjects = Array.isArray(fetchedProjects) ? fetchedProjects : [];
+            
+            if (append) {
+                setProjects(prev => [...prev, ...newProjects]);
+            } else {
+                setProjects(newProjects);
+            }
+            
             setCurrentPage(page);
-            setHasMore(newProjects.length === PAGE_SIZE);
+            setTotalPages(response.data?.totalPages || 1);
+            
+            // Check if we've reached the end using response.data.last
+            if (response.data?.last === true) {
+                setHasMoreData(false);
+                setAllDataLoaded(true);
+            } else {
+                setHasMoreData(true);
+            }
         } catch (error) {
-            console.error('Error fetching projects:', error);
-            setHasMore(false);
+            console.error('[API ERROR - ProjectDropdown] Error fetching projects:', error.response?.data || error.message);
+            if (!append) {
+                setProjects([]);
+                setTotalPages(1);
+            }
+            setHasMoreData(false);
         } finally {
             setLoading(false);
+            isFetchingRef.current = false;
         }
-    }, []);
+    }, [hasMoreData]);
+
+    // Handle scroll event for infinite loading
+    const handleScroll = useCallback((e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        
+        // Check if user scrolled near bottom (within 50px)
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            if (hasMoreData && !loading && !isFetchingRef.current) {
+                loadProjects(currentPage + 1, true);
+            }
+        }
+    }, [currentPage, hasMoreData, loading, loadProjects]);
 
     useEffect(() => {
         if (isOpen) {
-            loadProjects(0, true);
+            setSearchTerm('');
+            setProjects([]);
+            setCurrentPage(0);
+            setHasMoreData(true);
+            setAllDataLoaded(false);
+            loadProjects(0, false); 
         }
     }, [isOpen, loadProjects]);
-
-    const handleScroll = (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.target;
-        if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !loading) {
-            loadProjects(currentPage + 1);
-        }
-    };
 
     const handleSelect = (project) => {
         onChange({ value: project.projectId, label: `${project.projectId}(${project.title})` });
@@ -59,13 +121,15 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
         if (!disabled) setIsOpen(!isOpen);
     };
 
-    const filteredProjects = projects.filter(proj => 
+    const safeProjects = Array.isArray(projects) ? projects : [];
+
+    const filteredProjects = safeProjects.filter(proj => 
         proj.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         proj.projectId?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <div 
                 onClick={toggleDropdown} 
                 className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${
@@ -103,38 +167,58 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                                 />
                             </div>
                         </div>
-                        <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-                            {filteredProjects.map(project => {
-                                const isSelected = value?.value === project.projectId;
-                                return (
-                                    <div 
-                                        key={project.projectId} 
-                                        onClick={() => handleSelect(project)} 
-                                        className={`p-3 cursor-pointer flex items-center justify-between ${
-                                            isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`
-                                        }`}
-                                    >
-                                        <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
-                                            <div className="font-medium">{project.projectId}({project.title})</div>
-                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                Client: {project.client} • Status: {project.projectStatus}
+                        <div 
+                            className="max-h-60 overflow-y-auto" 
+                            ref={scrollAreaRef}
+                            onScroll={handleScroll}
+                        >
+                            {filteredProjects.length > 0 ? (
+                                filteredProjects.map(project => {
+                                    const isSelected = value?.value === project.projectId;
+                                    return (
+                                        <div 
+                                            key={project.projectId} 
+                                            onClick={() => handleSelect(project)} 
+                                            className={`p-3 cursor-pointer flex items-center justify-between ${
+                                                isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`
+                                            }`}
+                                        >
+                                            <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                                                <div className="font-medium">{project.projectId}({project.title})</div>
+                                                <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    Client: {project.client} • Status: {project.projectStatus}
+                                                </div>
                                             </div>
+                                            {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
                                         </div>
-                                        {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
-                                    </div>
-                                );
-                            })}
-                            {loading && (
+                                    );
+                                })
+                            ) : searchTerm ? (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No projects matching "{searchTerm}"
+                                </div>
+                            ) : loading && projects.length === 0 ? (
                                 <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading projects...
+                                </div>
+                            ) : (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No projects found.
+                                </div>
+                            )}
+                            
+                            {loading && projects.length > 0 && (
+                                <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Loading more projects...
                                 </div>
                             )}
-                            {!hasMore && projects.length > 0 && (
-                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                                    No more projects
-                                </div>
-                            )}
                         </div>
+                        
+                        {allDataLoaded && projects.length > 0 && (
+                            <div className={`p-2 border-t text-center text-sm font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
+                                🎯 All projects loaded
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -142,60 +226,104 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 };
 
-// --- Employee Dropdown with Infinite Scroll ---
-const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = false }) => {
+// Employee Dropdown with Infinite Scroll
+const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = false, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const [currentPage, setCurrentPage] = useState(0);
-    const { userData } = useContext(Context);
+    const [hasMoreData, setHasMoreData] = useState(true);
     
+    // Pagination States
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [allDataLoaded, setAllDataLoaded] = useState(false);
     const PAGE_SIZE = 15;
+    
+    const isFetchingRef = useRef(false);
+    const scrollAreaRef = useRef(null);
+    const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
+    
+    // Load employees for the current page
+    const loadEmployees = useCallback(async (page = 0, append = false) => {
+        if (isFetchingRef.current || (page > 0 && !hasMoreData)) return;
 
-    const loadEmployees = useCallback(async (page = 0, reset = false) => {
-        if (loading || (!hasMore && !reset)) return;
-        
+        isFetchingRef.current = true;
         setLoading(true);
+        
         try {
+            console.log(`[API CALL - EmployeeDropdown] Fetching employees: Page ${page}, Size ${PAGE_SIZE}`);
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/employees`);
-            const newEmployees = response.data || [];
+            console.log(`[API SUCCESS - EmployeeDropdown] Employees fetched for page ${page}:`, response.data);
             
-            setEmployees(prev => reset ? newEmployees : [...prev, ...newEmployees]);
+            const responseData = response.data || {};
+            const fetchedEmployees = responseData.content || []; 
+            const newEmployees = Array.isArray(fetchedEmployees) ? fetchedEmployees : [];
+            
+            if (append) {
+                setEmployees(prev => [...prev, ...newEmployees]);
+            } else {
+                setEmployees(newEmployees);
+            }
+            
             setCurrentPage(page);
-            setHasMore(newEmployees.length === PAGE_SIZE);
+            setTotalPages(responseData.totalPages || 1);
+            
+            // Check if we've reached the end using response.data.last
+            if (responseData.last === true) {
+                setHasMoreData(false);
+                setAllDataLoaded(true);
+            } else {
+                setHasMoreData(true);
+            }
         } catch (error) {
-            console.error('Error fetching employees:', error);
+            console.error('[API ERROR - EmployeeDropdown] Error fetching employees:', error.response?.data || error.message);
+            if (!append) {
+                setEmployees([]);
+                setTotalPages(1);
+            }
+            setHasMoreData(false);
         } finally {
             setLoading(false);
+            isFetchingRef.current = false; 
         }
-    }, [loading, hasMore]);
+    }, [hasMoreData]);
+
+    // Handle scroll event for infinite loading
+    const handleScroll = useCallback((e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        
+        // Check if user scrolled near bottom (within 50px)
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            if (hasMoreData && !loading && !isFetchingRef.current) {
+                loadEmployees(currentPage + 1, true);
+            }
+        }
+    }, [currentPage, hasMoreData, loading, loadEmployees]);
 
     useEffect(() => {
         if (isOpen) {
-            loadEmployees(0, true);
+            setSearchTerm('');
+            setEmployees([]);
+            setCurrentPage(0);
+            setHasMoreData(true);
+            setAllDataLoaded(false);
+            loadEmployees(0, false);
         }
     }, [isOpen, loadEmployees]);
 
-    const handleScroll = (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.target;
-        if (scrollHeight - scrollTop <= clientHeight + 50 && hasMore && !loading) {
-            loadEmployees(currentPage + 1);
-        }
-    };
-
     const handleSelect = (employee) => {
+        const employeeLabel = `${employee.displayName || employee.firstName + ' ' + employee.lastName} (${employee.employeeId})`;
         if (isMulti) {
             const currentValues = Array.isArray(value) ? value : [];
             const isSelected = currentValues.some(item => item.value === employee.employeeId);
             if (isSelected) {
                 onChange(currentValues.filter(item => item.value !== employee.employeeId));
             } else {
-                onChange([...currentValues, { value: employee.employeeId, label: `${employee.displayName} (${employee.employeeId})` }]);
+                onChange([...currentValues, { value: employee.employeeId, label: employeeLabel }]);
             }
         } else {
-            onChange({ value: employee.employeeId, label: `${employee.displayName} (${employee.employeeId})` });
+            onChange({ value: employee.employeeId, label: employeeLabel });
             setIsOpen(false);
         }
     };
@@ -204,32 +332,39 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
         if (!disabled) setIsOpen(!isOpen);
     };
 
-    const filteredEmployees = employees.filter(emp => 
-        emp.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const safeEmployees = Array.isArray(employees) ? employees : [];
+    
+    const filteredEmployees = safeEmployees.filter(emp => {
+        const displayName = emp.displayName || (emp.firstName + ' ' + emp.lastName);
+        return (
+            displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     const renderSelectedValue = () => {
+        const defaultPlaceholder = isMulti ? 'Select team members...' : 'Select a team lead...';
+        
         if (isMulti) {
             const currentValues = Array.isArray(value) ? value : [];
-            if (currentValues.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Select team members...</span>;
+            if (currentValues.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
             return (
                 <div className="flex flex-wrap gap-1">
                     {currentValues.map(item => (
-                        <div key={item.value} className={`text-xs font-semibold px-2 py-1 rounded-full ${theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
+                        <div key={item.value} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
                             {item.label}
                         </div>
                     ))}
                 </div>
             );
         } else {
-            if (!value) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>Select a team lead...</span>;
+            if (!value) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
             return <span>{value.label}</span>;
         }
     };
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <div onClick={toggleDropdown} className={`w-full p-3 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between ${error ? 'border-red-300' : (theme === 'dark' ? 'border-gray-600' : 'border-gray-200')} ${disabled ? 'opacity-50' : ''} ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}>
                 <div className="flex-1">{renderSelectedValue()}</div>
                 <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
@@ -243,21 +378,51 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                 <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`} />
                             </div>
                         </div>
-                        <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-                            {filteredEmployees.map(employee => {
-                                const isSelected = isMulti ? (Array.isArray(value) && value.some(item => item.value === employee.employeeId)) : value?.value === employee.employeeId;
-                                return (
-                                    <div key={employee.employeeId} onClick={() => handleSelect(employee)} className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
-                                        <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
-                                            <div className="font-medium">{employee.displayName}</div>
-                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
+                        <div 
+                            className="max-h-60 overflow-y-auto" 
+                            ref={scrollAreaRef}
+                            onScroll={handleScroll}
+                        >
+                            {filteredEmployees.length > 0 ? (
+                                filteredEmployees.map(employee => {
+                                    const isSelected = isMulti ? (Array.isArray(value) && value.some(item => item.value === employee.employeeId)) : value?.value === employee.employeeId;
+                                    const displayName = employee.displayName || (employee.firstName + ' ' + employee.lastName);
+                                    return (
+                                        <div key={employee.employeeId} onClick={() => handleSelect(employee)} className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
+                                            <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                                                <div className="font-medium">{displayName}</div>
+                                                <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
+                                            </div>
+                                            {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
                                         </div>
-                                        {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
-                                    </div>
-                                );
-                            })}
-                            {loading && <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Loading...</div>}
+                                    );
+                                })
+                            ) : searchTerm ? (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No employees matching "{searchTerm}"
+                                </div>
+                            ) : loading && employees.length === 0 ? (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading employees...
+                                </div>
+                            ) : (
+                                <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    No employees found.
+                                </div>
+                            )}
+                            
+                            {loading && employees.length > 0 && (
+                                <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Loading more employees...
+                                </div>
+                            )}
                         </div>
+                        
+                        {allDataLoaded && employees.length > 0 && (
+                            <div className={`p-2 border-t text-center text-sm font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
+                                👥 All employees loaded
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -265,6 +430,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
     );
 };
 
+// Loading and Error Components
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center h-64">
     <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-t-2 border-b-2 border-blue-500"></div>
@@ -278,6 +444,7 @@ const ErrorDisplay = ({ message }) => (
   </div>
 );
 
+// Main AllTeams Component
 const AllTeams = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -285,9 +452,12 @@ const AllTeams = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
-  const [expandedTeams, setExpandedTeams] = useState(new Set());
+  const [expandedTeams, setExpandedTeams] = useState(new Set()); 
   const [searchTerm, setSearchTerm] = useState('');
-  const [matchedArray,setMatchedArray]=useState(null);
+  const [matchedArray, setMatchedArray] = useState(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); 
+  const [displayMode, setDisplayMode] = useState('MY_TEAMS'); 
+  const [adminallteams, setAdminAllTeams] = useState([]); 
 
   // Form state
   const [teamName, setTeamName] = useState('');
@@ -296,7 +466,6 @@ const AllTeams = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [permissionArray,setPermissionArray]=useState(null)
 
   const { userData, theme } = useContext(Context);
   const userRoles = userData?.roles || [];
@@ -310,7 +479,9 @@ const AllTeams = () => {
 
   const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : userData?.employeeId;
 
-  console.log('🔍 URL Parameters:', { fromContextMenu, targetEmployeeId, employeeIdToFetch });
+  const loggedinuserRole = userData?.roles[0] 
+  ? `ROLE_${userData.roles[0]}` 
+  : null;
 
   const toggleTeamExpansion = (teamId) => {
     const newExpandedTeams = new Set(expandedTeams);
@@ -333,57 +504,77 @@ const AllTeams = () => {
         return;
       }
 
-      console.log(`🚀 Fetching teams for employee: ${employeeIdToFetch}`);
-      
+      console.log(`[API CALL - fetchTeams] Fetching teams for employee: ${employeeIdToFetch}`);
       const response = await publicinfoApi.get(`employee/team/${employeeIdToFetch}`);
-      console.log('📊 Teams API Response:', response.data);
+      console.log('[API SUCCESS - fetchTeams] Teams fetched:', response.data);
       
       const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
       setTeams(teamsArray || []);
       setError(null);
     } catch (err) {
-      console.error("❌ Error fetching teams:", err);
+      console.error('[API ERROR - fetchTeams] Error fetching teams:', err.response?.data || err.message);
       setError(`Could not fetch teams data for employee ${employeeIdToFetch}.`);
     } finally {
       setLoading(false);
     }
   };
 
-
-  useEffect(()=>{
-    let fetchForPermissionArray=async()=>{
-        try {
-            let response=await authApi.get(`role-access/${loggedinuserRole}`);
-            console.log("Response From AllTeams for Fetching Permissions Array:",response.data);
-            setMatchedArray(response?.data?.permissions);
-        } catch (error) {
-            console.log("error from Fetching Error matching Objects:",error);
-        }
+  const fetchAdminAllTeams = async () => {
+    if (!matchedArray || !matchedArray.includes("ADMIN_FETCHING_ALLTEAMS")) {
+      setAdminAllTeams([]);
+      setLoading(false);
+      return;
     }
-    fetchForPermissionArray();
-  },[])
-
-  console.log(matchedArray)
-
-
-   const loggedinuserRole = userData?.roles[0] 
-  ? `ROLE_${userData.roles[0]}` 
-  : null;
-
- 
-
-   
-
-   
-
+    
+    setLoading(true);
+    setAdminAllTeams([]);
+    
+    try {
+      console.log("[API CALL - fetchAdminAllTeams] Fetching all teams for admin view.");
+      let response = await publicinfoApi.get(
+        "employee/0/19/teamId/asc/teams"
+      );
+      
+      const teamsData = response.data.content;
+      setAdminAllTeams(teamsData);
+      console.log("Admin Fetched Teams (ALL_TEAMS view) ✅", teamsData);
+      setError(null);
+    } catch (error) {
+      console.error("[API ERROR - fetchAdminAllTeams] Error From Admin Fetching All Teams ❌", error.response?.data || error.message);
+      setAdminAllTeams([]); 
+      setError('Failed to load all teams directory.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    console.log('🔄 useEffect triggered:', { canCreateTeam, employeeIdToFetch });
-    fetchTeams();
-  }, [canCreateTeam, employeeIdToFetch]);
+    if(loggedinuserRole) {
+        let fetchForPermissionArray = async () => {
+            try {
+                console.log(`[API CALL - fetchForPermissionArray] Fetching role access for role: ${loggedinuserRole}`);
+                let response = await authApi.get(`role-access/${loggedinuserRole}`);
+                console.log('[API SUCCESS - fetchForPermissionArray] Role permissions fetched:', response.data);
+                setMatchedArray(response?.data?.permissions);
+            } catch (error) {
+                console.error("[API ERROR - fetchForPermissionArray] Error from Fetching Error matching Objects:", error.response?.data || error.message);
+            }
+        }
+        fetchForPermissionArray();
+    }
+  },[loggedinuserRole]);
+
+  useEffect(() => {
+    if (displayMode === 'MY_TEAMS') {
+        fetchTeams();
+    } else if (displayMode === 'ALL_TEAMS') {
+        fetchAdminAllTeams();
+    }
+  }, [displayMode, canCreateTeam, employeeIdToFetch, matchedArray]);
   
-  // Filter teams based on search term
-  const filteredTeams = teams.filter(team =>
+  const currentDataSource = displayMode === 'MY_TEAMS' ? teams : adminallteams;
+
+  const filteredCurrentTeams = (Array.isArray(currentDataSource) ? currentDataSource : []).filter(team =>
     team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -408,18 +599,18 @@ const AllTeams = () => {
         teamName,
         teamDescription: "Default Description",
         employeeIds: [teamLead?.value, ...teamMembers.map(member => member.value)].filter(Boolean),
-        projectId: selectedProject?.value // Send only the project ID
+        projectId: selectedProject?.value
     };
 
-    console.log('🚀 Creating team with data:', newTeamData);
-
     try {
-        const response = await publicinfoApi.post('employee/team', newTeamData);
-        console.log('✅ Team created successfully:', response.data);
+        console.log('[API CALL - handleCreateTeam] Creating new team with data:', newTeamData);
+        await publicinfoApi.post('employee/team', newTeamData);
+        console.log('[API SUCCESS - handleCreateTeam] Team created successfully.');
         
-        await fetchTeams();
+        if (displayMode === 'MY_TEAMS') {
+            await fetchTeams();
+        }
 
-        // Reset form
         setIsCreateModalOpen(false);
         setTeamName('');
         setTeamLead(null);
@@ -427,7 +618,7 @@ const AllTeams = () => {
         setSelectedProject(null);
         alert('Team created successfully!');
     } catch (err) {
-        console.error("❌ Error creating team:", err);
+        console.error('[API ERROR - handleCreateTeam] Failed to create team:', err.response?.data || err.message);
         setFormErrors({ general: err.response?.data?.message || 'Failed to create team. Please check the data and try again.' });
     } finally {
         setIsSubmitting(false);
@@ -435,7 +626,6 @@ const AllTeams = () => {
   };
 
   const handleDeleteClick = (team) => {
-    console.log('🗑️ Delete team clicked:', team);
     setSelectedTeam(team);
     setIsDeleteModalOpen(true);
   };
@@ -444,18 +634,23 @@ const AllTeams = () => {
     if (!selectedTeam) return;
 
     setIsSubmitting(true);
-    console.log('🚀 Deleting team:', selectedTeam.teamId);
     
     try {
-        const response = await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
-        console.log('✅ Team deleted successfully:', response.data);
+        console.log(`[API CALL - confirmDelete] Deleting team with ID: ${selectedTeam.teamId}`);
+        await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
+        console.log('[API SUCCESS - confirmDelete] Team deleted successfully.');
         
-        setTeams(teams.filter(t => t.teamId !== selectedTeam.teamId));
+        if (displayMode === 'MY_TEAMS') {
+            setTeams(teams.filter(t => t.teamId !== selectedTeam.teamId));
+        } else if (displayMode === 'ALL_TEAMS') {
+            setAdminAllTeams(adminallteams.filter(t => t.teamId !== selectedTeam.teamId));
+        }
+        
         setIsDeleteModalOpen(false);
         setSelectedTeam(null);
         alert('Team deleted successfully!');
     } catch (err) {
-        console.error("❌ Error deleting team:", err);
+        console.error('[API ERROR - confirmDelete] Failed to delete team:', err.response?.data || err.message);
         alert('Failed to delete team.');
     } finally {
         setIsSubmitting(false);
@@ -483,7 +678,6 @@ const AllTeams = () => {
                         </div>
                         <button onClick={() => {
                             setIsCreateModalOpen(false);
-                            // Reset form
                             setTeamName('');
                             setTeamLead(null);
                             setTeamMembers([]);
@@ -531,7 +725,7 @@ const AllTeams = () => {
                                 <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
                                     Team Lead <span className="text-red-500">*</span>
                                 </label>
-                                <EmployeeDropdown value={teamLead} onChange={setTeamLead} theme={theme} error={formErrors.teamLead} />
+                                <EmployeeDropdown value={teamLead} onChange={setTeamLead} theme={theme} error={formErrors.teamLead} isMulti={false}/>
                                 {formErrors.teamLead && <p className="text-red-500 text-xs mt-1">{formErrors.teamLead}</p>}
                             </div>
                             <div>
@@ -558,7 +752,6 @@ const AllTeams = () => {
                         type="button" 
                         onClick={() => {
                             setIsCreateModalOpen(false);
-                            // Reset form
                             setTeamName('');
                             setTeamLead(null);
                             setTeamMembers([]);
@@ -595,161 +788,282 @@ const AllTeams = () => {
     );
   };
 
-  return (
-    <div className={`px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        {fromContextMenu && targetEmployeeId && (
-            <div className={`mb-4 sm:mb-6 p-3 sm:p-4 mx-4 sm:mx-0 rounded-none sm:rounded-xl border-l-4 border-blue-500 shadow-md flex items-center space-x-3 ${theme === 'dark' ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
-                <FaEye className="flex-shrink-0" />
-                <p className="font-semibold text-sm sm:text-base break-words">
-                    🔍 Viewing teams for employee: <span className="font-mono">{targetEmployeeId}</span>
+  const handleMyTeamsClick = () => {
+    setDisplayMode('MY_TEAMS');
+    setIsRightSidebarOpen(false);
+  };
+
+  const handleAllTeamsClick = () => {
+    setDisplayMode('ALL_TEAMS');
+    setIsRightSidebarOpen(false);
+    fetchAdminAllTeams();
+  };
+
+  const renderContent = () => {
+    const isMyTeamsMode = displayMode === 'MY_TEAMS';
+    const teamTitle = isMyTeamsMode ? 'My Teams' : 'All Teams';
+
+    if (loading) {
+        return <LoadingSpinner />;
+    }
+
+    if (error && isMyTeamsMode) {
+        return <ErrorDisplay message={error} />;
+    }
+    
+    const teamsToRenderAfterSearch = (Array.isArray(currentDataSource) ? currentDataSource : []).filter(team =>
+        team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    if (teamsToRenderAfterSearch.length === 0) {
+        return (
+            <div className="text-center py-12 sm:py-16 px-4">
+                <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                }`}>
+                    <FaUsers className={`w-8 h-8 sm:w-10 sm:h-10 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                </div>
+                <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                    {searchTerm ? `No Teams Found matching "${searchTerm}"` : `${teamTitle} Not Available`}
+                </h2>
+                <p className={`text-sm sm:text-base mb-4 max-w-md mx-auto ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {isMyTeamsMode
+                        ? 'You are not part of any teams yet. Ask your manager to add you.'
+                        : 'No teams are currently listed in the directory or unable to fetch directory data.'
+                    }
                 </p>
             </div>
+        );
+    }
+    
+    return (
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mx-4 sm:mx-0">
+                {teamsToRenderAfterSearch.map((team, index) => {
+                    const teamId = team.teamId || index;
+                    const isExpanded = isTeamExpanded(teamId);
+                    
+                    const leadOrManager = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD' || emp.jobTitlePrimary === 'MANAGER');
+                    const otherMembers = team.employees?.filter(emp => emp !== leadOrManager) || [];
+                    
+                    const membersToShow = isExpanded ? otherMembers : otherMembers.slice(0, 4);
+                    const hasMoreMembers = otherMembers.length > 4;
+                    
+                    const membersToDisplay = leadOrManager ? [leadOrManager, ...membersToShow] : membersToShow;
+                    const teamLead = leadOrManager?.jobTitlePrimary === 'TEAM_LEAD' ? leadOrManager : null;
+
+                    return (
+                        <div key={teamId} className={`rounded-none sm:rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
+                            <div className="p-4 sm:p-5">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className={`text-lg sm:text-xl font-bold break-words ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                            {team.teamName}
+                                        </h2>
+                                        {leadOrManager && (
+                                            <div className={`flex items-center text-sm sm:text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                <FaUserShield className="mr-2 text-green-500 flex-shrink-0" />
+                                                <strong>{leadOrManager.jobTitlePrimary}:</strong><span className="ml-1 break-words">{leadOrManager.displayName || leadOrManager.firstName + ' ' + leadOrManager.lastName}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex space-x-2 flex-shrink-0">
+                                        <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
+                                            <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
+                                        </Link>
+                                        {matchedArray?.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
+                                            <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
+                                                <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={`px-4 sm:px-5 py-3 sm:py-4 border-t mt-auto ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                                <h3 className={`font-semibold mb-2 text-sm sm:text-base ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    Members ({team.employees?.length || 0})
+                                </h3>
+                                <div className="space-y-2">
+                                    <div className="flex flex-wrap gap-1 sm:gap-2">
+                                        {membersToDisplay?.map(member => {
+                                                const displayName = member.displayName || (member.firstName + ' ' + member.lastName);
+                                                const isYou = member.employeeId === employeeIdToFetch;
+                                                const isLead = member.jobTitlePrimary === 'TEAM_LEAD' || member.jobTitlePrimary === 'MANAGER';
+                                                
+                                                let tagClass;
+                                                if (isYou) {
+                                                    tagClass = theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800';
+                                                } else if (isLead) {
+                                                    tagClass = theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-indigo-100 text-indigo-800';
+                                                } else {
+                                                    tagClass = theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800';
+                                                }
+
+                                            return (
+                                                <span key={member.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full break-words ${tagClass}`}>
+                                                    {displayName}
+                                                    {isYou && ' (You)'}
+                                                    {isLead && !isYou && ` (${member.jobTitlePrimary})`}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                    {hasMoreMembers && (
+                                        <button
+                                            onClick={() => toggleTeamExpansion(teamId)}
+                                            className="flex items-center space-x-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                                        >
+                                            {isExpanded ? (
+                                                <><span>Show Less</span><FaChevronUp className="w-3 h-3" /></>
+                                            ) : (
+                                                <><span>+{otherMembers.length - 4} more</span><FaChevronDown className="w-3 h-3" /></>
+                                            )}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </>
+    );
+  };
+
+  const hasAdminPermissions = matchedArray && matchedArray.includes("ADMIN_FETCHING_ALLTEAMS");
+
+  return (
+    <div className={`relative flex min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        
+        {hasAdminPermissions && !isRightSidebarOpen && (
+            <button
+                onClick={() => setIsRightSidebarOpen(true)}
+                className="fixed right-0 top-1/2 -translate-y-1/2 p-2 rounded-l-lg bg-indigo-600 text-white shadow-lg z-50 hover:bg-indigo-700 transition-colors"
+                aria-label="Open Navigation Sidebar"
+                title="Open Navigation"
+            >
+                <FaChevronLeft size={24} />
+            </button>
         )}
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 sm:mb-6 gap-4 mx-4 sm:mx-0">
-            <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                <FaUsers className="mr-2 sm:mr-3 text-blue-500" /> 
-                {fromContextMenu ? 'Employee Teams' : 'All Teams'}
-            </h1>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
-                <div className="relative w-full sm:w-64">
-                    <input
-                        type="text"
-                        placeholder="Search by team name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={`w-full pl-8 sm:pl-10 pr-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'}`}
-                    />
-                    <FaSearch className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
-                </div>
-                {matchedArray?.includes("CREATE_TEAM") && !fromContextMenu && (
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="w-full sm:w-auto bg-black text-white px-4 sm:px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center shadow-md text-sm"
-                    >
-                        <FaPlus className="mr-2" /> Create Team
-                    </button>
+        <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen ? 'lg:mr-60' : 'mr-0'}`}>
+            <div className={`px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8`}>
+                {fromContextMenu && targetEmployeeId && (
+                    <div className={`mb-4 sm:mb-6 p-3 sm:p-4 mx-4 sm:mx-0 rounded-none sm:rounded-xl border-l-4 border-blue-500 shadow-md flex items-center space-x-3 ${theme === 'dark' ? 'bg-blue-900/20 text-blue-300' : 'bg-blue-50 text-blue-800'}`}>
+                        <FaEye className="flex-shrink-0" />
+                        <p className="font-semibold text-sm sm:text-base break-words">
+                            🔍 Viewing teams for employee: <span className="font-mono">{targetEmployeeId}</span>
+                        </p>
+                    </div>
                 )}
+
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 sm:mb-6 gap-4 mx-4 sm:mx-0">
+                    <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                        <FaUsers className="mr-2 sm:mr-3 text-blue-500" /> 
+                        {displayMode === 'MY_TEAMS' ? 'My Teams' : (fromContextMenu ? 'Employee Teams' : 'All Teams')}
+                    </h1>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
+                        <div className="relative w-full sm:w-64">
+                            <input
+                                type="text"
+                                placeholder="Search by team name..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className={`w-full pl-8 sm:pl-10 pr-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-colors text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'}`}
+                            />
+                            <FaSearch className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                        </div>
+                        {matchedArray?.includes("CREATE_TEAM") && !fromContextMenu && (
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="w-full sm:w-auto bg-black text-white px-4 sm:px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center shadow-md text-sm"
+                            >
+                                <FaPlus className="mr-2" /> Create Team
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {renderContent()}
+
+                {renderCreateTeamModal()}
+                
+                <ConfirmationModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    onConfirm={confirmDelete}
+                    title="Delete Team"
+                    message={`Are you sure you want to delete the team "${selectedTeam?.teamName}"? This action cannot be undone.`}
+                    confirmText="Delete"
+                    isConfirming={isSubmitting}
+                />
             </div>
         </div>
 
-        {loading ? (
-            <LoadingSpinner />
-        ) : error ? (
-            <ErrorDisplay message={error} />
-        ) : (
-            <>
-                {filteredTeams.length === 0 ? (
-                    <div className="text-center py-12 sm:py-16 px-4">
-                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                        }`}>
-                            <FaUsers className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                                theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
-                            }`} />
-                        </div>
-                        <h2 className={`text-lg sm:text-xl font-bold mb-2 ${
-                            theme === 'dark' ? 'text-white' : 'text-gray-800'
-                        }`}>
-                            {searchTerm ? 'No Teams Found' : (fromContextMenu ? 'No Teams Found' : 'No Teams Available')}
-                        </h2>
-                        <p className={`text-sm sm:text-base mb-4 max-w-md mx-auto ${
-                            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                        }`}>
-                            {searchTerm 
-                                ? `Your search for "${searchTerm}" did not match any teams.`
-                                : fromContextMenu 
-                                ? `Employee ${targetEmployeeId} is not part of any teams yet.`
-                                : 'No teams have been created yet. Create your first team!'
-                            }
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mx-4 sm:mx-0">
-                        {filteredTeams.map((team, index) => {
-                            const teamId = team.teamId || index;
-                            const isExpanded = isTeamExpanded(teamId);
-                            const membersToShow = isExpanded ? team.employees : team.employees?.slice(0, 5);
-                            const hasMoreMembers = team.employees?.length > 5;
-                            const teamLead = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD');
-
-                            return (
-                                <div key={teamId} className={`rounded-none sm:rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
-                                    <div className="p-4 sm:p-5">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1 min-w-0">
-                                                <h2 className={`text-lg sm:text-xl font-bold break-words ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                    {team.teamName}
-                                                </h2>
-                                                {teamLead && (
-                                                    <div className={`flex items-center text-sm sm:text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                        <FaUserShield className="mr-2 text-green-500 flex-shrink-0" />
-                                                        <strong>Lead:</strong><span className="ml-1 break-words">{teamLead.displayName}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex space-x-2 flex-shrink-0">
-                                                <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
-                                                    <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                </Link>
-                                                { matchedArray.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
-                                                    <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
-                                                        <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className={`px-4 sm:px-5 py-3 sm:py-4 border-t mt-auto ${theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                                        <h3 className={`font-semibold mb-2 text-sm sm:text-base ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                            Members ({team.employees?.length || 0})
-                                        </h3>
-                                        <div className="space-y-2">
-                                            <div className="flex flex-wrap gap-1 sm:gap-2">
-                                                {membersToShow?.map(member => (
-                                                    <span key={member.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full break-words ${
-                                                        member.employeeId === employeeIdToFetch 
-                                                            ? theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800'
-                                                            : theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'
-                                                    }`}>
-                                                        {member.displayName}
-                                                        {member.employeeId === employeeIdToFetch && ' (You)'}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                            {hasMoreMembers && (
-                                                <button
-                                                    onClick={() => toggleTeamExpansion(teamId)}
-                                                    className="flex items-center space-x-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                                                >
-                                                    {isExpanded ? (
-                                                        <><span>Show Less</span><FaChevronUp className="w-3 h-3" /></>
-                                                    ) : (
-                                                        <><span>+{team.employees.length - 5} more</span><FaChevronDown className="w-3 h-3" /></>
-                                                    )}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+        {hasAdminPermissions && (
+            <aside
+                className={`fixed top-16 right-0 h-[calc(100vh-4rem)] border-l transition-all duration-300 z-50 flex flex-col ${
+                    isRightSidebarOpen ? 'w-60 translate-x-0' : 'w-0 translate-x-full'
+                } ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+            >
+                {isRightSidebarOpen && (
+                    <button
+                        onClick={() => setIsRightSidebarOpen(false)}
+                        className="absolute -left-12 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50 hidden md:block"
+                        aria-label="Close Navigation Sidebar"
+                        title="Close Navigation"
+                    >
+                        <FaChevronRight size={24} />
+                    </button>
                 )}
-            </>
+
+                <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+                    <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Navigation</h3>
+                    <button
+                        onClick={() => setIsRightSidebarOpen(false)}
+                        className={`p-1 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+                        title="Close Sidebar"
+                    >
+                        <FaTimes size={18} />
+                    </button>
+                </div>
+                <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                    <button
+                        onClick={handleMyTeamsClick}
+                        className={`w-full text-left py-2 px-3 rounded-lg font-medium flex items-center transition-colors ${
+                            displayMode === 'MY_TEAMS'
+                                ? 'bg-blue-600 text-white'
+                                : theme === 'dark'
+                                ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                : 'text-gray-700 hover:bg-gray-200'
+                        }`}
+                    >
+                        <FaUsers className="mr-2" size={16} />
+                        My Teams
+                    </button>
+                    <button
+                        onClick={handleAllTeamsClick}
+                        className={`w-full text-left py-2 px-3 rounded-lg font-medium flex items-center transition-colors ${
+                            displayMode === 'ALL_TEAMS'
+                                ? 'bg-blue-600 text-white'
+                                : theme === 'dark'
+                                ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                : 'text-gray-700 hover:bg-gray-200'
+                        }`}
+                    >
+                        <FaUsers className="mr-2" size={16} />
+                        All Teams
+                    </button>
+                </nav>
+            </aside>
         )}
 
-        {renderCreateTeamModal()}
-
-        <ConfirmationModal
-            isOpen={isDeleteModalOpen}
-            onClose={() => setIsDeleteModalOpen(false)}
-            onConfirm={confirmDelete}
-            title="Delete Team"
-            message={`Are you sure you want to delete the team "${selectedTeam?.teamName}"? This action cannot be undone.`}
-            confirmText="Delete"
-            isConfirming={isSubmitting}
-        />
+        {isRightSidebarOpen && (
+            <div
+                className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                onClick={() => setIsRightSidebarOpen(false)}
+            />
+        )}
     </div>
   );
 };

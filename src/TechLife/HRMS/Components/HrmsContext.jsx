@@ -4,6 +4,7 @@ import logo from "./assets/anasol-logo.png";
 import { authApi } from "../../../axiosInstance";
 
 export const Context = createContext();
+export const UISidebarContext = createContext();
 
 const HrmsContext = ({ children }) => {
     const [gdata, setGdata] = useState([]);
@@ -13,12 +14,14 @@ const HrmsContext = ({ children }) => {
         return savedTheme ? savedTheme : "light";
     });
     const [lastSseMsgId, setLastSseMsgId] = useState(null);
+    const [globalSearch,setGlobalSearch]=useState("")
     const [unreadCount, setUnreadCount] = useState(0);
     const [userprofiledata, setUserProfileData] = useState(null);
     const [userData, setUserData] = useState(null);
     const [accessToken, setAccessToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
+    const [matchedArray,setMatchedArray]=useState([]);
 
     useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
@@ -35,7 +38,39 @@ const HrmsContext = ({ children }) => {
         }
     }, []);
 
-    // ✅ Updated permissions fetcher with ROLE_ prefix removal
+
+
+
+            const LoggedInUserRole = userData?.roles[0]?`ROLE_${userData?.roles[0]}` 
+  : null;
+
+
+     useEffect(() => {
+    const fetchPermissionArray = async () => {
+        try {
+            const response = await authApi.get(`role-access/${LoggedInUserRole}`);
+            setMatchedArray(response?.data?.permissions);
+            
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    if (LoggedInUserRole) {
+        fetchPermissionArray();
+    }
+}, [LoggedInUserRole]);
+
+
+useEffect(() => {
+    if (matchedArray && matchedArray.length > 0) {
+        console.log("Context matched Array ", matchedArray);
+    }
+}, [matchedArray]);
+
+
+
+    // ✅ Permissions fetcher
     useEffect(() => {
         let permissionfetcher = async () => {
             try {
@@ -164,9 +199,10 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray
             }}
         >
+            {/* UISidebarContext will be provided in HrmsApp */}
             {children}
         </Context.Provider>
     );
