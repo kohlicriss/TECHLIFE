@@ -21,6 +21,7 @@ const HrmsContext = ({ children }) => {
     const [accessToken, setAccessToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
+    const [matchedArray,setMatchedArray]=useState([]);
 
     useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
@@ -36,6 +37,38 @@ const HrmsContext = ({ children }) => {
             setRefreshToken(storedRefreshToken);
         }
     }, []);
+
+
+
+
+            const LoggedInUserRole = userData?.roles[0]?`ROLE_${userData?.roles[0]}` 
+  : null;
+
+
+     useEffect(() => {
+    const fetchPermissionArray = async () => {
+        try {
+            const response = await authApi.get(`role-access/${LoggedInUserRole}`);
+            setMatchedArray(response?.data?.permissions);
+            
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    if (LoggedInUserRole) {
+        fetchPermissionArray();
+    }
+}, [LoggedInUserRole]);
+
+
+useEffect(() => {
+    if (matchedArray && matchedArray.length > 0) {
+        console.log("Context matched Array ", matchedArray);
+    }
+}, [matchedArray]);
+
+
 
     // ✅ Permissions fetcher
     useEffect(() => {
@@ -166,7 +199,7 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray
             }}
         >
             {/* UISidebarContext will be provided in HrmsApp */}

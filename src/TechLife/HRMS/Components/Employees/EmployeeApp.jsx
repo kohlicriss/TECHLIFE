@@ -650,7 +650,7 @@ function EmployeeApp() {
       
       // Refresh employee list
       const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
-      setEmployeeData(response.data);
+      setEmployeeData(response.data.content);
       
       // Reset form
       setNewEmployee({

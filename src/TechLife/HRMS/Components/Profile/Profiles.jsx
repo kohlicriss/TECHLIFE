@@ -34,7 +34,7 @@ const Profiles = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { empID } = useParams();
-    const { userprofiledata, setUserProfileData, theme, userData } = useContext(Context);
+    const { userprofiledata, setUserProfileData, theme, userData,matchedArray } = useContext(Context);
 
     const searchParams = new URLSearchParams(location.search);
     const fromContextMenu = searchParams.get("fromContextMenu") === "true";
@@ -335,8 +335,8 @@ const Profiles = () => {
 
     const renderMobile = () => (
         <div className="lg:hidden">
-            <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'} flex items-center space-x-4`}>
-                {canEditHeader && (
+            <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'}`}>
+                {matchedArray.includes("UPDATE_HEADER") && (
                     <button
                         onClick={handleHeaderEditClick}
                         className={`absolute top-2 right-2 p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
@@ -345,63 +345,84 @@ const Profiles = () => {
                         <MdEdit className="w-4 h-4" />
                     </button>
                 )}
-                <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
-                    {displayHeader?.employeeImage || profileImagePreview ? (
-                        <img
-                            src={profileImagePreview || displayHeader.employeeImage}
-                            alt="Profile"
-                            className="w-16 h-16 rounded-full border border-white shadow object-cover"
-                        />
-                    ) : (
-                        <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-xl">
-                            {initials}
-                        </div>
-                    )}
-                </div>
-                <div className={`flex-1 grid grid-cols-1 text-xs gap-y-1 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                    <div className="font-bold text-base">{displayHeader?.name || display?.displayName}</div>
-                    <div className="flex items-center space-x-2">
-                        <HiIdentification />
-                        <span>{displayHeader?.employeeId}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <MdWork />
-                        <span>{displayHeader?.jobTitlePrimary}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <MdEmail />
-                        <span>{displayHeader?.workEmail}</span>
-                    </div>
-                    {displayHeader?.department && (
-                        <div className="flex items-center space-x-2">
-                            <MdBusiness />
-                            <span>{displayHeader.department}</span>
-                        </div>
-                    )}
-                    {displayHeader?.contact && (
-                        <div className="flex items-center space-x-2">
-                            <FaPhone />
-                            <span>{displayHeader.contact}</span>
-                        </div>
-                    )}
-                    {displayHeader?.location && (
-                        <div className="flex items-center space-x-2">
-                            <MdLocationOn />
-                            <span>{displayHeader.location}</span>
-                        </div>
-                    )}
-                </div>
+                
+                {/* Name on top */}
+                <div className={`font-bold text-lg text-right mb-2 pr-4 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+    {displayHeader?.name || display?.displayName}
+</div>
+
+                {/* Table-like layout: 3 columns without borders */}
+                <div className={`grid grid-cols-3 gap-x-2 text-xs ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+    
+    {/* Column 1: Profile Picture - LEFT aligned */}
+   <div className="flex justify-start items-center" style={{ transform: 'translateY(-18px)' }}>
+    <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
+        {displayHeader?.employeeImage || profileImagePreview ? (
+            <img
+                src={profileImagePreview || displayHeader.employeeImage}
+                alt="Profile"
+                className="w-16 h-16 rounded-full border border-white shadow object-cover"
+            />
+        ) : (
+            <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-base">
+                {initials}
+            </div>
+        )}
+    </div>
+</div>
+
+    {/* Column 2: First 3 Details - More LEFT with spacing */}
+    <div className="space-y-3 -ml-2">
+        <div className="flex items-center space-x-2">
+            <HiIdentification className="flex-shrink-0" />
+            <span className="truncate">{displayHeader?.employeeId}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+            <MdWork className="flex-shrink-0" />
+            <span className="truncate">{displayHeader?.jobTitlePrimary}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+            <MdEmail className="flex-shrink-0" />
+            <span className="truncate">{displayHeader?.workEmail}</span>
+        </div>
+    </div>
+
+    {/* Column 3: Next 3 Details - More gap from column 2 */}
+    <div className="space-y-3 pl-2">
+        {displayHeader?.department && (
+            <div className="flex items-center space-x-2">
+                <MdBusiness className="flex-shrink-0" />
+                <span className="truncate">{displayHeader.department}</span>
+            </div>
+        )}
+        {displayHeader?.contact && (
+            <div className="flex items-center space-x-2">
+                <FaPhone className="flex-shrink-0" />
+                <span className="truncate">{displayHeader.contact}</span>
+            </div>
+        )}
+        {displayHeader?.location && (
+            <div className="flex items-center space-x-2">
+                <MdLocationOn className="flex-shrink-0" />
+                <span className="truncate">{displayHeader.location}</span>
+            </div>
+        )}
+    </div>
+</div>
             </div>
             
-            <div className={`sticky top-0 z-[1] grid grid-cols-5 gap-1 w-full max-w-md mx-auto border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-black bg-[#B7D4FF]'} px-1`}>
+            {/* FIXED MOBILE NAVBAR - Perfect Equal Spacing */}
+            <div className={`sticky top-0 z-[1] flex w-full max-w-md mx-auto border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-black bg-[#B7D4FF]'}`}>
                 {tabs.map(tab => {
                     const active = location.pathname.endsWith(tab.path);
                     return (
                         <button
                             key={tab.name}
                             onClick={() => handleTabClick(tab.path)}
-                            className={`py-2 px-1 text-xs text-center rounded ${
-                                active ? `${theme === 'dark' ? 'text-white border-b-2 border-white' : 'text-black border-b-2 border-black'} font-semibold` : `${theme === 'dark' ? 'text-gray-400' : 'text-black opacity-50'}`
+                            className={`flex-1 py-2 px-1 text-xs text-center rounded transition-all duration-200 ${
+                                active 
+                                    ? `${theme === 'dark' ? 'text-white border-b-2 border-white' : 'text-black border-b-2 border-black'} font-semibold` 
+                                    : `${theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-black opacity-50 hover:opacity-75'}`
                             }`}
                         >
                             {tab.name}
@@ -426,7 +447,7 @@ const Profiles = () => {
     return (
         <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
             <div className={`hidden lg:block h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
-                {canEditHeader && (
+                {matchedArray.includes("UPDATE_HEADER") && (
                     <div className="absolute top-4 right-8">
                         <button
                             onClick={handleHeaderEditClick}
@@ -510,6 +531,7 @@ const Profiles = () => {
                 </div>
             </div>
 
+            {/* All existing modals and editing forms remain exactly the same... */}
             {isEditingHeader && (
                 <motion.div
                     initial={{ opacity: 0 }}
