@@ -28,6 +28,7 @@ export default function EmployeeTicket() {
 const [hasMore, setHasMore] = useState(true);
 const [isLoading, setIsLoading] = useState(false);
 const [totalCount, setTotalCount] = useState(0);
+  const [matchedArray,setMatchedArray]=useState([]);
  
   const navigate = useNavigate();
   const { empID } = useParams();
@@ -38,10 +39,12 @@ const [totalCount, setTotalCount] = useState(0);
   const token = localStorage.getItem("accessToken");
    const isDark = theme === "dark";
  
+  
   const sidebarItems = [
-    { tab: "My Tickets", icon: Ticket },
-    ...(normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
-  ];
+  ...(matchedArray?.includes("VIEW_MY_TICKETS") ? [{ tab: "My Tickets", icon: Ticket }] : []),
+  ...(matchedArray?.includes("VIEW_ASSIGNED") ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
+];
+
  
   const statusLabels = { all: "All", resolved: "Resolved" };
   const statusIcons = { all: <LayoutDashboard size={20} />, resolved: <CheckCircle2 size={20} /> };
@@ -52,64 +55,71 @@ const [totalCount, setTotalCount] = useState(0);
 
 const fetchTickets = async (pageNum = 0) => {
   if (!token || !empID || !userData || isLoading || !hasMore) return;
- 
+
   setIsLoading(true);
   try {
-    let url;
-    if (activeTab === "Assigned Tickets") {
-     
-    } else {
-      url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10`;
-    }
- 
+ const url = `https://hrms.anasolconsultancyservices.com/api/ticket/admin/tickets/employee/${empID}?page=${pageNum}&size=10&sort=createdAt,desc`;
+
     const res = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
- 
+
     const { content, totalElements } = res.data;
- 
-    setTickets(prev =>
-      pageNum === 0 ? content : [...prev, ...content]
-    );
+
+    if (pageNum === 0) {
+    
+      setTickets(content);
+    } else {
+    
+      setTickets((prev) => [...prev, ...content]);
+    }
+
     setTotalCount(totalElements);
-    setPage(pageNum + 1);
     setHasMore(content.length > 0);
+    setPage(pageNum + 1);
   } catch (err) {
     console.error("Error fetching tickets:", err);
     setHasMore(false);
   } finally {
     setIsLoading(false);
   }
-}; 
+};
+
+
 useEffect(() => {
   setTickets([]);
   setPage(0);
   setHasMore(true);
   fetchTickets(0);
-}, [activeTab, empID, normalizedRole, token, userData]);
- 
- 
- useEffect(() => {
-  const handleScroll = () => {
-    const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
-    if (bottomReached && hasMore && !isLoading) {
-      fetchTickets(page);
-    }
-  };
- 
-  window.addEventListener('scroll', handleScroll);
-  return () => window.removeEventListener('scroll', handleScroll);
-}, [page, hasMore, isLoading]);
- 
+}, [activeTab, empID]);
+
+
+
 useEffect(() => {
-  fetchTickets();
-}, [empID]);
- 
- 
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [activeTab]);
+
+const observer = useRef();
+const lastTicketRef = useCallback(
+  (node) => {
+    if (isLoading) return;
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchTickets(page);
+      }
+    });
+
+    if (node) observer.current.observe(node);
+  },
+  [isLoading, hasMore, page]
+);
+
  const handleTabClick = (tab) => {
 
    if (!empID) {
-    console.error("❌ empID is undefined, cannot navigate");
+    console.error(" empID is undefined, cannot navigate");
     return;
   }
   setActiveTab(tab);
@@ -171,9 +181,10 @@ const handleFormSubmit = async (data) => {
   };
  
  
- const applyFilters = () => {
+const applyFilters = () => {
   let filtered = [...tickets];
 
+  // 🔍 Search filter
   if (searchTerm.trim() !== '') {
     const s = searchTerm.toLowerCase();
     filtered = filtered.filter(t =>
@@ -183,31 +194,38 @@ const handleFormSubmit = async (data) => {
     );
   }
 
+ 
   if (statusFilter !== 'all') {
     filtered = filtered.filter(
       t => (t.status || "").toLowerCase() === statusFilter
     );
   }
 
- 
-  if (dateFilter !== 'All') {
-    const now = new Date();
+  
+  const now = new Date();
+
+  if (dateFilter === 'Today') {
     filtered = filtered.filter(t => {
       const date = new Date(t.sentAt || t.createdAt);
-      if (dateFilter === 'Today') {
-        return date.toDateString() === now.toDateString();
-      }
-      if (dateFilter === 'Last 7 days') {
-        const last7 = new Date();
-        last7.setDate(now.getDate() - 7);
-        return date >= last7 && date <= now;
-      }
-      if (dateFilter === 'Last 30 days') {
-        const last30 = new Date();
-        last30.setDate(now.getDate() - 30);
-        return date >= last30 && date <= now;
-      }
-      return true;
+      return date.toDateString() === now.toDateString();
+    });
+  }
+
+  if (dateFilter === 'Last 7 days') {
+    const last7 = new Date();
+    last7.setDate(now.getDate() - 7);
+    filtered = filtered.filter(t => {
+      const date = new Date(t.sentAt || t.createdAt);
+      return date >= last7 && date <= now;
+    });
+  }
+
+  if (dateFilter === 'Last 30 days') {
+    const last30 = new Date();
+    last30.setDate(now.getDate() - 30);
+    filtered = filtered.filter(t => {
+      const date = new Date(t.sentAt || t.createdAt);
+      return date >= last30 && date <= now;
     });
   }
 
@@ -228,13 +246,12 @@ const handleFormSubmit = async (data) => {
     });
   }
 
-  
-  filtered.sort(
-    (a, b) => new Date(b.sentAt || b.createdAt) - new Date(a.sentAt || a.createdAt)
-  );
+filtered.sort((a, b) => new Date(a.sentAt || a.createdAt) - new Date(b.sentAt ||b.createdAt));
+
 
   return filtered;
 };
+
 
 
  
@@ -244,6 +261,8 @@ const normalizeStatus = (status) => (status || "").trim().toLowerCase();
 const total = totalCount;
 const resolved = filteredTickets.filter(t => normalizeStatus(t.status) === "resolved").length;
 const unsolved = total - resolved;
+
+
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
@@ -472,16 +491,21 @@ const unsolved = total - resolved;
           >
             Ticket History
           </h2>
+           {matchedArray.includes("CREATE_TICKET") && (
                 <button
                   onClick={() => setView('form')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-xl shadow hover:scale-105 transition"
                 >
                   +
                 </button>
+           )}
               </div>
  
               <div className={`${isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"} p-6 rounded-2xl shadow-lg`}>
-  <TicketHistory tickets={filteredTickets} onTicketClick={handleTicketClick} />
+  <TicketHistory tickets={[...filteredTickets].reverse()}
+  
+   onTicketClick={handleTicketClick}
+  lastTicketRef={lastTicketRef} />
 </div>
 
             </>
