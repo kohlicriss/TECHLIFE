@@ -1,12 +1,12 @@
 {
   "files": {
     "main.css": "/static/css/main.19098f97.css",
-    "main.js": "/static/js/main.1789696b.js",
+    "main.js": "/static/js/main.1c2bad33.js",
     "static/js/834.c24b1c53.chunk.js": "/static/js/834.c24b1c53.chunk.js",
     "static/js/664.fdf33ceb.chunk.js": "/static/js/664.fdf33ceb.chunk.js",
     "static/js/654.f5f5367f.chunk.js": "/static/js/654.f5f5367f.chunk.js",
     "static/js/473.6d87a806.chunk.js": "/static/js/473.6d87a806.chunk.js",
-    "static/js/492.fef87ad8.chunk.js": "/static/js/492.fef87ad8.chunk.js",
+    "static/js/492.80024069.chunk.js": "/static/js/492.80024069.chunk.js",
     "static/js/676.0d6c6b67.chunk.js": "/static/js/676.0d6c6b67.chunk.js",
     "static/js/488.fd76867f.chunk.js": "/static/js/488.fd76867f.chunk.js",
     "static/js/667.90154127.chunk.js": "/static/js/667.90154127.chunk.js",
@@ -32,12 +32,12 @@
     "static/media/anasol-logo.png": "/static/media/anasol-logo.a2ebc8b505bdd612f215.png",
     "index.html": "/index.html",
     "main.19098f97.css.map": "/static/css/main.19098f97.css.map",
-    "main.1789696b.js.map": "/static/js/main.1789696b.js.map",
+    "main.1c2bad33.js.map": "/static/js/main.1c2bad33.js.map",
     "834.c24b1c53.chunk.js.map": "/static/js/834.c24b1c53.chunk.js.map",
     "664.fdf33ceb.chunk.js.map": "/static/js/664.fdf33ceb.chunk.js.map",
     "654.f5f5367f.chunk.js.map": "/static/js/654.f5f5367f.chunk.js.map",
     "473.6d87a806.chunk.js.map": "/static/js/473.6d87a806.chunk.js.map",
-    "492.fef87ad8.chunk.js.map": "/static/js/492.fef87ad8.chunk.js.map",
+    "492.80024069.chunk.js.map": "/static/js/492.80024069.chunk.js.map",
     "676.0d6c6b67.chunk.js.map": "/static/js/676.0d6c6b67.chunk.js.map",
     "488.fd76867f.chunk.js.map": "/static/js/488.fd76867f.chunk.js.map",
     "667.90154127.chunk.js.map": "/static/js/667.90154127.chunk.js.map",
@@ -63,6 +63,6 @@
   },
   "entrypoints": [
     "static/css/main.19098f97.css",
-    "static/js/main.1789696b.js"
+    "static/js/main.1c2bad33.js"
   ]
 }
