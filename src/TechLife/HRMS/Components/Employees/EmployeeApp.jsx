@@ -266,6 +266,23 @@ const InputField = ({
     );
 };
 
+// --- Field Definitions for the Combined Form ---
+const credentialsFormFields = [
+    { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
+    { label: "Username/Email", name: "username", type: "email", required: true, hint: "This will be the login username (e.g., work email)." },
+    { label: "Password", name: "password", type: "password", required: true, hint: "Temporary password (min 6 characters)." },
+    { label: "Role", name: "role", type: "text", required: true, hint: "Primary role (e.g., ADMIN, MANAGER, EMPLOYEE, HR)." },
+];
+
+const employeeFormFields = [
+    { label: "Employee ID", name: "employeeId", type: "text", required: true, hint: "Must be 'ACS' followed by 8 digits (e.g., ACS12345678)." },
+    { label: "First Name", name: "firstName", type: "text", required: true, hint: "Enter employee's first name." },
+    { label: "Display Name", name: "displayName", type: "text", required: false, hint: "Name to display in the system (optional)." },
+    { label: "Marital Status", name: "maritalStatus", type: "select", required: true, options: ["Single", "Married", "Divorced", "Widowed"], hint: "Select employee's marital status." },
+    { label: "Department ID", name: "departmentId", type: "department-dropdown", required: true, hint: "Select department from the list." },
+];
+
+
 const generateInitials = (name) => {
     if (!name) return "";
     const nameParts = name.split(" ");
@@ -275,44 +292,6 @@ const generateInitials = (name) => {
     return nameParts[0][0].toUpperCase();
 };
 
-const employeeFormFields = [
-    {
-        label: "Employee ID",
-        name: "employeeId",
-        type: "text",
-        required: true,
-        hint: "Must start with 'ACS' followed by 8 digits (e.g., ACS12345678)"
-    },
-    {
-        label: "First Name",
-        name: "firstName",
-        type: "text",
-        required: true,
-        hint: "Enter employee's first name"
-    },
-    {
-        label: "Display Name",
-        name: "displayName",
-        type: "text",
-        required: false,
-        hint: "Name to display in the system (optional)"
-    },
-    {
-        label: "Marital Status",
-        name: "maritalStatus",
-        type: "select",
-        required: true,
-        options: ["Single", "Married", "Divorced", "Widowed"],
-        hint: "Select employee's marital status"
-    },
-    {
-        label: "Department ID",
-        name: "departmentId",
-        type: "department-dropdown",
-        required: true,
-        hint: "Select department from the list"
-    }
-];
 
 const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -330,8 +309,6 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
         setLoading(true);
         try {
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/departmentId/asc/all/departments`);
-            console.log("Departments Response:", response.data);
-
             const newDepartments = response.data.content || [];
 
             setDepartments(prev => reset ? newDepartments : [...prev, ...newDepartments]);
@@ -372,7 +349,6 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                 setIsOpen(false);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -540,27 +516,26 @@ function EmployeeApp() {
     const [flippedCard, setFlippedCard] = useState(null);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, employee: null });
 
-    const [isCredentialsFormOpen, setIsCredentialsFormOpen] = useState(false);
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    // --- MERGED FORM STATE ---
+    const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
-
-    const [newCredentials, setNewCredentials] = useState({
+    const [submissionStatus, setSubmissionStatus] = useState(''); // For button text
+    const initialFormData = {
+        // Credentials fields
         fullName: '',
         username: '',
         password: '',
         role: '',
-    });
-
-    const [newEmployee, setNewEmployee] = useState({
+        // Employee fields
         employeeId: '',
         firstName: '',
         displayName: '',
         maritalStatus: '',
         departmentId: '',
-    });
-    const [errors, setErrors] = useState({});
-    const [credentialsErrors, setCredentialsErrors] = useState({});
-
+    };
+    const [formData, setFormData] = useState(initialFormData);
+    const [formErrors, setFormErrors] = useState({});
+    
     const [popup, setPopup] = useState({ show: false, message: '', type: '' });
     const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, employee: null });
 
@@ -587,7 +562,6 @@ function EmployeeApp() {
         let fetchedData = async () => {
             try {
                 let response = await authApi.get(`role-access/${LoggedUserRole}`);
-                console.log("from EmployeesApp :", response.data);
                 setLoggedPermissionData(response.data);
             } catch(error) {
                 console.error("Error fetching role access data:", error);
@@ -605,25 +579,6 @@ function EmployeeApp() {
     useEffect(() => {
         setHasAccess(userData?.permissions)
     }, [userData])
-
-    useEffect(() => {
-        const savedFormData = localStorage.getItem("employeeFormData");
-        if (savedFormData) {
-            try {
-                const parsedData = JSON.parse(savedFormData);
-                setNewEmployee(parsedData);
-                console.log("Loaded form data from localStorage:", parsedData);
-            } catch (error) {
-                console.error("Error parsing saved form data:", error);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isFormOpen) {
-            localStorage.setItem("employeeFormData", JSON.stringify(newEmployee));
-        }
-    }, [newEmployee, isFormOpen]);
 
     useEffect(() => {
         const handleOutsideClick = () => {
@@ -714,23 +669,23 @@ function EmployeeApp() {
             setFlippedCard(null);
         }
     };
+    
+    const fetchAllEmployees = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
+            setEmployeeData(response.data.content);
+        } catch (err) {
+            console.error("Error fetching employees:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [pageNumber, pageSize, sortBy, sortOrder]);
+
 
     useEffect(() => {
-        const fetchAllEmployees = async () => {
-            try {
-                setLoading(true);
-                const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
-                console.log("Employees Data from API:", response.data.content);
-                setEmployeeData(response.data.content);
-            } catch (err) {
-                console.error("Error fetching employees:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAllEmployees();
-    }, [pageNumber, pageSize, sortBy, sortOrder]);
+    }, [fetchAllEmployees]);
 
     useEffect(() => {
         if (employeeData) {
@@ -782,162 +737,23 @@ function EmployeeApp() {
         setSelectedFilters(clearedFilters);
     };
 
-    const validateCredentialsData = (data) => {
-        const errors = {};
-        if (!data.fullName) {
-            errors.fullName = "Full name is required.";
-        }
-        if (!data.username) {
-            errors.username = "Username is required (e.g., employee's email).";
-        }
-        if (!data.password || data.password.length < 6) {
-            errors.password = "Password is required and must be at least 6 characters.";
-        }
-        if (!data.role) {
-            errors.role = "Role is required.";
-        }
-        return errors;
-    };
-
-    const handleCredentialsChange = (e) => {
-        const { name, value } = e.target;
-        setNewCredentials({ ...newCredentials, [name]: value });
-        if (credentialsErrors[name]) {
-            setCredentialsErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[name];
-                return newErrors;
-            });
-        }
-    };
-
-    const handleCredentialsSubmit = async (e) => {
-        e.preventDefault();
-        setIsUpdating(true);
-
-        const validationErrors = validateCredentialsData(newCredentials);
-        if (Object.keys(validationErrors).length > 0) {
-            setCredentialsErrors(validationErrors);
-            setIsUpdating(false);
-            return;
-        }
-        setCredentialsErrors({});
-
-        try {
-            const credentialsToSubmit = {
-                fullName: newCredentials.fullName,
-                username: newCredentials.username,
-                password: newCredentials.password,
-                role: newCredentials.role,
-            };
-
-            await authApi.post("/register", credentialsToSubmit, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            setPopup({ show: true, message: 'User credentials created successfully! Proceeding to Employee details form.', type: 'success' });
-            setIsCredentialsFormOpen(false);
-            setIsFormOpen(true);
-
-            setNewEmployee(prev => ({
-                ...prev,
-                firstName: newCredentials.fullName.split(' ')[0] || '',
-                displayName: newCredentials.fullName,
-            }));
-
-        } catch (error) {
-            console.error("Error creating user credentials:", error);
-            const errorMessage = error.response?.data?.message || 'Failed to create user credentials. Please check the provided data.';
-            setCredentialsErrors({ general: errorMessage });
-            setPopup({ show: true, message: errorMessage, type: 'error' });
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
-    const validateFormData = (data) => {
-        const errors = {};
-        if (!data.employeeId || !/^ACS\d{8}$/.test(data.employeeId)) {
-            errors.employeeId = "Employee ID must start with 'ACS' followed by 8 digits.";
-        }
-        if (!data.firstName) {
-            errors.firstName = "First name is required.";
-        }
-        if (!data.maritalStatus) {
-            errors.maritalStatus = "Marital status is required.";
-        }
-        if (!data.departmentId) {
-            errors.departmentId = "Department ID is required.";
-        }
-        return errors;
-    };
-
-    const handleFormSubmit = async (e) => {
-        e.preventDefault();
-        setIsUpdating(true);
-
-        const validationErrors = validateFormData(newEmployee);
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            setIsUpdating(false);
-            return;
-        }
-
-        try {
-            const employeeDataToSubmit = {
-                employeeId: newEmployee.employeeId,
-                firstName: newEmployee.firstName,
-                displayName: newEmployee.displayName,
-                maritalStatus: newEmployee.maritalStatus,
-                departmentId: newEmployee.departmentId,
-            };
-
-            await publicinfoApi.post('employee', employeeDataToSubmit, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            setPopup({ show: true, message: 'Employee created successfully! You can add more details later.', type: 'success' });
-            setIsFormOpen(false);
-
-            localStorage.removeItem("employeeFormData");
-            console.log("Cleared form data from localStorage after successful submission");
-
-            const response = await publicinfoApi.get(`employee/${pageNumber}/${pageSize}/${sortBy}/${sortOrder}/employees`);
-            setEmployeeData(response.data.content);
-
-            setNewEmployee({
-                employeeId: '',
-                firstName: '',
-                displayName: '',
-                maritalStatus: '',
-                departmentId: '',
-            });
-            setNewCredentials({
-                fullName: '',
-                username: '',
-                password: '',
-                role: '',
-            });
-
-        } catch (error) {
-            console.error("Error creating employee:", error);
-            const errorMessage = error.response?.data?.message || 'Failed to create employee. Please check the provided data.';
-            setErrors({ general: errorMessage });
-            setPopup({ show: true, message: errorMessage, type: 'error' });
-        } finally {
-            setIsUpdating(false);
-        }
-    };
+    // --- UNIFIED FORM LOGIC ---
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
-        setNewEmployee({ ...newEmployee, [name]: value });
-        if (errors[name]) {
-            setErrors(prev => {
+        
+        setFormData(prev => {
+            const updatedData = { ...prev, [name]: value };
+            // Auto-populate first name and display name from full name
+            if (name === 'fullName') {
+                updatedData.firstName = value.split(' ')[0] || '';
+                updatedData.displayName = value;
+            }
+            return updatedData;
+        });
+
+        if (formErrors[name]) {
+            setFormErrors(prev => {
                 const newErrors = { ...prev };
                 delete newErrors[name];
                 return newErrors;
@@ -946,9 +762,9 @@ function EmployeeApp() {
     };
 
     const handleDepartmentChange = (value) => {
-        setNewEmployee({ ...newEmployee, departmentId: value });
-        if (errors.departmentId) {
-            setErrors(prev => {
+        setFormData({ ...formData, departmentId: value });
+        if (formErrors.departmentId) {
+            setFormErrors(prev => {
                 const newErrors = { ...prev };
                 delete newErrors.departmentId;
                 return newErrors;
@@ -956,8 +772,82 @@ function EmployeeApp() {
         }
     };
 
+    const validateForm = (data) => {
+        const errors = {};
+        // Credentials validation
+        if (!data.fullName) errors.fullName = "Full name is required.";
+        if (!data.username) errors.username = "Username/Email is required.";
+        if (!data.password || data.password.length < 6) errors.password = "Password must be at least 6 characters.";
+        if (!data.role) errors.role = "Role is required.";
+        
+        // Employee validation
+        if (!data.employeeId || !/^ACS\d{8}$/.test(data.employeeId)) errors.employeeId = "Employee ID must be 'ACS' + 8 digits.";
+        if (!data.firstName) errors.firstName = "First name is required.";
+        if (!data.maritalStatus) errors.maritalStatus = "Marital status is required.";
+        if (!data.departmentId) errors.departmentId = "Department ID is required.";
+        
+        return errors;
+    };
+    
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        
+        const validationErrors = validateForm(formData);
+        if (Object.keys(validationErrors).length > 0) {
+            setFormErrors(validationErrors);
+            return;
+        }
+
+        setIsUpdating(true);
+        setFormErrors({});
+
+        // DTO for Credentials Endpoint
+        const credentialsDto = {
+            fullName: formData.fullName,
+            username: formData.username,
+            password: formData.password,
+            role: formData.role.toUpperCase(),
+        };
+
+        // DTO for Employee Endpoint
+        const employeeDto = {
+            employeeId: formData.employeeId,
+            firstName: formData.firstName,
+            displayName: formData.displayName || formData.fullName,
+            maritalStatus: formData.maritalStatus,
+            departmentId: formData.departmentId,
+        };
+
+        try {
+            // STEP 1: Create User Credentials
+            setSubmissionStatus('Creating User...');
+            await authApi.post("/register", credentialsDto);
+
+            // STEP 2: Create Employee Profile (only if credentials succeeded)
+            setSubmissionStatus('Creating Employee...');
+            await publicinfoApi.post('employee', employeeDto);
+
+            // SUCCESS
+            setPopup({ show: true, message: 'Employee and user account created successfully!', type: 'success' });
+            setIsAddEmployeeModalOpen(false);
+            setFormData(initialFormData); // Reset form
+            fetchAllEmployees(); // Refresh the employee list
+
+        } catch (error) {
+            console.error("Error creating employee:", error);
+            const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please check the data and try again.';
+            setFormErrors({ general: errorMessage });
+            setPopup({ show: true, message: errorMessage, type: 'error' });
+        } finally {
+            setIsUpdating(false);
+            setSubmissionStatus('');
+        }
+    };
+    
     const handleFormClose = () => {
-        setIsFormOpen(false);
+        setIsAddEmployeeModalOpen(false);
+        setFormData(initialFormData);
+        setFormErrors({});
     };
 
     const renderField = (field, currentErrors, handleChange, fieldValue) => {
@@ -995,229 +885,133 @@ function EmployeeApp() {
         );
     };
 
-    const renderCreateEmployeeCredentialsModal = () => {
-        if (!isCredentialsFormOpen) return null;
-
-        const credentialsFormFields = [
-            { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
-            { label: "Username/Email", name: "username", type: "email", required: true, hint: "This will be the login username (e.g., work email)." },
-            { label: "Password", name: "password", type: "password", required: true, hint: "Temporary password (min 6 characters)." },
-            {
-                label: "Role",
-                name: "role",
-                type: "text",
-                required: true,
-                hint: "Enter the primary role for the new user (e.g., ADMIN, MANAGER, EMPLOYEE, HR)."
-            },
-        ];
+    // --- RENDER COMBINED MODAL ---
+    const renderAddEmployeeModal = () => {
+        if (!isAddEmployeeModalOpen) return null;
 
         return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4">
-                <motion.div
-                    initial={{ y: -50, opacity: 0, scale: 0.9 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: -50, opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    className={`relative w-full max-w-sm sm:max-w-md lg:max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
-                        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                    }`}
-                >
-                    {/* Header */}
-                    <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-teal-500 to-green-700 text-white relative overflow-hidden">
-                        <div className="absolute inset-0 bg-black/10"></div>
-                        <div className="relative flex items-center justify-between">
-                            <div className="flex items-center space-x-3 min-w-0 flex-1">
-                                <div className="text-lg sm:text-2xl">
-                                    <IoKeyOutline />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <h2 className="text-lg sm:text-xl font-bold break-words">Create User Credentials</h2>
-                                    <p className="text-white/90 text-xs sm:text-sm break-words">Step 1 of 2: Setup login account.</p>
-                                </div>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
+    <motion.div
+        initial={{ y: -50, opacity: 0, scale: 0.9 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: -50, opacity: 0, scale: 0.9 }}
+        transition={{ duration: 0.3 }}
+        className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+        }`}
+    >
+        {/* Fixed Header */}
+        <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white flex-shrink-0`}>
+            <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="text-xl sm:text-2xl">
+                        <IoAddCircleOutline />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Add New Employee</h2>
+                        <p className="text-xs sm:text-sm opacity-90 mt-1">Provide user credentials and basic employee details.</p>
+                    </div>
+                </div>
+                <button onClick={handleFormClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+            </div>
+        </div>
+
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto">
+            <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 md:p-8">
+                {/* Credentials Section */}
+                <div className="mb-6 sm:mb-8">
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                    }`}>
+                        <IoKeyOutline className="w-5 h-5 mr-2" />
+                        User Credentials
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                        {credentialsFormFields.map(field => (
+                            <div key={field.name}>
+                                {renderField(field, formErrors, handleFormChange, formData[field.name])}
                             </div>
-                            <button
-                                onClick={() => {
-                                    setIsCredentialsFormOpen(false);
-                                    setIsUpdating(false);
-                                    setCredentialsErrors({});
-                                }}
-                                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
-                            >
-                                <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
-                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Employee Information Section */}
+                <div className="mb-6 sm:mb-8">
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                        theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                    }`}>
+                        <IoPersonOutline className="w-5 h-5 mr-2" />
+                        Employee Information
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                        {employeeFormFields.map(field => (
+                            <div key={field.name}>
+                                {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {formErrors.general && (
+                    <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
+                        theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                    }`}>
+                        <div className="flex items-center">
+                            <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
+                            <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                                {formErrors.general}
+                            </p>
                         </div>
                     </div>
+                )}
+            </form>
+        </div>
 
-                    {/* Form Content */}
-                    <div className="overflow-y-auto max-h-[calc(95vh-140px)]">
-                        <form className="p-4 sm:p-6" onSubmit={handleCredentialsSubmit}>
-                            <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                                {credentialsFormFields.map(field => renderField(field, credentialsErrors, handleCredentialsChange, newCredentials[field.name]))}
-                            </div>
+        {/* Fixed Footer */}
+        <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex-shrink-0 ${
+            theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
+        } flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4`}>
+            <button
+                type="button"
+                onClick={handleFormClose}
+                className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
+                    theme === 'dark'
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                }`}
+            >
+                Cancel
+            </button>
+            <button
+                type="submit"
+                onClick={handleFormSubmit}
+                disabled={isUpdating}
+                className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-purple-500/30 text-sm sm:text-base flex items-center justify-center space-x-2 ${
+                    isUpdating ? 'cursor-not-allowed opacity-75' : ''
+                }`}
+            >
+                {isUpdating ? (
+                    <>
+                        <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>{submissionStatus || 'Saving...'}</span>
+                    </>
+                ) : (
+                    <>
+                        <IoCheckmarkCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>Create Employee</span>
+                    </>
+                )}
+            </button>
+        </div>
+    </motion.div>
+</div>
 
-                            {credentialsErrors.general && (
-                                <div className={`mt-4 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
-                                    theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
-                                }`}>
-                                    <div className="flex items-center">
-                                        <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
-                                        <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{credentialsErrors.general}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-
-                    {/* Footer */}
-                    <div className={`px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 ${
-                        theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                    }`}>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsCredentialsFormOpen(false);
-                                setIsUpdating(false);
-                                setCredentialsErrors({});
-                            }}
-                            className={`w-full sm:w-auto px-6 sm:px-8 py-2 border-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                                theme === 'dark'
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                            }`}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            onClick={handleCredentialsSubmit}
-                            disabled={isUpdating}
-                            className={`w-full sm:w-auto px-6 sm:px-8 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-lg text-sm hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2 ${
-                                isUpdating ? 'cursor-not-allowed opacity-75' : ''
-                            }`}
-                        >
-                            {isUpdating ? (
-                                <>
-                                    <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Creating Credentials...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    <span>Create Credentials</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </motion.div>
-            </div>
         );
     };
 
-    const renderCreateEmployeeModal = () => {
-        if (!isFormOpen) return null;
-
-        return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4">
-                <motion.div
-                    initial={{ y: -50, opacity: 0, scale: 0.9 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: -50, opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    className={`relative w-full max-w-sm sm:max-w-md lg:max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
-                        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                    }`}
-                >
-                    {/* Header */}
-                    <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white relative overflow-hidden">
-                        <div className="absolute inset-0 bg-black/10"></div>
-                        <div className="relative flex items-center justify-between">
-                            <div className="flex items-center space-x-3 min-w-0 flex-1">
-                                <div className="text-lg sm:text-2xl">
-                                    <IoAddCircleOutline />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <h2 className="text-lg sm:text-xl font-bold break-words">Create New Employee</h2>
-                                    <p className="text-white/90 text-xs sm:text-sm break-words">Step 2 of 2: Basic employee information.</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleFormClose}
-                                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
-                            >
-                                <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Form Content */}
-                    <div className="overflow-y-auto max-h-[calc(95vh-140px)]">
-                        <form className="p-4 sm:p-6" onSubmit={handleFormSubmit}>
-                            {/* Essential Information Section */}
-                            <div className="mb-6">
-                                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
-                                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                                }`}>
-                                    <IoPersonOutline className="w-5 h-5 mr-2" />
-                                    Essential Information
-                                </h3>
-                                <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                                    {employeeFormFields.map(field => renderField(field, errors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, newEmployee[field.name]))}
-                                </div>
-                            </div>
-
-                            {errors.general && (
-                                <div className={`mt-4 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
-                                    theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
-                                }`}>
-                                    <div className="flex items-center">
-                                        <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
-                                        <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{errors.general}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-
-                    {/* Footer */}
-                    <div className={`px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 ${
-                        theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                    }`}>
-                        <button
-                            type="button"
-                            onClick={handleFormClose}
-                            className={`w-full sm:w-auto px-6 sm:px-8 py-2 border-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                                theme === 'dark'
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                            }`}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            onClick={handleFormSubmit}
-                            disabled={isUpdating}
-                            className={`w-full sm:w-auto px-6 sm:px-8 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg text-sm hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2 ${
-                                isUpdating ? 'cursor-not-allowed opacity-75' : ''
-                            }`}
-                        >
-                            {isUpdating ? (
-                                <>
-                                    <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Creating Employee...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <IoCheckmarkCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    <span>Create Employee</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    };
 
     const loadTerminatedEmployees = useCallback(async (page = 0, reset = false) => {
         if (terminatedLoading || (!terminatedHasMore && !reset)) return;
@@ -1225,8 +1019,6 @@ function EmployeeApp() {
         setTerminatedLoading(true);
         try {
             const response = await publicinfoApi.get(`employee/${page}/${TERMINATED_PAGE_SIZE}/employeeId/asc/terminated/employees`);
-            console.log("Terminated Employees Response:", response.data);
-
             const newEmployees = response.data.content || [];
 
             setTerminatedEmployeesData(prev => reset ? newEmployees : [...prev, ...newEmployees]);
@@ -1478,24 +1270,12 @@ function EmployeeApp() {
             </div>
         );
     }
-
-    if (isCredentialsFormOpen) {
-        // Render modal outside the main layout content, fixed position handles full screen
+    
+    // The main app background for context when the modal is open
+    if (isAddEmployeeModalOpen) {
         return (
             <>
-                {renderCreateEmployeeCredentialsModal()}
-                {/* Main app background for context */}
-                <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}></div>
-            </>
-        );
-    }
-
-    if (isFormOpen) {
-         // Render modal outside the main layout content, fixed position handles full screen
-        return (
-            <>
-                {renderCreateEmployeeModal()}
-                {/* Main app background for context */}
+                {renderAddEmployeeModal()}
                 <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}></div>
             </>
         );
@@ -1579,7 +1359,7 @@ function EmployeeApp() {
 
                             {matchedArray && matchedArray.includes("CREAT_USER") && (
                                 <button
-                                    onClick={() => setIsCredentialsFormOpen(true)}
+                                    onClick={() => setIsAddEmployeeModalOpen(true)}
                                     className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-xs sm:text-sm flex items-center justify-center space-x-2"
                                 >
                                     <IoAddCircleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
