@@ -18,6 +18,7 @@ import {
     uploadFile,
     forwardMessage,
     getPinnedMessage,
+    pinMessage,
     unpinMessage,
     clearChatHistory,
     uploadVoiceMessage,
@@ -25,8 +26,7 @@ import {
     searchMessages,
     getMessageContext,
     getChatAttachments,
-    searchChatOverview,
-    pinMessage
+    searchChatOverview
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
 
@@ -1663,11 +1663,10 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     return (
+        // Outermost container - h-full (100% of parent), p-0 md:p-4 md:gap-4 for desktop border/gap
         <div className={`w-full h-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} font-sans`}>
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
-                {/* Chat List Sidebar - Always hidden on mobile when a chat is open.
-                    Uses flex-shrink-0 to keep its height fixed (not changing due to keyboard).
-                */}
+                {/* Chat List Sidebar (Desktop) */}
                 <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg flex-shrink-0 ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className={`w-full p-3 rounded-lg border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 border-gray-300'}`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                     <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
@@ -1717,8 +1716,10 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                {/* Main Chat Window */}
-                <div className={`w-full md:w-[70%] h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                {/* Main Chat Window (Mobile & Desktop) */}
+                {/* Parent Chat Container: w-full, h-full, flex flex-col to enable fixed header/footer and scrollable middle */}
+                {/* IMPORTANT: h-screen is set here to acquire the full mobile device height without parent scrolling */}
+                <div className={`w-full md:w-[70%] h-screen flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
@@ -1728,8 +1729,9 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                             </div>
                         </div>
                     ) : (
-                        <>
-                            {/* DIV1: Header (Fixed Top) */}
+                        // Inner container for fixed/scrollable elements
+                        <div className="flex flex-col h-full w-full">
+                            {/* DIV1: Header (Fixed top content - flex-shrink-0) */}
                             <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
                                     <button onClick={closeChat} className={`md:hidden p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100'}`}><FaArrowLeft /></button>
@@ -1767,8 +1769,18 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-2"><div className="relative"><button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className={`p-2 rounded-full hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600'}`}><BsThreeDotsVertical size={20} /></button>{showChatMenu && (<div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20"><button onClick={() => { setIsSearchVisible(true); setShowChatMenu(false); }}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Search</button><button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button></div>)}</div></div>
+                                <div className="flex items-center space-x-2">
+                                    <div className="relative">
+                                        <button ref={chatMenuButtonRef} onClick={() => setShowChatMenu(!showChatMenu)} className={`p-2 rounded-full hover:bg-gray-100 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600'}`}><BsThreeDotsVertical size={20} /></button>
+                                        {showChatMenu && (
+                                            <div ref={chatMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
+                                                <button onClick={() => { setIsSearchVisible(true); setShowChatMenu(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Search</button>
+                                                <button onClick={() => { setShowClearConfirm(true); setShowChatMenu(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Clear chat</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             {isSearchVisible && (
@@ -1811,12 +1823,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         {showPinnedMenu && (
                                             <div ref={pinnedMenuRef} className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20 text-sm ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white'}`}>
                                                 <ul className="py-1">
-                                                    <li onClick={handleGoToMessage} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700'}`}>
-                                                        <FaAngleDoubleRight /> Go to message
-                                                    </li>
-                                                    <li onClick={handleUnpin} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'text-red-400 hover:bg-gray-600' : ''}`}>
-                                                        <FaTimes /> Unpin
-                                                    </li>
+                                                    <li onClick={handleGoToMessage} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 ${theme === 'dark' ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700'}`}><FaAngleDoubleRight /> Go to message</li>
+                                                    <li onClick={handleUnpin} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'text-red-400 hover:bg-gray-600' : ''}`}><FaTimes /> Unpin</li>
                                                 </ul>
                                             </div>
                                         )}
@@ -1824,8 +1832,18 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 </div>
                             )}
 
-                            {/* DIV2: Messages (Scrollable Middle) */}
-                            <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                            {/* DIV2: Messages (Main Scrollable Content) */}
+                            {/* flex-grow pushes DIV3 to the bottom, overflow-y-auto enables scrolling */}
+                            <div 
+                                ref={chatContainerRef} 
+                                onScroll={handleChatScroll} 
+                                className={`flex-grow p-4 overflow-y-auto custom-scrollbar flex flex-col-reverse`} 
+                                style={{
+                                    backgroundImage: theme === 'dark' ? 'url(https://placehold.co/600x400/1F2937/FFFFFF/png?text=Chat+Background)' : 'url(https://placehold.co/600x400/F9FAFB/374151/png?text=Chat+Background)',
+                                    backgroundSize: 'cover',
+                                    backgroundBlendMode: theme === 'dark' ? 'overlay' : 'normal',
+                                }}
+                            >
                                 {isSearchVisible ? (
                                     <div className="space-y-2">
                                         {searchResults.length > 0 ? (
@@ -1854,8 +1872,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                     isMessagesLoading ? (
                                         <MessageSkeleton theme={theme} />
                                     ) : (
-                                        <div className="space-y-2">
-                                            {chatMessages.map((msg, index) => {
+                                        <div className="space-y-2 flex flex-col-reverse"> {/* Reverse the message list display order inside the scroll container */}
+                                            {chatMessages.slice().reverse().map((msg, index) => { // Reverse the array for correct display
                                                 const isMyMessage = msg.sender === currentUser?.id;
                                                 const msgDate = new Date(msg.timestamp).toDateString();
                                                 const showDateHeader = lastMessageDate !== msgDate;
@@ -1914,7 +1932,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                                                 <div className={`p-2 rounded mb-2 text-sm ${isMyMessage ? 'bg-blue-500' : (theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300')}`}>
                                                                                     <p className="font-semibold">{msg.replyTo.sender === currentUser?.id ? 'You' : getSenderInfo(msg.replyTo.sender).name}</p>
                                                                                     <p className="opacity-80 truncate">
-                                                                                        {['image', 'audio', 'file'].includes(msg.replyTo.type) ? msg.replyTo.content : msg.replyTo.content}
+                                                                                        {['image', 'audio', 'file'].includes(msg.replyTo.type) ? msg.replyTo.fileName : msg.replyTo.content}
                                                                                     </p>
                                                                                 </div>
                                                                             )}
@@ -1975,7 +1993,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 )}
                             </div>
 
-                            {/* DIV3: Input Field/Footer (Fixed Bottom) */}
+                            {/* DIV3: Input Field/Footer (Fixed Bottom Content - flex-shrink-0) */}
                             <div className={`flex-shrink-0 flex flex-col p-4 border-t ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                 {replyingTo && (
                                     <div className={`p-2 rounded-t-lg flex justify-between items-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
@@ -1993,6 +2011,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 {currentChatInfo && (
                                     <div className={`relative flex items-center w-full space-x-2 ${(replyingTo || editingInfo.index !== null) ? 'pt-2' : ''}`}>
                                         {showEmojiPicker && (
+                                            // Emoji Picker is positioned absolute at the bottom and outside the input area.
+                                            // It must be placed above the input field.
                                             <div ref={emojiPickerRef} className="absolute bottom-full mb-2 left-0 z-40 w-[95vw] max-w-sm">
                                                 <EmojiPicker onEmojiClick={onEmojiClick} width="100%" height={350} theme={theme} />
                                             </div>
@@ -2017,7 +2037,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                     </div>
                                 )}
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
                 {showScrollToBottom && (
