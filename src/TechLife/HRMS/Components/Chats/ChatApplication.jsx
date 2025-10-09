@@ -18,7 +18,6 @@ import {
     uploadFile,
     forwardMessage,
     getPinnedMessage,
-    pinMessage,
     unpinMessage,
     clearChatHistory,
     uploadVoiceMessage,
@@ -26,7 +25,8 @@ import {
     searchMessages,
     getMessageContext,
     getChatAttachments,
-    searchChatOverview
+    searchChatOverview,
+    pinMessage
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
 
@@ -376,15 +376,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
     };
-
-
-
-
-
-    
-
-
-
 
 
     useEffect(() => {
@@ -1670,7 +1661,10 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     return (
         <div className={`w-full h-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} font-sans`}>
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
-                <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                {/* Chat List Sidebar - Always hidden on mobile when a chat is open.
+                    Uses flex-shrink-0 to keep its height fixed (not changing due to keyboard).
+                */}
+                <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg flex-shrink-0 ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className={`w-full p-3 rounded-lg border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 border-gray-300'}`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                     <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
                         {isSearching ? (
@@ -1719,6 +1713,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
+                {/* Main Chat Window */}
                 <div className={`w-full md:w-[70%] h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
@@ -1730,6 +1725,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         </div>
                     ) : (
                         <>
+                            {/* DIV1: Header (Fixed Top) */}
                             <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
                                     <button onClick={closeChat} className={`md:hidden p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100'}`}><FaArrowLeft /></button>
@@ -1824,6 +1820,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 </div>
                             )}
 
+                            {/* DIV2: Messages (Scrollable Middle) */}
                             <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
                                 {isSearchVisible ? (
                                     <div className="space-y-2">
@@ -1974,6 +1971,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 )}
                             </div>
 
+                            {/* DIV3: Input Field/Footer (Fixed Bottom) */}
                             <div className={`flex-shrink-0 flex flex-col p-4 border-t ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                 {replyingTo && (
                                     <div className={`p-2 rounded-t-lg flex justify-between items-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
