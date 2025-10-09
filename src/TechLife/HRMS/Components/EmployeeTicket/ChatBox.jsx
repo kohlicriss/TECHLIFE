@@ -12,7 +12,8 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 const [hasMore, setHasMore] = useState(true);
 const [loading, setLoading] = useState(false);
 const { userData ,theme} = useContext(Context);
- const [matchedArray,setMatchedArray]=useState([]);
+ //const [matchedArray,setMatchedArray]=useState(null);
+ const matchedArray = userData?.permissions || [];
 
 
   const isResolved = ticketStatus?.toLowerCase() === "resolved";
@@ -55,17 +56,9 @@ const { userData ,theme} = useContext(Context);
   }, {});
 
 
-const fetchMessages = async (pageToFetch) => {
+const fetchMessages = async (pageToFetch = 0) => {
   const token = localStorage.getItem("accessToken");
-  if (!ticketId || !token) return;
-
-  // Check permission locally before calling API
-  if (!(matchedArray?.includes("VIEW_TICKET_REPLIES"))) {
-    console.warn("🚫 No permission to view replies");
-    setMessages([]);
-    setHasMore(false);
-    return;
-  }
+  if (!ticketId || !token || !matchedArray.includes("VIEW_TICKET_REPLIES") || loading || !hasMore) return;
 
   try {
     setLoading(true);
@@ -75,27 +68,30 @@ const fetchMessages = async (pageToFetch) => {
     );
 
     if (res.status === 403) {
-      console.error("🚫 Forbidden: VIEW_TICKET_REPLIES missing");
+      console.error("🚫 Forbidden: VIEW_TICKET_REPLIES missing on backend");
       setMessages([]);
       setHasMore(false);
       return;
     }
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+
     const data = await res.json();
     const messagesArray = Array.isArray(data?.content) ? data.content : [];
 
     if (messagesArray.length === 0) {
       setHasMore(false);
     } else {
-      setMessages((prev) => dedupeMessages([...messagesArray, ...prev]));
+      setMessages((prev) => dedupeMessages([...prev, ...messagesArray]));
+      setPage(pageToFetch + 1);
     }
   } catch (err) {
-    console.error("❌ Fetch error:", err);
+    console.error("❌ Error fetching messages:", err);
   } finally {
     setLoading(false);
   }
 };
+
 
 
 const formatChatTimeIST = (dateString) => {

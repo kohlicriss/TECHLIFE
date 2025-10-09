@@ -251,6 +251,15 @@ filtered.sort((a, b) => new Date(a.sentAt || a.createdAt) - new Date(b.sentAt ||
 
   return filtered;
 };
+useEffect(() => {
+  if (userData?.permissions) {  
+    setMatchedArray(userData.permissions);
+  }
+}, [userData]);
+
+
+
+
 
 
 
