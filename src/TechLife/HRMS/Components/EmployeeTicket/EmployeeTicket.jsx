@@ -35,14 +35,16 @@ const [totalCount, setTotalCount] = useState(0);
   const { userData ,theme} = useContext(Context);
     
   const role = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
-  const normalizedRole = role.toUpperCase().startsWith("ROLE_") ? role.toUpperCase() : "ROLE_" + role.toUpperCase();
+ const normalizedRole = role.toUpperCase(); 
+
   const token = localStorage.getItem("accessToken");
    const isDark = theme === "dark";
+   
  
   
   const sidebarItems = [
   ...(matchedArray?.includes("VIEW_MY_TICKETS") ? [{ tab: "My Tickets", icon: Ticket }] : []),
-  ...(matchedArray?.includes("VIEW_ASSIGNED") ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
+  ...(matchedArray?.includes("VIEW_ASSIGNED")&&normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
 ];
 
  

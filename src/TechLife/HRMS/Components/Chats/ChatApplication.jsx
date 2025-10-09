@@ -1017,7 +1017,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
         setSelectedChat(null);
         setIsChatOpen(false);
-        setShowScrollToBottom(false);
 
         const newUrl = `/chat/${currentUser.id}`;
         navigate(newUrl);
@@ -1573,9 +1572,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         if (selectedChat?.type === 'group') {
             setActiveGroupInfoTab('Overview');
             setGroupMembers([]);
-            setGroupMedia([]);   
-            setGroupFiles([]); 
-            setGroupLinks([]);
             setIsGroupInfoModalOpen(true);
         }
     };
@@ -2077,7 +2073,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             </div>))}</div><div className={`p-4 border-t text-right ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer">Forward</button></div></div></div>)}
 
             {isProfileModalOpen && currentChatInfo && currentChatInfo.type !== 'group' && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]" onClick={() => setIsProfileModalOpen(false)}>
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[151]" onClick={() => setIsProfileModalOpen(false)}>
                     <img src={currentChatInfo.profile} alt={currentChatInfo.name} className="max-w-[80vw] max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
@@ -2183,7 +2179,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             )}
 
             {imageInView && (
-                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[120]" onClick={() => setImageInView(null)}>
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[151]" onClick={() => setImageInView(null)}>
                     <img src={imageInView} alt="Full view" className="max-w-[90vw] max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}

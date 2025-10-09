@@ -100,9 +100,10 @@ const [loadingOlder, setLoadingOlder] = useState(false);
   }
   const token = localStorage.getItem("accessToken");
 
-  const ws = new WebSocket(
-    `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticket.ticketId}?token=${token}`
-  );
+ const ws = new WebSocket(
+  `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticket.ticketId}&token=${token}`
+);
+
   socketRef.current = ws;
 
   ws.onopen = () => console.log("✅ WebSocket connected for", ticket.ticketId);
@@ -353,14 +354,14 @@ const handleReply = async () => {
 
                 </div>
               </div>
-                {matchedArray.includes("GET_REPLY") && (
+                
                <button
                 onClick={() => setShowChat(true)}
                 className="mb-6 px-6 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition-all duration-200 shadow"
               >
                 💬 Open Chat
               </button>
-                )}
+              
 
               <div className="mt-10 flex justify-end gap-4">
                  <button
@@ -431,14 +432,14 @@ const handleReply = async () => {
                     className={`w-full p-3 rounded-lg focus:ring-2 focus:ring-blue-400 resize-none text-sm shadow ${bgColor} ${borderColor}`}
                     placeholder="Type your reply..."
                   />
-                 {matchedArray.includes("REPLY_TICKET") && (
+                
                   <button
                     onClick={handleReply}
                     className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
                   >
                     Send
                   </button>
-                 )}
+                 
                   {messageSent && (
                     <div className="text-green-600 text-sm text-center animate-pulse">
                       ✅ Reply Sent
