@@ -45,7 +45,7 @@ const ChatAppSkeleton = ({ theme }) => (
 
 function ChatApp() {
     const { userId } = useParams();
-    const { theme } = useContext(Context);
+    const { theme,userData} = useContext(Context);
     const [chatList, setChatList] = useState({ groups: [], privateChatsWith: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -55,9 +55,9 @@ function ChatApp() {
     const fetchingMore = useRef(false);
 
     const currentUser = {
-        name: 'You',
+        name: userData?.displayName || 'You',
         id: userId,
-        profile: 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'
+        profile: userData?.employeeImage || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'
     };
 
     const loadChats = async (pageNum) => {

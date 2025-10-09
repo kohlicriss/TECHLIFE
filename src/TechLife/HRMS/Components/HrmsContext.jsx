@@ -22,12 +22,20 @@ const HrmsContext = ({ children }) => {
     const [refreshToken, setRefreshToken] = useState(null);
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
     const [matchedArray,setMatchedArray]=useState([]);
+    const [chatUnreadCount,setChatUnreadCount]=useState(0);
 
-    useEffect(() => {
+        useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
+        const storedUserImage = localStorage.getItem("loggedInUserImage");
+ 
         if (storedUser) {
-            setUserData(JSON.parse(storedUser));
+            const userObject = JSON.parse(storedUser);
+            if (storedUserImage) {
+                userObject.employeeImage = storedUserImage;
+            }
+            setUserData(userObject);
         }
+ 
         const storedAccessToken = localStorage.getItem("accessToken");
         const storedRefreshToken = localStorage.getItem("refreshToken");
         if (storedAccessToken) {
@@ -37,7 +45,6 @@ const HrmsContext = ({ children }) => {
             setRefreshToken(storedRefreshToken);
         }
     }, []);
-
 
 
 
@@ -199,7 +206,7 @@ useEffect(() => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray,chatUnreadCount,setChatUnreadCount
             }}
         >
             {/* UISidebarContext will be provided in HrmsApp */}
