@@ -999,6 +999,15 @@ function Profile() {
     const config = sectionConfig[section];
     const IconComponent = config.icon;
     
+    // ✅ FILTER OUT ID FIELD FOR ADD OPERATIONS
+    const filteredFields = fields.filter(field => {
+        // Hide ID field for ADD operations (POST), show for EDIT operations (PUT)
+        if (field.name === 'id' && isAdd) {
+            return false;
+        }
+        return true;
+    });
+    
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4 animate-fadeIn">
         <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
@@ -1031,7 +1040,8 @@ function Profile() {
           <div className="overflow-y-auto flex-grow">
             <form className="p-4 sm:p-6 md:p-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(section); }}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
+                {/* ✅ USE FILTERED FIELDS INSTEAD OF ORIGINAL FIELDS */}
+                {filteredFields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
               </div>
               
               {errors.general && (
@@ -1088,7 +1098,7 @@ function Profile() {
         </div>
       </div>
     );
-  };
+};
   
   const DetailItem = ({ label, value }) => (
     <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-300 hover:scale-105 ${
