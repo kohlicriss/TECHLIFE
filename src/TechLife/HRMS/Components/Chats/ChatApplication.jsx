@@ -288,6 +288,7 @@ const ContactProfileModal = ({ chat, onClose, theme }) => {
 };
 
 function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore, theme }) {
+    const { setChatUnreadCount } = useContext(Context);
     const location = useLocation();
     const navigate = useNavigate();
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
@@ -837,6 +838,11 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         ...chatData.groups,
     ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
+    useEffect(() => {
+        const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
+        setChatUnreadCount(totalUnread);
+    }, [allChats, setChatUnreadCount]);
+
     const handleTypingEvent = useCallback((payload) => {
         const typingUpdate = JSON.parse(payload.body);
 
@@ -1011,6 +1017,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
         setSelectedChat(null);
         setIsChatOpen(false);
+        setShowScrollToBottom(false);
 
         const newUrl = `/chat/${currentUser.id}`;
         navigate(newUrl);
@@ -1566,6 +1573,9 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         if (selectedChat?.type === 'group') {
             setActiveGroupInfoTab('Overview');
             setGroupMembers([]);
+            setGroupMedia([]);   
+            setGroupFiles([]); 
+            setGroupLinks([]);
             setIsGroupInfoModalOpen(true);
         }
     };
@@ -1703,7 +1713,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full md:w-[70%] h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className={`w-full md:w-[70%] h-screen md:h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">

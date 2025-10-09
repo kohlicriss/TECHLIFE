@@ -198,7 +198,7 @@ const RouteWrapper = ({ children, moduleName }) => (
 );
 
 // Main Layout with error boundaries for sidebar and navbar
-const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isChatWindowVisible }) => (
+const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isChatWindowVisible,chatUnreadCount }) => (
     <div className="flex flex-col h-screen bg-gray-50">
         <ErrorBoundary 
             fallback={() => (
@@ -218,7 +218,7 @@ const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isCh
                     </div>
                 )}
             >
-                <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} />
+                <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} chatUnreadCount={chatUnreadCount} />
             </ErrorBoundary>
             
             <main className="flex-1 overflow-y-auto">
@@ -253,8 +253,8 @@ const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isCh
 );
 
 const MainLayoutWrapper = (props) => {
-    const { isChatWindowVisible } = useContext(Context);
-    return <MainLayout {...props} isChatWindowVisible={isChatWindowVisible} />;
+    const { isChatWindowVisible, chatUnreadCount } = useContext(Context);
+    return <MainLayout {...props} isChatWindowVisible={isChatWindowVisible} chatUnreadCount={chatUnreadCount} />;
 };
 
 const HrmsApp = () => {

@@ -19,12 +19,20 @@ const HrmsContext = ({ children }) => {
     const [accessToken, setAccessToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
+    const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
     useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
+        const storedUserImage = localStorage.getItem("loggedInUserImage");
+
         if (storedUser) {
-            setUserData(JSON.parse(storedUser));
+            const userObject = JSON.parse(storedUser);
+            if (storedUserImage) {
+                userObject.employeeImage = storedUserImage; 
+            }
+            setUserData(userObject); 
         }
+
         const storedAccessToken = localStorage.getItem("accessToken");
         const storedRefreshToken = localStorage.getItem("refreshToken");
         if (storedAccessToken) {
@@ -41,13 +49,13 @@ const HrmsContext = ({ children }) => {
             try {
                 let response = await authApi.get(`/role-access/all`);
                 console.log("Original Permissions data from API:", response.data);
-                
+
                 // Remove ROLE_ prefix from roleName in each permission object
                 const processedPermissions = response.data.map(roleData => ({
                     ...roleData,
                     roleName: roleData.roleName.replace(/^ROLE_/, '') // Remove ROLE_ prefix
                 }));
-                
+
                 console.log("Processed Permissions data (ROLE_ prefix removed):", processedPermissions);
                 setPermissionsData(processedPermissions);
             } catch (error) {
@@ -164,7 +172,8 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData
+                permissionsdata, setPermissionsData,
+                chatUnreadCount, setChatUnreadCount
             }}
         >
             {children}
