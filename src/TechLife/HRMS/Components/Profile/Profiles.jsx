@@ -286,30 +286,39 @@ const Profiles = () => {
     };
 
     const handleHeaderSave = async (e) => {
-        e.preventDefault();
-        try {
-            const payload = {
-                ...editingHeaderData,
-                department: selectedDepartmentValue || editingHeaderData.department
-            };
-            
-            console.log("Sending payload:", payload);
-            
-            const res = await publicinfoApi.put(`employee/${profileEmployeeId}/header`, payload);
-            if(!isOwnProfile) {
-                setViewedEmployeeHeaderData(res.data);
-            } else {
-                setHeaderData(res.data);
-            }
-            setIsEditingHeader(false);
-            setSelectedDepartmentDisplay('');
-            setSelectedDepartmentValue('');
-            alert("Header information updated successfully!");
-        } catch (err) {
-            console.error("❌ Error updating header:", err);
-            alert("Failed to update header information");
+    e.preventDefault();
+    try {
+        const payload = {
+            ...editingHeaderData,
+            department: selectedDepartmentValue || editingHeaderData.department
+        };
+        
+        console.log("Sending payload:", payload);
+        
+        const res = await publicinfoApi.put(`employee/${profileEmployeeId}/header`, payload);
+        
+        // ✅ PRESERVE existing employeeImage when updating
+        if(!isOwnProfile) {
+            setViewedEmployeeHeaderData(prev => ({
+                ...res.data,
+                employeeImage: prev?.employeeImage || res.data.employeeImage
+            }));
+        } else {
+            setHeaderData(prev => ({
+                ...res.data,
+                employeeImage: prev?.employeeImage || res.data.employeeImage
+            }));
         }
-    };
+        
+        setIsEditingHeader(false);
+        setSelectedDepartmentDisplay('');
+        setSelectedDepartmentValue('');
+        alert("Header information updated successfully!");
+    } catch (err) {
+        console.error("❌ Error updating header:", err);
+        alert("Failed to update header information");
+    }
+};
 
     const handleHeaderInputChange = e => {
         setEditingHeaderData(prev => ({ ...prev, [e.target.name]: e.target.value }));

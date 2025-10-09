@@ -45,7 +45,7 @@ const ChatAppSkeleton = ({ theme }) => (
 
 function ChatApp() {
     const { userId } = useParams();
-    const { theme, userData } = useContext(Context);
+    const { theme,userData} = useContext(Context);
     const [chatList, setChatList] = useState({ groups: [], privateChatsWith: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);

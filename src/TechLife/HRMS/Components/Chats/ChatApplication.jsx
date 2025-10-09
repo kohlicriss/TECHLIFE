@@ -288,7 +288,6 @@ const ContactProfileModal = ({ chat, onClose, theme }) => {
 };
 
 function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasMore, isFetchingMore, theme }) {
-    const { setChatUnreadCount } = useContext(Context);
     const location = useLocation();
     const navigate = useNavigate();
     const [chatData, setChatData] = useState({ groups: [], privateChatsWith: [] });
@@ -337,7 +336,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [currentResultIndex, setCurrentResultIndex] = useState(-1);
-    const { setIsChatWindowVisible } = useContext(Context);
+    const { setIsChatWindowVisible,setChatUnreadCount } = useContext(Context);
 
     useEffect(() => {
         if (setIsChatWindowVisible) {
@@ -377,6 +376,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
     };
+
+
+
+
+
+    
+
+
+
+
 
     useEffect(() => {
         if (searchQuery.trim() === '') {
@@ -838,7 +847,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         ...chatData.groups,
     ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
-    useEffect(() => {
+
+        useEffect(() => {
         const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
         setChatUnreadCount(totalUnread);
     }, [allChats, setChatUnreadCount]);
