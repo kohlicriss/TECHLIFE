@@ -20,7 +20,7 @@ import {
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
 
-function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData, setUserData, theme } = useContext(Context);
@@ -65,7 +65,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "My Projects", icon: <Database size={18} />, path: empId ? `/projects/${empId}` : "/projects" },
     { name: "My Tasks",icon: <ListChecks size={18} />,path: empId ? `/tasks/${empId}` : "/tasks",},
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
-    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
+    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
   ];
 
@@ -144,7 +144,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center cursor-pointer ${
                   collapsed ? "justify-center" : "justify-start"
-                } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
+                } gap-3 px-4 py-1.5 transition rounded-md mx-2 relative ${
                   isActive
                     ? "bg-blue-500 text-white font-semibold"
                     : theme === 'dark'
@@ -154,6 +154,13 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               >
                 {item.icon}
                 {!collapsed && <span>{item.name}</span>}
+
+                {!collapsed && item.notification && (
+                  <span className="absolute right-4 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+                {collapsed && item.notification && (
+                    <span className="absolute right-2 top-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
               </Link>
             );
           })}
