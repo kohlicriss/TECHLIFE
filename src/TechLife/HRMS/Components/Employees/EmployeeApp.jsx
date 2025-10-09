@@ -1403,7 +1403,7 @@ function EmployeeApp() {
                     </div>
                 </motion.div>
 
-                <div className="flex items-center justify-between mb-4 sm:mb-6 mx-4 sm:mx-0">
+                <div className="flex items-center justify-between mb-4 sm:mb-3 mx-4 sm:mx-0">
                     <h3 className={`text-base sm:text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
                         {filteredEmployees.length} Employee{filteredEmployees.length !== 1 ? 's' : ''} Found
                     </h3>
@@ -1476,70 +1476,85 @@ function EmployeeApp() {
                                                 } hover:scale-105`}
                                                 style={{ backfaceVisibility: 'hidden' }}
                                             >
-                                                <div className="flex flex-col items-center text-center h-full justify-center p-4 sm:p-5 relative overflow-hidden">
-                                                    <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 opacity-10">
-                                                        <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-10 sm:translate-x-12 -translate-y-10 sm:-translate-y-12`}></div>
-                                                    </div>
+                                              <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
+    {/* Background decoration */}
+    <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
+        <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
+    </div>
 
-                                                    <div className="relative mb-3 sm:mb-4 z-10">
-                                                        {employee.employeeImage ? (
-                                                            <div className="relative">
-                                                                <img
-                                                                    src={employee.employeeImage}
-                                                                    alt={`${employee.displayName}'s profile picture`}
-                                                                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover border-4 border-gradient-to-r from-blue-400 to-indigo-500 shadow-xl group-hover:border-blue-400 transition-all duration-300 transform group-hover:scale-110"
-                                                                />
-                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="relative">
-                                                                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg sm:text-2xl font-bold shadow-xl group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-110">
-                                                                    {generateInitials(employee.displayName)}
-                                                                </div>
-                                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-green-500 rounded-full border-2 border-white shadow-lg"></div>
-                                                            </div>
-                                                        )}
-                                                    </div>
+    {/* Profile Image Section */}
+    <div className="flex flex-col items-center text-center mb-3 z-10">
+        <div className="relative mb-2">
+            {employee.employeeImage ? (
+                <div className="relative">
+                    <img
+                        src={employee.employeeImage}
+                        alt={`${employee.displayName}'s profile picture`}
+                        className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                </div>
+            ) : (
+                <div className="relative">
+                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-105">
+                        {generateInitials(employee.displayName)}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                </div>
+            )}
+        </div>
 
-                                                    <div className="w-full z-10">
-                                                        <h3 className={`text-base sm:text-lg font-bold mb-2 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                            {employee.displayName}
-                                                        </h3>
-                                                        <p className="text-blue-600 font-semibold mb-3 text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
-                                                            {employee.jobTitlePrimary}
-                                                        </p>
+        {/* Name and Job Title */}
+        <div className="w-full px-1">
+            <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                {employee.displayName}
+            </h3>
+            <p className="text-blue-600 font-semibold text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full truncate">
+                {employee.jobTitlePrimary || "Not Updated Job Title"  }
+            </p>
+        </div>
+    </div>
 
-                                                        <div className="space-y-1 sm:space-y-2 text-xs">
-                                                            <div className={`flex items-center justify-center space-x-2 p-1 sm:p-2 rounded-md ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoIdCardOutline className={`w-3 h-3 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                                                                <span className="truncate font-mono text-xs">{employee.employeeId}</span>
-                                                            </div>
+    {/* Employee Details Section - Fixed height container */}
+    <div className="flex-1 flex flex-col justify-end min-h-0">
+        <div className="space-y-1.5 px-1">
+            {/* Employee ID */}
+            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+            }`}>
+                <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
+                <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
+            </div>
 
-                                                            <div className={`flex items-center justify-center space-x-2 p-1 sm:p-2 rounded-md ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoBriefcaseOutline className={`w-3 h-3 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
-                                                                <span className="truncate">{employee.departmentId || 'N/A'}</span>
-                                                            </div>
+            {/* Department */}
+            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+            }`}>
+                <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+                <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
+            </div>
 
-                                                            <div className={`flex items-center justify-center space-x-2 p-1 sm:p-2 rounded-md ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoLocationOutline className={`w-3 h-3 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
-                                                                <span className="truncate">{employee.location || 'N/A'}</span>
-                                                            </div>
+            {/* Location */}
+            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+            }`}>
+                <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
+                <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
+            </div>
 
-                                                            <div className={`flex items-center justify-center space-x-2 p-1 sm:p-2 rounded-md ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoMailOutline className={`w-3 h-3 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
-                                                                <span className="truncate text-xs">{employee.workEmail || 'N/A'}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+            {/* Email */}
+            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+            }`}>
+                <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
+                <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
+                    {employee.workEmail || 'N/A'}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
                                             </div>
 
                                             <div
