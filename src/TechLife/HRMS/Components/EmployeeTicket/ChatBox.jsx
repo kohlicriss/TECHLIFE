@@ -58,7 +58,7 @@ const { userData ,theme} = useContext(Context);
 
 const fetchMessages = async (pageToFetch = 0) => {
   const token = localStorage.getItem("accessToken");
-  if (!ticketId || !token || !matchedArray.includes("VIEW_TICKET_REPLIES") || loading || !hasMore) return;
+  if (!ticketId || !token || loading || !hasMore) return;
 
   try {
     setLoading(true);
@@ -68,7 +68,7 @@ const fetchMessages = async (pageToFetch = 0) => {
     );
 
     if (res.status === 403) {
-      console.error("🚫 Forbidden: VIEW_TICKET_REPLIES missing on backend");
+      console.error(" Forbidden: VIEW_TICKET_REPLIES missing on backend");
       setMessages([]);
       setHasMore(false);
       return;
@@ -86,7 +86,7 @@ const fetchMessages = async (pageToFetch = 0) => {
       setPage(pageToFetch + 1);
     }
   } catch (err) {
-    console.error("❌ Error fetching messages:", err);
+    console.error(" Error fetching messages:", err);
   } finally {
     setLoading(false);
   }

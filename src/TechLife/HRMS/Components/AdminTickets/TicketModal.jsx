@@ -244,7 +244,7 @@ const handleReply = async () => {
     );
 
    
-    setReplies((prev) => [...prev, res.data || payload]);
+    //setReplies((prev) => [...prev, res.data || payload]);
 
     setReplyText("");
     setMessageSent(true);
@@ -277,6 +277,7 @@ const handleReply = async () => {
       );
 
       setReplies((prev) => [...prev, res.data]);
+
       setNewStatus(res.data.status);
       ticket.status = res.data.status;
       if (onStatusUpdate) onStatusUpdate(res.data);
