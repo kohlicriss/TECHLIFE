@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.4ee80a67.css",
-    "main.js": "/static/js/main.fafae286.js",
+    "main.js": "/static/js/main.f27d9845.js",
     "static/js/834.bcc8a11a.chunk.js": "/static/js/834.bcc8a11a.chunk.js",
     "static/js/664.ea0a6d6e.chunk.js": "/static/js/664.ea0a6d6e.chunk.js",
     "static/js/654.b21c0d54.chunk.js": "/static/js/654.b21c0d54.chunk.js",
@@ -32,7 +32,7 @@
     "static/media/anasol-logo.png": "/static/media/anasol-logo.a2ebc8b505bdd612f215.png",
     "index.html": "/index.html",
     "main.4ee80a67.css.map": "/static/css/main.4ee80a67.css.map",
-    "main.fafae286.js.map": "/static/js/main.fafae286.js.map",
+    "main.f27d9845.js.map": "/static/js/main.f27d9845.js.map",
     "834.bcc8a11a.chunk.js.map": "/static/js/834.bcc8a11a.chunk.js.map",
     "664.ea0a6d6e.chunk.js.map": "/static/js/664.ea0a6d6e.chunk.js.map",
     "654.b21c0d54.chunk.js.map": "/static/js/654.b21c0d54.chunk.js.map",
@@ -63,6 +63,6 @@
   },
   "entrypoints": [
     "static/css/main.4ee80a67.css",
-    "static/js/main.fafae286.js"
+    "static/js/main.f27d9845.js"
   ]
 }
