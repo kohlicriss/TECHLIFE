@@ -1016,7 +1016,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         const newUrl = `/chat/${currentUser.id}/with?id=${targetChat.chatId}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
 
-    }, [currentUser.id, groupMembersCache]); 
+    }, [currentUser.id, groupMembersCache]);
 
     const closeChat = useCallback(() => {
         isManuallyClosing.current = true;
@@ -1730,7 +1730,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full md:w-[70%] h-screen md:h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className={`flex-col shadow-xl fixed inset-0 z-[100] md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
