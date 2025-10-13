@@ -5,6 +5,7 @@ import { Context } from '../HrmsContext';
 import { authApi, publicinfoApi } from '../../../../axiosInstance';
 import {
     IoSearchOutline,
+    IoLockClosed,
     IoMailOutline,
     IoLocationOutline,
     IoBriefcaseOutline,
@@ -1284,124 +1285,124 @@ function EmployeeApp() {
     return (
         <div className={`min-h-screen px-0 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
             <div className="max-w-7xl mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className={`rounded-none sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 shadow-lg border mb-6 sm:mb-8 mx-4 sm:mx-0 ${
-                        theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+             <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, delay: 0.2 }}
+    className={`rounded-none sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg border mb-4 sm:mb-6 mx-2 sm:mx-0 ${
+        theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+    }`}
+>
+    <div className="mb-3">
+        <div className="relative group max-w-full sm:max-w-sm md:max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                <IoSearchOutline className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+            </div>
+            <input
+                type="text"
+                className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 pl-7 sm:pl-8 border rounded-md sm:rounded-lg transition-all duration-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none placeholder-gray-500 text-xs sm:text-sm ${
+                    theme === 'dark'
+                        ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
+                        : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
+                }`}
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+    </div>
+
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {dynamicFilters.map(filter => {
+                const IconComponent = filter.icon;
+                return (
+                    <div key={filter.name} className="relative group min-w-0 flex-1 sm:flex-initial">
+                        <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 flex items-center pointer-events-none">
+                            <IconComponent className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                        </div>
+                        <select
+                            className={`px-3 sm:px-4 py-2 sm:py-2.5 pl-6 sm:pl-7 pr-4 sm:pr-5 border rounded-md sm:rounded-lg transition-all duration-300 appearance-none cursor-pointer min-w-[100px] sm:min-w-[120px] text-xs truncate focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+                                theme === 'dark'
+                                    ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
+                            }`}
+                            value={selectedFilters[filter.name]}
+                            onChange={(e) => setSelectedFilters({
+                                ...selectedFilters,
+                                [filter.name]: e.target.value,
+                            })}
+                        >
+                            {filter.options.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center pointer-events-none">
+                            <IoChevronDownOutline className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
+            <button
+                onClick={clearFilters}
+                className={`px-4 sm:px-5 py-1.5 sm:py-2 border rounded-md sm:rounded-lg font-medium transition-all duration-200 focus:ring-2 focus:ring-gray-500/20 text-xs flex items-center justify-center space-x-1.5 ${
+                    theme === 'dark'
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                }`}
+            >
+                <IoRefreshOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <span>Clear</span>
+            </button>
+
+            {matchedArray && matchedArray.includes("CREAT_USER") && (
+                <button
+                    onClick={() => setIsAddEmployeeModalOpen(true)}
+                    className="px-4 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-md sm:rounded-lg hover:shadow-md transform hover:scale-105 transition-all duration-200 focus:ring-2 focus:ring-blue-500/30 text-xs flex items-center justify-center space-x-1.5"
+                >
+                    <IoAddCircleOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span>Add</span>
+                </button>
+            )}
+
+            {matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
+                <button
+                    onClick={handleTerminateEmployees}
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors duration-200 text-xs flex items-center justify-center space-x-1.5"
+                >
+                    <IoTrashOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span>Terminate</span>
+                </button>
+            )}
+
+            <div className={`flex rounded-md p-0.5 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
+                        viewMode === 'grid'
+                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
                     }`}
                 >
-                    <div className="mb-4">
-                        <div className="relative group max-w-full sm:max-w-md">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <IoSearchOutline className={`h-4 w-4 sm:h-5 sm:w-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                            </div>
-                            <input
-                                type="text"
-                                className={`w-full px-4 sm:px-5 py-3 sm:py-4 pl-8 sm:pl-10 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none placeholder-gray-500 text-sm ${
-                                    theme === 'dark'
-                                        ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
-                                        : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
-                                }`}
-                                placeholder="Search by Name, Email, or Employee ID..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between">
-                        <div className="flex flex-wrap gap-2 sm:gap-3">
-                            {dynamicFilters.map(filter => {
-                                const IconComponent = filter.icon;
-                                return (
-                                    <div key={filter.name} className="relative group min-w-0 flex-1 sm:flex-initial">
-                                        <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
-                                            <IconComponent className={`h-3 w-3 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                                        </div>
-                                        <select
-                                            className={`px-4 sm:px-5 py-3 sm:py-4 pl-7 sm:pl-9 pr-6 sm:pr-8 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none cursor-pointer min-w-[120px] sm:min-w-[140px] text-xs sm:text-sm truncate focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
-                                                theme === 'dark'
-                                                    ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
-                                                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
-                                            }`}
-                                            value={selectedFilters[filter.name]}
-                                            onChange={(e) => setSelectedFilters({
-                                                ...selectedFilters,
-                                                [filter.name]: e.target.value,
-                                            })}
-                                        >
-                                            {filter.options.map(option => (
-                                                <option key={option} value={option}>{option}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none">
-                                            <IoChevronDownOutline className={`h-3 w-3 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            <button
-                                onClick={clearFilters}
-                                className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-xs sm:text-sm flex items-center justify-center space-x-2 ${
-                                    theme === 'dark'
-                                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                                }`}
-                            >
-                                <IoRefreshOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span>Clear</span>
-                            </button>
-
-                            {matchedArray && matchedArray.includes("CREAT_USER") && (
-                                <button
-                                    onClick={() => setIsAddEmployeeModalOpen(true)}
-                                    className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-xs sm:text-sm flex items-center justify-center space-x-2"
-                                >
-                                    <IoAddCircleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    <span>Add Employee</span>
-                                </button>
-                            )}
-
-                            { matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
-                                <button
-                                    onClick={handleTerminateEmployees}
-                                    className="px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200 text-xs sm:text-sm flex items-center justify-center space-x-2"
-                                >
-                                    <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    <span>Terminated Employees</span>
-                                </button>
-                            )}
-
-                            <div className={`flex rounded-lg p-1 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-1 sm:p-2 rounded-md transition-all duration-200 ${
-                                        viewMode === 'grid'
-                                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-                                    }`}
-                                >
-                                    <IoGridOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`p-1 sm:p-2 rounded-md transition-all duration-200 ${
-                                        viewMode === 'list'
-                                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-                                    }`}
-                                >
-                                    <IoListOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+                    <IoGridOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                </button>
+                <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
+                        viewMode === 'list'
+                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+                    }`}
+                >
+                    <IoListOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                </button>
+            </div>
+        </div>
+    </div>
+</motion.div>
 
                 <div className="flex items-center justify-between mb-4 sm:mb-3 mx-4 sm:mx-0">
                     <h3 className={`text-base sm:text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -1626,7 +1627,7 @@ function EmployeeApp() {
                                                             </button>
                                                         }
 
-                                                        {hasAccess && hasAccess.includes("DELETE_USER") && (
+                                                        { hasAccess.includes("DELETE_USER") && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -1778,55 +1779,59 @@ function EmployeeApp() {
                     </motion.div>
                 )}
 
-                <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
-                    <button
-                        onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
-                        disabled={pageNumber === 0}
-                        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
-                            theme === 'dark'
-                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                        <IoArrowBack className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span>Previous</span>
-                    </button>
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
+    <button
+        onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
+        disabled={pageNumber === 0}
+        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
+            theme === 'dark'
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+    >
+        <IoArrowBack className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span>Previous</span>
+    </button>
 
-                    <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                        <span className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Page {pageNumber + 1}
-                        </span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(parseInt(e.target.value));
-                                setPageNumber(0);
-                            }}
-                            className={`px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg text-xs sm:text-sm ${
-                                theme === 'dark'
-                                    ? 'bg-gray-700 text-white border-gray-600'
-                                    : 'bg-gray-100 text-gray-800 border-gray-300'
-                            }`}
-                        >
-                            <option value="15">15 per page</option>
-                            <option value="30">30 per page</option>
-                            <option value="50">50 per page</option>
-                        </select>
-                    </div>
+    <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+        <span className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            Page {pageNumber + 1}
+        </span>
+        <select
+            value={pageSize}
+            onChange={(e) => {
+                setPageSize(parseInt(e.target.value));
+                setPageNumber(0);
+            }}
+            className={`px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg text-xs sm:text-sm ${
+                theme === 'dark'
+                    ? 'bg-gray-700 text-white border-gray-600'
+                    : 'bg-gray-100 text-gray-800 border-gray-300'
+            }`}
+        >
+            <option value="15">15 per page</option>
+            <option value="30">30 per page</option>
+            <option value="50">50 per page</option>
+        </select>
+    </div>
 
-                    <button
-                        onClick={() => setPageNumber(prev => prev + 1)}
-                        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
-                            theme === 'dark'
-                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                        disabled={filteredEmployees.length < pageSize}
-                    >
-                        <span>Next</span>
-                        <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
-                </div>
+    <button
+        onClick={() => setPageNumber(prev => prev + 1)}
+        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
+            theme === 'dark'
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+        disabled={filteredEmployees.length < pageSize}
+    >
+        <span>{filteredEmployees.length < pageSize ? 'Last Page' : 'Next'}</span>
+        {filteredEmployees.length < pageSize ? (
+            <IoLockClosed className="w-3 h-3 sm:w-4 sm:h-4" />
+        ) : (
+            <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
+        )}
+    </button>
+</div>
             </div>
 
             {isTerminatedEmployeesModalOpen && renderTerminatedEmployeesModal()}

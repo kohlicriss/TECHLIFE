@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload, IoTrashOutline } from 'react-icons/io5';
+import { IoClose, IoDocumentText, IoCheckmarkCircle, IoPencil,IoWarning, IoEye, IoAdd, IoCloudUpload, IoTrashOutline } from 'react-icons/io5';
 import { Context } from '../../HrmsContext';
 import { publicinfoApi } from '../../../../../axiosInstance';
 import { useParams, useLocation } from 'react-router-dom';
@@ -662,7 +662,7 @@ const Achivements = () => {
                           }`}
                           title="Edit achievement"
                         >
-                          <IoEye className="w-3 h-3 sm:w-4 sm:h-4" />
+                         <IoPencil className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                         <button 
                           onClick={() => handleDelete(achievement.id)}
@@ -806,106 +806,119 @@ const Achivements = () => {
         </div>
 
         {/* Add/Edit Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
-            <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
-              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-            }`}>
-              {/* Header */}
-              <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${config.color} text-white`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
-                      {isEditMode ? 'Edit Achievement' : 'Add New Achievement'}
-                    </h2>
-                    <p className="text-xs sm:text-sm opacity-90 mt-1">
-                      {isEditMode ? 'Update the achievement details' : 'Fill in the details to add a new certification'}
-                    </p>
-                  </div>
-                  <button onClick={handleCloseModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                    <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </button>
-                </div>
-              </div>
+       {isModalOpen && (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
+      <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] flex flex-col shadow-2xl animate-slideUp ${
+        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+      }`}>
+        {/* Fixed Header */}
+        <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${config.color} text-white flex-shrink-0`}>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
+                {isEditMode ? 'Edit Achievement' : 'Add New Achievement'}
+              </h2>
+              <p className="text-xs sm:text-sm opacity-90 mt-1">
+                {isEditMode ? 'Update the achievement details' : 'Fill in the details to add a new achievement'}
+              </p>
+            </div>
+            <button onClick={handleCloseModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+              <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
+        </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8 max-h-[calc(95vh-120px)] overflow-y-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                  {achievementFormFields.map((field) => (
-                    <div key={field.name} className={field.name === 'certificationURL' || field.name === 'achievementFile' ? 'lg:col-span-2' : ''}>
-                      <InputField
-                        {...field}
-                        value={formData[field.name] || ''}
-                        onChange={handleInputChange}
-                        onBlur={() => {}}
-                        isError={formErrors[field.name]}
-                        theme={theme}
-                      />
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+              {achievementFormFields.map((field) => (
+                <div key={field.name} className={field.name === 'certificationURL' || field.name === 'achievementFile' ? 'lg:col-span-2' : ''}>
+                  <InputField
+                    {...field}
+                    value={formData[field.name] || ''}
+                    onChange={handleInputChange}
+                    onBlur={() => {}}
+                    isError={formErrors[field.name]}
+                    theme={theme}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Uploaded Files Display */}
+            {uploadedFiles.length > 0 && (
+              <div className="mt-4 sm:mt-6">
+                <h4 className={`text-sm font-semibold mb-3 ${
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Uploaded Files:
+                </h4>
+                <div className="space-y-2">
+                  {Array.from(uploadedFiles).map((file, index) => (
+                    <div key={index} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${
+                      theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <IoDocumentText className={`w-4 h-4 flex-shrink-0 ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`} />
+                        <span className={`text-xs sm:text-sm truncate ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          {file.name}
+                        </span>
+                      </div>
+                      <span className={`text-xs flex-shrink-0 ml-2 ${
+                        theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </span>
                     </div>
                   ))}
                 </div>
-
-                {/* Uploaded Files Display */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4 sm:mt-6">
-                    <h4 className={`text-sm font-semibold mb-3 ${
-                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Uploaded Files:
-                    </h4>
-                    <div className="space-y-2">
-                      {Array.from(uploadedFiles).map((file, index) => (
-                        <div key={index} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${
-                          theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                        }`}>
-                          <div className="flex items-center space-x-3 min-w-0 flex-1">
-                            <IoDocumentText className={`w-4 h-4 flex-shrink-0 ${
-                              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                            }`} />
-                            <span className={`text-xs sm:text-sm truncate ${
-                              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
-                              {file.name}
-                            </span>
-                          </div>
-                          <span className={`text-xs flex-shrink-0 ml-2 ${
-                            theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-                          }`}>
-                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </form>
-
-              {/* Footer */}
-              <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t ${
-                theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
-              } flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4`}>
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
-                    theme === 'dark'
-                      ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  onClick={handleSubmit}
-                  className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base`}
-                >
-                  {isEditMode ? 'Update' : 'Save'} Achievement
-                </button>
               </div>
-            </div>
-          </div>
-        )}
+            )}
+          </form>
+        </div>
+
+        {/* Fixed Footer */}
+        <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex-shrink-0 ${
+          theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
+        } flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4`}>
+          <button
+            type="button"
+            onClick={handleCloseModal}
+            className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
+              theme === 'dark'
+                ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+            }`}
+          >
+            Cancel
+          </button>
+          
+          {isEditMode ? (
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-purple-500/30 text-sm sm:text-base`}
+            >
+              Update Achievement
+            </button>
+          ) : (
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-green-500/30 text-sm sm:text-base`}
+            >
+              Add Achievement
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )}
 
         {/* Success/Error Popup */}
         {popup.show && (

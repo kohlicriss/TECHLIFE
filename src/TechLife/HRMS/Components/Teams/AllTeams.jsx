@@ -1,11 +1,93 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { publicinfoApi, authApi } from '../../../../axiosInstance';
-import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; 
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch, FaChevronLeft, FaChevronRight, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa'; 
 import { IoCheckmarkCircle, IoWarning, IoAddCircleOutline, IoKeyOutline } from 'react-icons/io5';
+import { X } from 'lucide-react';
 import { Context } from '../HrmsContext';
 import ConfirmationModal from './ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Custom Notification Component
+const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsVisible(true);
+            if (type === 'success' || type === 'error') {
+                const timer = setTimeout(() => {
+                    handleClose();
+                }, 3000);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [isOpen, type]);
+
+    const handleClose = () => {
+        setIsVisible(false);
+        setTimeout(() => onClose(), 300);
+    };
+
+    if (!isOpen) return null;
+
+    const getIcon = () => {
+        switch (type) {
+            case 'success':
+                return <FaCheckCircle className="w-6 h-6 text-green-500" />;
+            case 'error':
+                return <FaExclamationTriangle className="w-6 h-6 text-red-500" />;
+            case 'info':
+                return <FaInfoCircle className="w-6 h-6 text-blue-500" />;
+            default:
+                return null;
+        }
+    };
+
+    const getTitleClass = () => {
+        switch (type) {
+            case 'success':
+                return 'text-green-600 dark:text-green-400';
+            case 'error':
+                return 'text-red-600 dark:text-red-400';
+            case 'info':
+                return 'text-blue-600 dark:text-blue-400';
+            default:
+                return theme === 'dark' ? 'text-white' : 'text-gray-800';
+        }
+    };
+
+    return (
+        <div className={`fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md m-4 border transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {getIcon()}
+                    <h3 className={`text-xl font-bold ml-3 ${getTitleClass()}`}>{title}</h3>
+                    {type !== "success" && type !== "error" && (
+                        <button onClick={handleClose} className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X size={20} />
+                        </button>
+                    )}
+                </div>
+                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{message}</p>
+                {(type === 'success' || type === 'error') && (
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={handleClose}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                type === 'success' 
+                                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                    : 'bg-red-500 hover:bg-red-600 text-white'
+                            }`}
+                        >
+                            OK
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 // --- Reusable Input Field Component (Copied Styling) ---
 const InputField = ({
@@ -94,7 +176,6 @@ const InputField = ({
     );
 };
 // --- End Reusable Input Field Component ---
-
 
 // Utility Hook for Outside Click
 const useOutsideClick = (handler, ignoreRefs = []) => {
@@ -561,7 +642,7 @@ const AllTeams = () => {
     const [matchedArray, setMatchedArray] = useState(null);
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); 
     const [displayMode, setDisplayMode] = useState('MY_TEAMS'); 
-    const [adminallteams, setAdminAllTeams] = useState([]); 
+    const [adminallteams, setAdminAllTeams] = useState([]);
 
     // Form state
     const [teamName, setTeamName] = useState('');
@@ -570,6 +651,14 @@ const AllTeams = () => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formErrors, setFormErrors] = useState({});
+
+    // Notification state
+    const [notification, setNotification] = useState({
+        isOpen: false,
+        type: '',
+        title: '',
+        message: ''
+    });
 
     const { userData, theme } = useContext(Context);
     const userRoles = userData?.roles || [];
@@ -586,6 +675,25 @@ const AllTeams = () => {
     const loggedinuserRole = userData?.roles[0] 
         ? `ROLE_${userData.roles[0]}` 
         : null;
+
+    // Custom notification handlers
+    const showNotification = (type, title, message) => {
+        setNotification({
+            isOpen: true,
+            type,
+            title,
+            message
+        });
+    };
+
+    const closeNotification = () => {
+        setNotification({
+            isOpen: false,
+            type: '',
+            title: '',
+            message: ''
+        });
+    };
 
     const toggleTeamExpansion = (teamId) => {
         const newExpandedTeams = new Set(expandedTeams);
@@ -720,7 +828,7 @@ const AllTeams = () => {
             setTeamLead(null);
             setTeamMembers([]);
             setSelectedProject(null);
-            alert('Team created successfully!');
+            showNotification('success', 'Team Created Successfully!', 'The new team has been created successfully.');
         } catch (err) {
             console.error('[API ERROR - handleCreateTeam] Failed to create team:', err.response?.data || err.message);
             setFormErrors({ general: err.response?.data?.message || 'Failed to create team. Please check the data and try again.' });
@@ -752,10 +860,10 @@ const AllTeams = () => {
             
             setIsDeleteModalOpen(false);
             setSelectedTeam(null);
-            alert('Team deleted successfully!');
+            showNotification('success', 'Team Deleted Successfully!', 'The team has been deleted successfully.');
         } catch (err) {
             console.error('[API ERROR - confirmDelete] Failed to delete team:', err.response?.data || err.message);
-            alert('Failed to delete team.');
+            showNotification('error', 'Delete Failed', 'Failed to delete team. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -1185,6 +1293,16 @@ const AllTeams = () => {
                     onClick={() => setIsRightSidebarOpen(false)}
                 />
             )}
+
+            {/* Custom Notification */}
+            <CustomNotification
+                isOpen={notification.isOpen}
+                onClose={closeNotification}
+                type={notification.type}
+                title={notification.title}
+                message={notification.message}
+                theme={theme}
+            />
         </div>
     );
 };

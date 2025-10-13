@@ -1,9 +1,91 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { authApi, publicinfoApi } from '../../../../axiosInstance';
-import { FaUsers, FaProjectDiagram, FaArrowLeft, FaUserShield, FaEdit } from 'react-icons/fa';
+import { FaUsers, FaProjectDiagram, FaArrowLeft, FaUserShield, FaEdit, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
+import { X } from 'lucide-react';
 import { Context } from '../HrmsContext';
 import EditTeamModal from './EditTeamModal';
+
+// Custom Notification Component
+const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsVisible(true);
+            if (type === 'success' || type === 'error') {
+                const timer = setTimeout(() => {
+                    handleClose();
+                }, 3000);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [isOpen, type]);
+
+    const handleClose = () => {
+        setIsVisible(false);
+        setTimeout(() => onClose(), 300);
+    };
+
+    if (!isOpen) return null;
+
+    const getIcon = () => {
+        switch (type) {
+            case 'success':
+                return <FaCheckCircle className="w-6 h-6 text-green-500" />;
+            case 'error':
+                return <FaExclamationTriangle className="w-6 h-6 text-red-500" />;
+            case 'info':
+                return <FaInfoCircle className="w-6 h-6 text-blue-500" />;
+            default:
+                return null;
+        }
+    };
+
+    const getTitleClass = () => {
+        switch (type) {
+            case 'success':
+                return 'text-green-600 dark:text-green-400';
+            case 'error':
+                return 'text-red-600 dark:text-red-400';
+            case 'info':
+                return 'text-blue-600 dark:text-blue-400';
+            default:
+                return theme === 'dark' ? 'text-white' : 'text-gray-800';
+        }
+    };
+
+    return (
+        <div className={`fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md m-4 border transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="flex items-center mb-4">
+                    {getIcon()}
+                    <h3 className={`text-xl font-bold ml-3 ${getTitleClass()}`}>{title}</h3>
+                    {type !== "success" && type !== "error" && (
+                        <button onClick={handleClose} className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X size={20} />
+                        </button>
+                    )}
+                </div>
+                <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{message}</p>
+                {(type === 'success' || type === 'error') && (
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={handleClose}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                type === 'success' 
+                                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                    : 'bg-red-500 hover:bg-red-600 text-white'
+                            }`}
+                        >
+                            OK
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center h-40 sm:h-64">
@@ -27,41 +109,65 @@ const TeamDetails = () => {
     const [error, setError] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState([]);
-    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
-    const [matchedArray,setMatchedArray]=useState(null);
-
-    useEffect(()=>{
-        let fetchedData=async()=>{
-                let response = await authApi.get(`role-access/${LoggedUserRole}`);
-                console.log("from Edit Team :",response.data);
-                setLoggedPermissionData(response.data);
-        }
-        fetchedData();
-    },[])
-  
-    useEffect(()=>{
-        if(loggedPermissiondata){
-            setMatchedArray(loggedPermissiondata?.permissions)
-        }
-    },[loggedPermissiondata]);
-    console.log(matchedArray);
-
-
+    const [loggedPermissiondata, setLoggedPermissionData] = useState([]);
+    const [matchedArray, setMatchedArray] = useState([]);
+    
+    // Notification state
+    const [notification, setNotification] = useState({
+        isOpen: false,
+        type: '',
+        title: '',
+        message: ''
+    });
 
     const { theme, userData } = useContext(Context);
     const userRoles = userData?.roles || [];
     const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
-    
-
-        const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
-        console.log("Logged user role ",LoggedUserRole)
-
-        
-        
-
-
-    // 🎯 Get logged in user ID
+    const LoggedUserRole = userData?.roles[0] ? `ROLE_${userData?.roles[0]}` : null;
     const empID = userData?.employeeId;
+
+    // Custom notification handlers
+    const showNotification = (type, title, message) => {
+        setNotification({
+            isOpen: true,
+            type,
+            title,
+            message
+        });
+    };
+
+    const closeNotification = () => {
+        setNotification({
+            isOpen: false,
+            type: '',
+            title: '',
+            message: ''
+        });
+    };
+
+    useEffect(() => {
+        let fetchedData = async () => {
+            try {
+                let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                console.log("from Edit Team :", response.data);
+                setLoggedPermissionData(response.data);
+            } catch (error) {
+                console.error("Error fetching permissions:", error);
+                showNotification('error', 'Permission Error', 'Failed to load user permissions. Some features may not be available.');
+            }
+        }
+        if (LoggedUserRole) {
+            fetchedData();
+        }
+    }, [LoggedUserRole])
+
+    useEffect(() => {
+        if (loggedPermissiondata) {
+            setMatchedArray(loggedPermissiondata?.permissions || []);
+        }
+    }, [loggedPermissiondata]);
+
+    console.log(matchedArray);
 
     const fetchTeamDetails = async () => {
         try {
@@ -76,7 +182,9 @@ const TeamDetails = () => {
             setError(null);
         } catch (err) {
             console.error("Error fetching team details:", err);
-            setError("Could not fetch team details. The team may not exist or an error occurred.");
+            const errorMessage = err.response?.data?.message || "Could not fetch team details. The team may not exist or an error occurred.";
+            setError(errorMessage);
+            showNotification('error', 'Data Loading Error', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -84,22 +192,33 @@ const TeamDetails = () => {
 
     const fetchAllEmployees = async () => {
         try {
-          const response = await publicinfoApi.get('employee/0/1000/employeeId/asc/employees');
-          const formattedEmployees = response.data.map(emp => ({
-            value: emp.employeeId,
-            label: `${emp.displayName} (${emp.employeeId})`
-          }));
-          setAllEmployees(formattedEmployees);
+            const response = await publicinfoApi.get('employee/0/1000/employeeId/asc/employees');
+            const formattedEmployees = (response.data.content).map(emp => ({
+                value: emp.employeeId,
+                label: `${emp.displayName} (${emp.employeeId})`
+            }));
+            setAllEmployees(formattedEmployees);
         } catch (err) {
-          console.error("Error fetching employees:", err);
+            console.error("Error fetching employees:", err);
+            showNotification('error', 'Employee Data Error', 'Failed to load employee list. Team editing may not work properly.');
         }
     };
 
-    // 🚀 Handle user click navigation
     const handleUserClick = (member) => {
         if (empID && member.employeeId) {
             navigate(`/employees/${empID}/public/${member.employeeId}`);
+        } else {
+            showNotification('error', 'Navigation Error', 'Unable to navigate to employee profile. Please try again.');
         }
+    };
+
+    const handleTeamUpdated = () => {
+        fetchTeamDetails();
+        showNotification('success', 'Team Updated', 'Team details have been successfully updated.');
+    };
+
+    const handleEditModalClose = () => {
+        setIsEditModalOpen(false);
     };
 
     useEffect(() => {
@@ -220,10 +339,20 @@ const TeamDetails = () => {
 
             <EditTeamModal
                 isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
+                onClose={handleEditModalClose}
                 team={teamWithProjects}
-                onTeamUpdated={fetchTeamDetails}
+                onTeamUpdated={handleTeamUpdated}
                 employees={allEmployees}
+            />
+
+            {/* Custom Notification */}
+            <CustomNotification
+                isOpen={notification.isOpen}
+                onClose={closeNotification}
+                type={notification.type}
+                title={notification.title}
+                message={notification.message}
+                theme={theme}
             />
         </div>
     );
