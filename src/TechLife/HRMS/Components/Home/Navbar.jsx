@@ -391,7 +391,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
             smoothScrollToElement(suggestion.scrollTo);
           }, 500); // Increased delay for navigation
           
-          console.log(`Navigated to: ${suggestion.path}, will scroll to: ${suggestion.scrollTo}`);
+          console.log(`Mapsd to: ${suggestion.path}, will scroll to: ${suggestion.scrollTo}`);
         }
       }
     }
@@ -474,7 +474,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
       >
         <div className="flex items-center space-x-4">
           <button
-            className={`md:hidden text-2xl ${
+            className={`lg:hidden text-2xl ${
               theme === "dark" ? "text-white" : "text-gray-700"
             }`}
             onClick={() => setSidebarOpen(true)}
@@ -584,8 +584,8 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
                             : "text-gray-500"
                       }`}>
                         {suggestion.scrollTo 
-                          ? `Navigate and scroll to ${suggestion.label}` 
-                          : `Navigate to ${suggestion.label}`
+                          ? `Maps and scroll to ${suggestion.label}` 
+                          : `Maps to ${suggestion.label}`
                         }
                       </span>
                     </div>

@@ -585,7 +585,7 @@ const Profiles = () => {
     };
 
     const renderMobile = () => (
-        <div className="lg:hidden">
+        <div className="md:hidden">
             <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'}`}>
                 {matchedArray.includes("UPDATE_HEADER") && (
                     <button
@@ -690,7 +690,7 @@ const Profiles = () => {
 
     return (
         <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
-            <div className={`hidden lg:block h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
+            <div className={`hidden md:block h-auto md:h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
                 {matchedArray.includes("UPDATE_HEADER") && (
                     <div className="absolute top-4 right-8">
                         <button
@@ -708,10 +708,10 @@ const Profiles = () => {
                             <img
                                 src={profileImagePreview || displayHeader.employeeImage}
                                 alt="Profile"
-                                className="w-32 h-32 rounded-full border border-white shadow object-cover"
+                                className="w-24 h-24 md:w-32 md:h-32 rounded-full border border-white shadow object-cover"
                             />
                         ) : (
-                            <div className="w-32 h-32 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-6xl">
+                            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-5xl md:text-6xl">
                                 {initials}
                             </div>
                         )}
@@ -723,7 +723,7 @@ const Profiles = () => {
                     </div>
                     <div className={`ml-8 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
                         <h1 className="text-3xl font-bold">{displayHeader?.name || display?.displayName}</h1>
-                        <div className={`grid grid-cols-2 gap-x-10 gap-y-2 mt-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-2 mt-2 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
                             <div className="flex items-center space-x-2"><HiIdentification /> <span>{displayHeader?.employeeId}</span></div>
                             <div className="flex items-center space-x-2"><MdWork /> <span>{displayHeader?.jobTitlePrimary}</span></div>
                             <div className="flex items-center space-x-2"><MdEmail /> <span>{displayHeader?.workEmail}</span></div>
@@ -741,7 +741,7 @@ const Profiles = () => {
                 </div>
             </div>
             {renderMobile()}
-            <div className="hidden lg:flex flex-1">
+            <div className="hidden md:flex flex-1">
                 <main className={`flex-1 p-6 ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
                     <Routes>
                         <Route index element={<Navigate to="profile" replace />} />
@@ -875,260 +875,270 @@ const Profiles = () => {
             </div>
             {/* All existing modals and editing forms remain exactly the same... */}
             {isEditingHeader && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4 overflow-y-auto"
-                >
-                    <motion.div
-                        initial={{ scale: 0.95, y: 20 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.95, y: 20 }}
-                        className={`w-full max-w-6xl mx-auto rounded-2xl shadow-2xl border-0 overflow-hidden ${
-                            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                            }`}
-                    >
-                        <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 p-6 sm:p-8">
-                            <div className="flex items-center space-x-4">
-                                <div className="flex-shrink-0">
-                                    <IoDocumentText className="h-8 w-8 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-2xl sm:text-3xl font-bold text-white">
-                                        Edit Header Information
-                                    </h3>
-                                    <p className="mt-1 text-blue-100 text-sm sm:text-base">
-                                        Update employee header details and contact information
-                                    </p>
-                                </div>
+              <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4"
+>
+    <motion.div
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 20 }}
+        className={`w-full max-w-6xl mx-auto rounded-2xl shadow-2xl border-0 overflow-hidden flex flex-col ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+        }`}
+    >
+        {/* Fixed Header */}
+        <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 p-6 sm:p-8 flex-shrink-0">
+            <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                    <IoDocumentText className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1">
+                    <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                        Edit Header Information
+                    </h3>
+                    <p className="mt-1 text-blue-100 text-sm sm:text-base">
+                        Update employee header details and contact information
+                    </p>
+                </div>
+            </div>
+            <button
+                onClick={() => setIsEditingHeader(false)}
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 text-white"
+            >
+                <IoClose className="h-5 w-5 sm:h-6 sm:h-6" />
+            </button>
+        </div>
+        
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto max-h-[60vh]">
+            <div className="p-6 sm:p-8">
+                <form onSubmit={handleHeaderSave} className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="group">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Employee ID
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    name="employeeId"
+                                    value={editingHeaderData.employeeId || ''}
+                                    onChange={handleHeaderInputChange}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`}
+                                    placeholder="Enter employee ID"
+                                />
                             </div>
-                            <button
-                                onClick={() => setIsEditingHeader(false)}
-                                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 text-white"
-                            >
-                                <IoClose className="h-5 w-5 sm:h-6 sm:h-6" />
-                            </button>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Unique identifier for the employee
+                            </p>
                         </div>
-                        <div className="p-6 sm:p-8 max-h-[70vh] overflow-y-auto">
-                            <form onSubmit={handleHeaderSave} className="space-y-6">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div className="group">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Employee ID
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="employeeId"
-                                                value={editingHeaderData.employeeId || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                                    }`}
-                                                placeholder="Enter employee ID"
-                                            />
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Unique identifier for the employee
-                                        </p>
-                                    </div>
-                                    <div className="group">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Full Name
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value={editingHeaderData.name || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                                    }`}
-                                                placeholder="Enter full name"
-                                            />
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Complete name of the employee
-                                        </p>
-                                    </div>
-                                    <div className="group">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Job Title
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="jobTitlePrimary"
-                                                value={editingHeaderData.jobTitlePrimary || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-green-300 focus:border-green-500 focus:ring-4 focus:ring-green-100 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                                    }`}
-                                                placeholder="Enter job title"
-                                            />
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Primary role or position title
-                                        </p>
-                                    </div>
-                                    <div className="group">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Department
-                                        </label>
-                                        <div className="relative" ref={departmentDropdownRef}>
+                        <div className="group">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Full Name
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={editingHeaderData.name || ''}
+                                    onChange={handleHeaderInputChange}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`}
+                                    placeholder="Enter full name"
+                                />
+                            </div>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Complete name of the employee
+                            </p>
+                        </div>
+                        <div className="group">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Job Title
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    name="jobTitlePrimary"
+                                    value={editingHeaderData.jobTitlePrimary || ''}
+                                    onChange={handleHeaderInputChange}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-green-300 focus:border-green-500 focus:ring-4 focus:ring-green-100 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`}
+                                    placeholder="Enter job title"
+                                />
+                            </div>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Primary role or position title
+                            </p>
+                        </div>
+                        <div className="group">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Department
+                            </label>
+                            <div className="relative" ref={departmentDropdownRef}>
+                                <div
+                                    onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 cursor-pointer flex justify-between items-center group-hover:border-purple-300 focus:border-purple-500 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900'
+                                    }`}
+                                >
+                                    <span className={selectedDepartmentDisplay || editingHeaderData.department ? '' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-500')}>
+                                        {selectedDepartmentDisplay || editingHeaderData.department || 'Select department'}
+                                    </span>
+                                    <FaChevronDown className={`transition-transform duration-200 ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
+                                </div>
+                                {departmentDropdownOpen && (
+                                    <div className={`absolute z-50 w-full mt-2 max-h-60 overflow-y-auto rounded-xl border-2 shadow-lg ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600'
+                                            : 'bg-white border-gray-300'
+                                    }`}
+                                        onScroll={handleDepartmentScroll}
+                                    >
+                                        {allDepartments.map((department) => (
                                             <div
-                                                onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 cursor-pointer flex justify-between items-center group-hover:border-purple-300 focus:border-purple-500 ${
+                                                key={department.departmentId}
+                                                onClick={() => handleDepartmentSelect(department)}
+                                                className={`px-4 py-3 cursor-pointer border-b hover:bg-opacity-80 transition-colors ${
                                                     theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900'
-                                                    }`}
+                                                        ? 'text-white hover:bg-gray-600 border-gray-600'
+                                                        : 'text-gray-900 hover:bg-gray-100 border-gray-200'
+                                                } ${department === allDepartments[allDepartments.length - 1] ? 'border-b-0' : ''}`}
                                             >
-                                                <span className={selectedDepartmentDisplay || editingHeaderData.department ? '' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-500')}>
-                                                    {selectedDepartmentDisplay || editingHeaderData.department || 'Select department'}
-                                                </span>
-                                                <FaChevronDown className={`transition-transform duration-200 ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
+                                                {department.departmentId}({department.departmentName})
                                             </div>
-                                            {departmentDropdownOpen && (
-                                                <div className={`absolute z-50 w-full mt-2 max-h-60 overflow-y-auto rounded-xl border-2 shadow-lg ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600'
-                                                        : 'bg-white border-gray-300'
-                                                    }`}
-                                                    onScroll={handleDepartmentScroll}
-                                                >
-                                                    {allDepartments.map((department) => (
-                                                        <div
-                                                            key={department.departmentId}
-                                                            onClick={() => handleDepartmentSelect(department)}
-                                                            className={`px-4 py-3 cursor-pointer border-b hover:bg-opacity-80 transition-colors ${
-                                                                theme === 'dark'
-                                                                    ? 'text-white hover:bg-gray-600 border-gray-600'
-                                                                    : 'text-gray-900 hover:bg-gray-100 border-gray-200'
-                                                                } ${department === allDepartments[allDepartments.length - 1] ? 'border-b-0' : ''}`}
-                                                        >
-                                                            {department.departmentId}({department.departmentName})
-                                                        </div>
-                                                    ))}
-                                                    {departmentLoading && (
-                                                        <div className={`px-4 py-3 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                            Loading more departments...
-                                                        </div>
-                                                    )}
-                                                    {!departmentHasMore && allDepartments.length > 0 && (
-                                                        <div className={`px-4 py-3 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                                                            No more departments
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Department or division name (Only department name will be saved)
-                                        </p>
+                                        ))}
+                                        {departmentLoading && (
+                                            <div className={`px-4 py-3 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                Loading more departments...
+                                            </div>
+                                        )}
+                                        {!departmentHasMore && allDepartments.length > 0 && (
+                                            <div className={`px-4 py-3 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                No more departments
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="group">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Work Email
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="email"
-                                                name="workEmail"
-                                                value={editingHeaderData.workEmail || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-orange-300 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                                    }`}
-                                                placeholder="Enter work email"
-                                            />
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Official company email address
-                                        </p>
-                                    </div>
-                                    <div className="group">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Contact Number
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="contact"
-                                                value={editingHeaderData.contact || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-teal-300 focus:border-teal-500 focus:ring-4 focus:ring-teal-100 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                                    }`}
-                                                placeholder="Enter contact number"
-                                            />
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Primary contact phone number
-                                        </p>
-                                    </div>
-                                    <div className="group lg:col-span-2">
-                                        <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                                            Location
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                name="location"
-                                                value={editingHeaderData.location || ''}
-                                                onChange={handleHeaderInputChange}
-                                                className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 ${
-                                                    theme === 'dark'
-                                                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                                    }`}
-                                                placeholder="Enter work location"
-                                            />
-                                        </div>
-                                        <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            Office location or branch name
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200 dark:border-gray-600">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsEditingHeader(false);
-                                            setSelectedDepartmentDisplay('');
-                                            setSelectedDepartmentValue('');
-                                        }}
-                                        className={`w-full sm:w-auto px-8 py-3 border-2 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${
-                                            theme === 'dark'
-                                                ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
-                                                : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
-                                            }`}
-                                    >
-                                        Cancel Changes
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl text-base transition-all duration-300 transform hover:scale-105 hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 shadow-lg"
-                                    >
-                                        Save Changes
-                                    </button>
-                                </div>
-                            </form>
+                                )}
+                            </div>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Department or division name (Only department name will be saved)
+                            </p>
                         </div>
-                    </motion.div>
-                </motion.div>
+                        <div className="group">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Work Email
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="email"
+                                    name="workEmail"
+                                    value={editingHeaderData.workEmail || ''}
+                                    onChange={handleHeaderInputChange}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-orange-300 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`}
+                                    placeholder="Enter work email"
+                                />
+                            </div>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Official company email address
+                            </p>
+                        </div>
+                        <div className="group">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Contact Number
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    name="contact"
+                                    value={editingHeaderData.contact || ''}
+                                    onChange={handleHeaderInputChange}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-teal-300 focus:border-teal-500 focus:ring-4 focus:ring-teal-100 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`}
+                                    placeholder="Enter contact number"
+                                />
+                            </div>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Primary contact phone number
+                            </p>
+                        </div>
+                        <div className="group lg:col-span-2">
+                            <label className={`block text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                Location
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    name="location"
+                                    value={editingHeaderData.location || ''}
+                                    onChange={handleHeaderInputChange}
+                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 ${
+                                        theme === 'dark'
+                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                                    }`}
+                                    placeholder="Enter work location"
+                                />
+                            </div>
+                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Office location or branch name
+                            </p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {/* Fixed Footer */}
+        <div className="p-6 sm:p-8 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setIsEditingHeader(false);
+                        setSelectedDepartmentDisplay('');
+                        setSelectedDepartmentValue('');
+                    }}
+                    className={`w-full sm:w-auto px-8 py-3 border-2 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${
+                        theme === 'dark'
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+                    }`}
+                >
+                    Cancel Changes
+                </button>
+                <button
+                    type="submit"
+                    onClick={handleHeaderSave}
+                    className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl text-base transition-all duration-300 transform hover:scale-105 hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 shadow-lg"
+                >
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </motion.div>
+</motion.div>
             )}
             <AnimatePresence>
                 {isImageModalOpen && (
