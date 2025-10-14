@@ -1730,7 +1730,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`flex-col shadow-xl fixed inset-0 z-[100] h-screen md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
+                <div className={`flex-col shadow-xl fixed inset-0 z-[100] overflow-hidden md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
@@ -1741,7 +1741,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         </div>
                     ) : (
                         <>
-                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b sticky top-0 z-10 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
+                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b z-10 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
                                     <button onClick={closeChat} className={`md:hidden p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100'}`}><FaArrowLeft /></button>
                                     <button onClick={() => currentChatInfo.type !== 'group' && currentChatInfo.profile && setIsProfileModalOpen(true)} className="flex-shrink-0">
