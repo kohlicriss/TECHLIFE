@@ -22,12 +22,10 @@ import {
     Plus,
     AlertCircle,
 } from "lucide-react";
-
 // Modern Modal Components with Documents.jsx styling
 const Modal = ({ children, onClose, title, type, theme }) => {
     let titleClass = "";
     let icon = null;
-
     if (type === "confirm") {
         titleClass = "text-yellow-600";
         icon = <Info className="h-6 w-6 text-yellow-500" />;
@@ -38,7 +36,6 @@ const Modal = ({ children, onClose, title, type, theme }) => {
         titleClass = "text-red-600";
         icon = <XCircle className="h-6 w-6 text-red-500" />;
     }
-
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] animate-fadeIn">
             <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md mx-4 border animate-slideUp ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
@@ -51,7 +48,6 @@ const Modal = ({ children, onClose, title, type, theme }) => {
         </div>
     );
 };
-
 const ErrorPopup = ({ message, onClose, theme }) => (
     <Modal onClose={onClose} title="An Error Occurred" type="error" theme={theme}>
         <p className={`mb-6 text-base whitespace-pre-wrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{message}</p>
@@ -65,7 +61,6 @@ const ErrorPopup = ({ message, onClose, theme }) => (
         </div>
     </Modal>
 );
-
 const SuccessPopup = ({ message, onClose, theme }) => (
     <Modal onClose={onClose} title="Success" type="success" theme={theme}>
         <p className={`mb-6 text-base whitespace-pre-wrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{message}</p>
@@ -79,7 +74,6 @@ const SuccessPopup = ({ message, onClose, theme }) => (
         </div>
     </Modal>
 );
-
 const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
     <Modal onClose={onCancel} title="Confirm Deletion" type="confirm" theme={theme}>
         <p className={`mb-6 text-base ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -101,7 +95,6 @@ const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
         </div>
     </Modal>
 );
-
 // Modern Update History Popup - Documents.jsx Style
 const UpdateHistoryPopup = ({
     setShowUpdateHistoryPopup,
@@ -116,7 +109,6 @@ const UpdateHistoryPopup = ({
     // Field renderer similar to Documents.jsx
     const renderField = (label, name, type = "text", required = false, placeholder = "") => {
         const fieldValue = updateHistoryData[name] || "";
-        
         return (
             <div className="group relative">
                 <label className={`block text-sm font-semibold mb-3 flex items-center ${
@@ -125,7 +117,6 @@ const UpdateHistoryPopup = ({
                     {label}
                     {required && <span className="text-red-500 ml-1 text-base">*</span>}
                 </label>
-
                 {type === "textarea" ? (
                     <textarea
                         name={name}
@@ -159,7 +150,6 @@ const UpdateHistoryPopup = ({
             </div>
         );
     };
-
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
             <div className={`rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
@@ -187,7 +177,6 @@ const UpdateHistoryPopup = ({
                         </button>
                     </div>
                 </div>
-
                 {/* Form Content */}
                 <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
                     <form onSubmit={handleUpdateHistorySubmit} className="p-8 space-y-8">
@@ -197,26 +186,21 @@ const UpdateHistoryPopup = ({
                                 <div className={`w-2 h-8 rounded-full ${theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'}`}></div>
                                 <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Update Information</h3>
                             </div>
-                            
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {renderField('Changes', 'changes', 'text', true, 'e.g., Status: IN_PROGRESS → COMPLETED')}
                                 {renderField('Note', 'note', 'text', false, 'Add a descriptive note')}
                             </div>
-
                             {renderField('Related Links', 'relatedLinks', 'text', false, 'https://example.com, https://another.com')}
-
                             {employeeId === assignedBy && (
                                 renderField('Remark', 'remark', 'text', false, 'Add a remark')
                             )}
                         </div>
-
                         {/* File Upload Section */}
                         <div className="space-y-6">
                             <div className="flex items-center space-x-2">
                                 <div className={`w-2 h-8 rounded-full ${theme === 'dark' ? 'bg-orange-500' : 'bg-orange-600'}`}></div>
                                 <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>File Attachments</h3>
                             </div>
-
                             <div className="space-y-4">
                                 <label className={`block text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                                     Upload Files (Max 5)
@@ -248,7 +232,6 @@ const UpdateHistoryPopup = ({
                                         }`}>Any files (Max 5 files)</p>
                                     </div>
                                 </div>
-
                                 {updateHistoryData.relatedFileLinks.length > 0 && (
                                     <div className="space-y-3">
                                         <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Selected files:</p>
@@ -272,7 +255,6 @@ const UpdateHistoryPopup = ({
                         </div>
                     </form>
                 </div>
-                
                 {/* Footer */}
                 <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
                     theme === 'dark' 
@@ -305,11 +287,9 @@ const UpdateHistoryPopup = ({
         </div>
     );
 };
-
 const TaskViewPage = () => {
     const { projectid, id } = useParams();
     const navigate = useNavigate();
-
     const [assignedBy, setAssignedBy] = useState("");
     const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);
     const { userData, theme } = useContext(Context);
@@ -320,19 +300,15 @@ const TaskViewPage = () => {
         relatedFileLinks: [],
         remark: "",
     });
-
     const [currentTask, setCurrentTask] = useState(null);
     const [updateHistory, setUpdateHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     const [successPopup, setSuccessPopup] = useState({ show: false, message: "" });
     const [errorPopup, setErrorPopup] = useState({ show: false, message: "" });
     const [confirmDeletePopup, setConfirmDeletePopup] = useState({ show: false, historyId: null });
-
     const [editingRowId, setEditingRowId] = useState(null);
     const [editRowData, setEditRowData] = useState(null);
-    
     // Helper function to extract detailed error messages
     const getErrorMessage = (error) => {
         if (error.response) {
@@ -354,23 +330,18 @@ const TaskViewPage = () => {
             return error.message || "An unknown error occurred.";
         }
     };
-
     const fetchTaskData = async () => {
         if (!projectid || !id) return;
-
         setLoading(true);
         setError(null);
-
         try {
             const taskResponse = await tasksApi.get(`/task/${projectid}/${id}`);
             console.log("Task Data Received:", taskResponse.data);
             setCurrentTask(taskResponse.data);
             setAssignedBy(taskResponse.data?.createdBy);
-
             const historyResponse = await tasksApi.get(`/${projectid}/${id}/updatetasks`);
             console.log("All task history responses:", historyResponse.data);
             setUpdateHistory(historyResponse.data);
-
         } catch (err) {
             console.error("Error in fetchTaskData:", err.response?.data || err.message);
             if (err.response?.status === 404) {
@@ -383,11 +354,9 @@ const TaskViewPage = () => {
             setLoading(false);
         }
     };
-
     useEffect(() => {
         fetchTaskData();
     }, [projectid, id]);
-
     const getPriorityClass = (priority) => {
         const upperPriority = priority ? priority.toUpperCase() : "";
         switch (upperPriority) {
@@ -401,7 +370,6 @@ const TaskViewPage = () => {
                 return "bg-gray-100 text-gray-800 border-gray-200";
         }
     };
-
     const getStatusClass = (status) => {
         const upperStatus = status ? status.toUpperCase().replace(" ", "_") : "";
         switch (upperStatus) {
@@ -415,45 +383,35 @@ const TaskViewPage = () => {
                 return "bg-gray-100 text-gray-800 border-gray-200";
         }
     };
-
     const handleUpdateHistoryInputChange = (e) => {
         const { name, value } = e.target;
         setUpdateHistoryData((prev) => ({ ...prev, [name]: value }));
     };
-
     const handleUpdateHistoryFileChange = (e) => {
         const selectedFiles = Array.from(e.target.files);
         let allFiles = [...updateHistoryData.relatedFileLinks, ...selectedFiles];
-
         if (allFiles.length > 5) {
             setErrorPopup({ show: true, message: "You can only upload a maximum of 5 files." });
             allFiles = allFiles.slice(0, 5);
         }
-
         setUpdateHistoryData((prev) => ({
             ...prev,
             relatedFileLinks: allFiles,
         }));
     };
-
     const handleUpdateHistorySubmit = async (e) => {
         e.preventDefault();
-
         if (!updateHistoryData.changes) {
             setErrorPopup({ show: true, message: "The 'Changes' field is required." });
             return;
         }
-
         const creatorId = userData?.employeeId;
         if (!creatorId) {
             setErrorPopup({ show: true, message: "User ID not found. Please log in again." });
             return;
         }
-
         const isAssigner = creatorId === assignedBy;
-
         const formData = new FormData();
-
         const taskUpdatePayload = {
             id: Date.now(),
             changes: updateHistoryData.changes,
@@ -466,14 +424,12 @@ const TaskViewPage = () => {
             remark: isAssigner ? updateHistoryData.remark : null,
             updatedDate: new Date().toISOString(),
         };
-
         formData.append(
             "taskUpdateDTO",
             new Blob([JSON.stringify(taskUpdatePayload)], {
                 type: "application/json",
             })
         );
-
         if (
             updateHistoryData.relatedFileLinks &&
             updateHistoryData.relatedFileLinks.length > 0
@@ -482,7 +438,6 @@ const TaskViewPage = () => {
                 formData.append("relatedFileLinks", file);
             }
         }
-
         try {
             const response = await tasksApi.post(
                 `/history/${projectid}/${id}`,
@@ -505,30 +460,25 @@ const TaskViewPage = () => {
             setErrorPopup({ show: true, message: `Failed to create history: ${detailedError}` });
         }
     };
-
     const handleInlineEdit = (historyItem) => {
         setEditingRowId(historyItem.id);
         setEditRowData(historyItem);
     };
-
     const handleInlineCancel = () => {
         setEditingRowId(null);
         setEditRowData(null);
     };
-
     const handleInlineSave = async () => {
         try {
             if (!editRowData || !editRowData.id) {
                 setErrorPopup({ show: true, message: "Cannot save. Invalid history item." });
                 return;
             }
-
             const reviewerId = userData?.employeeId;
             if (!reviewerId || userData?.employeeId !== assignedBy) {
                 setErrorPopup({ show: true, message: "Only the task assigner can add remarks." });
                 return;
             }
-
             const cleanedFileLinks = (editRowData.relatedFileLinks || []).map(
                 (url) => {
                     try {
@@ -539,7 +489,6 @@ const TaskViewPage = () => {
                     }
                 }
             );
-
             const updatedPayload = {
                 ...editRowData,
                 reviewedBy: reviewerId,
@@ -551,7 +500,6 @@ const TaskViewPage = () => {
                         : [],
                 relatedFileLinks: cleanedFileLinks,
             };
-
             await tasksApi.put(
                 `/${reviewerId}/status/${projectid}/${id}`,
                 updatedPayload,
@@ -559,7 +507,6 @@ const TaskViewPage = () => {
                     headers: { "Content-Type": "application/json" },
                 }
             );
-            
             handleInlineCancel();
             setSuccessPopup({ show: true, message: "Remark updated successfully!" });
             fetchTaskData();
@@ -569,31 +516,25 @@ const TaskViewPage = () => {
             setErrorPopup({ show: true, message: `An error occurred while saving: ${detailedError}` });
         }
     };
-
     const handleInlineInputChange = (e) => {
         const { name, value } = e.target;
         setEditRowData((prev) => ({ ...prev, [name]: value }));
     };
-
     const handleDeleteHistory = (historyId) => {
         setConfirmDeletePopup({ show: true, historyId });
     };
-
     const confirmDelete = async () => {
         const historyId = confirmDeletePopup.historyId;
         setConfirmDeletePopup({ show: false, historyId: null });
-
         try {
             const deleterId = userData?.employeeId;
             if (!deleterId) {
                 setErrorPopup({ show: true, message: "User ID not found. Please log in again." });
                 return;
             }
-
             const response = await tasksApi.delete(
                 `/${projectid}/${id}/${historyId}/delete`
             );
-
             if (response.status === 200 || response.status === 204) {
                 setSuccessPopup({ show: true, message: "History entry deleted successfully." });
                 fetchTaskData();
@@ -606,7 +547,6 @@ const TaskViewPage = () => {
             setErrorPopup({ show: true, message: `An error occurred while deleting: ${detailedError}` });
         }
     };
-
     const renderRelatedLinks = (links) => {
         if (!links || links.length === 0) return "-";
         return (
@@ -626,7 +566,6 @@ const TaskViewPage = () => {
             </ul>
         );
     };
-
     const renderRelatedFiles = (files) => {
         if (!files || files.length === 0) return "-";
         return (
@@ -647,12 +586,10 @@ const TaskViewPage = () => {
             </ul>
         );
     };
-
     const handleSubmitTask = () => {
         const now = new Date();
         const completedDate = now.toISOString().slice(0, 10);
         const updatedDateTime = now.toISOString();
-
         const updatedTask = {
             ...currentTask,
             status: "COMPLETED",
@@ -669,12 +606,10 @@ const TaskViewPage = () => {
             },
             note: "Task submitted and marked as completed.",
         };
-
         setCurrentTask(updatedTask);
         setUpdateHistory([...updateHistory, newHistoryEntry]);
         setSuccessPopup({ show: true, message: "Task marked as completed successfully!" });
     };
-
     if (loading) {
         return (
             <div className={`flex justify-center items-center h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
@@ -684,7 +619,6 @@ const TaskViewPage = () => {
             </div>
         );
     }
-
     if (error) {
         return (
             <div className={`flex justify-center items-center h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-red-50'}`}>
@@ -692,7 +626,6 @@ const TaskViewPage = () => {
             </div>
         );
     }
-
     if (!currentTask) {
         return (
             <div className={`flex justify-center items-center h-screen text-2xl font-semibold ${theme === 'dark' ? 'bg-gray-900 text-red-400' : 'bg-gradient-to-br from-gray-50 to-blue-100 text-red-600'}`}>
@@ -700,14 +633,12 @@ const TaskViewPage = () => {
             </div>
         );
     }
-
     const isTaskCompleted = currentTask.status.toUpperCase() === "COMPLETED";
     const isAssigner = userData?.employeeId === assignedBy;
-
     return (
         <>
-            <div className={`min-h-screen py-6 px-4 sm:py-10 sm:px-6 lg:px-8 flex items-start justify-center font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
-                <div className={`w-full p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <div className={`min-h-screen p-0 flex items-start justify-center font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
+                <div className={`w-full max-w-full pt-6 pb-6 sm:pt-8 sm:pb-8 md:pt-10 md:pb-10 px-0 rounded-3xl shadow-2xl border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                     <div className={`flex items-center justify-between mb-8 pb-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <button
                             onClick={() => navigate(`/tasks/${userData?.employeeId}`)}
@@ -720,85 +651,106 @@ const TaskViewPage = () => {
                             Task Details
                         </h2>
                     </div>
-
                     <div className="flex flex-col gap-8">
                         <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                            <div className="mb-8 space-y-6">
-                                <h3 className={`text-2xl sm:text-3xl font-bold leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                                    {currentTask.title}
-                                </h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <Info className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
-                                        <span className="font-semibold mr-2">Priority:</span>
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-sm font-bold ${getPriorityClass(
-                                                currentTask.priority
-                                            )}`}
-                                        >
-                                            {currentTask.priority}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <Clock className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
-                                        <span className="font-semibold mr-2">Status:</span>
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-sm font-bold ${getStatusClass(
-                                                currentTask.status
-                                            )}`}
-                                        >
-                                            {currentTask.status}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <CalendarDays className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
-                                        <span className="font-semibold mr-2">Due Date:</span>
-                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
-                                            {currentTask.dueDate}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <CalendarDays className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
-                                        <span className="font-semibold mr-2">Created On:</span>
-                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
-                                            {currentTask.createdDate}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <User className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
-                                        <span className="font-semibold mr-2">Created By:</span>
-                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
-                                            {currentTask.createdBy}
-                                        </span>
-                                    </div>
-                                    <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <User className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
-                                        <span className="font-semibold mr-2">Assigned To:</span>
-                                        <span className={`text-sm p-2 rounded-md border shadow-sm flex-grow ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
-                                            {currentTask.assignedTo}
-                                        </span>
-                                    </div>
-                                    {currentTask.completedDate && (
-                                        <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                            <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
-                                            <span className="font-semibold mr-2">
-                                                Completed On:
-                                            </span>
-                                            <span className="text-sm">
-                                                {currentTask.completedDate}
-                                            </span>
-                                        </div>
-                                    )}
-                                    {currentTask.rating && (
-                                        <div className={`flex items-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                                            <Star className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" />
-                                            <span className="font-semibold mr-2">Rating:</span>
-                                            <span className="text-sm">{currentTask.rating} / 10</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                          <div className="mb-8 space-y-6">
+    <h3 className={`text-2xl sm:text-3xl font-bold leading-tight text-center ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+        {currentTask.title}
+    </h3>
+    {/* Improved Mobile Layout for Key Info */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Priority */}
+        <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="flex items-center">
+                <Info className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />
+                <span className="font-semibold text-sm sm:text-base">Priority:</span>
+            </div>
+            <span
+                className={`text-xs sm:text-sm px-3 py-2 rounded-lg border shadow-sm ${getPriorityClass(
+                    currentTask.priority
+                )}`}
+            >
+                {currentTask.priority}
+            </span>
+        </div>
+        {/* Status */}
+        <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="flex items-center">
+                <Clock className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />
+                <span className="font-semibold text-sm sm:text-base">Status:</span>
+            </div>
+            <span
+                className={`text-xs sm:text-sm px-3 py-2 rounded-lg border shadow-sm ${getStatusClass(
+                    currentTask.status
+                )}`}
+            >
+                {currentTask.status}
+            </span>
+        </div>
+        {/* Due Date */}
+        <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="flex items-center">
+                <CalendarDays className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />
+                <span className="font-semibold text-sm sm:text-base">Due Date:</span>
+            </div>
+            <div className={`text-xs sm:text-sm p-2 sm:p-3 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
+                {currentTask.dueDate}
+            </div>
+        </div>
+        {/* Created On */}
+        <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="flex items-center">
+                <CalendarDays className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />
+                <span className="font-semibold text-sm sm:text-base">Created On:</span>
+            </div>
+            <div className={`text-xs sm:text-sm p-2 sm:p-3 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
+                {currentTask.createdDate}
+            </div>
+        </div>
+        {/* Created By */}
+        <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="flex items-center">
+                <User className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />
+                <span className="font-semibold text-sm sm:text-base">Created By:</span>
+            </div>
+            <div className={`text-xs sm:text-sm p-2 sm:p-3 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
+                {currentTask.createdBy}
+            </div>
+        </div>
+        {/* Assigned To */}
+        <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className="flex items-center">
+                <User className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />
+                <span className="font-semibold text-sm sm:text-base">Assigned To:</span>
+            </div>
+            <div className={`text-xs sm:text-sm p-2 sm:p-3 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
+                {currentTask.assignedTo}
+            </div>
+        </div>
+        {currentTask.completedDate && (
+            <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                    <span className="font-semibold text-sm sm:text-base">Completed On:</span>
+                </div>
+                <div className={`text-xs sm:text-sm p-2 sm:p-3 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-green-900/30 border-green-700 text-green-300' : 'bg-green-50 border-green-200 text-green-800'}`}>
+                    {currentTask.completedDate}
+                </div>
+            </div>
+        )}
+        {currentTask.rating && (
+            <div className={`flex flex-col space-y-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className="flex items-center">
+                    <Star className="h-4 w-4 text-yellow-500 mr-2 flex-shrink-0" />
+                    <span className="font-semibold text-sm sm:text-base">Rating:</span>
+                </div>
+                <div className={`text-xs sm:text-sm p-2 sm:p-3 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-gray-600 border-gray-500 text-white' : 'bg-white border-gray-200 text-black'}`}>
+                    {currentTask.rating} / 10
+                </div>
+            </div>
+        )}
+    </div>
+</div>
 
                             <div className="mb-8">
                                 <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -808,7 +760,6 @@ const TaskViewPage = () => {
                                     {currentTask.description}
                                 </div>
                             </div>
-
                             {currentTask.remark && (
                                 <div className="mb-8">
                                     <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -820,7 +771,6 @@ const TaskViewPage = () => {
                                     </div>
                                 </div>
                             )}
-
                             {currentTask.completionNote && (
                                 <div className="mb-8">
                                     <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -831,7 +781,6 @@ const TaskViewPage = () => {
                                     </div>
                                 </div>
                             )}
-
                             {(currentTask.relatedLinks?.length > 0 || currentTask.attachedFileLinks?.length > 0) && (
                                 <div className="mb-8">
                                     <h4 className={`text-xl font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -884,7 +833,6 @@ const TaskViewPage = () => {
                                 </div>
                             )}
                         </div>
-
                         <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
                             <div className="mb-8">
                                 <div className="flex justify-between items-center mb-3">
@@ -970,7 +918,6 @@ const TaskViewPage = () => {
                     </div>
                 </div>
             </div>
-            
             {/* Modern Update History Popup */}
             {showUpdateHistoryPopup && (
                 <UpdateHistoryPopup
@@ -984,7 +931,6 @@ const TaskViewPage = () => {
                     theme={theme}
                 />
             )}
-            
             {errorPopup.show && (
                 <ErrorPopup
                     message={errorPopup.message}
@@ -992,7 +938,6 @@ const TaskViewPage = () => {
                     theme={theme}
                 />
             )}
-
             {successPopup.show && (
                 <SuccessPopup
                     message={successPopup.message}
@@ -1000,7 +945,6 @@ const TaskViewPage = () => {
                     theme={theme}
                 />
             )}
-
             {confirmDeletePopup.show && (
                 <ConfirmDeletePopup
                     onConfirm={confirmDelete}
@@ -1008,7 +952,6 @@ const TaskViewPage = () => {
                     theme={theme}
                 />
             )}
-
             {/* Animations CSS */}
             <style jsx>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1021,5 +964,4 @@ const TaskViewPage = () => {
         </>
     );
 };
-
 export default TaskViewPage;
