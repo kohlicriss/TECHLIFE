@@ -24,20 +24,17 @@ const LeaveDetails = ({ leave, onClose }) => {
             onClick={onClose}
             className={`w-20 h-20 absolute top-3 right-3 ${theme==='dark'?'text-gray-200':'text-gray-500'} hover:text-gray-700 text-xl`}
           >
-         <FaRegCircleXmark  />
+         <FaRegCircleXmark className="w-8 h-8"  />
           </button>
           <h2 className={`text-2xl font-bold mb-4 ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Leave Request Summary</h2>
           <div className="space-y-2">
-            <div><strong>Employee ID:</strong> {leave.EmployeeId}</div>
-            <div><strong>Employee Name:</strong> {leave.EmployeeName}</div>
-            <div><strong>Leave Type:</strong> {leave.Leave_type}</div>
-            <div><strong>Leave On:</strong> {Array.isArray(leave.Leave_On) ? leave.Leave_On.join(" ") : leave.Leave_On}</div>
+            <div><strong>Request By:</strong> {leave.request_By}</div>
+            <div><strong>Leave Type:</strong> {leave.leave_type}</div>
+            <div><strong>Leave On:</strong> {leave.leave_on}</div>
             <div><strong>Status:</strong> {leave.status}</div>
-            <div><strong>Request By:</strong> {leave.Request_By}</div>
-            <div><strong>Action Date:</strong> {leave.Action_Date}</div>
-            <div><strong>Rejection Reason:</strong> {leave.Rejection_Reason || "-"}</div>
-            <div><strong>Reason:</strong>{leave.Reason || "-"} </div>
-            <div><strong>Action:</strong> <a href={leave.Action} target="_blank" rel="noreferrer" className="text-gray-600 underline">⋯</a></div>
+            <div><strong>Action Date:</strong> {leave.action_Date}</div>
+            <div><strong>Reason:</strong>{leave.leave_Reason || "-"} </div>
+            <div><strong>Action:</strong> {leave.rejection_Reason || "-"}</div>
           </div>
         </motion.div>
       </motion.div>

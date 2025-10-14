@@ -3,18 +3,29 @@ import { FaSortAlphaDown, FaSortAlphaUp, FaFilter } from 'react-icons/fa';
 import { Context } from '../HrmsContext';
 
 const applicants = [
-  { candidateId: "C_01", name: 'John Doe', emailId: 'johndoe12@gmail.com', location: 'Hydrebad', job: 'Senior DevOps Engineer', image: 'https://randomuser.me/api/portraits/men/74.jpg', color: 'bg-teal-500', status: "sent" },
-  { candidateId: "C_02", name: 'Ramesh', emailId: 'ramesh123@gmail.com', location: 'Bangalore', job: 'UI/UX Designer', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D', color: 'bg-blue-500', status: "scheduled" },
-  { candidateId: "C_03", name: 'Raghunadh', emailId: 'raghu123@gmail.com', location: 'Chennai', job: 'Full Stack Developer', image: 'https://randomuser.me/api/portraits/men/9.jpg', color: 'bg-pink-500', status: "Interviewed" },
-  { candidateId: "C_04", name: 'Anita', emailId: 'anita123@gmail.com', location: 'Hyderabad', job: 'Junior React Developer', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D', color: 'bg-purple-500', status: "offered" },
-  { candidateId: "C_05", name: 'SriLekha', emailId: 'srilekha12@gmail.com', location: 'Mumbai', job: 'Data Scientist', image: 'https://randomuser.me/api/portraits/women/63.jpg', color: 'bg-green-500', status: "Hired" },
-  { candidateId: "C_06", name: 'Rajesh', emailId: 'rajesh12@gmail.com', location: 'pure', job: 'BackEnd Developer', image: 'https://randomuser.me/api/portraits/men/79.jpg', color: 'bg-red-500', status: "Rejected" },
-  { candidateId: "C_07", name: 'Suresh', emailId: 'suresh12@gmail.com', location: 'Kolkata', job: 'Python Developer', image: 'https://randomuser.me/api/portraits/men/19.jpg', color: 'bg-green-500', status: "Hired" },
-  { candidateId: "C_08", name: 'Sandhya', emailId: 'sandhya12@gmail.com', location: 'Hyderabad', job: 'QA Tester', image: 'https://randomuser.me/api/portraits/women/32.jpg', color: 'bg-blue-500', status: "Scheduled" },
-  { candidateId: "C_09", name: 'Naveen', emailId: 'naveen12@gmail.com', location: 'Bangalore', job: 'Automation Tester', image: 'https://randomuser.me/api/portraits/men/58.jpg', color: 'bg-brown-400', status: "App Received" },
-  { candidateId: "C_10", name: 'Sagarika', emailId: 'sagarika12@gmail.com', location: 'Mumbai', job: 'Digital Manager', image: 'https://randomuser.me/api/portraits/women/27.jpg', color: 'bg-green-500', status: "Hired" },
+  { candidateId: "C_01", name: 'JohnDoe', emailId: 'johndoe12@gmail.com', location: 'Hydrebad', job: 'Senior DevOps Engineer', status: "sent" },
+  { candidateId: "C_02", name: 'Ramesh', emailId: 'ramesh123@gmail.com', location: 'Bangalore', job: 'UI/UX Designer', status: "scheduled" },
+  { candidateId: "C_03", name: 'Raghunadh', emailId: 'raghu123@gmail.com', location: 'Chennai', job: 'Full Stack Developer', status: "Interviewed" },
+  { candidateId: "C_04", name: 'Anita', emailId: 'anita123@gmail.com', location: 'Hyderabad', job: 'Junior React Developer', status: "offered" },
+  { candidateId: "C_05", name: 'SriLekha', emailId: 'srilekha12@gmail.com', location: 'Mumbai', job: 'Data Scientist', status: "Hired" },
+  { candidateId: "C_06", name: 'Rajesh', emailId: 'rajesh12@gmail.com', location: 'pure', job: 'BackEnd Developer', status: "Rejected" },
+  { candidateId: "C_07", name: 'Suresh', emailId: 'suresh12@gmail.com', location: 'Kolkata', job: 'Python Developer', status: "Hired" },
+  { candidateId: "C_08", name: 'Sandhya', emailId: 'sandhya12@gmail.com', location: 'Hyderabad', job: 'QA Tester', status: "Scheduled" },
+  { candidateId: "C_09", name: 'Naveen', emailId: 'naveen12@gmail.com', location: 'Bangalore', job: 'Automation Tester', status: "App Received" },
+  { candidateId: "C_10", name: 'Sagarika', emailId: 'sagarika12@gmail.com', location: 'Mumbai', job: 'Digital Manager', status: "Hired" },
 ];
-
+ const teamLeadImageMap = {
+  JohnDoe : 'https://randomuser.me/api/portraits/men/74.jpg',
+  Ramesh: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D',
+  Raghunadh: 'https://i.pravatar.cc/40?img=4',
+  Anita: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHBlb3BsZXxlbnww fHwwfHx8MA%3D%3D',
+  SriLekha: 'https://randomuser.me/api/portraits/women/63.jpg',
+  Rajesh: 'https://randomuser.me/api/portraits/men/79.jpg',
+  Suresh: 'https://randomuser.me/api/portraits/men/19.jpg',
+  Sandhya: 'https://randomuser.me/api/portraits/women/32.jpg',
+  Naveen: 'https://randomuser.me/api/portraits/men/58.jpg',
+  Sagarika: 'https://randomuser.me/api/portraits/women/27.jpg'
+  };
 const Applicants = ({onBack}) => {
   const{theme}=useContext(Context)
   const [statusFilter, setStatusFilter] = useState("All");
@@ -154,7 +165,7 @@ const Applicants = ({onBack}) => {
               paginatedData.map((applicant) => (
                 <tr key={applicant.candidateId} className="hover:bg-gray-50">
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {applicant.candidateId}</td>
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  <div className="flex items-center">    <img className="h-10 w-10 rounded-full mr-4" src={applicant.image} alt={applicant.name} />    {applicant.name}  </div></td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  <div className="flex items-center">    <img className="h-10 w-10 rounded-full mr-4" src={teamLeadImageMap[applicant.name]} alt={applicant.name} />    {applicant.name}  </div></td>
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>   {applicant.emailId} </td>
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {applicant.job}</td>
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {applicant.location}</td>

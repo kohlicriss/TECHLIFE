@@ -1,4 +1,4 @@
-import { Calendar as CalendarDays, BriefcaseMedical, PackageSearch, MessageSquareCode, CircleUserRound, UserRoundCog } from 'lucide-react';
+import { Calendar as CalendarDays, BriefcaseMedical, PackageSearch, MessageSquareCode, CircleUserRound, UserRoundCog, ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { Fragment, useContext, useEffect, useState } from 'react';
 import Calendar from './Calender';
 import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus } from 'react-icons/fa';
@@ -10,6 +10,11 @@ import { Context } from '../HrmsContext';
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperclip } from 'react-icons/fa6';
 import { FiEdit } from 'react-icons/fi';
+import { LiaFileAlt } from 'react-icons/lia';
+import LeavesReports from './LeavesReports';
+import { authApi } from '../../../../axiosInstance';
+import EmployeeTable from './TotalEmployeeLeaves';
+import AttendanceTable from './TotalEmployeeAttendance';
 
 
 const Header = () => {
@@ -65,22 +70,23 @@ const Header = () => {
     );
 };
 
-const UserGreeting = () => {
+const UserGreeting = ({ handleRequestLeave }) => {
     const { userData, theme } = useContext(Context);
     const [loggedInUserProfile, setLoggedInUserProfile] = useState({
         image: null,
-        initials: ""
+        initials: "  " // Ensure this is styled to center correctly
     });
 
     useEffect(() => {
         const userPayload = JSON.parse(localStorage.getItem("emppayload"));
         const userImage = localStorage.getItem("loggedInUserImage");
 
-        const initials = (userPayload?.displayName || "")
+        const initials = (userPayload?.displayName || " ")
             .split(" ")
             .map((word) => word[0])
             .join("")
-            .substring(0, 2);
+            .substring(0, 2)
+            .toUpperCase(); // Added toUpperCase for better display
 
         setLoggedInUserProfile({
             image: userImage,
@@ -90,38 +96,50 @@ const UserGreeting = () => {
 
     return (
         <motion.div
-            className={`flex justify-between items-center p-6 rounded-lg shadow-md mb-6 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-purple-100 text-gray-800'}`}
-            initial={{ opacity: 0, y: 20 }}
+            // UPDATED: Clearer light/dark mode background, better padding
+            className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-xl shadow-lg mb-6 
+                       ${theme === 'dark' 
+                            ? 'bg-gray-800 border border-gray-700' // Dark Mode: Solid, contrasted background
+                            : 'bg-gradient-to-r from-white to-purple-50 border border-gray-200' // Light Mode: Subtle gradient
+                       }`}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.5 }}
         >
-            <div className="flex items-center space-x-4">
+            {/* Left Section: Profile and Text */}
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                
+                {/* Profile Picture/Initials Container */}
                 <motion.div
-                    className="w-20 h-20 bg-gray-300 rounded-full overflow-hidden flex items-center justify-center font-bold text-2xl"
-                    transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                    // UPDATED: Larger avatar on desktop, centered initials
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden flex items-center justify-center border-4 ${theme === 'dark' ? 'border-gray-700 bg-indigo-600' : 'border-white bg-indigo-500'} shadow-md`}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
                 >
-                    {loggedInUserProfile.image ? (
+                   {/* Avatar Logic */}
+                   {loggedInUserProfile.image ? (
                         <img
                             src={loggedInUserProfile.image}
                             alt="Profile"
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <span className="text-gray-600">
+                        // UPDATED: Centered initials styling
+                        <span
+                            className={`text-xl font-extrabold text-white`}
+                        >
                             {loggedInUserProfile.initials}
                         </span>
                     )}
                 </motion.div>
+                
+                {/* Greeting and Stats Text */}
                 <div>
-                    <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                        Welcome, {userData?.fullName}
+                    <h2 className={`text-xl sm:text-2xl font-extrabold flex items-center ${theme==='dark' ? 'text-white':'text-gray-800'}`}>
+                        Welcome, {userData?.fullName || 'User'}👋
                     </h2>
-                    <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        You have <span className="font-bold text-green-600">10</span> Approved &{" "}
-                        <span className="font-bold text-red-600">2</span> Rejected leaves.
-                    </p>
                 </div>
-            </div>
+            </div>   
         </motion.div>
     );
 };
@@ -338,20 +356,42 @@ const ChartsLayout = ({ onViewAll }) => {
     const {theme}=useContext(Context)
 
     const applicants = [
-        { name: 'John Doe', exp: '5+', location: 'Hydrebad', job: 'Senior DevOps Engineer', image: 'https://randomuser.me/api/portraits/men/74.jpg', color: 'bg-teal-500' },
-        { name: 'Ramesh', exp: '4+', location: 'Bangalore', job: 'UI/UX Designer', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D', color: 'bg-blue-500' },
-        { name: 'Raghunadh', exp: '6+', location: 'Chennai', job: 'Full Stack Developer', image: 'https://randomuser.me/api/portraits/men/9.jpg', color: 'bg-pink-500' },
-        { name: 'Anita', exp: '2+', location: 'Hyderabad', job: 'Junior React Developer', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D', color: 'bg-purple-500' },
-        { name: 'SriLekha', exp: '2+', location: 'Mumbai', job: 'Data Scientist', image: 'https://randomuser.me/api/portraits/women/63.jpg', color: 'bg-yellow-500' },
+        { name: 'Manikanta', exp: '5+', location: 'Hydrebad', job: 'Senior DevOps Engineer'},
+        { name: 'Ramesh',    exp: '4+', location: 'Bangalore', job: 'UI/UX Designer'},
+        { name: 'Raghunadh', exp: '6+', location: 'Chennai', job: 'Full Stack Developer'},
+        { name: 'Anita',     exp: '2+', location: 'Hyderabad', job: 'Junior React Developer'},
+        { name: 'SriLekha', exp: '2+', location: 'Mumbai', job: 'Data Scientist'},
     ];
+    const teamLeadImageMap = {
+        Manikanta : 'https://randomuser.me/api/portraits/men/74.jpg',
+        Ramesh: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D',
+       Raghunadh: 'https://i.pravatar.cc/40?img=4',
+        Anita: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D',
+       SriLekha: 'https://randomuser.me/api/portraits/women/63.jpg'
+    };
+    const bgcolor={
+        Manikanta: 'bg-teal-500',
+        Ramesh: 'bg-blue-500',
+       Raghunadh: 'bg-pink-500',
+        Anita: 'bg-purple-500',
+         SriLekha: 'bg-yellow-500'
+
+    }
     const openings = [
-        { title: 'Senior DevOps Engineer', openings: 10, logo: '🛠️', Category: "DevOps", Location: "Hyderabad,India", Salary: "$8,00,000 - $12,00,000 per Annum", Date: "2023-10-01" },
-        { title: 'Data Scientist', openings: 20, logo: '🐘', Category: "Data Science", Location: "Bangalore,India", Salary: "$7,00,000 - $10,00,000 per Annum", Date: "2023-10-05" },
-        { title: 'Junior React Developer', openings: 30, logo: '⚛️', Category: "Software", Location: "Chennai,India", Salary: "$4,00,000 - $6,00,000 per Annum", Date: "2023-10-10" },
-        { title: 'UI/UX Designer', openings: 40, logo: '⚙️', Category: "Design", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-20", },
-        { title: 'Full Stack Developer', openings: 15, logo: '💻', Category: "Software", Location: "Delhi,India", Salary: "$5,00,000 - $7,00,000 per Annum", Date: "2023-10-25" },
+        { title: 'Senior DevOps Engineer', openings: 10, Category: "DevOps", Location: "Hyderabad,India", Salary: "$8,00,000 - $12,00,000 per Annum", Date: "2023-10-01" },
+        { title: 'Data Scientist', openings: 20,  Category: "Data Science", Location: "Bangalore,India", Salary: "$7,00,000 - $10,00,000 per Annum", Date: "2023-10-05" },
+        { title: 'Junior React Developer', openings: 30,  Category: "Software", Location: "Chennai,India", Salary: "$4,00,000 - $6,00,000 per Annum", Date: "2023-10-10" },
+        { title: 'UI/UX Designer', openings: 40, Category: "Design", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-20", },
+        { title: 'Full Stack Developer', openings: 15,  Category: "Software", Location: "Delhi,India", Salary: "$5,00,000 - $7,00,000 per Annum", Date: "2023-10-25" },
     ];
-    const renderContent = () => {
+    const logoMap = {
+        'Senior DevOps Engineer': '🛠️',
+        'Data Scientist': '🐘',
+        'Junior React Developer': '⚛️',
+        'UI/UX Designer': '⚙️',
+        'Full Stack Developer': '💻',
+    };
+        const renderContent = () => {
         if (activeTab === 'applicants') {
             return (
                 <motion.ul
@@ -369,13 +409,13 @@ const ChartsLayout = ({ onViewAll }) => {
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                         >
                             <div className="flex items-center">
-                                <img src={applicant.image} alt={applicant.name} className="w-10 h-10 rounded-full mr-4 object-cover" />
+                                <img src={teamLeadImageMap[applicant.name]} alt={applicant.name} className="w-10 h-10 rounded-full mr-4 object-cover" />
                                 <div>
                                     <h3 className={`text-lg font-medium ${theme==='dark'?'text-gray-200':'text-gray-900'}`}>{applicant.name}</h3>
                                     <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'}`}>Exp: {applicant.exp} Years • {applicant.location}</p>
                                 </div>
                             </div>
-                            <span className={`text-white text-xs font-semibold px-3 py-1 rounded-full ${applicant.color}`}>{applicant.job}</span>
+                            <span className={`text-white text-xs font-semibold px-3 py-1 rounded-full ${bgcolor[applicant.name] ? bgcolor[applicant.name] : 'bg-gray-500'}`}>{applicant.job}</span>
                         </motion.li>
                     ))}
                 </motion.ul>
@@ -397,7 +437,9 @@ const ChartsLayout = ({ onViewAll }) => {
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                         >
                             <div className="flex items-center">
-                                <span className="text-xl mr-4">{opening.logo}</span>
+                                <span className="text-xl mr-4">
+                                    {logoMap[opening.title] || '💼'}
+                                </span>
                                 <div>
                                     <h3 className={`text-sm font-medium ${theme==='dark'?'text-gray-200':'text-gray-900'}`}>{opening.title}</h3>
                                     <p className={`text-sm ${theme==='dark'?'text-gray-200':'text-gray-500'}`}>No of Openings : {opening.openings}</p>
@@ -604,12 +646,12 @@ function Project() {
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
 
     const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",        more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",  more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",   more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",     more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",        Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",    Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",    Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",      Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
 
     const teamLeadImageMap = {
         Naveen: "https://i.pravatar.cc/40?img=1",
@@ -856,6 +898,9 @@ const CombinedDashboard = () => {
     const [showApplicants, setShowApplicants] = useState(false);
     const [showJobsList, setShowJobsList] = useState(false);
     const [showchartLayout, setShowchartLayout] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+        const [showReport, setShowReport] = useState(false);
+        const [showMain,setShowMain]=useState(false);
     const { userData,theme } = useContext(Context);
     const navigate=useNavigate()
     const { empID } = useParams();
@@ -866,7 +911,33 @@ const CombinedDashboard = () => {
             y: 0,
             employee: null,
         });
-
+        const [sidebarView, setSidebarView] = useState(null);
+     const role = (userData?.roles?.[0] || "").toUpperCase();   
+     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
+     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+    const [matchedArray,setMatchedArray]=useState(null);
+    const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+    useEffect(()=>{
+                     let fetchedData=async()=>{
+                             let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                             console.log("from Employee :",response.data);
+                             setLoggedPermissionData(response.data);
+                     }
+                     fetchedData();
+                     },[])
+                
+                     useEffect(()=>{
+                     if(loggedPermissiondata){
+                         setMatchedArray(loggedPermissiondata?.permissions)
+                     }
+                     },[loggedPermissiondata]);
+                     console.log(matchedArray);
+        
+            const [hasAccess,setHasAccess]=useState([])
+                useEffect(()=>{
+                    setHasAccess(userData?.permissions)
+                },[userData])
+                console.log("permissions from userdata:",hasAccess)
     const handleProjectClick= async(employee)=>{
        if (employee) {
             navigate(`/projects/${userData.employeeId}?fromContextMenu=true&targetEmployeeId=${userData.employeeId}`);
@@ -953,10 +1024,121 @@ const CombinedDashboard = () => {
 
         },
     ];
+    const handleShowReports = () => {
+        setShowReport(true);
+        setSidebarOpen(false);
+    };
+    const handleShowMain=()=>{
+        setShowMain(true);
+        setSidebarOpen(false);
+    }
+    const handleGoBackToDashboard = () => {
+        setShowReport(false);
+    };
+    const handleShowAttendance = () => {
+        setSidebarView('attendance');
+        setSidebarOpen(false);
+    };
+    const handleShowLeaves = () => {
+        setSidebarView('leaves');
+        setSidebarOpen(false);
+    };
+    
+    
+
+
 
     return (
         <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} p-4 font-sans`}>
+            <AnimatePresence>
+                {/* Sidebar Trigger Button */}
+                {showSidebar && !sidebarOpen && (
+                    <motion.button
+                        key="open-sidebar"
+                        onClick={() => setSidebarOpen(true)}
+                        className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
+                        aria-label="Open Sidebar"
+                        initial={{ x: '100%' }}
+                        animate={{ x: '0%' }}
+                        exit={{ x: '100%' }}
+                        transition={{ duration: 0.3, delay: 0.2 }}
+                    >
+                        <ChevronLeft />
+                    </motion.button>
+                )}
+
+                {/* Sidebar */}
+                {(matchedArray || []).includes("VIEW_LEAVES_REPORTS") && sidebarOpen && (
+                    <motion.div
+                        key="sidebar"
+                        className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
+                        initial={{ x: '100%' }}
+                        animate={{ x: '0%' }}
+                        exit={{ x: '100%' }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <motion.h3
+                            className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-blue-100'} cursor-pointer mb-1 mt-20  p-2 rounded-md`}
+                             onClick={handleShowAttendance}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />Total Employee Attendance 
+                        </motion.h3>
+                        <motion.h3
+                            className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-blue-100'} cursor-pointer mb-4   p-2 rounded-md`}
+                           onClick={handleShowLeaves}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />Total Employee Leaves
+                        </motion.h3>
+                        <button
+                            onClick={() => setSidebarOpen(false)}
+                            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
+                            aria-label="Close Sidebar"
+                            initial={{ x: '100%' }}
+                            animate={{ x: '0%' }}
+                            exit={{ x: '100%' }}
+                            transition={{ duration: 0.3, delay: 0.2 }}
+                        >
+                            <ChevronRight />
+                        </button>
+                        
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <Header />
+             <div className={`flex-1 transition-all duration-300 p-2 sm:p-3 lg:p-4`}>
+         
+              {sidebarOpen && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setSidebarOpen(false)}></div>}
+            <main className={`p-2 sm:p-2 lg:p-2 ${sidebarOpen && showSidebar ? 'filter blur-sm' : ''}`}>
+                <AnimatePresence mode="wait">
+                    
+                    {sidebarView === 'attendance' && (
+                            <motion.div
+                                key="attendance"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <AttendanceTable onBack={() => setSidebarView(null)} />
+                            </motion.div>
+                        )}
+                        {/* Render Employee Table only for Leaves */}
+                        {sidebarView === 'leaves' && (
+                            <motion.div
+                                key="leaves"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <EmployeeTable onBack={() => setSidebarView(null)} />
+                            </motion.div>
+                        )}
+                    {sidebarView === null && (
             <div className="container mx-auto">
                 <UserGreeting />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
@@ -1009,6 +1191,10 @@ const CombinedDashboard = () => {
                     <Project />
                 </div>
             </div>
+    )};
+            </AnimatePresence>
+            </main>
+        </div>
         </div>
     );
 };

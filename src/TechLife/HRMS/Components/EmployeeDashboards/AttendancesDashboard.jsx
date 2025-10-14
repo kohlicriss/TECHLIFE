@@ -12,6 +12,8 @@ import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
 import { authApi, dashboardApi, publicinfoApi } from "../../../../axiosInstance";
 import { IoPersonOutline } from "react-icons/io5";
+import AttendanceTable from "./TotalEmployeeAttendance";
+import { LiaFileAlt } from "react-icons/lia";
 
 // --- Constants and Helper Functions ---
 const PIE_COLORS = ["#4F46E5", "#F97316"]; // Tailwind's indigo-600 and orange-500
@@ -97,7 +99,7 @@ const backendData = [
         trend: "up",
         trendPercentage: "5",
         trendPeriod: "This week",
-        chartData: [{hours: 7}, {hours: 8}, {hours: 7.5}, {hours: 9}, {hours: 8.5}], 
+        chartData: [{name:"1",hours: 7}, {name:"2",hours: 8}, {name:"3",hours: 7.5}, {name:"4",hours: 9}, {name:"5",hours: 8.5}], 
         chartColor: "#8884d8", 
     },
     {
@@ -108,7 +110,7 @@ const backendData = [
         trend: "up",
         trendPercentage: "7",
         trendPeriod: "Last week",
-        chartData: [{hours: 30}, {hours: 40.5}, {hours: 38}, {hours: 45}, {hours: 40.5}], 
+        chartData: [{name:"1",hours: 30}, {name:"2",hours: 40.5}, {name:"3",hours: 38}, {name:"4",hours: 45}, {name:"5",hours: 40.5}], 
         chartColor: "#4ADE80", 
     },
     {
@@ -134,7 +136,7 @@ const backendData = [
     }
 ];
 
-const dates = ["All", "11", "12", "13", "14", "15"];
+//const dates = ["All", "11", "12", "13", "14", "15"];
 //const rawTableData = [
 //    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
 //    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
@@ -145,66 +147,77 @@ const dates = ["All", "11", "12", "13", "14", "15"];
 //    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
 //    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
 //];
-const rawPieData = [
-    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
-    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
-    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
-    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
-    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
-];
-const barChartData = [
-    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
-    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
-    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
-    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
-    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
-];
-const Data = [
-    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:40 - 17:10", hours: 0.5 }, { Time: "19:20 - 19:40", hours: 0.2 }] },
-    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "19:00 - 19:20", hours: 0.2 }] },
-    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
-    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
-];
-const chartData = [
-    { name: 'Day 1', hours: 7 },
-    { name: 'Day 2', hours: 8 },
-    { name: 'Day 3', hours: 7.5 },
-    { name: 'Day 4', hours: 9 },
-    { name: 'Day 5', hours: 8.5 },
-];
+//const rawPieData = [
+//    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
+//    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
+//    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
+//    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
+//    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
+//];
+//const barChartData = [
+//    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
+//    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
+//    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
+//    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
+//    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
+//];
+//const Data = [
+//    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
+//    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:40 - 17:10", hours: 0.5 }, { Time: "19:20 - 19:40", hours: 0.2 }] },
+//    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "19:00 - 19:20", hours: 0.2 }] },
+//    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
+//    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
+//];
+
 
 const ProfessionalStatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod, chartData, chartColor }) => {
     const isUp = trend === 'up';
     const {theme}=useContext(Context);
-
     return (
-        <div className={`rounded-xl p-5 shadow-lg border border-gray-100   ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}  transition-all duration-300 hover:shadow-xl`}>
+        <div className={`rounded-xl p-2 shadow-lg border border-gray-100   ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}  transition-all duration-300 hover:shadow-xl`}>
             <div className="flex items-start justify-between">
                 <div>
                     <div className={`w-12 h-12 flex items-center justify-center rounded-lg mb-3 ${iconBgColor} ${iconTextColor} p-2`}>
                         {React.cloneElement(icon, { className: 'w-8 h-8' })}
                     </div>
                     <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{description}</p>
-                    <p className={`text-4xl font-bold mt-1  ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                    <p className={`text-2xl font-bold mt-1  ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
                         {value}
                     </p>
                 </div>
 
-                <div className="w-24 h-16">
+                <div className="w-full h-40">
                 
-                    <ResponsiveContainer width="120%" height="120%">
-                        <LineChart data={chartData}>
+                    <ResponsiveContainer width="100%" height="80%">
+                        <LineChart data={chartData} margin={{ top: 50, right: 20, left: 15, bottom: 5 }}>
+
+                            
+                           <XAxis 
+                                dataKey="name" 
+                                stroke={theme === 'dark' ? '#E5E7EB' : '#4B5563'} 
+                                padding={{ left: 10, right: 10 }} 
+                                // axisLine={false} 
+                                // tickLine={false} 
+                            />
+                            
+                            <YAxis 
+                                dataKey="hours" 
+                                stroke={theme === 'dark' ? 'rgba(229, 231, 235, 1)' : '#4B5563'}  hide
+                            />
+                            
+                           
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '5px' }}
                                 labelStyle={{ color: '#fff' }}
+                                formatter={(value, name) => [`${value} hours`, name]}
                             />
                             <Line
                                 type="monotone"
                                 dataKey="hours"
                                 stroke={chartColor}
                                 strokeWidth={2}
-                                dot={false}
+                                dot={{ r: 3, fill: chartColor, strokeWidth: 1 }} 
+                             
                             />
                         </LineChart>
                     </ResponsiveContainer>
@@ -315,33 +328,41 @@ const MyComponent = ({ Data, selectedDate }) => {
             overtime: formatDuration(overtimeSeconds)
         };
     }, [selectedDate, Data]);
-
-    // Scale hour for bar position (assuming 10:00 to 20:00 as full range)
     const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
-
-    // Render schedule bar for selected date
     const renderScheduleBar = useCallback(() => {
         if (!Data || selectedDate === "All")
             return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
         const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
         if (!dayData)
             return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedDate}.</motion.div>;
-        const timePoints = new Set([dayData.Start_time, dayData.End_time]);
-        if (dayData.Break_hour)
-            dayData.Break_hour.forEach(b => {
+        const timePoints = new Set();
+    if (dayData.Start_time) {
+        timePoints.add(dayData.Start_time);
+    }
+    if (dayData.End_time) {
+        timePoints.add(dayData.End_time);
+    }
+    if (dayData.Break_hour)
+        dayData.Break_hour.forEach(b => {
+            if (b.Time) { 
                 const [start, end] = b.Time.split(' - ');
-                timePoints.add(start);
-                timePoints.add(end);
-            });
+                if (start) timePoints.add(start);
+                if (end) timePoints.add(end);
+            }
+        });
         const sortedTimes = Array.from(timePoints).sort(
             (a, b) => new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`)
         );
-        const formatTimelineTime = (timeStr) => {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-            return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
-        };
+       const formatTimelineTime = (timeStr) => {
+    if (!timeStr) {
+        console.error("formatTimelineTime received a null or empty time string.");
+        return 'Invalid Time'; 
+    }
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+    return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
+};
         const calculateDuration = (startTime, endTime) =>
             (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
         const workingHoursSegment = {
@@ -411,7 +432,6 @@ const MyComponent = ({ Data, selectedDate }) => {
             </div>
         );
     }, [selectedDate, Data, hoveredHour, getHourValue, scaleHour]);
-
     return (
         <motion.div
             className="p-4"
@@ -484,6 +504,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const { userData,theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+     const [sidebarView, setSidebarView] = useState(null);
     const [showAttendanceReports, setShowAttendanceReports] = useState(false);
     const [showMainDashboard,setShowMainDashboard]=useState(false);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
@@ -503,6 +524,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [isLoading,setIsLoading]=useState(false);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
+    const datesPerPage = 5;
     const [loggedInUserProfile, setLoggedInUserProfile] = useState({
         image: null,
         initials: "  "
@@ -511,14 +533,14 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
        const clockTimerRef = useRef(null); 
        
     const [rawTableData , setRawTableData] = useState(  [
-     { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     { employee_id: "E_02", date: "2025-06-29", login_time: null, logout_time: null },
-     { employee_id: "E_03", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     { employee_id: "E_04", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     { employee_id: "E_05", date: "2025-06-26", login_time: null, logout_time: null },
-     { employee_id: "E_06", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     { employee_id: "E_07", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     { employee_id: "E_08", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
+     //{ employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     //{ employee_id: "E_02", date: "2025-06-29", login_time: null, logout_time: null },
+     //{ employee_id: "E_03", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     //{ employee_id: "E_04", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     //{ employee_id: "E_05", date: "2025-06-26", login_time: null, logout_time: null },
+     //{ employee_id: "E_06", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     //{ employee_id: "E_07", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
+     //{ employee_id: "E_08", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
 ]);
 
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
@@ -553,55 +575,98 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             console.log("permissions from userdata:",hasAccess)
     
 
-   // const [barChartData, setBarChartData] = useState([]);
-   // const [rawPieData, setRawPieData] = useState([]);
-   // const [dates, setDates] = useState([]);
-   // const [Data, setData] = useState([])
-   // const [cardData, setCardData] = useState([]);
+    const [barChartData, setBarChartData] = useState([]);
+    const [rawPieData, setRawPieData] = useState([]);
+    const [dates, setDates] = useState([]);
+    const [Data, setData] = useState([])
+    const [cardData, setCardData] = useState([]);
+    const[startIndex,setStartIndex]=useState(null)
+    const ATTENDANCE_ID_STORAGE_KEY = 'currentAttendanceId';
+    const CLOCKIN_TIME_STORAGE_KEY = `attendanceClockInTime_${userData?.employeeId}`;
+    const [profileData, setProfileData] = useState({
+       mode: "",
+       shift: "",
+       onTime: 0,
+       avgWorkingHours: 0,
+       loginTime: null,
+       logoutTime: null,
+       grossTimeDay: "",
+       effectiveTimeDay: "",
+     });
+const SHIFT_OPTIONS = ["Day Shift", "Night Shift"];
+const updateProfileField = async (field, value) => {
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.getMonth() + 1;
+    const year = today.getFullYear();
+    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
+    try {
+        await dashboardApi.put(url, { [field]: value });
+        setProfileData(prev => ({ ...prev, [field]: value }));
+    } catch (error) {
+        console.error(`Error updating ${field}:`, error);
+    }
+};
+const handleShiftChange = (e) => {
+    const selectedShift = e.target.value;
+    updateProfileField("shift", selectedShift);
+};
+    const [currentAttendanceId, setCurrentAttendanceId] = useState(() => {
+    return localStorage.getItem(ATTENDANCE_ID_STORAGE_KEY) || null;
+   });
+   useEffect(() => {
+    const storedAttendanceId = localStorage.getItem(ATTENDANCE_ID_STORAGE_KEY);
+    
+    if (storedAttendanceId) {
+        setCurrentAttendanceId(storedAttendanceId);
+        // setIsLoggedIn(true); 
+    }
+}, []);
 
+    // 1. Bar Chart Data
+    useEffect(() => {
+        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/bar-chart?page=0&size=5`;
+        dashboardApi.get(url).then(response => {
+            const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Work_Hours: item.working_hour, Break_Hours: item.break_hour }));
+            setBarChartData(formatted);
+            const dates = ["All", ...formatted.map(item => item.Date)];
+            setDates(dates);
+        }).catch(error => console.error('Error fetching bar chart data:', error));
+    }, [empID]);
 
- // //Data Fetching Effects
-    //// Data Fetching Effects
-    //// 1. Bar Chart Data
-    //useEffect(() => {
-    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/bar-chart`;
-    //    // NOTE: Using dashboardApi assuming it's configured for 'https://hrms.anasolconsultancyservices.com/api/attendance'
-    //    // If it's a raw axios instance, this is fine too.
-    //    dashboardApi.get(url).then(response => {
-    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Work_Hours: item.working_hour, Break_Hours: item.break_hour }));
-    //        setBarChartData(formatted);
-    //        const dates = ["All", ...formatted.map(item => item.Date)];
-    //        setDates(dates);
-    //    }).catch(error => console.error('Error fetching bar chart data:', error));
-    //}, [empID]);
-//
-    //// 2. Attendance Table Data
-    //useEffect(() => {
-    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/attendance?page=0&size=10`;
-    //    dashboardApi.get(url).then(response => {
-    //        setRawTableData(response.data);
-    //    }).catch(error => console.error('Error fetching attendance data:', error));
-    //}, [empID]);
-//
-    //// 3. Pie Chart Data
-    //useEffect(() => {
-    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/pie-chart`;
-    //    dashboardApi.get(url).then(response => {
-    //        const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Working_hour: item.working_hour, Break_hour: item.break_hour, EmployeeId: item.employeeId }));
-    //        setRawPieData(formatted);
-    //    }).catch(error => console.error('Error fetching pie chart data:', error));
-    //}, [empID]);
-//
-    //// 4. Line Graph/Schedule Bar Data (Data)
-    //useEffect(() => {
-    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${empID}/line-graph`;
-    //    dashboardApi.get(url).then(response => {
-    //        const formatted = response.data.map(item => ({ EmployeeId: item.employeeId, Date: item.date, Month: item.month, Year: item.year, Start_time: item.start_time, End_time: item.end_time, Break_hour: item.breaks.map(b => ({ Time: b.time, hour: b.hour })) }));
-    //        setData(formatted);
-    //    }).catch(error => console.error('Error fetching line graph data:', error));
-    //}, [empID]);
-//
-    //// 5. Stat Card Data
+    // 2. Attendance Table Data
+    useEffect(() => {
+        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/attendance?page=0&size=10`;
+        dashboardApi.get(url).then(response => {
+            setRawTableData(response.data);
+            const dates = ["All", ...response.map(item => item.Date)];
+            setDates(dates);
+        }).catch(error => console.error('Error fetching attendance data:', error));
+    }, [empID]);
+
+    // 3. Pie Chart Data
+    useEffect(() => {
+        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/pie-chart`;
+        dashboardApi.get(url).then(response => {
+            const formatted = response.data.map(item => ({ Date: item.date, Month: item.month, Year: item.year, Working_hour: item.working_hour, Break_hour: item.break_hour, EmployeeId: item.employeeId }));
+            setRawPieData(formatted);
+            const dates = ["All", ...formatted.map(item => item.Date)];
+            setDates(dates);
+        }).catch(error => console.error('Error fetching pie chart data:', error));
+    }, [empID]);
+
+    // 4. Line Graph/Schedule Bar Data (Data)
+    useEffect(() => {
+        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/line-graph?page=0&size=5`;
+        dashboardApi.get(url).then(response => {
+            const formatted = response.data.map(item => ({ EmployeeId: item.employeeId, Date: item.date, Month: item.month, Year: item.year, Start_time: item.start_time, End_time: item.end_time, Break_hour: item.breaks.map(b => ({ Time: b.time, hour: b.hour })) }));
+            setData(formatted);
+            const dates = ["All", ...formatted.map(item => item.Date)];
+            setDates(dates);
+        }).catch(error => console.error('Error fetching line graph data:', error));
+    }, [empID]);
+
+    // 5. Stat Card Data
     //useEffect(() => {
     //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/attendance/leaves/dashboard/${empID}`;
     //    dashboardApi.get(url).then(response => {
@@ -624,7 +689,17 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
        });
      }, [userData]);
   
-    // Timer and Clock Effects
+useEffect(() => {
+    const CLOCKIN_TIME_STORAGE_KEY = `attendanceClockInTime_${userData?.employeeId}`;
+    const savedClockIn = localStorage.getItem(CLOCKIN_TIME_STORAGE_KEY);
+    if (savedClockIn) {
+        setIsLoggedIn(true);
+        setStartTime(new Date(savedClockIn));
+    } else {
+        setIsLoggedIn(false);
+        setStartTime(null);
+    }
+}, [userData?.employeeId]);
     useEffect(() => {
     // 1. Gross/Effective Hours Timer Logic:
     if (isLoggedIn && startTime) {
@@ -633,7 +708,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
             clearInterval(intervalRef.current);
         }
         
-       
+        
         intervalRef.current = setInterval(() => {
             const now = new Date();
             const diffInSeconds = (now - startTime) / 1000;
@@ -644,73 +719,117 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
         setGrossHours(0); 
         setEffectiveHours(0); 
         if (intervalRef.current) {
-             clearInterval(intervalRef.current);
-             intervalRef.current = null;
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
         }
     }
     
-  
+    // 2. Clock Timer Logic (Keep this separate from the gross/effective timer logic)
     if (!clockTimerRef.current) {
         clockTimerRef.current = setInterval(() => setCurrentTime(new Date()), 1000);
     }
 
-   
+    // 3. Browser/Screen State Management (NEW LOGIC)
+    const employeeId = userData?.employeeId;
+    const attendanceId = currentAttendanceId;
+
+    const handleDisconnect = async () => {
+        if (isLoggedIn && employeeId && attendanceId) {
+            console.log("Disconnecting due to visibility change or unload...");
+            const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/disconnected`;
+            try {
+                await fetch(apiUrl, { method: 'PUT', headers: { 'accept': '*/*' } });
+                console.log("Disconnected endpoint hit successfully.");
+            } catch (error) {
+                console.error("Disconnected API call failed:", error);
+            }
+        }
+    };
+
+    const handleConnect = async () => {
+        if (isLoggedIn && employeeId && attendanceId) {
+            console.log("Connecting due to visibility change...");
+            const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/connected`;
+            try {
+                await fetch(apiUrl, { method: 'PUT', headers: { 'accept': '*/*' } });
+                console.log("Connected endpoint hit successfully.");
+            } catch (error) {
+                console.error("Connected API call failed:", error);
+            }
+        }
+    };
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+            // Screen is off or tab is in background
+            handleDisconnect();
+        } else if (document.visibilityState === 'visible') {
+            // Screen is on or tab is active
+            handleConnect();
+        }
+        if (document.visibilityState === 'hidden' && isLoggedIn) {
+        console.log("User moved to another tab/window is minimized.");
+    }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // --- Tab Change/Close (beforeunload) ---
+    //const handleBeforeUnload = (event) => {
+    //if (isLoggedIn) {
+    //    const message = "Are you sure you want to disconnect? Your session will end.";
+    //    event.returnValue = message;
+    //    handleDisconnect(); 
+    //}
+//};
+
+    //window.addEventListener('beforeunload', handleBeforeUnload);
+
+
+    // Cleanup function for useEffect
     return () => { 
         if (intervalRef.current) {
-             clearInterval(intervalRef.current);
-             intervalRef.current = null;
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
         }
         if (clockTimerRef.current) {
-             clearInterval(clockTimerRef.current);
-             clockTimerRef.current = null;
+            clearInterval(clockTimerRef.current);
+            clockTimerRef.current = null;
         }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        //window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-}, [isLoggedIn, startTime]);
-
-    // Action Handlers
-    const handleModeChange = (newMode) => { setMode(newMode); setShowModeConfirm(false); };
-     const handleRefresh = () => {
-        const currentState = isLoggedIn;
-        setIsLoggedIn(false); 
-        setTimeout(() => setIsLoggedIn(currentState), 0); 
-    };
- 
-
-
-
-
-const formatEmployeeId = (index) => {
-    // Assuming index 0 corresponds to employee 1 (ACS00000001)
-    // and you want a 10-character ID (ACS + 7 digits)
-    const employeeNumber = index + 1;
-    return `ACS${String(employeeNumber).padStart(7, '0')}`;
-};
-
-
-const handleLogin = (index) => {
+}, [isLoggedIn, startTime, currentAttendanceId]); // Depend on currentAttendanceId
    
-    const employeeId = empID//formatEmployeeId(index); 
+    const handleModeChange = (newMode) => {  updateProfileField("mode", newMode); setMode(newMode); setShowModeConfirm(false); };
+const handleRefresh = () => {
+    const currentState = isLoggedIn;
+    setIsLoggedIn(false); 
+    setTimeout(() => setIsLoggedIn(currentState), 0); 
+};   
+const ATTENDANCE_RECORDS_KEY = `attendanceRecords_${userData?.employeeId}`;
+const handleLogin = () => {
     const now = new Date();
-
-    // Client-side state updates
     setIsLoggedIn(true);
     setStartTime(now);
     setEndTime(null);
     setGrossHours(0);
     setEffectiveHours(0);
 
-    setRawTableData(prev => [...prev, { 
-        employee_id:employeeId, // Use the correctly formatted ID
-        date: now.toLocaleDateString(), 
+   localStorage.setItem(CLOCKIN_TIME_STORAGE_KEY, now.toISOString());
+
+    const newRecord = {
+        employee_id: userData?.employeeId,
+        date: now.toLocaleDateString(),
         login_time: formatClockTime(now),
         logout_time: null,
-        login_hours: 0, 
-        barWidth: "0%", 
-    }]);
+        login_hours: 0,
+        barWidth: "0%",
+    };
 
-    // --- 2. API Integration: Clock-in (PUT request) ---
-    // The URL now uses the correct employeeId string
-    const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/ACS00000001/office/clock-in`;
+    const records = JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || [];
+    localStorage.setItem(ATTENDANCE_RECORDS_KEY, JSON.stringify([...records, newRecord]));
+    setRawTableData(prev => [...prev, newRecord]);
+    const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/${mode}/clock-in`;
 
     fetch(apiUrl, {
         method: 'PUT',
@@ -719,35 +838,58 @@ const handleLogin = (index) => {
         },
     })
     .then(response => {
-        if (!response.ok) {
-            // Include response details in the error for better debugging
-            throw new Error(`HTTP error! status: ${response.status}. Response text: ${response.statusText}`);
+         if (!response.ok) {
+            if (response.status === 500) {
+                 return response.text().then(errorText => {
+                     throw new Error(`HTTP error! Status: ${response.status}. Server response: ${errorText || 'No detailed server message available.'}`);
+                 });
+            }
+            
+            throw new Error(`HTTP error! status: ${response.status}.`);
         }
         return response.json(); 
     })
+       
     .then(data => {
         console.log("Clock-in successful:", data);
+        const attendanceIdFromResponse = data.attendanceId; 
+        if (attendanceIdFromResponse) {
+            setCurrentAttendanceId(attendanceIdFromResponse);
+            localStorage.setItem(ATTENDANCE_ID_STORAGE_KEY, attendanceIdFromResponse);
+            console.log(`Stored Attendance ID: ${attendanceIdFromResponse}`);
+        } else {
+            console.warn("Attendance ID not received in clock-in response.");
+        }
     })
     .catch(error => {
         console.error("Clock-in failed:", error);
-        // Optional: Revert isLoggedIn state if clock-in truly failed
+        // Revert login state if API fails
+        setIsLoggedIn(false); 
+        setStartTime(null);
     });
 };
-    const handleLogout = () => { setIsLogoutConfirmed(true); };
-   const handleConfirmLogout = async () => { // Make the function async
-    const now = new Date(); // Get the current time for both local state and API payload
-
-    // 1. Prepare Data for the Backend
-    const employeeId = 'ACS00000001'; // Get this dynamically if possible
+const handleShowAttendances = () => {
+        setSidebarView('attendances');
+       setIsSidebarOpen(false);
+    };
+const handleShowAttendance = () => {
+        setSidebarView('attendance');
+       setIsSidebarOpen(false);
+    };
+    const handleShowAttendanceReport = () => {
+        setSidebarView('attendanceReport');
+       setIsSidebarOpen(false);
+    };
+const handleLogout = () => { setIsLogoutConfirmed(true); };
+const handleConfirmLogout = async () => { 
+    const now = new Date(); 
     const clockOutData = {
-        employee_id: employeeId,
+        employee_id:[`${userData?.employeeId}`],
         clock_out_time: now.toISOString(), // ISO format is best for backend storage
         
     };
-
-    // 2. Call the PUT API
     try {
-        const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/clock-out`;
+        const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/clock-out`;
 
         const response = await fetch(apiUrl, {
             method: 'PUT',
@@ -758,59 +900,76 @@ const handleLogin = (index) => {
         });
 
         if (!response.ok) {
-            // Handle HTTP errors (e.g., 400, 500)
+            
             const errorText = await response.text();
             console.error('Clock-out API call failed:', response.status, errorText);
             alert('Failed to record clock-out time on the server. Please try again or contact support.');
         }
 
-        // 3. Update Local State ONLY after the API call (successful or failed)
-        setIsLoggedIn(false);
-        setIsLogoutConfirmed(false);
-        setEndTime(now);
-
-       
-        setRawTableData(prev => {
-            if (prev.length === 0) return prev;
-            // ... (rest of your local state update logic)
-            const lastIndex = prev.length - 1;
-            const lastRecord = prev[lastIndex];
-            const loginDate = new Date(`2000-01-01 ${lastRecord.login_time}`);
-            const logoutDate = now;
-            const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
-
-            return [
-                ...prev.slice(0, lastIndex),
-                {
-                    ...lastRecord,
-                    logout_time: formatClockTime(now),
-                    login_hours: loginHours > 0 ? loginHours : 0,
-                    barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
-                }
-            ];
-        });
-
     } catch (error) {
         console.error('Error during clock-out API call:', error);
         alert('A network error occurred while clocking out. You have been logged out locally, but the server record might be missing.');
-        
-        // Log out locally even on network error
-        setIsLoggedIn(false);
-        setIsLogoutConfirmed(false);
-        setEndTime(now);
-    }
+    } finally {
+        // NEW: Clear Attendance ID from state and local storage on logout
+        setCurrentAttendanceId(null);
+        localStorage.removeItem(ATTENDANCE_ID_STORAGE_KEY);
+        localStorage.removeItem(CLOCKIN_TIME_STORAGE_KEY);
+
+       setIsLoggedIn(false);
+    setIsLogoutConfirmed(false);
+    setEndTime(now);
+
+    setRawTableData(prev => {
+        if (prev.length === 0) return prev;
+        const lastIndex = prev.length - 1;
+        const lastRecord = prev[lastIndex];
+        if (
+            lastRecord.date === now.toLocaleDateString() &&
+            !lastRecord.logout_time
+        ) {
+            const loginDate = new Date(`2000-01-01 ${lastRecord.login_time}`);
+            const logoutDate = now;
+            const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
+            const updatedRecord = {
+                ...lastRecord,
+                logout_time: formatClockTime(now),
+                login_hours: loginHours > 0 ? loginHours : 0,
+                barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
+            };
+
+            // Update localStorage
+            const records = JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || [];
+            records[lastIndex] = updatedRecord;
+            localStorage.setItem(ATTENDANCE_RECORDS_KEY, JSON.stringify(records));
+
+            return [
+                ...prev.slice(0, lastIndex),
+                updatedRecord
+            ];
+        }
+        return prev;
+    });
+    
 };
-    const handleCancel = () => { setIsLogoutConfirmed(false); };
-    // Format hours for display
-    const formatHours = (seconds) => {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = Math.floor(seconds % 60);
-        return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
-    };
-    const grossHoursFormatted = formatHours(grossHours);
-    const effectiveHoursFormatted = formatHours(effectiveHours);
-    const maxHoursInSeconds = 8 * 3600;
+};
+
+useEffect(() => {
+    const records = (JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || []).filter(r => r && r.date);
+    if (records.length > 0) {
+        setRawTableData(records);
+    }
+}, [userData?.employeeId]);
+
+const handleCancel = () => { setIsLogoutConfirmed(false); };
+const formatHours = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+};
+const grossHoursFormatted = formatHours(grossHours);
+const effectiveHoursFormatted = formatHours(effectiveHours);
+const maxHoursInSeconds = 8 * 3600;
     const progress = (grossHours / maxHoursInSeconds) * 100;
     const finalAttendanceData = useMemo(() => {
         let data = [...rawTableData];
@@ -869,12 +1028,7 @@ const handleLogin = (index) => {
               
                     <motion.button onClick={() => setIsSidebarOpen(true)}  className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
                         aria-label="Open Sidebar"
-                        initial={{ x: '100%' }}
-                        animate={{ x: '0%' }}
-                        exit={{ x: '100%' }}
-                        transition={{ duration: 0.3, delay: 0.2 }}
-                           
-                            >
+                         >
                         <ChevronLeft  />
                     </motion.button>
                     )}
@@ -882,35 +1036,26 @@ const handleLogin = (index) => {
                     <motion.div
                                             key="sidebar"
                                             className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
-                                            initial={{ x: '100%' }}
-                                            animate={{ x: '0%' }}
-                                            exit={{ x: '100%' }}
-                                            transition={{ duration: 0.3 }}
                                         >
                         <motion.h3
-                            className={`text-lg font-bold mt-20  cursor-pointer mb-1 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
-                            onClick={() => { setShowMainDashboard(true); setIsSidebarOpen(false); }}
+                             className={`text-lg font-bold mt-20  cursor-pointer mb-1 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
+                             onClick={handleShowAttendance}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> My Attendence 
-                        </motion.h3> 
+                            <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />Total Employee Attendance 
+                        </motion.h3>  
                        <motion.h3
                             className={`text-lg font-bold   cursor-pointer mb-4 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
-                            onClick={() => { setShowAttendanceReports(true); setIsSidebarOpen(false); }}
+                            onClick={handleShowAttendanceReport}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
                             <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
-                        </motion.h3>  
+                        </motion.h3> 
+                        
                         <button onClick={() => setIsSidebarOpen(false)} className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
-                            aria-label="Close Sidebar"
-                            initial={{ x: '100%' }}
-                            animate={{ x: '0%' }}
-                            exit={{ x: '100%' }}
-                            transition={{ duration: 0.3, delay: 0.2 }} 
-                            
-                          >
+                            aria-label="Close Sidebar">
                             <ChevronRight />
                         </button>
                     </motion.div>                   
@@ -918,7 +1063,10 @@ const handleLogin = (index) => {
             )}
             </AnimatePresence>
             {/* Main Content Wrapper */}
-            <main className={`p-2 sm:p-2 lg:p-4 transition-all duration-300 ease-in-out ${isSidebarOpen && showSidebar ? 'mr-80 filter blur-sm' : 'mr-0'}`}>
+            <div className={`flex-1 transition-all duration-300 p-4 sm:p-6 lg:p-8`}>
+         
+              {isSidebarOpen && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsSidebarOpen(false)}></div>}
+            <main className={`p-2 sm:p-2 lg:p-4 ${isSidebarOpen && showSidebar ? 'filter blur-sm' : ''}`}>
                 <header className="flex items-center justify-between mb-1">
                     <motion.h1
                         className={`text-2xl sm:text-4xl font-extrabold ${theme === 'dark'? 'text-white': 'text-gray-900'}`}
@@ -926,21 +1074,25 @@ const handleLogin = (index) => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        {showAttendanceReports ? "Attendance Reports" : "Attendance"}
+                        {showAttendanceReports ? "Attendance Reports" : ""}
                         
                     </motion.h1>
-                    <motion.button
-                        onClick={showAttendanceReports ? () => setShowAttendanceReports(false) : onBack}
-                        className="flex items-center px-4 py-2 text-sm font-semibold text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <ArrowLeftIcon className="w-4 h-4 mr-2" />{showAttendanceReports ? "Back to Dashboard" : "Back"}
-                    </motion.button>
+                    
                 </header>
                 {/* Conditional Rendering of Main Content */}
                 <AnimatePresence mode="wait">
-                    {showAttendanceReports ? (
+                    {sidebarView === 'attendance' && (
+                        <motion.div
+                            key="attendance"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <AttendanceTable onBack={() => setSidebarView(null)} />
+                        </motion.div>
+                    )}
+                    {sidebarView==='attendanceReport' && (
                         <motion.div
                             key="reports"
                             initial={{ opacity: 0, y: 20 }}
@@ -949,334 +1101,320 @@ const handleLogin = (index) => {
                             transition={{ duration: 0.3 }}
                             className=""
                         >
-                            <AttendanceReports rawTableData={rawTableData} role={role.toLowerCase()} />
+                            <AttendanceReports rawTableData={rawTableData} role={role.toLowerCase()} onBack={() => setSidebarView(null)} />
                           
                         </motion.div>
-                    ) : (
+                    )} 
+                     {sidebarView === null && (
                         <motion.div
                             key="dashboard"
-                            
-                           
                         >
-                            {/* Employee Profile and Clock Layouts - REFACTORED */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-2">
-                                <motion.div
-                                    className="p-4 flex items-center justify-center"
-                                   
-                                    animate={{ opacity: 1, scale: 1 }}
-                                   
+                           <div className="grid grid-cols-1 lg:grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
+   <motion.div
+        className="p-2 flex items-center justify-center w-full"
+        animate={{ opacity: 1, scale: 1 }}
+    >
+        <div className={`rounded-3xl shadow-2xl p-4 w-full max-w-lg md:max-w-3xl transition-all hover:shadow-3xl duration-300 relative overflow-hidden 
+                ${theme === 'dark' ? 'bg-gray-800 border border-indigo-500/50' : 'bg-white border border-gray-200'}`}>
+
+            <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-purple-100 via-pink-200 to-red-300 opacity-30 z-0 animate-pulse-slow"></div>
+            <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-gradient-to-tr from-green-100 via-blue-200 to-purple-300 opacity-30 z-0 animate-pulse-slow-reverse"></div>
+            <div className="flex flex-row items-start justify-between mb-2 relative z-10">
+                <div className="flex items-start space-x-3 md:space-x-4">
+                    <div className="relative mt-1"> {/* Adjusted margin top */}
+                        <motion.div
+                            className={`w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-4 flex items-center justify-center shadow-xl cursor-pointer 
+                                ${theme === 'dark' ? 'border-gray-700 bg-gray-600' : 'border-white bg-indigo-500'}`}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        >
+                            {loggedInUserProfile.image ? (
+                                <img
+                                    src={loggedInUserProfile.image}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <span
+                                    className={`text-lg md:text-xl font-bold ${
+                                        theme === "dark" ? "text-white" : "text-white" // White text for contrast
+                                    } flex items-center justify-center w-full h-full`}
                                 >
-                                    {/* Main container with motion and color accents */}
-                                    <div className={`rounded-2xl shadow-xl p-4 w-full max-w-2xl transition-transform  hover:shadow-2xl duration-300 relative overflow-hidden ${theme === 'dark'? 'bg-gray-700 ': 'bg-stone-100 '}`}>
+                                    {loggedInUserProfile.initials}
+                                </span>
+                            )}
+                        </motion.div>
+                        <motion.div
+                            className={`absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center border-2 
+                                ${theme === 'dark' ? 'border-gray-800' : 'border-white'} transition-colors 
+                                ${mode === "office" ? "bg-blue-500" : "bg-green-500"}`}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                        >
+                            {mode === "office" ? (
+                                <FaBuilding className="text-white text-xs" />
+                            ) : (
+                                <FaHome className="text-white text-xs" />
+                            )}
+                        </motion.div>
+                    </div>
 
-                                        {/* Subtle animated background pattern */}
-                                        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-gradient-to-tr from-purple-200 via-pink-200 to-red-200 opacity-70 z-0 animate-bounce-slow"></div>
-                                        <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-gradient-to-tr from-green-200 via-blue-200 to-purple-200 opacity-70 z-0 animate-bounce-slow-reverse"></div>
+                    {/* Welcome Text */}
+                    <motion.div
+                        className="text-start mt-2"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1, duration: 0.5 }}
+                    >
+                        <p className={`text-xs md:text-sm font-semibold mb-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Welcome Back!
+                        </p>
+                        <h2 className={`text-lg md:text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                            {`${userData?.fullName || 'Employee'}`} 👋
+                        </h2>
+                    </motion.div>
+                </div>
+                <div className="flex space-x-1 md:space-x-2 mt-1">
+                    {/* Refresh Button - Smaller icon/padding on mobile */}
+                    <motion.button
+                        onClick={handleRefresh}
+                        className={`p-2 rounded-full hover:shadow-lg flex items-center justify-center text-sm font-medium transition-transform duration-300 
+                            ${theme === 'dark' ? 'bg-gray-700 text-indigo-400 border border-gray-600' : 'bg-gray-100 text-indigo-600 border border-gray-300'}`}
+                        whileTap={{ scale: 0.9 }}
+                        aria-label="Refresh Timer"
+                    >
+                        <motion.svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} initial={{ rotate: 0 }}
+                            animate={{ rotate: showModeConfirm ? 180 : 0 }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.001 8.001 0 01-15.357-2m15.357 2H15" />
+                        </motion.svg>
+                        <span className="hidden sm:inline ml-1 text-xs">Refresh</span> {/* Smaller text on desktop */}
+                    </motion.button>
 
-                                        {/* Top section with profile on left and mode selector on right */}
-                                        <div className="flex flex-row items-start justify-between mb-6 relative z-10 transition-all duration-500 ease-in-out">
-
-                                            {/* Profile on left */}
-                                            <div className="flex items-center space-x-4">
-                                                <div className="relative">
-                                                    <motion.div
-                                                        className={`w-20 h-20 rounded-full overflow-hidden border-4  shadow-lg cursor-pointer ${theme === 'dark'? 'border-gray-600': 'border-white'}`}
-                                                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                                                        
-                                                    >
-                                                        {loggedInUserProfile.image ? (
-                                                            <img
-                                                              src={loggedInUserProfile.image}
-                                                              alt="Profile"
-                                                              className="w-full h-full object-cover"
-                                                            />
-                                                          ) : (
-                                                            <span
-                                                              className={`text-sm font-bold ${
-                                                                theme === "dark" ? "text-white" : "text-gray-600"
-                                                              }`}
-                                                            >
-                                                              {loggedInUserProfile.initials}
-                                                            </span>
-                                                          )}
-                                                         
-                                                    </motion.div>
-                                                    {/* Status indicator */}
-                                                    
-                                                    <motion.div
-                                                        className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white transition-colors ${mode === "office" ? "bg-blue-500" : "bg-green-500"}`}
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                                                    >
-                                                        {mode === "office" ? (
-                                                            <FaBuilding className="text-white text-xs" />
-                                                        ) : (
-                                                            <FaHome className="text-white text-xs" />
-                                                        )}
-                                                    </motion.div>
-                                                </div>
-                                                {/* User info */}
-                                                <div>
-                                                    <div className="flex space-x-4 mt-10 mr-2">
-                                                        <motion.div
-                                                            className="flex flex-col text-center"
-                                                            initial={{ opacity: 0, x: -20 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.3, duration: 0.5 }}
-                                                        >
-                                                            <span className={`text-md ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Attendance</span>
-                                                            <span className="font-semibold text-green-600 text-lg">{`100%`}</span>
-                                                        </motion.div>
-                                                        <motion.div
-                                                            className="flex flex-col text-center"
-                                                            initial={{ opacity: 0, x: -20 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.4, duration: 0.5 }}
-                                                        >
-                                                            <span className={`text-md ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}>Avg. Hours</span>
-                                                            <span className="font-semibold text-blue-600 text-lg">{`10h 9m`}</span>
-                                                        </motion.div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        {/* Mode selector with animated pop-up */}
-                                        <div className="absolute top-1 right-1 z-20">
-                                            <div className="flex space-x-2">
-                                                <motion.button
-                                                    onClick={handleRefresh}
-                                                    className={`px-3 py-2 rounded-full hover:shadow-md flex items-center justify-center gap-1 text-sm font-medium transition-transform duration-300 ${theme === 'dark'? 'bg-gray-800 text-white border border-gray-600': 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300  border border-gray-300'}`}
-                                                    whileTap={{ scale: 0.9 }}
-                                                    aria-label="Refresh Timer"
-                                                >
-                                                    <motion.svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} initial={{ rotate: 0 }}
-                                                        animate={{ rotate: showModeConfirm ? 180 : 0 }}>
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.001 8.001 0 01-15.357-2m15.357 2H15" />
-                                                    </motion.svg>
-                                                    <span className="hidden sm:inline">Refresh</span>
-                                                </motion.button>
-                                            <div className="relative">
-                                                <motion.button
-                                                    onClick={() => setShowModeConfirm(!showModeConfirm)}
-                                                    className="px-4 py-2.5 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 hover:from-blue-200 hover:to-blue-300 flex items-center justify-center gap-2 text-sm font-medium shadow-sm border border-blue-300 transition-transform duration-300"
-                                                    whileTap={{ scale: 0.9 }}
-                                                >
-                                                    {/* Mode icon */}
-                                                    {mode === "office" ? (
-                                                        <motion.div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center" whileHover={{ rotate: 360 }}>
-                                                            <FaBuilding className="text-white text-xs" />
-                                                        </motion.div>
-                                                    ) : (
-                                                        <motion.div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center" whileHover={{ rotate: 360 }}>
-                                                            <FaHome className="text-white text-xs" />
-                                                        </motion.div>
-                                                    )}
-                                                    <span className="capitalize">{mode}</span>
-                                                    <motion.svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-4 w-4 ml-1 transition-transform duration-200"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                        initial={{ rotate: 0 }}
-                                                        animate={{ rotate: showModeConfirm ? 180 : 0 }}
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                    </motion.svg>
-                                                </motion.button>
-
-                                                {/* Mode confirmation popup with smooth animation */}
-                                                <AnimatePresence>
-                                                    {showModeConfirm && (
-                                                        <motion.div
-                                                            className={`absolute top-full right-0 mt-2 w-52 p-3  border border-gray-300 rounded-xl shadow-lg z-30 ${theme === 'dark'? 'bg-gray-800 text-white': 'bg-white text-gray-800'}`}
-                                                            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                                                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                                        >
-                                                            <p className={`${theme==='dark'?'text-gray-200':'text-gray-700'} font-medium text-sm mb-3 text-center`}>
-                                                                Switch to {mode === "office" ? "Remote" : "Office"} mode?
-                                                            </p>
-                                                            <div className="flex space-x-2">
-                                                                <motion.button
-                                                                    onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
-                                                                    className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-colors font-semibold"
-                                                                    
-                                                                    whileTap={{ scale: 0.95 }}
-                                                                >
-                                                                    Confirm
-                                                                </motion.button>
-                                                                <motion.button
-                                                                    onClick={() => setShowModeConfirm(false)}
-                                                                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                                                    
-                                                                    whileTap={{ scale: 0.95 }}
-                                                                >
-                                                                    Cancel
-                                                                </motion.button>
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        </div>
-                                         </div>
-
-                                        {/* Welcome message */}
-                                        <motion.div
-                                            className="text-start mb-2 relative z-8 px-2"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.5, duration: 0.5 }}
+                    {/* Mode Toggle Button - Smaller text/padding on mobile */}
+                    <div className="relative">
+                        <motion.button
+                            onClick={() => setShowModeConfirm(!showModeConfirm)}
+                            className={`px-2 py-1.5 md:px-4 md:py-2 rounded-full flex items-center justify-center gap-1 md:gap-2 text-sm font-medium shadow-md transition-transform duration-300 
+                                ${theme === 'dark' ? 'bg-indigo-600 text-white' : 'bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-700 border border-indigo-300'}`}
+                            whileTap={{ scale: 0.9 }}
+                        >
+                            {/* Mode icon */}
+                            {mode === "office" ? (
+                                <motion.div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-blue-500 flex items-center justify-center" whileHover={{ rotate: 360 }}>
+                                    <FaBuilding className="text-white text-xs" />
+                                </motion.div>
+                            ) : (
+                                <motion.div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-500 flex items-center justify-center" whileHover={{ rotate: 360 }}>
+                                    <FaHome className="text-white text-xs" />
+                                </motion.div>
+                            )}
+                            <span className="capitalize hidden sm:inline text-sm">{mode}</span> {/* Kept hidden on mobile, smaller on desktop */}
+                            <motion.svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3 md:h-4 md:w-4 ml-0.5 transition-transform duration-200 hidden sm:block"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                initial={{ rotate: 0 }}
+                                animate={{ rotate: showModeConfirm ? 180 : 0 }}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </motion.svg>
+                        </motion.button>
+                        <AnimatePresence>
+                            {showModeConfirm && (
+                                <motion.div
+                                    className={`absolute top-full right-0 mt-2 w-48 p-3 border rounded-xl shadow-xl z-30 
+                                        ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+                                    initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                >
+                                    <p className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium text-xs mb-3 text-center`}>
+                                        Switch to {mode === "office" ? "Remote" : "Office"} mode?
+                                    </p>
+                                    <div className="flex space-x-2">
+                                        <motion.button
+                                            onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
+                                            className="flex-1 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-colors font-semibold text-sm"
+                                            whileTap={{ scale: 0.95 }}
                                         >
-                                            <h2 className={`text-2xl font-medium  mb-2 ${theme === 'dark'? 'text-white': 'text-gray-800'}`}>    {`Welcome, ${userData?.fullName}`}</h2>
-                                        </motion.div>
-
-                                        {/* Divider with animated underline */}
-                                        <div className="relative my-3 w-full flex justify-center">
-                                            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                                <motion.div
-                                                    className="w-full border-t border-gray-300"
-                                                    initial={{ scaleX: 0 }}
-                                                    animate={{ scaleX: 1 }}
-                                                    transition={{ delay: 0.6, duration: 0.8 }}
-                                                    style={{ transformOrigin: "left" }}
-                                                />
-                                            </div>
-                                            <span className={`px-3  text-md  font-medium z-10 ${theme === 'dark'? 'bg-gray-700 text-white': 'bg-white text-gray-500'}`}>TIME TRACKING</span>
-                                        </div>
-
-                                        {/* Time display section */}
-                                        <div className="w-full flex flex-col items-center text-center mb-4 relative z-10">
-                                            {/* Current Time */}
-                                            <div className="mb-4">
-                                                <motion.div
-                                                    className="flex items-center justify-center gap-2 text-indigo-600 font-medium mb-2"
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: 0.8, duration: 0.5 }}
-                                                >
-                                                    <ClockIcon className="w-5 h-5 text-indigo-500" />
-                                                    <span>Current Time</span>
-                                                </motion.div>
-                                                <motion.p
-                                                    className={`text-2xl font-bold  tracking-wide mb-1 ${theme === 'dark'? 'text-white': 'text-gray-900'}`}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ delay: 1, duration: 0.5 }}
-                                                >
-                                                    {formatClockTime(currentTime)}
-                                                </motion.p>
-                                                <motion.p
-                                                    className={`text-sm  ${theme === 'dark'? 'text-white': 'text-gray-500'}`}
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ delay: 1.2, duration: 0.5 }}
-                                                >
-                                                    {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                                                </motion.p>
-                                            </div>
-                                            {/* Metrics Cards */}
-                                            <div className="grid grid-cols-2 gap-4 w-full max-w-md px-2">
-                                                {/* Gross Time Card */}
-                                                <motion.div
-                                                    className={` rounded-xl p-2 shadow-sm  ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-purple-50 to-purple-100 border border-gray-300'}`}
-                                                    transition={{ type: "spring", stiffness: 300 }}
-                                                >
-                                                    <p className={`text-sm  font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Gross Time</p>
-                                                    <p className={`text-lg font-semibold ${theme === 'dark'? 'text-white': 'text-purple-700 '}`}>{grossHoursFormatted}</p>
-                                                </motion.div>
-                                                {/* Effective Time Card */}
-                                                <motion.div
-                                                    className={` ${theme === 'dark'? 'bg-gray-800 text-white border-gray-600': 'bg-gradient-to-br from-pink-50 to-pink-100 border border-gray-300'} rounded-xl p-2 shadow-sm border border-gray-300`}
-                                                    transition={{ type: "spring", stiffness: 300 }}
-                                                >
-                                                    <p className={`text-sm font-medium mb-2 ${theme === 'dark'? 'text-blue-300': 'text-gray-600'}`}>Effective Time</p>
-                                                    <p className={`text-lg font-semibold  ${theme === 'dark'? 'text-white': 'text-orange-700 '}`}>{effectiveHoursFormatted}</p>
-                                                </motion.div>
-                                            </div>
-                                        </div>
-
-                                        {/* Divider */}
-                                        <div className="relative my-2 w-24 mx-auto">
-                                            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                                <motion.div
-                                                    className="w-full border-t border-gray-300"
-                                                    initial={{ scaleX: 0 }}
-                                                    animate={{ scaleX: 1 }}
-                                                    transition={{ delay: 1.4, duration: 0.8 }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Action Buttons */}
-                                        <div className="w-full flex justify-center mt-4 relative z-10">
-                                            {!isLoggedIn ? (
-                                                <motion.button
-                                                    onClick={handleLogin}
-                                                    className="flex items-center justify-center w-48 max-w-md py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:from-green-500 hover:to-green-600 font-semibold text-lg"
-                                                    whileTap={{ scale: 0.9 }}
-                                                >
-                                                    <ClockIcon className="w-5 h-5 mr-2" />
-                                                    Clock In
-                                                </motion.button>
-                                            ) : (
-                                                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md justify-center">
-                                                    <AnimatePresence mode="wait">
-                                                        {isLogoutConfirmed ? (
-                                                            <>
-                                                                <motion.button
-                                                                    key="confirm"
-                                                                    onClick={handleConfirmLogout}
-                                                                    className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold"
-                                                                    initial={{ opacity: 0, x: -20 }}
-                                                                    animate={{ opacity: 1, x: 0 }}
-                                                                    exit={{ opacity: 0, x: -20 }}
-                                                                    whileTap={{ scale: 0.95 }}
-                                                                >
-                                                                    <ClockIcon className="w-4 h-4 mr-2" />
-                                                                    Confirm Logout
-                                                                </motion.button>
-                                                                <motion.button
-                                                                    key="cancel"
-                                                                    onClick={handleCancel}
-                                                                    className="flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-300 transition-all duration-200"
-                                                                    initial={{ opacity: 0, x: 20 }}
-                                                                    animate={{ opacity: 1, x: 0 }}
-                                                                    exit={{ opacity: 0, x: 20 }}
-                                                                    whileTap={{ scale: 0.95 }}
-                                                                >
-                                                                    <XCircleIcon className="w-4 h-4 mr-2" />
-                                                                    Cancel
-                                                                </motion.button>
-                                                            </>
-                                                        ) : (
-                                                            <motion.button
-                                                                key="logout"
-                                                                onClick={handleLogout}
-                                                                className="flex items-center justify-center w-48 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:from-red-600 hover:to-red-700 font-semibold"
-                                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                exit={{ opacity: 0, scale: 0.8 }}
-                                                                whileTap={{ scale: 0.9 }}
-                                                            >
-                                                                <ClockIcon className="w-5 h-5 mr-2" />
-                                                                Clock Out
-                                                            </motion.button>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                            )}
-                                        </div>
+                                            Confirm
+                                        </motion.button>
+                                        <motion.button
+                                            onClick={() => setShowModeConfirm(false)}
+                                            className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            Cancel
+                                        </motion.button>
                                     </div>
                                 </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+
+            </div>
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 w-full my-4 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-600  ${theme==='dark'?'bg-gray-700':'bg-gradient-to-br from-indigo-50 via-white to-indigo-100'} shadow-lg`}>
+    {/* Shift Card */}
+    <div className={`flex flex-col items-center p-3 rounded-xl ${theme==='dark'?'bg-gray-800':' bg-gradient-to-br from-orange-50 via-white to-orange-100'} shadow w-full`}>
+        <span className="text-lg font-semibold text-yellow-500 mb-1">Shift</span>
+        <span className="font-bold text-lg text-yellow-500 md:text-xl mb-1">{profileData.shift || '-'}</span>
+        <select
+            value={profileData.shift}
+            onChange={handleShiftChange}
+            className="px-3 py-1 rounded-lg bg-yellow-500 text-white text-xs font-semibold hover:bg-yellow-600 transition  w-full"
+        >
+            <option value="">Select Shift</option>
+            {SHIFT_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+            ))}
+        </select>
+    </div>
+    {/* Other Stats */}
+    <div className={`flex flex-col items-center p-3 rounded-xl   shadow w-full ${theme==='dark'?'bg-gray-800':'bg-gradient-to-br from-orange-50 via-white to-orange-100'}`}>
+        <span className="text-lg font-semibold text-green-500 mb-1">Attendance % (Ontime)</span>
+        <span className={`font-bold text-lg md:text-xl mb-2 ${profileData.onTime >= 75 ? 'text-green-500' : profileData.onTime >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>{profileData.onTime || 0}%</span>
+        <div  className="flex flex-col items-start">
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Avg. Working Hours: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.avgWorkingHours || 0}</span></span>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Login: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.loginTime ? new Date(profileData.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Logout: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.logoutTime ? new Date(profileData.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>
+        </div>
+    </div>
+</div>
+            
+            <div className="relative my-2 w-full flex justify-center">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <motion.div
+                        className={`w-full border-t ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'}`}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 0.6, duration: 0.8 }}
+                        style={{ transformOrigin: "left" }}
+                    />
+                </div>
+                <span className={`px-2 text-xs font-semibold z-10 ${theme === 'dark' ? 'bg-gray-800 text-indigo-400' : 'bg-white text-indigo-600'}`}>
+                    CURRENT CLOCK
+                </span>
+            </div>
+
+            {/* Time display section: Increased font size for clock, better centered */}
+            <div className="w-full flex flex-col items-center text-center mb-4 relative z-10">
+
+                <div className="mb-4">
+                    <motion.div
+                        className="flex items-center justify-center gap-2 text-indigo-600 font-medium mb-1"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8, duration: 0.5 }}
+                    >
+                        <ClockIcon className="w-5 h-5 text-indigo-500" /> {/* Slightly smaller icon */}
+                        <span className='text-sm'>Current Time</span>
+                    </motion.div>
+                    <motion.p
+                        // Central clock is now larger for focus, scales down well on mobile
+                        className={`text-3xl md:text-3xl lg:text-3xl font-extrabold tracking-tight mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1, duration: 0.5 }}
+                    >
+                        {formatClockTime(currentTime)}
+                    </motion.p>
+                    <motion.p
+                        className={`text-sm md:text-base font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.2, duration: 0.5 }}
+                    >
+                        {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                    </motion.p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 w-full max-w-xs md:max-w-md">
+                    <motion.div
+                        className={`rounded-xl p-2 shadow-sm text-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-indigo-500/50' : 'bg-indigo-50 border border-indigo-200'}`}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <p className={`text-xs font-small mb-1 uppercase ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>Gross Time (Day)</p>
+                        <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-purple-700'}`}>{grossHoursFormatted}</p>
+                    </motion.div>
+                    <motion.div
+                        className={`rounded-xl p-2 shadow-sm text-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-pink-500/50' : 'bg-pink-50 border border-pink-200'}`}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <p className={`text-xs font-small mb-1 uppercase ${theme === 'dark' ? 'text-pink-400' : 'text-pink-600'}`}>Effective Time (Day)</p>
+                        <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-orange-700'}`}>{effectiveHoursFormatted}</p>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* Action Buttons - Reduced size and centered for mobile */}
+            <div className="w-full flex justify-center mt-4 relative z-10">
+                {!isLoggedIn ? (
+                    <motion.button
+                        onClick={handleLogin}
+                        // Reduced size and font
+                        className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-green-700 font-bold text-lg"
+                        whileTap={{ scale: 0.95 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <ClockIcon className="w-5 h-5 mr-1.5" /> 
+                        Clock In
+                    </motion.button>
+                ) : (
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-sm"> 
+                        <AnimatePresence mode="wait">
+                            {isLogoutConfirmed ? (
+                                <>
+                                    <motion.button
+                                        key="confirm"
+                                        onClick={handleConfirmLogout}
+                                        // Reduced size and font
+                                        className="flex-1 items-center justify-center py-1 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        Confirm Logout
+                                    </motion.button>
+                                    <motion.button
+                                        key="cancel"
+                                        onClick={handleCancel}
+                                        className={`flex-1 items-center justify-center py-1 rounded-xl shadow-sm transition-all duration-200 font-medium text-sm 
+                                            ${theme === 'dark' ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                </>
+                            ) : (
+                                <motion.button
+                                    key="logout"
+                                    onClick={handleLogout}
+                                    // Reduced size and font
+                                    className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-600 hover:to-red-700 font-bold text-lg"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <ClockIcon className="w-5 h-5 mr-1.5" /> 
+                                    Clock Out
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
+            </div>
+        </div>
+    </motion.div>
                                 {/* Stat Cards Grid */}
-                               
-    
                         <motion.div
                             className="p-6 h-full flex flex-col justify-between"
                             initial={{ opacity: 0, x: 50 }}
@@ -1312,8 +1450,6 @@ const handleLogin = (index) => {
                                             />
                                         );
                                     }
-                
-                        
                                     return (
                                         <ProfessionalStatCard
                                             key={data.id}
@@ -1332,7 +1468,6 @@ const handleLogin = (index) => {
                                 })}
                             </div>
                         </motion.div>
-    
                     </div>
 
                             {/* Charts Grid */}
@@ -1347,24 +1482,52 @@ const handleLogin = (index) => {
                                         <ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown
                                     </h2>
                                     <div className="mb-6 flex justify-center gap-2 flex-wrap">
-                                        {dates.map((date) => {
-                                            const pieItem = rawPieData.find((item) => item.Date === date);
-                                            const barItem = barChartData.find((item) => item.Date === date);
-                                            // Prefer pieItem, fallback to barItem, else just use the date
-                                            const dataItem = pieItem || barItem;
-                                            const dateToSet = date === "All" ? "All" : (dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date);
-                                            return (
-                                                <motion.button
-                                                    key={date}
-                                                    onClick={() => setSelectedDate(dateToSet)}
-                                                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} ${theme === 'dark' ? (selectedDate === dateToSet ? "bg-indigo-500 text-white shadow-md" : "bg-gray-400 text-gray-300") : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                                                    whileHover={{ scale: 1.1 }}
-                                                    whileTap={{ scale: 0.9 }}
-                                                >
-                                                    {date === "All" ? "All" : date}
-                                                </motion.button>
-                                            );
-                                        })}
+                                        <div className="mb-6 flex justify-center gap-2 flex-wrap">
+    {/* Previous Button */}
+    {startIndex > 0 && (
+        <motion.button
+            onClick={() => setStartIndex(prev => Math.max(0, prev - datesPerPage))}
+            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Previous dates"
+        >
+            <ChevronLeft className="w-5 h-5" />
+        </motion.button>
+    )}
+
+    {dates.slice(startIndex, startIndex + datesPerPage).map((date) => {
+        const pieItem = rawPieData.find((item) => item.Date === date);
+        const barItem = barChartData.find((item) => item.Date === date);
+        // Prefer pieItem, fallback to barItem, else just use the date
+        const dataItem = pieItem || barItem;
+        const dateToSet = date === "All" ? "All" : (dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date);
+        return (
+            <motion.button
+                key={date}
+                onClick={() => setSelectedDate(dateToSet)}
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} ${theme === 'dark' ? (selectedDate === dateToSet ? "bg-indigo-500 text-white shadow-md" : "bg-gray-400 text-gray-300") : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+            >
+                {date === "All" ? "All" : date}
+            </motion.button>
+        );
+    })}
+    
+    {/* Next Button */}
+    {startIndex + datesPerPage < dates.length && (
+        <motion.button
+            onClick={() => setStartIndex(prev => prev + datesPerPage)}
+            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Next dates"
+        >
+            <ChevronRight className="w-5 h-5" /> 
+        </motion.button>
+    )}
+</div>
                                     </div>
                                     <MyComponent Data={Data} selectedDate={selectedDate} />
                                     <div className="flex-grow flex items-center justify-center">
@@ -1393,105 +1556,153 @@ const handleLogin = (index) => {
                                     <div className="flex-grow flex items-center justify-center">
                                         <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
                                             <BarChart data={filteredBarChartData} margin={{ top: 20, right: 10, left: 5, bottom: 5 }}>
-                                                <XAxis dataKey="Date" stroke={textColor} axisLine={false} tickLine={false} padding={{ left: 10, right: 10 }}  tickFormatter={(tick, index) => filteredBarChartData[index] ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}` : tick } className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}/>
-                                                <YAxis allowDecimals={false} hide />
-                                                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
-                                                <Legend wrapperStyle={{ paddingTop: "10px" }} />
-                                                <Bar dataKey="Working_hour" stackId="a" fill={BAR_COLORS.work} name="Work Hours" />
-                                                <Bar dataKey="Break_hour" stackId="a" fill={BAR_COLORS.break} name="Break Hours" />
-                                            </BarChart>
+                                                 <XAxis
+                                                     dataKey="Date"
+                                                     stroke={textColor}
+                                                     axisLine={false}
+                                                     tickLine={false}
+                                                     padding={{ left: 10, right: 10 }}
+                                                     tickFormatter={(tick, index) =>
+                                                         filteredBarChartData[index]
+                                                             ? `${filteredBarChartData[index].Date}-${filteredBarChartData[index].Month}`
+                                                             : tick
+                                                     }
+                                                     className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-500'}`}
+                                                 />
+                                                 <YAxis allowDecimals={false} hide />
+                                                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
+                                                 <Legend wrapperStyle={{ paddingTop: "10px" }} />
+                                                 <Bar dataKey="Work_Hours" stackId="a" fill={BAR_COLORS.work} name="Work Hours" />
+                                                 <Bar dataKey="Break_Hours" stackId="a" fill={BAR_COLORS.break} name="Break Hours" />
+                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </motion.section>
                             </div>
                             {/* Attendance Records Table */}
                             <motion.div
-                                className={`p-4 sm:p-6  rounded-xl border border-gray-200 shadow-lg mb-8 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 1 }}
-                            >
-                                <section>
-                                    <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
-                                        <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-green-200 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                                            <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" /> Attendance Records
-                                        </h2>
-                                        <div className="flex flex-wrap items-center gap-4">
-                                            <FilterButtonGroup options={MONTHS} selectedOption={selectedMonth} onSelect={(month) => { setSelectedMonth(month); setCurrentPage(1); }} />
-                                            <div className="relative">
-                                                <label className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Sort by:</label>
-                                                <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setCurrentPage(1); }} className={`border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
-                                                    {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="overflow-x-auto rounded-lg border border-gray-200">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'}`}>
-                                                <tr>
-                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
-                                                    <th scope="col"className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
-                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
-                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Login Hours</th>
-                                                    <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Daily Progress</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'} divide-y divide-gray-200`}>
-                                                <AnimatePresence>
-                                                    {paginatedData.length > 0 ? (
-                                                        paginatedData.map((entry, idx) => (
-                                                            <motion.tr
-                                                                key={idx}
-                                                                className="hover:bg-indigo-100 transition-colors duration-150"
-                                                                initial={{ opacity: 0, y: 20 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                exit={{ opacity: 0, y: -20 }}
-                                                                transition={{ duration: 0.3, delay: idx * 0.05 }}
-                                                            >
-                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.date}</td>
-                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><span className={`font-semibold text-indigo-700 ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}>{entry.login_hours.toFixed(2)}</span> hrs</td>
-                                                                <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
-                                                                    <div className="relative rounded-full h-4 w-full bg-white overflow-hidden">
-                                                                        <motion.div
-                                                                            className="bg-blue-200 h-full rounded-full"
-                                                                            initial={{ width: 0 }}
-                                                                            animate={{ width: entry.barWidth }}
-                                                                            transition={{ duration: 0.8, ease: "easeOut" }}
-                                                                        />
-                                                                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white mix-blend-difference">{entry.login_hours.toFixed(1)}h</span>
-                                                                    </div>
-                                                                </td>
-                                                            </motion.tr>
-                                                        ))
-                                                    ) : (
-                                                        <tr><td colSpan="5"className={`px-4 py-3 text-center  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}italic`}>No attendance records found for the selected options.</td></tr>
-                                                    )}
-                                                </AnimatePresence>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
-                                        <div className="flex items-center gap-2 mb-4 sm:mb-0">
-                                            <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
-                                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`border border-gray-300 px-2 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
-                                                {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                            </select>
-                                        </div>
-                                        <nav className="flex items-center gap-2">
-                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Previous</button>
-                                            <span  className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
-                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Next</button>
-                                        </nav>
-                                    </div>
-                                </section>
-                            </motion.div>
+    className={`p-4 sm:p-6 rounded-xl border border-gray-200 shadow-lg mb-8 ${theme === 'dark' ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-gray-200'}`} // Enhanced dark mode border/bg
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay: 1 }}
+>
+    <section>
+        <div className="flex justify-between items-start sm:items-center mb-5 flex-wrap gap-4"> 
+            <h2 className={`text-xl sm:text-2xl font-extrabold ${theme === 'dark' ? 'bg-gradient-to-br from-green-300 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-indigo-600 mr-2" /> Attendance Records
+            </h2>
+            <div className="flex flex-wrap items-center gap-4">
+                <div className="relative">
+                   <label htmlFor="month-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Select Month:</label>
+                    <select 
+                        id="month-select"
+                        value={selectedMonth} 
+                        onChange={(e) => { 
+                            setSelectedMonth(e.target.value); 
+                            setCurrentPage(1); 
+                        }} 
+                        className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
+                                   ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
+                    >
+                        {MONTHS.map((month) => (
+                            <option key={month} value={month}>{month}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="relative">
+                    <label htmlFor="sort-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Sort by:</label>
+                    <select 
+                        id="sort-select"
+                        value={sortOption} 
+                        onChange={(e) => { 
+                            setSortOption(e.target.value); 
+                            setCurrentPage(1); 
+                        }} 
+                        className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
+                                   ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
+                    >
+                        {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-md"> 
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className={`${theme === 'dark' ? 'bg-gray-700 text-indigo-400' : 'bg-indigo-50 text-indigo-700'}`}>
+                    <tr>
+                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>
+                            <div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div>
+                        </th>
+                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>
+                            <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div>
+                        </th>
+                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>
+                            <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div>
+                        </th>
+                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Login Hours</th>
+                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Daily Progress</th>
+                    </tr>
+                </thead>
+               <tbody className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} divide-y divide-gray-200`}>
+    <AnimatePresence>
+        {paginatedData.length > 0 ? (
+            paginatedData
+                .filter(entry => entry && entry.date) 
+                .map((entry, idx) => (
+                    <motion.tr
+                        key={idx}
+                        className={`${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-indigo-50'} transition-colors duration-150`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3, delay: idx * 0.05 }}
+                    >
+                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{entry.date}</td>
+                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
+                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">-</span>}</td>
+                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}><span className="font-bold">{entry.login_hours.toFixed(2)}</span> hrs</td>
+                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
+                            <div className="relative rounded-full h-4 w-full bg-gray-200 overflow-hidden">
+                                <motion.div
+                                    className="bg-indigo-400 h-full rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: entry.barWidth }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">{entry.login_hours.toFixed(1)}h</span>
+                            </div>
+                        </td>
+                    </motion.tr>
+                ))
+        ) : (
+            <tr><td colSpan="5" className={`px-4 py-3 text-center whitespace-nowrap ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} italic`}>No attendance records found for the selected options.</td></tr>
+        )}
+    </AnimatePresence>
+</tbody>
+            </table>
+        </div>
+        
+        {/* Pagination Controls (Refined spacing) */}
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between"> 
+            <div className="flex items-center gap-2 mb-4 sm:mb-0">
+                <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Rows per page:</span>
+                <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`border px-2 py-1 rounded-md text-sm cursor-pointer ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}>
+                    {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+            </div>
+            <nav className="flex items-center gap-2">
+                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`px-4 py-2 text-sm font-medium border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}>Previous</button>
+                <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
+                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`px-4 py-2 text-sm font-medium border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}>Next</button>
+            </nav>
+        </div>
+    </section>
+</motion.div>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </main>
+            </div>
         </div>
     );
 };

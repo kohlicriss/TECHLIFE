@@ -3,18 +3,29 @@ import { FaSortAlphaDown, FaSortAlphaUp, FaFilter } from 'react-icons/fa';
 import { Context } from '../HrmsContext';
 
 const openings = [
-    { JobId:'J_01',Title: 'Senior DevOps Engineer', Openings: 2, Logo: '🛠️', Category: "DevOps", Location: "Hyderabad,India", Salary: "$8,00,000 - $12,00,000 per Annum", Date: "2023-10-01" },
-    { JobId:'J_02',Title: 'Data Scientist', Openings: 3, Logo: '🐘', Category: "Data Science", Location: "Bangalore,India", Salary: "$7,00,000 - $10,00,000 per Annum", Date: "2023-10-05" },
-    { JobId:'J_03',Title: 'Junior React Developer', Openings: 2, Logo: '⚛️', Category: "Software", Location: "Chennai,India", Salary: "$4,00,000 - $6,00,000 per Annum", Date: "2023-10-10" },
-    { JobId:'J_04',Title: 'UI/UX Designer', Openings: 5, Logo: '⚙️', Category: "Design", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-20", },
-    { JobId:'J_05',Title: 'Full Stack Developer', Openings: 4, Logo: '💻', Category: "Software", Location: "Delhi,India", Salary: "$5,00,000 - $7,00,000 per Annum", Date: "2023-10-25" },
-    { JobId:'J_06',Title: 'BackEnd Developer', Openings: 1, Logo: '🌐', Category: "Software", Location: "pune,India", Salary: "$5,00,000 - $8,00,000 per Annum", Date: "2023-10-15" },
-    { JobId:'J_07',Title: 'Python Developer', Openings: 5, Logo: '🐍', Category: "Software", Location: "Kolkata,India", Salary: "$4,00,000 - $9,00,000 per Annum", Date: "2023-10-20" },
-    { JobId:'J_08',Title: 'QA Tester', Openings: 3, Logo: '🔍', Category: "Software", Location: "Hyderabad,India", Salary: "$4,00,000 - $5,00,000 per Annum", Date: "2023-10-22" },
-    { JobId:'J_09',Title: 'Automation Tester', Openings: 1, Logo: '🤖 ', Category: "Software", Location: "Bangalore,India", Salary: "$8,00,000 - $9,00,000 per Annum", Date: "2023-10-10" },
-    { JobId:'J_10',Title: 'Digital Manager', Openings: 2, Logo: '📊', Category: "Marketing", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-15" },
+    { JobId:'J_01',Title: 'Senior DevOps Engineer', Openings: 2,Category: "DevOps", Location: "Hyderabad,India", Salary: "$8,00,000 - $12,00,000 per Annum", Date: "2023-10-01" },
+    { JobId:'J_02',Title: 'Data Scientist', Openings: 3,Category: "Data Science", Location: "Bangalore,India", Salary: "$7,00,000 - $10,00,000 per Annum", Date: "2023-10-05" },
+    { JobId:'J_03',Title: 'Junior React Developer', Openings: 2,Category: "Software", Location: "Chennai,India", Salary: "$4,00,000 - $6,00,000 per Annum", Date: "2023-10-10" },
+    { JobId:'J_04',Title: 'UI/UX Designer', Openings: 5,Category: "Design", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-20", },
+    { JobId:'J_05',Title: 'Full Stack Developer', Openings: 4, Category: "Software", Location: "Delhi,India", Salary: "$5,00,000 - $7,00,000 per Annum", Date: "2023-10-25" },
+    { JobId:'J_06',Title: 'BackEnd Developer', Openings: 1,Category: "Software", Location: "pune,India", Salary: "$5,00,000 - $8,00,000 per Annum", Date: "2023-10-15" },
+    { JobId:'J_07',Title: 'Python Developer', Openings: 5,Category: "Software", Location: "Kolkata,India", Salary: "$4,00,000 - $9,00,000 per Annum", Date: "2023-10-20" },
+    { JobId:'J_08',Title: 'QA Tester', Openings: 3,Category: "Software", Location: "Hyderabad,India", Salary: "$4,00,000 - $5,00,000 per Annum", Date: "2023-10-22" },
+    { JobId:'J_09',Title: 'Automation Tester', Openings: 1, Category: "Software", Location: "Bangalore,India", Salary: "$8,00,000 - $9,00,000 per Annum", Date: "2023-10-10" },
+    { JobId:'J_10',Title: 'Digital Manager', Openings: 2,Category: "Marketing", Location: "Mumbai,India", Salary: "$3,00,000 - $5,00,000 per Annum", Date: "2023-10-15" },
 ];
-
+ const logoMap = {
+    'Senior DevOps Engineer': '🛠️',
+    'Data Scientist': '🐘',
+    'Junior React Developer': '⚛️',
+    'UI/UX Designer': '⚙️',
+    'Full Stack Developer': '💻',
+    'BackEnd Developer': '🌐',
+    'Python Developer': '🐍',
+    'QA Tester': '🔍',
+    'Automation Tester': '🤖 ',
+    'Digital Manager': '📊',
+};
 const JobsList = ({onBack}) => {
   const{theme}=useContext(Context)
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -149,7 +160,7 @@ const JobsList = ({onBack}) => {
               paginatedData.map((job) => (
                 <tr key={job.JobId} className="hover:bg-gray-50">
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'} `}>  {job.JobId}</td>  
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}><div className="flex items-center">  <span className="mr-2 text-2xl">{job.Logo}</span>  {job.Title}</div></td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}><div className="flex items-center">  <span className="mr-2 text-2xl">{logoMap[job.Title] || '💼'}</span>  {job.Title}</div></td>
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {job.Openings}</td>
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {job.Category}</td>
                   <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>  {job.Location}</td>

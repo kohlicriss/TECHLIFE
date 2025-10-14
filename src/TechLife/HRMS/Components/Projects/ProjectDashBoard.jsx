@@ -384,7 +384,7 @@ const ProjectCard = () => {
                     title="Previous Project"
                     onClick={goToPreviousProject}
                     href="#"
-                    >Previous Project<svg
+                    >Previous <svg
                         aria-hidden="true"
                         viewBox="0 0 10 10"
                         height="10"
@@ -414,7 +414,7 @@ const ProjectCard = () => {
                         title="Next Project"
                         onClick={goToNextProject}
                         href="#"
-                        >Next Project<svg
+                        >Next <svg
                             aria-hidden="true"
                             viewBox="0 0 10 10"
                             height="10"
@@ -602,8 +602,8 @@ const MyTeam = () => {
                             <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Date</th>
                             <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Role</th>
                             <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
-                            {(hasAccess || []).includes("EDIT_PROJTEAM") && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
-                            {(hasAccess || []).includes("DELETE_PROJTEAM") && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
+                            {(matchedArray || []).includes("EDIT_PROJTEAM") && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Edit</th>}
+                            {(matchedArray || []).includes("DELETE_PROJTEAM") && <th className={`px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Delete</th>}
                         </tr>
                     </thead>
                     <tbody  className="bg-white divide-y divide-gray-500">
@@ -633,12 +633,12 @@ const MyTeam = () => {
                                         <td className={`px-4 py-2 whitespace-nowrap text-sm  ${status.color} ${theme==='dark' ? 'bg-gray-500 ':''} `}>{status.label}</td>
                                        <td className={`px-4  py-2 whitespace-nowrap text-sm   ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                             
-                                            {(hasAccess || []).includes("EDIT_PROJTEAM") && (
+                                            {(matchedArray || []).includes("EDIT_PROJTEAM") && (
                                                 <button className={ `${theme==='dark'?'text-indigo-200':'text-indigo-600'}  hover:text-indigo-800 font-bold`} onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                             )}
                                         </td>
                                         <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                            {(hasAccess || []).includes("DELETE_PROJTEAM") && (
+                                            {(matchedArray || []).includes("DELETE_PROJTEAM") && (
                                                 <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-bold`} onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                             )}
                                         </td>
@@ -806,8 +806,8 @@ function ProjectStatus() {
                     <th className="py-2 px-4 font-semibold">Project Name</th>
                     <th className="py-2 px-4 font-semibold">Duration</th>
                     <th className="py-2 px-4 font-semibold">Status</th>
-                    {(hasAccess || []).includes("EDIT_PROJSTATUS") && <th className="py-2 px-4 ">Edit</th>}
-                    {(hasAccess || []).includes("DELETE_PROJSTATUS") && <th className="py-2 px-4 ">Delete</th>}
+                    {(matchedArray || []).includes("EDIT_PROJSTATUS") && <th className="py-2 px-4 ">Edit</th>}
+                    {(matchedArray || []).includes("DELETE_PROJSTATUS") && <th className="py-2 px-4 ">Delete</th>}
                 </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-500">
@@ -841,12 +841,12 @@ function ProjectStatus() {
                                 </ResponsiveContainer>
                                 <span className={`text-xs  ml-2 ${theme==='dark' ? 'text-gray-200':'text-gray-600'}`}>{project.Status}%</span>
                             </td>
-                            {(hasAccess || []).includes("EDIT_PROJSTATUS") && (
+                            {(matchedArray || []).includes("EDIT_PROJSTATUS") && (
                                 <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                     <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small`}  onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
                                 </td>
                             )}
-                            {(hasAccess || []).includes("DELETE_PROJSTATUS") && (
+                            {(matchedArray || []).includes("DELETE_PROJSTATUS") && (
                                 <td className={`py-2 px-4  whitespace-nowrap  ${theme==='dark' ? 'bg-gray-500 ':''}`}>
                                     <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small`}   onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
                                 </td>
@@ -895,12 +895,12 @@ function Project() {
         console.log("permissions from userdata:",hasAccess)
 
     const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   more:"+4",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  more:"+2", Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",        more:"+1",Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",  more:"+5",Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",   more:"+6",Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",     more:"+3",Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
+        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                  Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",       Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",   Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
+        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",   Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
+        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",     Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
 
     const teamLeadImageMap = {
         Naveen: "https://i.pravatar.cc/40?img=1",
@@ -911,38 +911,6 @@ function Project() {
         Gayatri: "https://i.pravatar.cc/40?img=6"
     };
 
-    const teamImagesMap = {
-        P_01: [
-            "https://randomuser.me/api/portraits/men/32.jpg",
-            "https://randomuser.me/api/portraits/women/65.jpg",
-            "https://randomuser.me/api/portraits/men/76.jpg"
-        ],
-        P_02: [
-            "https://randomuser.me/api/portraits/men/15.jpg",
-            "https://randomuser.me/api/portraits/women/22.jpg"
-        ],
-        P_03: [
-            "https://randomuser.me/api/portraits/men/11.jpg"
-        ],
-        P_04: [
-            "https://randomuser.me/api/portraits/men/55.jpg",
-            "https://randomuser.me/api/portraits/women/88.jpg",
-            "https://randomuser.me/api/portraits/men/99.jpg",
-            "https://randomuser.me/api/portraits/women/78.jpg"
-        ],
-        P_05: [
-            "https://randomuser.me/api/portraits/men/66.jpg",
-            "https://randomuser.me/api/portraits/women/77.jpg",
-            "https://randomuser.me/api/portraits/men/12.jpg",
-            "https://randomuser.me/api/portraits/women/23.jpg",
-            "https://randomuser.me/api/portraits/men/45.jpg"
-        ],
-        P06: [
-            "https://randomuser.me/api/portraits/men/21.jpg",
-            "https://randomuser.me/api/portraits/women/43.jpg",
-            "https://randomuser.me/api/portraits/men/87.jpg"
-        ]
-    };
 
     const getPriorityColor = (priority) => {
         switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
@@ -956,7 +924,6 @@ function Project() {
         start_date: "",
         end_date: "",
         Team_Lead:"",
-        Employee_team: [],
         Priority: "Medium",
         Open_task: 0,
         Closed_task: 0,
@@ -981,7 +948,6 @@ function Project() {
             start_date: "",
             end_date: "",
             Team_lead:"",
-            Employee_team: [],
             Priority: "Medium",
             Open_task: 0,
             Closed_task: 0,
@@ -1074,7 +1040,7 @@ const handleRowClick = (proj) => {
                        onChange={(e) => setStatusFilter(e.target.value)}
                        className={`${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50  text-purple-700'} border border-purple-500   font-medium rounded-xl px-4 py-2 text-sm shadow   shadow transition`}
                     >
-                     <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select Status</option>
+                     <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select All</option>
                      <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
                      <option value="Upcoming" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Upcoming</option>
                      <option value="Completed"className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Completed</option>
@@ -1462,7 +1428,7 @@ const handleRowClick = (proj) => {
                         <th className="p-3 text-sm md:text-base">Open Task</th>
                         <th className="p-3 text-sm md:text-base">Closed Task</th>
                         <th className="p-3 text-sm md:text-base">Details</th>
-                        {(hasAccess || []).includes("DELETE_PROJECT") &&<th className="p-3 text-sm md:text-base">Delete</th>}
+                        {(matchedArray || []).includes("DELETE_PROJECTS") &&<th className="p-3 text-sm md:text-base">Delete</th>}
                     </tr>
                 </thead>
                 <tbody  className="bg-white ">
@@ -1522,7 +1488,7 @@ const handleRowClick = (proj) => {
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
                              <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
-                            {(hasAccess || []).includes("DELETE_PROJECT") && (
+                            {(matchedArray || []).includes("DELETE_PROJECT") && (
                                 <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
                                     <motion.button
                                         whileHover={{ scale: 1.2 }}
@@ -1554,14 +1520,6 @@ const ProjectDashboard = () => {
     const { userData,theme } = useContext(Context);
     return (
         <div className={`min-h-screen bg-gray-50 p-4 sm:p-8 ${theme==="dark"?"bg-gray-900":"bg-gray-50 "}`}>
-            <motion.h1
-                className={`text-3xl sm:text-4xl font-bold  mb-6 sm:mb-8 text-left drop-shadow-sm ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-400 to-indigo-800 bg-clip-text text-transparent ' : 'text-gray-800 '} `}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                Projects
-            </motion.h1>
             {/* Project Profile Section */}
             <div className="mb-8">
                 <ProjectCard />
