@@ -651,32 +651,35 @@ const Achivements = () => {
                       ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' 
                       : 'bg-white border-gray-200'
                   }`}>
-                    {canEdit && (
-                      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button 
-                          onClick={() => handleOpenModal(achievement)}
-                          className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
-                            theme === 'dark'
-                              ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700'
-                              : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
-                          }`}
-                          title="Edit achievement"
-                        >
-                         <IoPencil className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(achievement.id)}
-                          className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
-                            theme === 'dark'
-                              ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700'
-                              : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
-                          }`}
-                          title="Delete achievement"
-                        >
-                          <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
-                      </div>
-                    )}
+                   {canEdit && (
+  <div className={`absolute top-4 right-4 sm:top-6 sm:right-6 flex space-x-2 transition-opacity duration-300 ${
+    // Always visible on mobile (xs), only on hover on sm+
+    'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+  }`}>
+    <button 
+      onClick={() => handleOpenModal(achievement)}
+      className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
+        theme === 'dark'
+          ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700'
+          : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+      }`}
+      title="Edit achievement"
+    >
+      <IoPencil className="w-3 h-3 sm:w-4 sm:h-4" />
+    </button>
+    <button 
+      onClick={() => handleDelete(achievement.id)}
+      className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
+        theme === 'dark'
+          ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700'
+          : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
+      }`}
+      title="Delete achievement"
+    >
+      <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+    </button>
+  </div>
+)}
                     
                     <div className="flex flex-col lg:flex-row items-start space-y-4 lg:space-y-0 lg:space-x-6">
                       <div className={`p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-md flex-shrink-0 bg-gradient-to-r ${config.color}`}>
