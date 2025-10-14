@@ -12,6 +12,8 @@ export default function ChatBox({ userRole = "employee", ticketId, ticketStatus 
 const [hasMore, setHasMore] = useState(true);
 const [loading, setLoading] = useState(false);
 const { userData ,theme} = useContext(Context);
+ //const [matchedArray,setMatchedArray]=useState(null);
+ const matchedArray = userData?.permissions || [];
 
 
   const isResolved = ticketStatus?.toLowerCase() === "resolved";
@@ -54,9 +56,9 @@ const { userData ,theme} = useContext(Context);
   }, {});
 
 
-const fetchMessages = async (pageToFetch) => {
+const fetchMessages = async (pageToFetch = 0) => {
   const token = localStorage.getItem("accessToken");
-  if (!ticketId || !token) return;
+  if (!ticketId || !token || loading || !hasMore) return;
 
   try {
     setLoading(true);
@@ -65,23 +67,32 @@ const fetchMessages = async (pageToFetch) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (res.status === 403) {
+      console.error(" Forbidden: VIEW_TICKET_REPLIES missing on backend");
+      setMessages([]);
+      setHasMore(false);
+      return;
+    }
+
+    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+
     const data = await res.json();
     const messagesArray = Array.isArray(data?.content) ? data.content : [];
 
     if (messagesArray.length === 0) {
       setHasMore(false);
     } else {
-      setMessages((prev) =>
-        dedupeMessages([...messagesArray, ...prev]) 
-      );
+      setMessages((prev) => dedupeMessages([...prev, ...messagesArray]));
+      setPage(pageToFetch + 1);
     }
   } catch (err) {
-    console.error("❌ Fetch error:", err);
+    console.error(" Error fetching messages:", err);
   } finally {
     setLoading(false);
   }
 };
+
+
 
 const formatChatTimeIST = (dateString) => {
   if (!dateString) return "";
@@ -294,17 +305,18 @@ useEffect(() => {
               : "bg-white border-gray-300 text-black placeholder-gray-500 focus:ring-blue-400"
           }`}
         />
-        <button
-          onClick={sendMessage}
-          disabled={isResolved}
-          className={`px-4 py-2 rounded text-white transition ${
-            isResolved
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          Send
-        </button>
+          <button
+  onClick={sendMessage}
+  disabled={isResolved || !(matchedArray?.includes("SEND_TICKET_REPLIES"))}
+  className={`px-4 py-2 rounded text-white transition ${
+    isResolved
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-blue-600 hover:bg-blue-700"
+  }`}
+>
+  Send
+</button>
+
       </div>
     </div>
   );

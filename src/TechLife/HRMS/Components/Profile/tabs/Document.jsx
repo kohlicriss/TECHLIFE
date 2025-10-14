@@ -405,7 +405,7 @@ const Document = () => {
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
   const location = useLocation();
-  const { theme, userData } = useContext(Context);
+  const { theme, userData,matchedArray } = useContext(Context);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [searchFilter, setSearchFilter] = useState('');
@@ -1298,19 +1298,22 @@ const Document = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-              {fromContextMenu && isAdmin && hasData && (
-                <button
-                  onClick={() => onDelete(subSectionKey)}
-                  className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
-                    theme === 'dark'
-                      ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
-                      : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
-                  }`}
-                >
-                  <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Delete</span>
-                </button>
-              )}
+             {((fromContextMenu && isAdmin && hasData) || 
+  (matchedArray?.includes("PROFILES_DOCUMENTS_DELETE") && hasData) 
+  ) && (
+    <button
+      onClick={() => onDelete(subSectionKey)}
+      className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
+        theme === 'dark'
+          ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
+          : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
+      }`}
+    >
+      <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+      <span className="hidden sm:inline">Delete</span>
+    </button>
+)}
+
               {!isReadOnly && (
                 <button
                   onClick={() => onEdit(subSectionKey)}

@@ -20,7 +20,7 @@ import {
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
 
-function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData, setUserData, theme } = useContext(Context);
@@ -65,7 +65,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "My Projects", icon: <Database size={18} />, path: empId ? `/projects/${empId}` : "/projects" },
     { name: "My Tasks",icon: <ListChecks size={18} />,path: empId ? `/tasks/${empId}` : "/tasks",},
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
-    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat" },
+    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
   ];
 
@@ -76,22 +76,23 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       path: empId ? `/permissions/${empId}` : "/permissions"
     });
     navItems.push({
-       name: "ADMIN",
-       icon: <FaUsers size={18} />,
-       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
+        name: "ADMIN",
+        icon: <FaUsers size={18} />,
+        path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
     })
   }
 
   if(userRole==='HR'){
     navItems.push({
-       name: "HR",
-       icon: <FaUsers size={18} />,
-       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
+        name: "HR",
+        icon: <FaUsers size={18} />,
+        path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
     })
   }
 
   return (
     <>
+      {/* Overlay for mobile and tablet view */}
       <div
         className={`fixed inset-0  bg-opacity-50 z-40 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
@@ -99,6 +100,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         onClick={() => setSidebarOpen(false)}
       ></div>
 
+      {/* Sidebar */}
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
@@ -108,6 +110,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
+          {/* Close button for mobile/tablet */}
           <div className="lg:hidden">
             <button
               className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-gray-600 hover:text-black'}`}
@@ -116,6 +119,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               <X size={20} />
             </button>
           </div>
+          {/* Collapse button */}
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
@@ -144,7 +148,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center cursor-pointer ${
                   collapsed ? "justify-center" : "justify-start"
-                } gap-3 px-4 py-1.5 transition rounded-md mx-2 ${
+                } gap-3 px-4 py-1.5 transition rounded-md mx-2 relative ${
                   isActive
                     ? "bg-blue-500 text-white font-semibold"
                     : theme === 'dark'
@@ -154,6 +158,13 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
               >
                 {item.icon}
                 {!collapsed && <span>{item.name}</span>}
+
+                {!collapsed && item.notification && (
+                  <span className="absolute right-4 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+                {collapsed && item.notification && (
+                    <span className="absolute right-2 top-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
               </Link>
             );
           })}

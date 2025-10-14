@@ -315,6 +315,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [activeGroupInfoTab, setActiveGroupInfoTab] = useState('Overview');
     const [groupMembers, setGroupMembers] = useState([]);
     const [isGroupDataLoading, setIsGroupDataLoading] = useState(false);
+    const [groupMembersCache, setGroupMembersCache] = useState({});
     const [imageInView, setImageInView] = useState(null);
     const [isChatDataReady, setIsChatDataReady] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -336,7 +337,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [currentResultIndex, setCurrentResultIndex] = useState(-1);
-    const { setIsChatWindowVisible } = useContext(Context);
+    const { setIsChatWindowVisible, setChatUnreadCount } = useContext(Context);
 
     useEffect(() => {
         if (setIsChatWindowVisible) {
@@ -837,6 +838,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         ...chatData.groups,
     ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
+
+    useEffect(() => {
+        const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
+        setChatUnreadCount(totalUnread);
+    }, [allChats, setChatUnreadCount]);
+
     const handleTypingEvent = useCallback((payload) => {
         const typingUpdate = JSON.parse(payload.body);
 
@@ -977,7 +984,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
 
-    const openChat = useCallback((targetChat) => {
+    const openChat = useCallback(async (targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
         }
@@ -988,13 +995,28 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         };
         stompClient.current.publish({ destination, body: JSON.stringify(payload) });
 
+        if (targetChat.type === 'group' && !groupMembersCache[targetChat.chatId]) {
+            try {
+                const teamDetailsResponse = await getGroupMembers(targetChat.chatId);
+                const members = teamDetailsResponse?.[0]?.employees || [];
+                if (members.length > 0) {
+                    setGroupMembersCache(prevCache => ({
+                        ...prevCache,
+                        [targetChat.chatId]: members
+                    }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch group members:", error);
+            }
+        }
+
         setSelectedChat(targetChat);
         setIsChatOpen(true);
 
         const newUrl = `/chat/${currentUser.id}/with?id=${targetChat.chatId}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
 
-    }, [currentUser.id]);
+    }, [currentUser.id, groupMembersCache]);
 
     const closeChat = useCallback(() => {
         isManuallyClosing.current = true;
@@ -1408,8 +1430,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
-
-
     const handleDelete = async (forEveryone) => {
         const chatId = selectedChat.chatId;
         const currentMessages = [...(messages[chatId] || [])];
@@ -1621,12 +1641,19 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const chatMessages = currentChatInfo ? messages[currentChatInfo.chatId] || [] : [];
 
     const getSenderInfo = (senderId) => {
-        if (!currentUser) return { name: 'Unknown', profile: null };
+        if (!currentUser) return { name: 'Unknown User', profile: null };
         if (senderId === currentUser.id) return { name: 'You', profile: currentUser.profile };
-        const allUsers = [...chatData.privateChatsWith, ...(currentChatInfo?.members || [])];
-        const member = allUsers.find(m => m.chatId === senderId || m.employeeId === senderId);
+
+        let member = chatData.privateChatsWith.find(m => m.chatId === senderId || m.employeeId === senderId);
+        if (member) {
+            return { name: member.name || member.displayName, profile: member.profile || member.employeeImage || null };
+        }
+        if (selectedChat?.type === 'group' && groupMembersCache[selectedChat.chatId]) {
+            member = groupMembersCache[selectedChat.chatId].find(m => m.employeeId === senderId);
+        }
+
         return member
-            ? { name: member.name || member.employeeName, profile: member.profile || null }
+            ? { name: member.name || member.displayName, profile: member.profile || member.employeeImage || null }
             : { name: 'Unknown User', profile: null };
     };
 
@@ -1703,7 +1730,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full md:w-[70%] h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className={`flex-col shadow-xl fixed inset-0 z-[100] overflow-hidden md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
@@ -1714,7 +1741,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         </div>
                     ) : (
                         <>
-                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b z-10 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
                                     <button onClick={closeChat} className={`md:hidden p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100'}`}><FaArrowLeft /></button>
                                     <button onClick={() => currentChatInfo.type !== 'group' && currentChatInfo.profile && setIsProfileModalOpen(true)} className="flex-shrink-0">
@@ -1756,7 +1783,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                             </div>
 
                             {isSearchVisible && (
-                                <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                                <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b sticky top-0 z-10 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
                                     <input
                                         type="text"
                                         placeholder="Search messages..."
@@ -1808,7 +1835,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 </div>
                             )}
 
-                            <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                            <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto min-h-0 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
                                 {isSearchVisible ? (
                                     <div className="space-y-2">
                                         {searchResults.length > 0 ? (
@@ -2067,7 +2094,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             </div>))}</div><div className={`p-4 border-t text-right ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}><button onClick={handleConfirmForward} disabled={forwardRecipients.length === 0} className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer">Forward</button></div></div></div>)}
 
             {isProfileModalOpen && currentChatInfo && currentChatInfo.type !== 'group' && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]" onClick={() => setIsProfileModalOpen(false)}>
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[151]" onClick={() => setIsProfileModalOpen(false)}>
                     <img src={currentChatInfo.profile} alt={currentChatInfo.name} className="max-w-[80vw] max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
@@ -2173,7 +2200,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             )}
 
             {imageInView && (
-                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[120]" onClick={() => setImageInView(null)}>
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[151]" onClick={() => setImageInView(null)}>
                     <img src={imageInView} alt="Full view" className="max-w-[90vw] max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}

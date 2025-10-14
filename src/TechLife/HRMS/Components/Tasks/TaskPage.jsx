@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle, ChevronDown, Search } from "lucide-react";
-import { Context } from "../HrmsContext";
-import { publicinfoApi, tasksApi } from '../../../../axiosInstance';
+// Assuming 'Context' is a valid context import
+import { Context } from "../HrmsContext"; 
+// Assuming 'axiosInstance' is correctly set up
+import { authApi, publicinfoApi, tasksApi } from '../../../../axiosInstance'; 
+
+// --- Helper Components (Defined in the original snippet) ---
 
 const CalendarIcon = ({ theme }) => (
     <svg
@@ -16,7 +20,7 @@ const CalendarIcon = ({ theme }) => (
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002-2z"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"
         />
     </svg>
 );
@@ -36,12 +40,19 @@ const Modal = ({ children, onClose, title, type, theme }) => {
         icon = <AlertCircle className="h-6 w-6 text-yellow-500" />;
     }
 
+    // Modal structure includes backdrop and dynamic styling
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] animate-fadeIn">
             <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md m-4 border animate-slideUp ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="flex items-center mb-4">
                     {icon && <span className="mr-3">{icon}</span>}
                     <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                    {/* Add an explicit close button for non-alert modals */}
+                    {type !== "success" && type !== "error" && (
+                        <button onClick={onClose} className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X size={20} />
+                        </button>
+                    )}
                 </div>
                 {children}
             </div>
@@ -78,7 +89,7 @@ const ErrorPopup = ({ message, onClose, theme }) => (
 );
 
 const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
-    <Modal onCancel={onCancel} title="Confirm Deletion" type="confirm" theme={theme}>
+    <Modal onClose={onCancel} title="Confirm Deletion" type="confirm" theme={theme}>
         <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Are you sure you want to delete this task? This action cannot be undone.</p>
         <div className="flex justify-end gap-3">
             <button
@@ -116,16 +127,18 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     }, [isOpen]);
 
     const loadEmployees = async (page = 0, reset = false) => {
-        if (loading || (allLoaded && !reset)) return;
+        if (loading || (allLoaded && !reset && page !== 0) || (page !== 0 && !hasMore)) return;
         
         setLoading(true);
         try {
+            // API call to fetch employees with pagination and sorting
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/public/employees`);
-            const newEmployees = response.data || [];
+            const newEmployees = response.data.content || [];
             
+            // Filter out the logged-in user from the assignable list
             const filteredNewEmployees = newEmployees.filter(emp => emp.employeeId !== userData?.employeeId);
             
-            if (reset) {
+            if (reset || page === 0) {
                 setEmployees(filteredNewEmployees);
                 setCurrentPage(0);
             } else {
@@ -160,6 +173,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
 
     const handleScroll = (e) => {
         const { scrollTop, scrollHeight, clientHeight } = e.target;
+        // Check if user has scrolled near the bottom (within 50px)
         if (scrollHeight - scrollTop <= clientHeight + 50) {
             loadMoreEmployees();
         }
@@ -174,10 +188,12 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     const handleDropdownToggle = () => {
         if (!disabled) {
             if (!isOpen) {
+                // Reset state when opening dropdown to ensure fresh load/scroll works
                 setEmployees([]);
                 setCurrentPage(0);
                 setAllLoaded(false);
                 setHasMore(true);
+                setSearchTerm(''); // Also reset search term on close/reopen
             }
             setIsOpen(!isOpen);
         }
@@ -185,6 +201,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
 
     return (
         <div className="relative">
+            {/* Dropdown Button */}
             <div
                 onClick={handleDropdownToggle}
                 className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
@@ -222,6 +239,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                 <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
             </div>
             
+            {/* Dropdown Content */}
             {isOpen && !disabled && (
                 <div className={`absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-lg z-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                     <div className="p-3 border-b border-gray-200 dark:border-gray-600">
@@ -247,6 +265,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                     >
                         {filteredEmployees.length > 0 ? (
                             <>
+                                {/* Employee List */}
                                 {filteredEmployees.map(employee => (
                                     <div
                                         key={employee.employeeId}
@@ -269,6 +288,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                                     </div>
                                 ))}
                                 
+                                {/* Loading and "Load More" sections */}
                                 {loading && (
                                     <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                         <div className="flex items-center justify-center space-x-2">
@@ -322,15 +342,20 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 };
 
+// --- TasksPage Component ---
+
 const TasksPage = () => {
     const navigate = useNavigate();
     const { employeeId } = useParams();
-    const { userData, theme } = useContext(Context);
+    // Destructuring theme and userData from context
+    const { userData, theme } = useContext(Context); 
+
+    // State for permissions, initialized with userData permissions and then updated from API
     const [hasAccess,setHasAccess]=useState([])
     useEffect(()=>{
         setHasAccess(userData?.permissions)
     },[userData])
-    console.log("permissions from userdata:",hasAccess)
+    // console.log("permissions from userdata:",hasAccess) // Log for debugging
 
     const [tasks, setTasks] = useState([]);
     const [assignedByMeTasks, setAssignedByMeTasks] = useState([]);
@@ -339,9 +364,14 @@ const TasksPage = () => {
     const [filterStatus, setFilterStatus] = useState("ALL");
     const [sortOption, setSortOption] = useState("none");
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-    const [displayMode, setDisplayMode] = useState("MY_TASKS");
+    // State to toggle between "My Tasks" and "Assigned By Me"
+    const [displayMode, setDisplayMode] = useState("MY_TASKS"); 
     const [projects, setProjects] = useState([]);
+    // State for permissions array fetched based on user role
+    const [matchedArray,setMatchedArray]=useState(null); 
+    
 
+    // State for task form (modal)
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
     const [files, setFiles] = useState([]);
@@ -349,14 +379,17 @@ const TasksPage = () => {
     const [submissionError, setSubmissionError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
+    // State for Pagination
     const [currentNumber, setCurrentNumber] = useState(0); 
     const [totalPages, setTotalPages] = useState(1);
     const [dropdownValue, setDropdownValue] = useState(5);
 
+    // State for Popups/Modals
     const [successPopup, setSuccessPopup] = useState({ show: false, message: '' });
     const [errorPopup, setErrorPopup] = useState({ show: false, message: '' });
     const [confirmDeletePopup, setConfirmDeletePopup] = useState({ show: false, projectId: null, taskId: null });
 
+    // Initial state for task form data
     const [formData, setFormData] = useState({
         id: '',
         title: '',
@@ -376,6 +409,7 @@ const TasksPage = () => {
         projectId: ''
     });
 
+    // --- Pagination Handlers ---
     const handleNumberClick = (number) => {
         setCurrentNumber(number);
     };
@@ -383,24 +417,67 @@ const TasksPage = () => {
     const handleDropdownChange = (event) => {
         const value = parseInt(event.target.value, 10);
         setDropdownValue(value);
+        // Reset to first page when changing page size
+        setCurrentNumber(0); 
     };
 
+    // --- Permission Fetching ---
+    useEffect(()=>{
+        let fetchForPermissionArray=async()=>{
+            try {
+                // Determine user role for fetching role access
+                const userRole = userData?.roles?.[0] ? `ROLE_${userData.roles[0]}` : null;
+                if (!userRole) return;
+                
+                // Fetch permissions based on role
+                let response=await authApi.get(`role-access/${userRole}`);
+                // console.log("Response From AllTeams for Fetching Permissions Array from TAsks PAge:",response.data);
+                setMatchedArray(response?.data?.permissions);
+            } catch (error) {
+                console.error("error from Fetching Error matching Objects:",error);
+            }
+        }
+        // Only fetch if userData is available and matchedArray hasn't been set yet
+        if (userData && !matchedArray) { 
+            fetchForPermissionArray();
+        }
+    },[userData, matchedArray]) // Dependency on userData and matchedArray
+            
+    // --- Data Fetching Functions ---
+
+    // Function to fetch projects for the Project ID dropdown
+    const fetchProjects = async () => {
+        try {
+            const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
+            // FIX: Ensure projects is always an array by checking for 'content'
+            setProjects(Array.isArray(response.data) ? response.data : response.data?.content || []); 
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
+    };
+
+    // Function to fetch tasks assigned TO the user
     const fetchTasks = useCallback(async () => {
         if (!userData) {
             setLoading(false);
             return;
         }
+
+        // Check for team lead permission from the fetched array
+        const hasTeamLeadPermission = matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR");
+        
         try { 
             setLoading(true);
-            const userRole = userData.roles[0];
             const userId = userData.employeeId;
-            const apiUrl = (userRole === "TEAM_LEAD" && employeeId)
-                ? `/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${employeeId}`
-                : `/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${userId}`;
+
+            // Conditional API URL based on permission and route parameter
+            const apiUrl = (hasTeamLeadPermission && employeeId)
+                ? `/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${employeeId}` // Team Lead viewing specific employee's tasks
+                : `/${currentNumber}/${dropdownValue}/id/asc/all/tasks/${userId}`;   // Default: User viewing their own tasks
             
             const response = await tasksApi.get(apiUrl);
 
-            console.log("API Response Data (fetchTasks):", response.data);
+            // console.log("API Response Data (fetchTasks):", response.data);
             setTasks(response.data.content || response.data.tasks || []);
             setTotalPages(response.data.totalPages || 1);
             setError(null);
@@ -410,25 +487,29 @@ const TasksPage = () => {
                 setError("Authorization failed. You do not have permission to view these tasks. Please check your login status.");
             } else if (err.response?.status === 404) {
                 setTasks([]);
+                setTotalPages(1); // Reset page count on 404 (no content)
             } else {
                 setError("Failed to fetch tasks. Please make sure the server is running and you are logged in.");
             }
         } finally {
             setLoading(false);
         }
-    }, [userData, employeeId, currentNumber, dropdownValue]);
+    }, [userData, employeeId, currentNumber, dropdownValue, matchedArray]); 
 
+    // Function to fetch tasks assigned BY the user (Team Lead function)
     const fetchTasksAssignedByMe = useCallback(async () => {
-        if (userData?.roles[0] !== "TEAM_LEAD" || !userData?.employeeId) {
+        // Only proceed if user data and the necessary permission is present
+        if (!userData?.employeeId || !matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR")) {
             setAssignedByMeTasks([]);
             return;
         }
+
         try {
             const tlId = userData.employeeId;
-            const url = `/${currentNumber}/${dropdownValue}/id/asc/${tlId}`;
+            const url = `/${currentNumber}/${dropdownValue}/id/asc/${tlId}`; // TL ID is the creator/assigner
             const response = await tasksApi.get(url);
 
-            console.log("API Response Data (fetchTasksAssignedByMe):", response.data);
+            // console.log("API Response Data (fetchTasksAssignedByMe):", response.data);
             setAssignedByMeTasks(response.data.content || response.data.tasks || []);
             setTotalPages(response.data.totalPages || 1);
         } catch (err) {
@@ -439,31 +520,28 @@ const TasksPage = () => {
                 setError(`Failed to fetch tasks assigned by Team Lead: ${err.message}`);
             } else {
                 setAssignedByMeTasks([]);
+                setTotalPages(1); // Reset page count on 404
             }
         }
-    }, [userData, currentNumber, dropdownValue]);
+    }, [userData, currentNumber, dropdownValue, matchedArray]); 
 
+    // Initial project fetch
     useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
-                setProjects(response.data);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
         fetchProjects();
-    }, []);
+    }, []); 
 
+    // Effect to trigger task fetching based on display mode and permissions
     useEffect(() => {
-        if (userData) {
-            fetchTasks();
-            if (userData.roles[0] === "TEAM_LEAD") {
-                fetchTasksAssignedByMe();
-            }
+        if (!userData || matchedArray === null) return; // Wait for user data and permissions
+
+        if (displayMode === "MY_TASKS") {
+            fetchTasks(); 
+        } else if (displayMode === "ASSIGNED_BY_ME") {
+            fetchTasksAssignedByMe(); 
         }
-    }, [fetchTasks, fetchTasksAssignedByMe, userData]);
+    }, [userData, displayMode, fetchTasks, fetchTasksAssignedByMe, matchedArray]); // Added matchedArray dependency to re-run when permissions load
+
+    // --- Logic for Task Display and Calculations ---
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -472,9 +550,15 @@ const TasksPage = () => {
         const startDate = new Date(startDateStr);
         const dueDate = new Date(dueDateStr);
         if (isNaN(startDate.getTime()) || isNaN(dueDate.getTime()) || startDate > dueDate) return 0;
+        
         const totalDuration = dueDate.getTime() - startDate.getTime();
-        if (totalDuration <= 0) return currentDate >= dueDate ? 100 : 0;
+        
+        // Handle case where duration is 0 (same day start/due)
+        if (totalDuration <= 0) return currentDate >= dueDate ? 100 : 0; 
+
         const elapsedDuration = currentDate.getTime() - startDate.getTime();
+        
+        // Calculate percentage, capped at 0 and 100
         return Math.round(Math.max(0, Math.min(100, (elapsedDuration / totalDuration) * 100)));
     };
 
@@ -483,52 +567,51 @@ const TasksPage = () => {
     };
 
     const getPriorityStyles = (priority) => {
-        if (theme === 'dark') {
-            switch (priority?.toUpperCase()) {
-                case "HIGH": return "text-red-400";
-                case "MEDIUM": return "text-yellow-400";
-                case "LOW": return "text-blue-400";
-                default: return "text-gray-400";
-            }
-        } else {
-            switch (priority?.toUpperCase()) {
-                case "HIGH": return "bg-red-50 text-red-700 border-red-100";
-                case "MEDIUM": return "bg-yellow-50 text-yellow-700 border-yellow-100";
-                case "LOW": return "bg-blue-50 text-blue-700 border-blue-100";
-                default: return "bg-gray-50 text-gray-700 border-gray-100";
-            }
-        }
+        // Consolidated priority styles (using Tailwind colors)
+        const styles = {
+            'HIGH': { dark: "text-red-400", light: "bg-red-50 text-red-700 border-red-100" },
+            'MEDIUM': { dark: "text-yellow-400", light: "bg-yellow-50 text-yellow-700 border-yellow-100" },
+            'LOW': { dark: "text-blue-400", light: "bg-blue-50 text-blue-700 border-blue-100" },
+            'DEFAULT': { dark: "text-gray-400", light: "bg-gray-50 text-gray-700 border-gray-100" },
+        };
+        const key = (priority?.toUpperCase() || 'DEFAULT');
+        return theme === 'dark' ? styles[key]?.dark || styles.DEFAULT.dark : styles[key]?.light || styles.DEFAULT.light;
     };
 
     const getStatusStyles = (status) => {
-        if (theme === 'dark') {
-            switch (status?.toUpperCase().replace(" ", "_")) {
-                case "IN_PROGRESS": return "text-purple-400";
-                case "PENDING": return "text-orange-400";
-                case "COMPLETED": return "text-green-400";
-                default: return "text-gray-400";
-            }
-        } else {
-            switch (status?.toUpperCase().replace(" ", "_")) {
-                case "IN_PROGRESS": return "bg-purple-50 text-purple-700";
-                case "PENDING": return "bg-orange-50 text-orange-700";
-                case "COMPLETED": return "bg-green-50 text-green-700";
-                default: return "bg-gray-50 text-gray-700";
-            }
-        }
+        // Consolidated status styles
+        const statusKey = status?.toUpperCase().replace(/ /g, "_") || 'DEFAULT';
+        const styles = {
+            'IN_PROGRESS': { dark: "text-purple-400", light: "bg-purple-50 text-purple-700" },
+            'PENDING': { dark: "text-orange-400", light: "bg-orange-50 text-orange-700" },
+            'COMPLETED': { dark: "text-green-400", light: "bg-green-50 text-green-700" },
+            'NOT_STARTED': { dark: "text-gray-400", light: "bg-gray-100 text-gray-700" }, // Added Not Started status
+            'ON_HOLD': { dark: "text-red-400", light: "bg-red-100 text-red-700" }, // Added On Hold status
+            'DEFAULT': { dark: "text-gray-400", light: "bg-gray-50 text-gray-700" },
+        };
+        return theme === 'dark' ? styles[statusKey]?.dark || styles.DEFAULT.dark : styles[statusKey]?.light || styles.DEFAULT.light;
     };
 
     const getStatusDot = (status) => {
-        switch (status?.toUpperCase().replace(" ", "_")) {
-            case "IN_PROGRESS": return "bg-purple-500";
-            case "PENDING": return "bg-orange-500";
-            case "COMPLETED": return "bg-green-500";
-            default: return "bg-gray-500";
-        }
+        const statusKey = status?.toUpperCase().replace(/ /g, "_") || 'DEFAULT';
+        const dots = {
+            'IN_PROGRESS': "bg-purple-500",
+            'PENDING': "bg-orange-500",
+            'COMPLETED': "bg-green-500",
+            'NOT_STARTED': "bg-gray-500",
+            'ON_HOLD': "bg-red-500",
+            'DEFAULT': "bg-gray-500",
+        };
+        return dots[statusKey] || dots.DEFAULT;
     };
 
-    const handleFilterChange = (event) => setFilterStatus(event.target.value);
+    const handleFilterChange = (event) => {
+        setFilterStatus(event.target.value);
+        setCurrentNumber(0); // Reset pagination on filter change
+    }
     const handleSortChange = (event) => setSortOption(event.target.value);
+
+    // --- Form Management Functions ---
 
     const resetFormData = () => {
         setFormData({
@@ -565,12 +648,16 @@ const TasksPage = () => {
         setFormMode('edit');
         setFormData({
             ...task,
-            relatedLinks: task.relatedLinks?.length ? task.relatedLinks : [''],
+            // Ensure relatedLinks is an array, defaults to [''] for one empty field
+            relatedLinks: (task.relatedLinks?.length && task.relatedLinks[0]) ? task.relatedLinks : [''], 
             attachedFileLinks: task.attachedFileLinks || [],
+            createdBy: task.createdBy || userData?.employeeId || '',
+            // Ensure dates are correctly formatted strings
             createdDate: task.createdDate || new Date().toISOString().split('T')[0],
             completedDate: task.completedDate || '',
             dueDate: task.dueDate || '',
-            projectId: task.projectId || task.id?.projectId || ''
+            // Handle nested ID structure for projectId if necessary
+            projectId: task.projectId || task.id?.projectId || '' 
         });
         setFiles([]);
         setFormErrors({});
@@ -591,8 +678,9 @@ const TasksPage = () => {
             const url = `/${projectId}/${taskId}/delete/task`;
             await tasksApi.delete(url);
             setSuccessPopup({ show: true, message: "Task deleted successfully!" });
-            fetchTasks();
-            fetchTasksAssignedByMe();
+            // Re-fetch both task lists to ensure consistency
+            fetchTasks(); 
+            fetchTasksAssignedByMe(); 
         } catch (error) {
             console.error("Failed to delete task:", error.response?.data || error.message);
             setErrorPopup({ show: true, message: "Failed to delete the task. Please try again." });
@@ -616,7 +704,8 @@ const TasksPage = () => {
         if (formData.description && formData.description.length > 255) newErrors.description = 'Description cannot exceed 255 characters';
         if (formData.remark && formData.remark.length > 200) newErrors.remark = 'Remark cannot exceed 200 characters';
         if (formData.completionNote && formData.completionNote.length > 200) newErrors.completionNote = 'Completion note cannot exceed 200 characters';
-        if (formData.rating && (formData.rating < 1 || formData.rating > 5)) newErrors.rating = 'Rating must be between 1 and 5';
+        // Rating validation allows empty string as well as 1-5
+        if (formData.rating && (parseInt(formData.rating) < 1 || parseInt(formData.rating) > 5)) newErrors.rating = 'Rating must be between 1 and 5'; 
         setFormErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -659,7 +748,7 @@ const TasksPage = () => {
 
         const formDataToSend = new FormData();
         const taskPayload = {
-            id: formData.id,
+            id: formData.id || null, // Allow null for create
             title: formData.title,
             description: formData.description || null,
             createdBy: userData.employeeId,
@@ -672,15 +761,19 @@ const TasksPage = () => {
             rating: formData.rating ? parseInt(formData.rating) : null,
             remark: formData.remark || null,
             completionNote: formData.completionNote || null,
-            relatedLinks: formData.relatedLinks.filter(link => link.trim() !== ''),
+            // Filter out empty strings before sending
+            relatedLinks: formData.relatedLinks.filter(link => link.trim() !== ''), 
             projectId: formData.projectId,
+            // attachedFileLinks is handled separately for update/create API logic
         };
         
         if (formMode === 'create') {
-            delete taskPayload.id;
+            delete taskPayload.id; // Ensure ID is not sent for creation
         }
 
+        // Append the JSON payload as a Blob
         formDataToSend.append('taskDTO', new Blob([JSON.stringify(taskPayload)], { type: 'application/json' }));
+        // Append selected files
         files.forEach(file => formDataToSend.append('attachedFileLinks', file));
 
         try {
@@ -691,58 +784,63 @@ const TasksPage = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            setSuccessPopup({ show: true, message: `Task ${formMode}d successfully!` });
+            setSuccessPopup({ show: true, message: `Task ${formMode === 'create' ? 'created' : 'updated'} successfully!` });
             handleFormClose();
+            // Re-fetch the relevant task list(s)
             fetchTasks();
-            if (userData.roles[0] === "TEAM_LEAD") {
+            if (matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR")) {
                 fetchTasksAssignedByMe();
             }
         } catch (error) {
             console.error("Submission failed:", error);
             const errorMsg = error.response?.data?.message || error.response?.data || error.message;
             setSubmissionError(`Failed to ${formMode} task: ${errorMsg}`);
-            setErrorPopup({ show: true, message: `Failed to ${formMode} task. Please try again.` });
+            setErrorPopup({ show: true, message: `Failed to ${formMode} task. Please check details and try again.` });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const filteredAndSortedTasks = useMemo(() => {
-        if (!Array.isArray(tasks)) return [];
-        return tasks
-            .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
+    // --- Memoized Filtered & Sorted Task Lists ---
+
+    const filterAndSort = (taskList) => {
+        if (!Array.isArray(taskList)) return [];
+        return taskList
+            .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(/ /g, "_") === filterStatus)
             .sort((a, b) => {
-                if (sortOption === "startDateAsc") return new Date(a.startDate) - new Date(b.startDate);
+                if (sortOption === "startDateAsc") {
+                    const dateA = new Date(a.startDate || a.createdDate);
+                    const dateB = new Date(b.startDate || b.createdDate);
+                    return dateA.getTime() - dateB.getTime();
+                }
                 if (sortOption === "priorityDesc") {
-                    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
-                    return priorityOrder[a.priority?.toUpperCase()] - priorityOrder[b.priority?.toUpperCase()];
+                    // Lower number means higher priority (High: 1, Medium: 2, Low: 3)
+                    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 }; 
+                    const prioA = priorityOrder[a.priority?.toUpperCase()] || 4;
+                    const prioB = priorityOrder[b.priority?.toUpperCase()] || 4;
+                    return prioA - prioB; // Ascending sort on order value means High (1) comes before Medium (2)
                 }
                 return 0;
             });
-    }, [tasks, filterStatus, sortOption]);
+    };
 
-    const filteredAndSortedAssignedByMeTasks = useMemo(() => {
-        if (!Array.isArray(assignedByMeTasks)) return [];
-        return assignedByMeTasks
-            .filter(task => filterStatus === "ALL" || task.status?.toUpperCase().replace(" ", "_") === filterStatus)
-            .sort((a, b) => {
-                if (sortOption === "startDateAsc") return new Date(a.createdDate) - new Date(b.createdDate);
-                if (sortOption === "priorityDesc") {
-                    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 };
-                    return priorityOrder[a.priority?.toUpperCase()] - priorityOrder[b.priority?.toUpperCase()];
-                }
-                return 0;
-            });
-    }, [assignedByMeTasks, filterStatus, sortOption]);
+    const filteredAndSortedTasks = useMemo(() => filterAndSort(tasks), [tasks, filterStatus, sortOption]);
+    const filteredAndSortedAssignedByMeTasks = useMemo(() => filterAndSort(assignedByMeTasks), [assignedByMeTasks, filterStatus, sortOption]);
 
+    // --- Render Functions (Task Table, Cards, Form Fields) ---
+
+    // Function to render form fields dynamically
     const renderField = (label, name, type = "text", required = false, options = [], isDisabled = false) => {
         const isError = formErrors[name];
         const fieldValue = formData[name] || "";
+        const isDefaultDisabled = name === 'createdBy' || name === 'createdDate';
+        const finalDisabled = isDisabled || isDefaultDisabled; // Combine prop and default disable
 
         const handleLocalFieldChange = (value) => {
             handleInputChange({ target: { name, value } });
         };
-
+        
+        // Custom component rendering for EmployeeDropdown and ProjectDropdown
         if (name === 'assignedTo') {
             return (
                 <div className="group relative" key={name}>
@@ -751,7 +849,7 @@ const TasksPage = () => {
                     }`}>
                         {label}
                         {required && <span className="text-red-500 ml-1 text-base">*</span>}
-                        {isDisabled && (
+                        {finalDisabled && (
                             <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
                                 theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
                             }`}>
@@ -764,7 +862,7 @@ const TasksPage = () => {
                         onChange={handleLocalFieldChange}
                         theme={theme}
                         error={isError}
-                        disabled={isDisabled}
+                        disabled={finalDisabled}
                     />
                     {isError && (
                         <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
@@ -776,6 +874,65 @@ const TasksPage = () => {
             );
         }
 
+        if (name === 'projectId') {
+            const currentProject = projects.find(p => p.projectId === fieldValue);
+            // Dynamic options: map projects array for select
+            const projectOptions = projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId }));
+
+            return (
+                <div className="group relative" key={name}>
+                    <label className={`block text-sm font-semibold mb-3 flex items-center ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                        {label}
+                        {required && <span className="text-red-500 ml-1 text-base">*</span>}
+                        {finalDisabled && (
+                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                                theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                                Read Only
+                            </span>
+                        )}
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={fieldValue}
+                            onChange={(e) => handleLocalFieldChange(e.target.value)}
+                            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none
+                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                                ${isError 
+                                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                                    : theme === 'dark'
+                                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                                }
+                                ${finalDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            disabled={finalDisabled}
+                        >
+                            <option value="">Choose Project</option>
+                            {projectOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                    {isError && (
+                        <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p className="text-sm font-medium">{isError}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Generic field rendering (text, date, select, textarea, file)
         return (
             <div className="group relative" key={name}>
                 <label className={`block text-sm font-semibold mb-3 flex items-center ${
@@ -783,7 +940,7 @@ const TasksPage = () => {
                 }`}>
                     {label}
                     {required && <span className="text-red-500 ml-1 text-base">*</span>}
-                    {isDisabled && (
+                    {finalDisabled && (
                         <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
                             theme === 'dark' ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
                         }`}>
@@ -805,8 +962,8 @@ const TasksPage = () => {
                                     ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                                     : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
                                 }
-                                ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
-                            disabled={isDisabled}
+                                ${finalDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            disabled={finalDisabled}
                         >
                             <option value="">Choose {label}</option>
                             {options.map((opt) => (
@@ -834,10 +991,11 @@ const TasksPage = () => {
                                 ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                                 : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
                             }
-                            ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
-                        disabled={isDisabled}
+                            ${finalDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                        disabled={finalDisabled}
                     />
                 ) : type === "file" ? (
+                    // File input with drag-and-drop styling
                     <div className={`relative border-2 border-dashed rounded-xl transition-all duration-300
                         ${isError 
                             ? 'border-red-300 bg-red-50' 
@@ -845,13 +1003,13 @@ const TasksPage = () => {
                             ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
                             : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
                         }
-                        ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        ${finalDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
                         <input
                             type="file"
                             multiple
                             onChange={(e) => handleFileChange(e)}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            disabled={isDisabled}
+                            disabled={finalDisabled}
                             accept="*/*"
                         />
                         <div className="px-6 py-8 text-center">
@@ -880,12 +1038,12 @@ const TasksPage = () => {
                                 ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                                 : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
                             }
-                            ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            ${finalDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
                         placeholder={`Enter ${label.toLowerCase()}...`}
                         required={required}
-                        disabled={isDisabled}
+                        disabled={finalDisabled}
                     />
-                ) : (
+                ) : ( // Default to text/number input
                     <input
                         type={type}
                         value={fieldValue}
@@ -898,10 +1056,10 @@ const TasksPage = () => {
                                 ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
                                 : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
                             }
-                            ${isDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
+                            ${finalDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
                         placeholder={`Enter ${label.toLowerCase()}...`}
                         required={required}
-                        disabled={isDisabled}
+                        disabled={finalDisabled}
                     />
                 )}
                 {isError && (
@@ -919,198 +1077,205 @@ const TasksPage = () => {
         const isUpdate = formMode === 'edit';
 
         return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
-                <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
-                    theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                }`}>
-                    <div className={`px-8 py-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white relative overflow-hidden`}>
-                        <div className="absolute inset-0 bg-black/10"></div>
-                        <div className="relative flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <div className="text-4xl">
-                                    {isUpdate ? <Edit className="w-10 h-10" /> : <Plus className="w-10 h-10" />}
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold">{isUpdate ? 'Update Task' : 'Create New Task'}</h2>
-                                    <p className="text-white/90 text-sm">
-                                        {isUpdate ? 'Modify task details and information' : 'Fill in the details to create a new task'}
-                                    </p>
-                                </div>
-                            </div>
-                            <button 
-                                onClick={handleFormClose} 
-                                className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" 
-                                aria-label="Close"
+            // Full-screen modal wrapper
+           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
+    <div className={`rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
+        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+    }`}>
+        {/* Fixed Header */}
+        <div className={`px-8 py-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white relative overflow-hidden flex-shrink-0`}>
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                    <div className="text-4xl">
+                        {isUpdate ? <Edit className="w-10 h-10" /> : <Plus className="w-10 h-10" />}
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold">{isUpdate ? 'Update Task' : 'Create New Task'}</h2>
+                        <p className="text-white/90 text-sm">
+                            {isUpdate ? 'Modify task details and information' : 'Fill in the details to create a new task'}
+                        </p>
+                    </div>
+                </div>
+                <button 
+                    onClick={handleFormClose} 
+                    className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" 
+                    aria-label="Close"
+                >
+                    <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+                </button>
+            </div>
+        </div>
+
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto">
+            <form className="p-8" onSubmit={handleFormSubmit}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Task Fields */}
+                    {isUpdate && renderField('Task ID', 'id', 'text', true, [], true)}
+                    {renderField('Project ID', 'projectId', 'select', true, projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId })))}
+                    {renderField('Task Title', 'title', 'text', true)}
+                    {renderField('Description', 'description', 'textarea')}
+                    {renderField('Assigned To', 'assignedTo', 'text', true)}
+                    {renderField('Created By', 'createdBy', 'text', false, [], true)}
+                    {renderField('Status', 'status', 'select', true, ['Not Started', 'In Progress', 'Completed', 'On Hold'])}
+                    {renderField('Priority', 'priority', 'select', true, ['High', 'Medium', 'Low'])}
+                    {renderField('Created Date', 'createdDate', 'date', false, [], true)}
+                    {renderField('Due Date', 'dueDate', 'date', true)}
+                    {renderField('Completed Date', 'completedDate', 'date')}
+                    {renderField('Rating (1-5)', 'rating', 'number')}
+                    {renderField('Remark', 'remark', 'textarea')}
+                    {renderField('Completion Note', 'completionNote', 'textarea')}
+                </div>
+
+                {/* Related Links Section */}
+                <div className="mt-8 space-y-4">
+                    <label className={`block text-sm font-semibold ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                    }`}>Related Links</label>
+                    {formData.relatedLinks.map((link, index) => (
+                        <div key={index} className="flex gap-3 items-start">
+                            <input
+                                type="url"
+                                value={link}
+                                onChange={(e) => handleRelatedLinkChange(index, e.target.value)}
+                                className={`flex-1 px-5 py-4 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-200 bg-white'}`}
+                                placeholder="Enter related link URL"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => removeRelatedLink(index)}
+                                disabled={formData.relatedLinks.length === 1}
+                                className={`px-4 py-4 rounded-xl transition-all duration-300 ${
+                                    formData.relatedLinks.length === 1 
+                                        ? 'text-gray-400 cursor-not-allowed' 
+                                        : 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-gray-700'
+                                }`}
                             >
-                                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
+                                <Trash2 size={18} />
                             </button>
                         </div>
-                    </div>
-                    <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-                        <form className="p-8" onSubmit={handleFormSubmit}>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                {isUpdate && renderField('Task ID', 'id', 'text', true, [], true)}
-                                {renderField('Project ID', 'projectId', 'select', true, projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId })))}
-                                {renderField('Task Title', 'title', 'text', true)}
-                                {renderField('Description', 'description', 'textarea')}
-                                {renderField('Assigned To', 'assignedTo', 'text', true)}
-                                {renderField('Created By', 'createdBy', 'text', false, [], true)}
-                                {renderField('Status', 'status', 'select', true, ['Not Started', 'In Progress', 'Completed', 'On Hold'])}
-                                {renderField('Priority', 'priority', 'select', true, ['High', 'Medium', 'Low'])}
-                                {renderField('Created Date', 'createdDate', 'date', false, [], true)}
-                                {renderField('Due Date', 'dueDate', 'date', true)}
-                                {renderField('Completed Date', 'completedDate', 'date')}
-                                {renderField('Rating (1-5)', 'rating', 'number')}
-                                {renderField('Remark', 'remark', 'textarea')}
-                                {renderField('Completion Note', 'completionNote', 'textarea')}
-                            </div>
+                    ))}
+                    <button
+                        type="button"
+                        onClick={addRelatedLink}
+                        className="flex items-center text-indigo-600 hover:text-indigo-700 font-medium transition-colors duration-200"
+                    >
+                        <Plus size={18} className="mr-1" />
+                        Add Related Link
+                    </button>
+                </div>
 
-                            <div className="mt-8 space-y-4">
-                                <label className={`block text-sm font-semibold ${
-                                    theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-                                }`}>Related Links</label>
-                                {formData.relatedLinks.map((link, index) => (
-                                    <div key={index} className="flex gap-3">
-                                        <input
-                                            type="url"
-                                            value={link}
-                                            onChange={(e) => handleRelatedLinkChange(index, e.target.value)}
-                                            className={`flex-1 px-5 py-4 border-2 rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-200 bg-white'}`}
-                                            placeholder="Enter related link URL"
-                                        />
+                {/* Attached Files Section */}
+                <div className="mt-8">
+                    {renderField('Attached Files', 'attachedFileLinks', 'file')}
+                    
+                    {/* Uploaded Files Preview */}
+                    {files.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                            <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Selected files to upload:</p>
+                            <div className="space-y-2">
+                                {files.map((file, index) => (
+                                    <div key={index} className={`flex justify-between items-center p-4 rounded-xl border transition-all duration-300 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
+                                        <div className="flex items-center space-x-3 min-w-0">
+                                            <div className={`p-2 rounded ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
+                                                <Upload className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                                            </div>
+                                            <span className={`text-sm truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}`} title={file.name}>
+                                                {file.name}
+                                            </span>
+                                        </div>
                                         <button
                                             type="button"
-                                            onClick={() => removeRelatedLink(index)}
-                                            disabled={formData.relatedLinks.length === 1}
-                                            className={`px-4 py-4 rounded-xl transition-all duration-300 ${
-                                                formData.relatedLinks.length === 1 
-                                                    ? 'text-gray-400 cursor-not-allowed' 
-                                                    : 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                                            }`}
+                                            onClick={() => removeFile(index)}
+                                            className="text-red-500 hover:text-red-700 p-2 rounded transition-colors duration-200"
+                                            aria-label={`Remove ${file.name}`}
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 ))}
-                                <button
-                                    type="button"
-                                    onClick={addRelatedLink}
-                                    className="flex items-center text-indigo-600 hover:text-indigo-700 font-medium transition-colors duration-200"
-                                >
-                                    <Plus size={18} className="mr-1" />
-                                    Add Related Link
-                                </button>
                             </div>
+                        </div>
+                    )}
 
-                            <div className="mt-8">
-                                {renderField('Attached Files', 'attachedFileLinks', 'file')}
-                                
-                                {files.length > 0 && (
-                                    <div className="mt-6 space-y-3">
-                                        <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Selected files:</p>
-                                        <div className="space-y-2">
-                                            {files.map((file, index) => (
-                                                <div key={index} className={`flex justify-between items-center p-4 rounded-xl border transition-all duration-300 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className={`p-2 rounded ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
-                                                            <Upload className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
-                                                        </div>
-                                                        <span className={`text-sm truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}`} title={file.name}>
-                                                            {file.name}
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeFile(index)}
-                                                        className="text-red-500 hover:text-red-700 p-2 rounded transition-colors duration-200"
-                                                        aria-label={`Remove ${file.name}`}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {submissionError && (
-                                <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
-                                    theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
-                                }`}>
-                                    <div className="flex items-center">
-                                        <AlertCircle className="w-6 h-6 text-red-400 mr-3" />
-                                        <p className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{submissionError}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-                    
-                    <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
-                        theme === 'dark' 
-                            ? 'bg-gray-700 border-gray-600' 
-                            : 'bg-gray-50 border-gray-200'
-                    }`}>
-                        <button 
-                            type="button" 
-                            onClick={handleFormClose} 
-                            className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
-                                theme === 'dark'
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                            }`}
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="button" 
-                            onClick={handleFormSubmit}
-                            disabled={isSubmitting}
-                            className={`px-10 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl
-                                     hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                                     focus:ring-4 focus:ring-indigo-500/30 flex items-center space-x-2
-                                     ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>{isUpdate ? 'Updating...' : 'Creating...'}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle className="w-5 h-5" />
-                                    <span>{isUpdate ? 'Update Task' : 'Create Task'}</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
+                    {/* Existing Files Preview */}
+                    {isUpdate && formData.attachedFileLinks.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                            <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Existing Attached Files:</p>
+                            <ul className="space-y-2">
+                                {formData.attachedFileLinks.map((link, index) => (
+                                    <li key={index} className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center">
+                                            <Info size={16} className="mr-2"/> {link.substring(link.lastIndexOf('/') + 1)}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
-            </div>
+
+                {/* Submission Error Message */}
+                {submissionError && (
+                    <div className={`mt-6 p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
+                        theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                    }`}>
+                        <div className="flex items-center">
+                            <AlertCircle className="w-6 h-6 text-red-400 mr-3" />
+                            <p className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>{submissionError}</p>
+                        </div>
+                    </div>
+                )}
+            </form>
+        </div>
+        
+        {/* Fixed Footer */}
+        <div className={`px-8 py-6 border-t flex justify-end space-x-4 flex-shrink-0 ${
+            theme === 'dark' 
+                ? 'bg-gray-700 border-gray-600' 
+                : 'bg-gray-50 border-gray-200'
+        }`}>
+            <button 
+                type="button" 
+                onClick={handleFormClose} 
+                className={`px-8 py-3 border-2 rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+                    theme === 'dark'
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                }`}
+            >
+                Cancel
+            </button>
+            <button 
+                type="button" 
+                onClick={handleFormSubmit}
+                disabled={isSubmitting}
+                className={`px-10 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold rounded-xl
+                        shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 
+                        focus:ring-4 focus:ring-indigo-500/50 flex items-center space-x-2
+                        ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
+            >
+                {isSubmitting ? (
+                    <>
+                        <div className="h-5 w-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>{isUpdate ? 'Updating...' : 'Creating...'}</span>
+                    </>
+                ) : (
+                    <>
+                        <CheckCircle className="w-5 h-5" />
+                        <span>{isUpdate ? 'Update Task' : 'Create Task'}</span>
+                    </>
+                )}
+            </button>
+        </div>
+    </div>
+</div>
+
         );
     };
 
-    if (loading) {
-        return <div className={`flex justify-center items-center min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>Loading tasks...</div>;
-    }
-
-    if (error) {
-        return (
-            <div className={`flex flex-col items-center justify-center min-h-screen p-4 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
-                <div className={`rounded-xl shadow-md p-8 max-w-md w-full text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
-                    <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>{error}</p>
-                    <p className={`mt-4 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                        If the issue persists, please contact support or check your network connection.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    const isTeamLead = userData?.roles[0] === "TEAM_LEAD";
-
+    // Table view for large screens
     const renderTaskTable = (taskList, tableTitle, noTasksMessage, showAssignedTo) => (
         <div className="mb-8 hidden md:block">
             <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{tableTitle}</h2>
@@ -1127,6 +1292,7 @@ const TasksPage = () => {
                                 <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-slate-600'}`}>Start Date</th>
                                 <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-slate-600'}`}>Due Date</th>
                                 <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-slate-600'}`}>Progress</th>
+                                {/* Actions column only visible for TL's Assigned By Me view */}
                                 {showAssignedTo && isTeamLead && <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-slate-600'}`}>Actions</th>}
                             </tr>
                         </thead>
@@ -1135,12 +1301,16 @@ const TasksPage = () => {
                                 const timeCompletedBar = calculateTimeCompletedBar(task.startDate || task.createdDate, task.dueDate, today);
                                 const progressBarColor = timeCompletedBar <= 50 ? 'bg-green-500' : timeCompletedBar <= 75 ? 'bg-yellow-500' : 'bg-red-500';
                                 return (
-                                    <tr key={`${task.id}-${task.projectId}`} onClick={() => clickHandler(task.projectId, task.id)} className={`cursor-pointer ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-slate-50'}`}>
+                                    <tr 
+                                        key={`${task.id}-${task.projectId}`} 
+                                        onClick={() => clickHandler(task.projectId, task.id)} 
+                                        className={`cursor-pointer ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-slate-50'}`}
+                                    >
                                         <td className={`px-6 py-4 text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{task.title}</td>
                                         <td className="px-6 py-4">
                                             <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full ${getStatusStyles(task.status)}`}>
                                                 <span className={`h-2 w-2 rounded-full inline-block ${getStatusDot(task.status)} mr-1`}></span>
-                                                {task.status.replace("_", " ")}
+                                                {task.status.replace(/_/g, " ")}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -1158,17 +1328,20 @@ const TasksPage = () => {
                                         </td>
                                         {showAssignedTo && isTeamLead && (
                                             <td className="px-6 py-4 text-sm flex items-center space-x-2">
-                                                {task.createdBy === userData?.employeeId && (
+                                                {/* Only allow edit/delete if the task was created by the current user */}
+                                                {task.createdBy === userData?.employeeId && ( 
                                                     <>
                                                         <button
                                                             onClick={(e) => handleEditClick(e, task)}
-                                                            className="text-indigo-600 hover:text-indigo-900 cursor-pointer transition-colors"
+                                                            className={`p-2 rounded-full ${theme === 'dark' ? 'text-indigo-400 hover:bg-gray-700' : 'text-indigo-600 hover:bg-indigo-50'} transition-colors`}
+                                                            aria-label="Edit Task"
                                                         >
                                                             <Edit size={18} />
                                                         </button>
                                                         <button
                                                             onClick={(e) => handleDeleteTask(e, task.projectId, task.id)}
-                                                            className="text-red-600 hover:text-red-900 cursor-pointer transition-colors"
+                                                            className={`p-2 rounded-full ${theme === 'dark' ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-red-50'} transition-colors`}
+                                                            aria-label="Delete Task"
                                                         >
                                                             <Trash2 size={18} />
                                                         </button>
@@ -1187,7 +1360,8 @@ const TasksPage = () => {
             </div>
         </div>
     );
-    
+        
+    // Card view for small screens
     const renderTaskCards = (taskList, noTasksMessage) => (
         <div className="space-y-4 md:hidden">
             {taskList.length > 0 ? (
@@ -1200,14 +1374,17 @@ const TasksPage = () => {
                             onClick={() => clickHandler(task.projectId, task.id)} 
                             className={`p-4 rounded-xl shadow-md cursor-pointer transition-transform duration-200 ease-in-out hover:scale-[1.01] ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
                         >
-                            <div className="flex justify-between items-center mb-2">
+                            <div className="flex justify-between items-start mb-2">
                                 <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{task.title}</h3>
-                                <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{task.assignedTo}</span>
+                                {/* Display assignedTo for all cards, or creator if it's the "Assigned by Me" list */}
+                                <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {displayMode === "ASSIGNED_BY_ME" ? `To: ${task.assignedTo}` : `By: ${task.createdBy}`}
+                                </span>
                             </div>
                             <div className="flex justify-between items-center text-sm mb-2">
                                 <div className="flex items-center">
                                     <span className={`h-2 w-2 rounded-full inline-block ${getStatusDot(task.status)} mr-2`}></span>
-                                    <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{task.status.replace("_", " ")}</span>
+                                    <span className={`font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{task.status.replace(/_/g, " ")}</span>
                                 </div>
                                 <span className={`text-xs font-bold py-0.5 px-2 rounded-md ${theme === 'dark' ? 'bg-gray-700' : 'border'} ${getPriorityStyles(task.priority)}`}>
                                     {task.priority}
@@ -1216,30 +1393,33 @@ const TasksPage = () => {
                             <div className={`flex justify-between text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                 <div className="flex items-center">
                                     <CalendarIcon theme={theme} />
-                                    <span>{task.startDate || task.createdDate}</span>
+                                    <span>Start: {task.startDate || task.createdDate}</span>
                                 </div>
                                 <div className="flex items-center">
                                     <CalendarIcon theme={theme} />
-                                    <span>{task.dueDate}</span>
+                                    <span>Due: {task.dueDate}</span>
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <p className={`text-sm mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Progress</p>
+                                <p className={`text-sm mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Progress: {timeCompletedBar}%</p>
                                 <div className={`w-full rounded-full h-2.5 ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
                                     <div className={`${progressBarColor} h-full rounded-full`} style={{ width: `${timeCompletedBar}%` }}></div>
                                 </div>
                             </div>
-                            {isTeamLead && task.createdBy === userData?.employeeId && (
+                            {/* Actions on card for Team Lead view, only for tasks they created */}
+                            {isTeamLead && task.createdBy === userData?.employeeId && displayMode === "ASSIGNED_BY_ME" && (
                                 <div className="flex justify-end mt-4 gap-2">
                                     <button
                                         onClick={(e) => handleEditClick(e, task)}
-                                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-gray-200 transition-colors"
+                                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        aria-label="Edit Task"
                                     >
                                         <Edit size={18} />
                                     </button>
                                     <button
                                         onClick={(e) => handleDeleteTask(e, task.projectId, task.id)}
-                                        className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-gray-200 transition-colors"
+                                        className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        aria-label="Delete Task"
                                     >
                                         <Trash2 size={18} />
                                     </button>
@@ -1256,22 +1436,55 @@ const TasksPage = () => {
         </div>
     );
 
+    // --- Sidebar Handlers ---
+
     const handleMyTasksClick = () => {
         setDisplayMode("MY_TASKS");
+        setCurrentNumber(0); // Reset pagination
         setIsRightSidebarOpen(false);
     };
 
     const handleAssignedByMeClick = () => {
         setDisplayMode("ASSIGNED_BY_ME");
+        setCurrentNumber(0); // Reset pagination
         setIsRightSidebarOpen(false);
     };
 
     const isMyTasksActive = displayMode === "MY_TASKS";
-    const isAssignedByMeActive = displayMode === "ASSIGNED_BY_ME";
+    // const isAssignedByMeActive = displayMode === "ASSIGNED_BY_ME";
 
+    // Rely exclusively on matchedArray for permission check
+    const isTeamLead = matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR"); 
+    const canCreateTask = matchedArray?.includes("CREATE_TASK");
+
+    // --- Loading & Error States ---
+
+    if (loading && matchedArray === null) {
+        return <div className={`flex justify-center items-center min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>Loading permissions and tasks...</div>;
+    }
+
+    if (error && !loading) {
+        return (
+            <div className={`flex flex-col items-center justify-center min-h-screen p-4 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
+                <div className={`rounded-xl shadow-md p-8 max-w-md w-full text-center ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
+                    <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>{error}</p>
+                    <p className={`mt-4 text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                        If the issue persists, please contact support or check your network connection.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+
+    // --- Main Component Render ---
     return (
         <div className={`flex min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
-            {isTeamLead && !isRightSidebarOpen && (
+            
+            {/* Toggle Button for Sidebar - Visible only with permission and when sidebar is closed */}
+            { isTeamLead && !isRightSidebarOpen && (
                 <button
                     onClick={() => setIsRightSidebarOpen(true)}
                     className="fixed right-0 top-1/2 -translate-y-1/2 p-2 rounded-l-lg bg-indigo-600 text-white shadow-lg z-50 hover:bg-indigo-700 transition-colors"
@@ -1281,16 +1494,22 @@ const TasksPage = () => {
                 </button>
             )}
 
-            <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen ? 'md:mr-80' : 'mr-0'} p-4 sm:p-6 lg:p-8`}>
+            {/* Main Content Area */}
+            <div className={`flex-1 transition-all duration-300 ${isRightSidebarOpen && isTeamLead ? 'md:mr-80' : 'mr-0'} p-4 sm:p-6 lg:p-8`}>
+                
+                {/* Mobile Overlay */}
                 {isRightSidebarOpen && isTeamLead && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsRightSidebarOpen(false)}></div>}
 
                 <div className="max-w-7xl mx-auto">
+                    {/* Header and Create Task Button */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                         <div>
-                            <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Task Dashboard</h1>
+                            <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                {isTeamLead && displayMode === "ASSIGNED_BY_ME" ? "Tasks Assigned by You" : "My Task Dashboard"}
+                            </h1>
                         </div>
                         <div className="mt-4 sm:mt-0 flex gap-4">
-                            {hasAccess.includes("CREATE_TASK") && (
+                            {canCreateTask && (
                                 <button
                                     onClick={handleCreateClick}
                                     className="flex cursor-pointer items-center justify-center bg-indigo-600 text-white font-semibold py-2.5 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
@@ -1301,14 +1520,17 @@ const TasksPage = () => {
                         </div>
                     </div>
                     
+                    {/* Filter and Sort Controls */}
                     <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-4 mb-6">
                         <div className="w-full sm:w-1/3 mb-4 sm:mb-0">
-                            <label htmlFor="filterStatus" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Filter:</label>
+                            <label htmlFor="filterStatus" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Filter Status:</label>
                             <select id="filterStatus" value={filterStatus} onChange={handleFilterChange} className={`block w-full pl-3 pr-10 py-2 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}>
                                 <option value="ALL">All</option>
+                                <option value="NOT_STARTED">Not Started</option>
                                 <option value="PENDING">Pending</option>
                                 <option value="IN_PROGRESS">In Progress</option>
                                 <option value="COMPLETED">Completed</option>
+                                <option value="ON_HOLD">On Hold</option>
                             </select>
                         </div>
                         <div className="w-full sm:w-1/3 mb-4 sm:mb-0">
@@ -1334,25 +1556,21 @@ const TasksPage = () => {
                         </div>
                     </div>
 
-                    {isTeamLead ? (
-                        displayMode === "MY_TASKS" ? (
-                            <>
-                                {renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)}
-                                {renderTaskCards(filteredAndSortedTasks, "No tasks to display.")}
-                            </>
-                        ) : (
-                            <>
-                                {renderTaskTable(filteredAndSortedAssignedByMeTasks, "Tasks Assigned By You", "You have not assigned any tasks yet.", true)}
-                                {renderTaskCards(filteredAndSortedAssignedByMeTasks, "You have not assigned any tasks yet.")}
-                            </>
-                        )
+                    {/* Task Display (Table for desktop, Cards for mobile) */}
+                    {isTeamLead && displayMode === "ASSIGNED_BY_ME" ? (
+                        <>
+                            {renderTaskTable(filteredAndSortedAssignedByMeTasks, "Tasks Assigned By You", "You have not assigned any tasks yet.", true)}
+                            {renderTaskCards(filteredAndSortedAssignedByMeTasks, "You have not assigned any tasks yet.")}
+                        </>
                     ) : (
+                        // Default to MY_TASKS if not a TL or in MY_TASKS mode
                         <>
                             {renderTaskTable(filteredAndSortedTasks, "Tasks Assigned to You", "No tasks to display.", false)}
                             {renderTaskCards(filteredAndSortedTasks, "No tasks to display.")}
                         </>
                     )}
 
+                    {/* Pagination Controls */}
                     <div className="mt-8 flex justify-center">
                         <div className="flex items-center justify-center space-x-2">
                             {Array.from({ length: totalPages }, (_, i) => i).map((num) => (
@@ -1375,35 +1593,51 @@ const TasksPage = () => {
                 </div>
             </div>
 
+            {/* Right Sidebar - Team Lead Dashboard Switcher */}
             {isTeamLead && (
                 <div className={`fixed inset-y-0 right-0 w-80 shadow-xl transform transition-transform duration-300 z-40 ${isRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-                    <button
-                        onClick={() => setIsRightSidebarOpen(false)}
-                        className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
-                        aria-label="Close Team Sidebar"
-                    >
-                        <ChevronRight size={24} />
-                    </button>
+                    
+                    {/* Sticky Close Button (Arrow) */}
+                    {isRightSidebarOpen && (
+                        <button
+                            onClick={() => setIsRightSidebarOpen(false)}
+                            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
+                            aria-label="Close Team Sidebar"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    )}
+                    
                     <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-                        <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Team Dashboard</h3>
+                        <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Team Dashboard</h3>
                     </div>
                     <div className="p-4 space-y-2">
                         <button
                             onClick={handleMyTasksClick}
-                            className={`w-full text-left p-3 rounded-lg transition-colors flex items-center font-medium ${isMyTasksActive ? 'bg-indigo-100 text-indigo-700' : `${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}`}
+                            className={`w-full text-left p-3 rounded-lg transition-colors flex items-center font-semibold ${isMyTasksActive 
+                                ? 'bg-indigo-500 text-white shadow-md' 
+                                : `${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`
+                            }`}
                         >
+                            <Info size={18} className="mr-2"/>
                             <span>My Tasks</span>
                         </button>
                         <button
                             onClick={handleAssignedByMeClick}
-                            className={`w-full text-left p-3 rounded-lg transition-colors flex items-center font-medium ${isAssignedByMeActive ? 'bg-indigo-100 text-indigo-700' : `${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}`}
+                            className={`w-full text-left p-3 rounded-lg transition-colors flex items-center font-semibold ${!isMyTasksActive 
+                                ? 'bg-indigo-500 text-white shadow-md' 
+                                : `${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`
+                            }`}
                         >
+                            <Edit size={18} className="mr-2"/>
                             <span>Tasks Assigned By You</span>
                         </button>
+                        {/* Optionally add team members list here for deeper filtering */}
                     </div>
                 </div>
             )}
 
+            {/* Popups */}
             {successPopup.show && (
                 <SuccessPopup 
                     message={successPopup.message} 
@@ -1426,6 +1660,7 @@ const TasksPage = () => {
                 />
             )}
 
+            {/* Global CSS for Animations */}
             <style jsx>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, useContext } from "react";
+import React, { useState, useEffect, lazy, Suspense, useContext, useMemo } from "react";
 import ErrorBoundary from "../../../ErrorBoundary";
 import {
     BrowserRouter as Router,
@@ -8,7 +8,9 @@ import {
     Outlet,
 } from "react-router-dom";
 import logo from "./assets/anasol-logo.png";
-import HrmsContext, { Context } from "./HrmsContext";
+
+// FIX: UISidebarContext మరియు HrmsContext నుండి Context, UISidebarContext రెండింటినీ ఇంపోర్ట్ చేయండి
+import HrmsContext, { Context, UISidebarContext } from "./HrmsContext"; 
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
@@ -92,7 +94,7 @@ const Permissions = lazy(() =>
     }))
 );
 
-// Enhanced Full Page Loading Spinner
+// --- Full Page Loading Spinner ---
 const FullPageSpinner = () => {
     const [dots, setDots] = useState(1);
     useEffect(() => {
@@ -110,11 +112,10 @@ const FullPageSpinner = () => {
     );
 };
 
-// Main Module Spinner with Bouncing Animation - Outlet Centered
+// --- Module Spinner with Bouncing Animation ---
 const ModuleSpinner = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-full h-full w-full bg-gray-50">
-            {/* Logo */}
             <div className="mb-8">
                 <img 
                     src={logo} 
@@ -123,13 +124,19 @@ const ModuleSpinner = () => {
                 />
             </div>
             
-            {/* Bouncing dots with CSS animation */}
             <div className="flex items-center space-x-2">
                 <div className="bouncing-dot" style={{ animationDelay: '0s' }}></div>
                 <div className="bouncing-dot" style={{ animationDelay: '0.2s' }}></div>
                 <div className="bouncing-dot" style={{ animationDelay: '0.4s' }}></div>
             </div>
             
+            {/* Tailwind CSS కోసం `style jsx` ను ఉపయోగించడం సరికాదు.
+                ఇది Next.js లో లేదా style-loader/css-loader తో ఉపయోగించినప్పుడు మాత్రమే పని చేస్తుంది.
+                ఈ కాంపోనెంట్‌ను Tailwind/Global CSS తో అనుకూలంగా ఉంచడానికి, 
+                అనిమేషన్ CSS ను ఇక్కడ కాకుండా గ్లోబల్ CSS లో లేదా
+                ఒక ప్రత్యేక `styled-components` తరహా లైబ్రరీలో నిర్వచించాలి.
+                ప్రస్తుతానికి, కోడ్ పనిచేయడానికి CSS ను ఇక్కడ ఉంచుతున్నాను.
+            */}
             <style jsx>{`
                 .bouncing-dot {
                     width: 12px;
@@ -155,7 +162,7 @@ const ModuleSpinner = () => {
     );
 };
 
-// Error fallback component for individual modules
+// --- Error fallback component for individual modules ---
 const ModuleErrorFallback = ({ moduleName, error, resetError }) => (
     <div className="flex h-64 w-full flex-col items-center justify-center bg-red-50 rounded-lg border border-red-200">
         <div className="text-red-500 mb-4">
@@ -179,11 +186,12 @@ const ModuleErrorFallback = ({ moduleName, error, resetError }) => (
     </div>
 );
 
-// Wrapper component for each route with isolated error handling
+// --- Route Wrapper with ErrorBoundary and Suspense ---
 const RouteWrapper = ({ children, moduleName }) => (
     <ErrorBoundary
+        // Key-based re-mounting to ensure a fresh attempt after an error
         key={`${moduleName}-${Date.now()}`}
-        fallback={(error, resetError) => (
+        fallback={({ error, resetError }) => (
             <ModuleErrorFallback 
                 moduleName={moduleName} 
                 error={error} 
@@ -197,69 +205,110 @@ const RouteWrapper = ({ children, moduleName }) => (
     </ErrorBoundary>
 );
 
-// Main Layout with error boundaries for sidebar and navbar
-const MainLayout = ({ isSidebarOpen, setSidebarOpen, currentUser, onLogout, isChatWindowVisible }) => (
-    <div className="flex flex-col h-screen bg-gray-50">
-        <ErrorBoundary 
-            fallback={() => (
-                <div className="h-16 bg-red-100 border-b border-red-200 flex items-center px-4">
-                    <span className="text-red-700">Navigation error - please refresh page</span>
-                </div>
-            )}
-        >
-            <Navbar setSidebarOpen={setSidebarOpen} currentUser={currentUser} onLogout={onLogout} />
-        </ErrorBoundary>
-        
-        <div className={`flex flex-1 overflow-hidden ${isChatWindowVisible ? 'pt-0 md:pt-16' : 'pt-16'}`}>
+// --- UISidebar Context Provider (from first code block) ---
+const UISidebarContextProvider = ({ children }) => {
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    
+    const contextValue = useMemo(() => ({ isSidebarOpen, setSidebarOpen }), [isSidebarOpen]);
+    
+    return (
+        // The UISidebarContext must be imported to use here
+        <UISidebarContext.Provider value={contextValue}>
+            {children}
+        </UISidebarContext.Provider>
+    );
+};
+
+
+// --- Main Layout with Error Boundaries (using React.memo for optimization) ---
+const MainLayout = React.memo(({ currentUser, onLogout, isChatWindowVisible, chatUnreadCount }) => {
+    // Access sidebar state from the dedicated UI context
+    const { isSidebarOpen, setSidebarOpen } = useContext(UISidebarContext);
+    
+    return (
+        <div className="flex flex-col h-screen bg-gray-50">
+            {/* Navbar Error Boundary */}
             <ErrorBoundary 
                 fallback={() => (
-                    <div className="w-64 bg-red-100 border-r border-red-200 flex items-center justify-center">
-                        <span className="text-red-700 text-sm">Sidebar error</span>
+                    <div className="h-16 bg-red-100 border-b border-red-200 flex items-center px-4">
+                        <span className="text-red-700">Navigation error - please refresh page</span>
                     </div>
                 )}
             >
-                <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} />
+                <Navbar setSidebarOpen={setSidebarOpen} currentUser={currentUser} onLogout={onLogout} />
             </ErrorBoundary>
             
-            <main className="flex-1 overflow-y-auto">
-                <ErrorBoundary
-                    fallback={(error, resetError) => (
-                        <div className="flex h-full items-center justify-center bg-red-50">
-                            <div className="text-center max-w-md">
-                                <div className="text-red-500 mb-4">
-                                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                </div>
-                                <h2 className="text-xl font-semibold text-red-700 mb-2">Page Error</h2>
-                                <p className="text-red-600 mb-4">
-                                    This page encountered an error. The navigation and sidebar are still working.
-                                </p>
-                                <button
-                                    onClick={resetError}
-                                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                >
-                                    Reload Page
-                                </button>
-                            </div>
+            {/* Main Content Area */}
+            <div className={`flex flex-1 overflow-hidden ${isChatWindowVisible ? 'pt-0 md:pt-16' : 'pt-16'}`}>
+                {/* Sidebar Error Boundary */}
+                <ErrorBoundary 
+                    fallback={() => (
+                        <div className="w-64 bg-red-100 border-r border-red-200 flex items-center justify-center">
+                            <span className="text-red-700 text-sm">Sidebar error</span>
                         </div>
                     )}
                 >
-                    <Outlet />
+                    <Sidebar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={onLogout} chatUnreadCount={chatUnreadCount} />
                 </ErrorBoundary>
-            </main>
+                
+                {/* Main Content Area (Outlet) Error Boundary */}
+                <main className="flex-1 overflow-y-auto">
+                    <ErrorBoundary
+                        fallback={({ error, resetError }) => (
+                            <div className="flex h-full items-center justify-center bg-red-50">
+                                <div className="text-center max-w-md">
+                                    <div className="text-red-500 mb-4">
+                                        <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <h2 className="text-xl font-semibold text-red-700 mb-2">Page Error</h2>
+                                    <p className="text-red-600 mb-4">
+                                        This page encountered an error. The navigation and sidebar are still working.
+                                    </p>
+                                    <button
+                                        onClick={resetError}
+                                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        Reload Page
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    >
+                        {/* Outlet renders the nested routes */}
+                        <Outlet /> 
+                    </ErrorBoundary>
+                </main>
+            </div>
         </div>
-    </div>
-);
+    );
+}, (prevProps, nextProps) => {
+    // Memoization to prevent unnecessary re-renders of the main layout
+    return prevProps.currentUser === nextProps.currentUser &&
+           prevProps.onLogout === nextProps.onLogout &&
+           prevProps.isChatWindowVisible === nextProps.isChatWindowVisible &&
+           prevProps.chatUnreadCount === nextProps.chatUnreadCount;
+});
 
+
+// --- Wrapper to inject HrmsContext values into MainLayout ---
 const MainLayoutWrapper = (props) => {
-    const { isChatWindowVisible } = useContext(Context);
-    return <MainLayout {...props} isChatWindowVisible={isChatWindowVisible} />;
+    // Get isChatWindowVisible and chatUnreadCount from HrmsContext (Context)
+    const { isChatWindowVisible, chatUnreadCount } = useContext(Context);
+    // isSidebarOpen/setSidebarOpen will come from UISidebarContext
+    return <MainLayout {...props} isChatWindowVisible={isChatWindowVisible} chatUnreadCount={chatUnreadCount} />;
 };
+
+
+// =========================================================================
+// --- HrmsApp Main Component ---
+// =========================================================================
 
 const HrmsApp = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("accessToken"));
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    
+    // Using simple mock user data for now
     const [currentUser] = useState({
         name: "Johnes",
         designation: " Associate Software Engineer",
@@ -267,6 +316,7 @@ const HrmsApp = () => {
     });
 
     useEffect(() => {
+        // Listen for storage changes to handle login/logout across tabs
         const handleStorageChange = () => {
             setIsAuthenticated(!!localStorage.getItem("accessToken"));
         };
@@ -275,13 +325,20 @@ const HrmsApp = () => {
     }, []);
 
     const handleLogin = () => setIsAuthenticated(true);
-    const handleLogout = () => setIsAuthenticated(false);
-    const loggedInEmpId = localStorage.getItem("logedempid");
+    const handleLogout = () => {
+        localStorage.removeItem("accessToken");
+        // You might want to remove logedempid too
+        // localStorage.removeItem("logedempid");
+        setIsAuthenticated(false);
+    }
+    
+    // Fallback to avoid null for initial load, though logic suggests it should exist after login
+    const loggedInEmpId = localStorage.getItem("logedempid") || currentUser.id || "default";
 
     return (
         // Top-level error boundary for entire app
         <ErrorBoundary
-            fallback={(error, resetError) => (
+            fallback={({ error, resetError }) => (
                 <div className="min-h-screen bg-red-50 flex items-center justify-center">
                     <div className="text-center max-w-lg mx-auto p-8">
                         <img src={logo} alt="Logo" className="h-20 w-20 mx-auto mb-6 opacity-50" />
@@ -317,6 +374,7 @@ const HrmsApp = () => {
                 </div>
             )}
         >
+            {/* HrmsContext provides all application-wide data/state */}
             <HrmsContext>
                 <ErrorBoundary
                     fallback={() => (
@@ -328,6 +386,7 @@ const HrmsApp = () => {
                         </div>
                     )}
                 >
+                    {/* Router handles all application routing */}
                     <Router>
                         <ErrorBoundary
                             fallback={() => (
@@ -351,19 +410,24 @@ const HrmsApp = () => {
                                                     </RouteWrapper>
                                                 } 
                                             />
+                                            {/* Redirect any other path to login */}
                                             <Route path="*" element={<Navigate to="/login" replace />} />
                                         </>
                                     ) : (
+                                        // Protected Routes wrapped by MainLayout and UISidebarContext
                                         <Route
                                             element={
-                                                <MainLayoutWrapper
-                                                    isSidebarOpen={isSidebarOpen}
-                                                    setSidebarOpen={setSidebarOpen}
-                                                    currentUser={currentUser}
-                                                    onLogout={handleLogout}
-                                                />
+                                                // UISidebarContext is placed here to provide sidebar state to MainLayout/Sidebar
+                                                <UISidebarContextProvider>
+                                                    <MainLayoutWrapper
+                                                        currentUser={currentUser}
+                                                        onLogout={handleLogout}
+                                                        // isChatWindowVisible and chatUnreadCount are passed from MainLayoutWrapper
+                                                    />
+                                                </UISidebarContextProvider>
                                             }
                                         >
+                                            {/* Admin/Combined Dashboards (Handling both route paths from the branches) */}
                                             <Route 
                                                 path="/combined-dashboard/:empId/*" 
                                                 element={
@@ -374,6 +438,18 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
+                                            <Route 
+                                                path="/admin-dashboard/:empId/*" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                                                        <RouteWrapper moduleName="Admin Dashboard">
+                                                            <CombinedDashBoard />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+                                            
+                                            {/* Employee Specific Dashboards */}
                                             <Route 
                                                 path="/attendance/:empId/*" 
                                                 element={
@@ -404,6 +480,8 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
+
+                                            {/* Applications/Features */}
                                             <Route 
                                                 path="/notifications/:empID/*" 
                                                 element={
@@ -424,6 +502,38 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
+                                            <Route 
+                                                path="/tasks/:empID/*" 
+                                                element={
+                                                    <ProtectedRoute>
+                                                        <RouteWrapper moduleName="Tasks">
+                                                            <TasksApp />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+                                            <Route 
+                                                path="/tickets/:empID/*" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'TEAM_LEAD']}>
+                                                        <RouteWrapper moduleName="Admin Tickets">
+                                                            <Tickets />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+                                            <Route 
+                                                path="/tickets/employee/:empID/*" 
+                                                element={
+                                                    <ProtectedRoute>
+                                                        <RouteWrapper moduleName="Employee Tickets">
+                                                            <EmployeeTicket />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+
+                                            {/* Profile, Employees & Teams */}
                                             <Route 
                                                 path="/profile/:empID/*" 
                                                 element={
@@ -474,36 +584,8 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
-                                            <Route 
-                                                path="/tickets/:empID/*" 
-                                                element={
-                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'TEAM_LEAD']}>
-                                                        <RouteWrapper moduleName="Admin Tickets">
-                                                            <Tickets />
-                                                        </RouteWrapper>
-                                                    </ProtectedRoute>
-                                                } 
-                                            />
-                                            <Route 
-                                                path="/tickets/employee/:empID/*" 
-                                                element={
-                                                    <ProtectedRoute>
-                                                        <RouteWrapper moduleName="Employee Tickets">
-                                                            <EmployeeTicket />
-                                                        </RouteWrapper>
-                                                    </ProtectedRoute>
-                                                } 
-                                            />
-                                            <Route 
-                                                path="/tasks/:empID/*" 
-                                                element={
-                                                    <ProtectedRoute>
-                                                        <RouteWrapper moduleName="Tasks">
-                                                            <TasksApp />
-                                                        </RouteWrapper>
-                                                    </ProtectedRoute>
-                                                } 
-                                            />
+                                            
+                                            {/* Admin/Management Routes */}
                                             <Route 
                                                 path="/permissions/:empID/*" 
                                                 element={
@@ -514,8 +596,11 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
+
+                                            {/* Direct Detail Route */}
                                             <Route path="/project-details/:project_id/*" element={<ProtectedRoute><ProjectDetails /></ProtectedRoute>} />
--                                           <Route path="/projects/:project_id/*" element={<ProtectedRoute><ProjectDashBoard /></ProtectedRoute>} />
+                                            
+                                            {/* Default route after login */}
                                             <Route path="*" element={<Navigate to={`/profile/${loggedInEmpId}`} replace />} />
                                         </Route>
                                     )}

@@ -4,6 +4,7 @@ import logo from "./assets/anasol-logo.png";
 import { authApi } from "../../../axiosInstance";
 
 export const Context = createContext();
+export const UISidebarContext = createContext();
 
 const HrmsContext = ({ children }) => {
     const [gdata, setGdata] = useState([]);
@@ -13,18 +14,28 @@ const HrmsContext = ({ children }) => {
         return savedTheme ? savedTheme : "light";
     });
     const [lastSseMsgId, setLastSseMsgId] = useState(null);
+    const [globalSearch,setGlobalSearch]=useState("")
     const [unreadCount, setUnreadCount] = useState(0);
     const [userprofiledata, setUserProfileData] = useState(null);
     const [userData, setUserData] = useState(null);
     const [accessToken, setAccessToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
+    const [matchedArray,setMatchedArray]=useState([]);
+    const [chatUnreadCount,setChatUnreadCount]=useState(0);
 
-    useEffect(() => {
+        useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
+        const storedUserImage = localStorage.getItem("loggedInUserImage");
+ 
         if (storedUser) {
-            setUserData(JSON.parse(storedUser));
+            const userObject = JSON.parse(storedUser);
+            if (storedUserImage) {
+                userObject.employeeImage = storedUserImage;
+            }
+            setUserData(userObject);
         }
+ 
         const storedAccessToken = localStorage.getItem("accessToken");
         const storedRefreshToken = localStorage.getItem("refreshToken");
         if (storedAccessToken) {
@@ -35,19 +46,50 @@ const HrmsContext = ({ children }) => {
         }
     }, []);
 
-    // ✅ Updated permissions fetcher with ROLE_ prefix removal
+
+
+            const LoggedInUserRole = userData?.roles[0]?`ROLE_${userData?.roles[0]}` 
+  : null;
+
+
+     useEffect(() => {
+    const fetchPermissionArray = async () => {
+        try {
+            const response = await authApi.get(`role-access/${LoggedInUserRole}`);
+            setMatchedArray(response?.data?.permissions);
+            
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    if (LoggedInUserRole) {
+        fetchPermissionArray();
+    }
+}, [LoggedInUserRole]);
+
+
+useEffect(() => {
+    if (matchedArray && matchedArray.length > 0) {
+        console.log("Context matched Array ", matchedArray);
+    }
+}, [matchedArray]);
+
+
+
+    // ✅ Permissions fetcher
     useEffect(() => {
         let permissionfetcher = async () => {
             try {
                 let response = await authApi.get(`/role-access/all`);
                 console.log("Original Permissions data from API:", response.data);
-                
+
                 // Remove ROLE_ prefix from roleName in each permission object
                 const processedPermissions = response.data.map(roleData => ({
                     ...roleData,
                     roleName: roleData.roleName.replace(/^ROLE_/, '') // Remove ROLE_ prefix
                 }));
-                
+
                 console.log("Processed Permissions data (ROLE_ prefix removed):", processedPermissions);
                 setPermissionsData(processedPermissions);
             } catch (error) {
@@ -164,9 +206,10 @@ const HrmsContext = ({ children }) => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray,chatUnreadCount,setChatUnreadCount
             }}
         >
+            {/* UISidebarContext will be provided in HrmsApp */}
             {children}
         </Context.Provider>
     );

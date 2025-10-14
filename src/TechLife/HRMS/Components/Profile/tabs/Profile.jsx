@@ -441,7 +441,7 @@ function Profile() {
   const [addressData, setAddressData] = useState(null);
   const [eduData, setEduData] = useState([]);
   const [experience, setExperience] = useState([]);
-  const { theme, userData } = useContext(Context);
+  const { theme, userData,matchedArray } = useContext(Context);
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
   const location = useLocation();
@@ -1268,19 +1268,20 @@ function Profile() {
                 </button>
               )}
 
-              {fromContextMenu && isAdmin && hasData && !['education', 'experience', 'relations'].includes(sectionKey) && (
-                <button
-                  onClick={() => handleDelete(sectionKey)}
-                  className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-sm ${
-                    theme === 'dark'
-                      ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
-                      : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
-                  }`}
-                >
-                  <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Delete</span>
-                </button>
-              )}
+         {(fromContextMenu && isAdmin && hasData) || (matchedArray.includes("PROFILES_PROFILE_DELETE") && hasData && !['education', 'experience', 'relations'].includes(sectionKey)) ? (
+    <button
+        onClick={() => handleDelete(sectionKey)}
+        className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-sm ${
+            theme === 'dark'
+                ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
+                : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
+        }`}
+    >
+        <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">Delete</span>
+    </button>
+) : null}
+
 
               {(!isReadOnly || isAdmin) && !['education', 'experience'].includes(sectionKey) && (
                 <button 
