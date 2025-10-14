@@ -434,6 +434,25 @@ const sectionConfig = {
   },
 };
 
+// NEW: Helper function to check if data has meaningful values
+const hasActualData = (data, sectionKey) => {
+  if (!data) return false;
+  
+  // For arrays (education/experience), check if array has elements
+  if (Array.isArray(data)) {
+    return data.length > 0;
+  }
+  
+  // For objects, check if any field has meaningful value
+  const fieldsToCheck = sectionFields[sectionKey];
+  if (!fieldsToCheck) return false;
+  
+  return fieldsToCheck.some(field => {
+    const value = data[field.name];
+    return value && value !== "" && value !== null && value !== undefined;
+  });
+};
+
 function Profile() {
   const [editingSection, setEditingSection] = useState(null);
   const [primarydata, setPrimaryData] = useState(null);
@@ -496,7 +515,15 @@ function Profile() {
         setEduData(eduRes.data);
         setExperience(expRes.data);
 
-        const sections = [primaryRes.data, contactRes.data, addressRes.data, eduRes.data.length > 0, expRes.data.length > 0, defaultProfile.relations];
+        // Updated completion calculation using hasActualData
+        const sections = [
+          hasActualData(primaryRes.data, 'primaryDetails'), 
+          hasActualData(contactRes.data, 'contactDetails'), 
+          hasActualData(addressRes.data, 'address'), 
+          hasActualData(eduRes.data, 'education'), 
+          hasActualData(expRes.data, 'experience'), 
+          hasActualData(defaultProfile.relations, 'relations')
+        ];
         const completed = sections.filter(Boolean).length;
         setCompletionStats({ completed, total: 6 });
 
@@ -637,13 +664,14 @@ function Profile() {
           break;
       }
 
+      // Updated completion calculation
       const sections = [
-        sectionKey === 'primaryDetails' ? null : primarydata,
-        sectionKey === 'contactDetails' ? null : contactdetails,
-        sectionKey === 'address' ? null : addressData,
-        eduData.length > 0,
-        experience.length > 0,
-        defaultProfile.relations
+        sectionKey === 'primaryDetails' ? false : hasActualData(primarydata, 'primaryDetails'),
+        sectionKey === 'contactDetails' ? false : hasActualData(contactdetails, 'contactDetails'),
+        sectionKey === 'address' ? false : hasActualData(addressData, 'address'),
+        hasActualData(eduData, 'education'),
+        hasActualData(experience, 'experience'),
+        hasActualData(defaultProfile.relations, 'relations')
       ];
       const completed = sections.filter(Boolean).length;
       setCompletionStats({ completed, total: 6 });
@@ -680,7 +708,17 @@ function Profile() {
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setPrimaryData(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [updatedData.data, contactdetails, addressData, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      
+      // Updated completion calculation
+      const sections = [
+        hasActualData(updatedData.data, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(experience, 'experience'), 
+        hasActualData(defaultProfile.relations, 'relations')
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
       if (error.response && error.response.status === 400) setErrors(error.response.data);
@@ -695,7 +733,17 @@ function Profile() {
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setContactDetails(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, updatedData.data, addressData, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      
+      // Updated completion calculation
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(updatedData.data, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(experience, 'experience'), 
+        hasActualData(defaultProfile.relations, 'relations')
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
       if (error.response && error.response.status === 400) setErrors(error.response.data);
@@ -710,7 +758,17 @@ function Profile() {
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setAddressData(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, updatedData.data, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      
+      // Updated completion calculation
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(updatedData.data, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(experience, 'experience'), 
+        hasActualData(defaultProfile.relations, 'relations')
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
       if (error.response && error.response.status === 400) setErrors(error.response.data);
@@ -740,7 +798,16 @@ function Profile() {
       const updatedEduRes = await publicinfoApi.get(`employee/${profileEmployeeId}/degreeDetails`);
       setEduData(updatedEduRes.data);
 
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, addressData, updatedEduRes.data.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      // Updated completion calculation
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(updatedEduRes.data, 'education'), 
+        hasActualData(experience, 'experience'), 
+        hasActualData(defaultProfile.relations, 'relations')
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
       console.error("Failed to update education details:", error);
@@ -765,7 +832,16 @@ function Profile() {
       const updatedExperienceRes = await publicinfoApi.get(`employee/${profileEmployeeId}/previousExperience`);
       setExperience(updatedExperienceRes.data);
 
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, addressData, eduData.length > 0, updatedExperienceRes.data.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      // Updated completion calculation
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(updatedExperienceRes.data, 'experience'), 
+        hasActualData(defaultProfile.relations, 'relations')
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
       console.error("Failed to update experience details:", error);
@@ -1211,7 +1287,9 @@ function Profile() {
   const Section = ({ sectionKey, title, children, data }) => {
     const config = sectionConfig[sectionKey];
     const IconComponent = config.icon;
-    const hasData = Array.isArray(data) ? data.length > 0 : !!data;
+    
+    // UPDATED: Use hasActualData function instead of simple boolean check
+    const hasData = hasActualData(data, sectionKey);
     
     return (
       <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
@@ -1268,21 +1346,7 @@ function Profile() {
                 </button>
               )}
 
-         {(fromContextMenu && isAdmin && hasData) || (matchedArray.includes("PROFILES_PROFILE_DELETE") && hasData && !['education', 'experience', 'relations'].includes(sectionKey)) ? (
-    <button
-        onClick={() => handleDelete(sectionKey)}
-        className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-sm ${
-            theme === 'dark'
-                ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
-                : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
-        }`}
-    >
-        <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-        <span className="hidden sm:inline">Delete</span>
-    </button>
-) : null}
-
-
+              {/* UPDATED: Show Add or Edit button for primaryDetails, contactDetails, and address sections based on hasData */}
               {(!isReadOnly || isAdmin) && !['education', 'experience'].includes(sectionKey) && (
                 <button 
                   onClick={() => openEditSection(sectionKey)} 
@@ -1297,7 +1361,7 @@ function Profile() {
                 >
                   {hasData ? (
                     <>
-                      <IconComponent className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <IoCreateOutline className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Edit Details</span>
                       <span className="sm:hidden">Edit</span>
                     </>
@@ -1369,12 +1433,13 @@ function Profile() {
   };
 
   const ProgressIndicator = () => {
+    // UPDATED: Use hasActualData for progress calculation
     const profileSections = [
-      primarydata,
-      contactdetails,
-      addressData,
-      eduData.length > 0,
-      experience.length > 0
+      hasActualData(primarydata, 'primaryDetails'),
+      hasActualData(contactdetails, 'contactDetails'),
+      hasActualData(addressData, 'address'),
+      hasActualData(eduData, 'education'),
+      hasActualData(experience, 'experience')
     ];
     const completedCount = profileSections.filter(Boolean).length;
     const totalCount = profileSections.length;
