@@ -1730,7 +1730,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`flex-col shadow-xl fixed inset-0 z-[100] md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
+                <div className={`flex-col shadow-xl fixed inset-0 z-[100] h-screen md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
