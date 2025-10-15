@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
+import { Context } from '../HrmsContext';
 
 const employeeAttendanceData = [
   {
@@ -126,6 +127,7 @@ const AttendanceTable = ({onBack}) => {
   const [leaveType, setLeaveType] = useState('');
   const [sortBy, setSortBy] = useState('Recantly Added');
   const [selectedMonth, setSelectedMonth] = useState('');
+  const {theme}=useContext(Context);
 
  
   const filteredData = useMemo(() => {
@@ -206,7 +208,7 @@ const AttendanceTable = ({onBack}) => {
   ];
 
   return (
-    <div className="p-4 sm:p-8 bg-gray-50 min-h-screen">
+    <div className={`p-4 sm:p-8 ${theme==='dark'?'bg-gray-400':'bg-gray-50'}min-h-screen`}>
       <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2">
         <span role="img" aria-label="clock">⏰</span> Employee Attendance Tracker
       </h1>
@@ -218,8 +220,8 @@ const AttendanceTable = ({onBack}) => {
       </button>
 
       {/* Overview Section & Dropdowns */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 bg-white rounded-xl shadow-lg border-l-4 border-indigo-500">
-        <div className="text-lg font-semibold text-gray-700 mb-4 sm:mb-0">
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme==='dark'?'bg-gray-700':'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
+        <div className={`text-lg font-semibold ${theme==='dark'?'text-gray-100':'text-gray-700'} mb-4 sm:mb-0`}>
           Total Employees: <span className="text-indigo-600 text-2xl">{totalEmployees}</span>
         </div>
         
@@ -229,7 +231,7 @@ const AttendanceTable = ({onBack}) => {
           <select
             value={leaveType}
             onChange={(e) => setLeaveType(e.target.value)}
-            className="p-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300"
+            className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300`}
           >
             <option value="">Leave Type: All</option>
             <option value="sick">Sick</option>
@@ -242,7 +244,7 @@ const AttendanceTable = ({onBack}) => {
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="p-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300"
+            className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300`}
           >
             <option value="">Select Month: All</option>
             {months.map(m => (
@@ -254,7 +256,7 @@ const AttendanceTable = ({onBack}) => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="p-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300"
+            className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300`}
           >
             <option value="Recantly Added">Sorted By: Recently Added</option>
             <option value="Ascending">Name: Ascending</option>
@@ -289,7 +291,7 @@ const AttendanceTable = ({onBack}) => {
           <tbody>
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-6 text-gray-500 text-lg">
+                <td colSpan={10} className={`text-center py-6 ${theme==='dark'?' text-gray-50':'text-gray-500'}  text-lg`}>
                   No attendance records found for the selected filters.
                 </td>
               </tr>
@@ -314,14 +316,14 @@ const AttendanceTable = ({onBack}) => {
                 return (
                   <tr 
                     key={record.attendanceId} 
-                    className={`border-b transition-colors duration-200 ${index % 2 === 0 ? 'bg-gray-50 hover:bg-gray-200' : 'bg-white hover:bg-gray-200'}`}
+                    className={`border-b transition-colors duration-200  ${theme==='dark'?'bg-gray-700 hover:bg-gray-600':'hover:bg-gray-200'}`}
                   >
                     
                     
-                    <td className="py-4 px-4 text-gray-800 font-medium hidden sm:table-cell">
+                    <td className={`py-4 px-4 ${theme==='dark'?' text-gray-50':'text-gray-700'} font-medium hidden sm:table-cell`}>
                       {record.employeeId}
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm${theme==='dark'?' text-gray-50':'text-gray-700'}  hidden sm:table-cell`}>
                       {record.date}
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
@@ -329,23 +331,23 @@ const AttendanceTable = ({onBack}) => {
                         {record.mode}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'}  hidden sm:table-cell`}>
                       {loginTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })}
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm${theme==='dark'?' text-gray-50':'text-gray-700'}  hidden sm:table-cell`}>
                       {logoutTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })}
                     </td>
-                    <td className="py-4 px-4 text-sm font-semibold text-indigo-700 hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm font-semibold ${theme==='dark'?' text-indigo-500':'text-indigo-700'} hidden sm:table-cell`}>
                       {totalDurationHHMM}
                     </td>
-                    <td className="py-4 px-4 text-sm text-orange-600 hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-orange-300':'text-orange-600'} hidden sm:table-cell`}>
                       {breakDurationHHMM}
                     </td>
-                    <td className="py-4 px-4 text-sm font-bold text-green-700 hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm font-bold ${theme==='dark'?' text-green-300':'text-green-700'} hidden sm:table-cell`}>
                       {effectiveHoursHHMM}
                     </td>
                     
-                    <td className="py-4 px-4 text-sm text-red-600 font-medium hidden sm:table-cell">
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-red-300':'text-red-600'} font-medium hidden sm:table-cell`}>
                       {record.leavesTaken}
                     </td>
 
@@ -358,15 +360,15 @@ const AttendanceTable = ({onBack}) => {
                     {/* Mobile View (sm:hidden) */}
                     <td className="py-4 px-4 sm:hidden">
                       <div className="flex flex-col space-y-1">
-                        <span className="text-base font-bold text-indigo-700">{record.name}</span>
-                        <span className="text-sm text-gray-600">Date: {record.date} ({record.mode})</span>
-                        <span className="text-sm text-gray-600">
+                        <span className={`text-base font-bold ${theme==='dark'?' text-indigo-300':'text-indigo-700'}`}>{record.name}</span>
+                        <span className={`text-sm ${theme==='dark'?' text-gray-100':'text-gray-600'}`}>Date: {record.date} ({record.mode})</span>
+                        <span className={`text-sm ${theme==='dark'?' text-gray-100':'text-gray-600'}`}>
                           {loginTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })} - 
                           {logoutTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })}
                         </span>
                         <div className="text-xs font-medium mt-1">
-                            <span className="text-green-700">Effective: {effectiveHoursHHMM}</span> | 
-                            <span className="text-red-600"> Leaves: {record.leavesTaken}</span>
+                            <span className={`${theme==='dark'?' text-green-400':'text-green-700'} `}>Effective: {effectiveHoursHHMM}</span> | 
+                            <span className={`${theme==='dark'?' text-red-400':'text-red-700'}`}> Leaves: {record.leavesTaken}</span>
                         </div>
                       </div>
                     </td>
@@ -380,7 +382,7 @@ const AttendanceTable = ({onBack}) => {
         </table>
       </div>
       
-      <p className="text-sm text-gray-500 mt-6 text-center">
+      <p className={`text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'}  mt-6 text-center`}>
         Data is displayed for **{filteredData.length}** attendance record(s) based on current filters.
       </p>
     </div>

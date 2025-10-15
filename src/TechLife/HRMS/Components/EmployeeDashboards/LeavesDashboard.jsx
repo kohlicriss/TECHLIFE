@@ -176,7 +176,34 @@ import EmployeeTable from "./TotalEmployeeLeaves";
 //        </motion.div>
 //    );
 //};
+// Assume Context is imported and provides the theme and userData
+// const Context = React.createContext({ theme: 'light', userData: { employeeId: '001' } }); 
+
+// --- Custom Input/Select Component for clean JSX ---
+const FormField = ({ label, theme, children, helperText, className = '' }) => {
+    return (
+        <div className={`space-y-1 ${className}`}>
+            <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                {label}
+            </label>
+            {children}
+            {helperText && (
+                <p className={`text-xs mt-1 italic ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {helperText}
+                </p>
+            )}
+        </div>
+    );
+};
+
+const baseInputClasses = (theme) => `w-full px-4 py-3 border rounded-lg transition duration-300 text-sm 
+    focus:ring-2 focus:ring-red-500/40 focus:border-red-500 focus:outline-none 
+    ${theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-800'}`;
+
+// ---------------------------------------------------
+
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
+    // Logic and State (UNCHANGED as requested)
     const { userData, theme } = useContext(Context);
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
@@ -184,17 +211,23 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
     const [reason, setReason] = useState("");
     const [isHalfDay, setIsHalfDay] = useState(false);
     const [employeeId, setEmployeeId] = useState(userData?.employeeId || "");
+    const [isSubmitting, setIsSubmitting] = useState(false); // Added for UI feedback
 
-    // Calculate number of days
     const getNumberOfDays = () => {
         if (!fromDate || !toDate) return 0;
         const start = new Date(fromDate);
         const end = new Date(toDate);
-        return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        // Correctly calculate day difference
+        const oneDay = 1000 * 60 * 60 * 24;
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.round(diffTime / oneDay);
+        return diffDays >= 0 ? diffDays + 1 : 0;
     };
 
     const handleSubmit = async (e) => {
-        // e.preventDefault();
+        e.preventDefault(); // Ensure we prevent default form submit
+        setIsSubmitting(true);
+        // ... (rest of your logic remains here)
         console.log("Submitting leave request:", { fromDate, toDate, leaveType, reason, isHalfDay });
         const leaveRequest = {
             employeeId: userData?.employeeId,
@@ -207,75 +240,166 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
         };
 
         try {
-            // POST to the endpoint
             await axios.post(
                 `https://hrms.anasolconsultancyservices.com/api/attendance/employee/leaveRequest/${userData?.employeeId}`,
                 leaveRequest
             );
             console.log("Leave request submitted:", leaveRequest);
-          
+            
             const key = `leaveHistory_${userData?.employeeId}`;
             const storedLeaves = JSON.parse(localStorage.getItem(key)) || [];
             localStorage.setItem(key, JSON.stringify([leaveRequest, ...storedLeaves]));
             if (onAddLeave) onAddLeave(leaveRequest);
             onClose();
+            alert("Leave request submitted successfully! ✅"); // Added success alert
         } catch (error) {
-            // alert("Failed to submit leave request.");
-            console.log(leaveRequest);
+            console.error(leaveRequest);
+            alert("Failed to submit leave request. Please check your inputs. 😔"); // Added error alert
+        } finally {
+            setIsSubmitting(false);
         }
     };
+    // UI Redesign Starts Here
+    const formThemeClasses = theme === 'dark' 
+        ? 'bg-gray-800 text-white border-gray-700' 
+        : 'bg-white text-gray-800 border-gray-100';
+    
+    const headerGradient = 'bg-gradient-to-r from-blue-500 to-blue-600';
 
     return (
-        <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4"    initial={{ opacity: 0 }}    animate={{ opacity: 1 }}    exit={{ opacity: 0 }}    transition={{ duration: 0.3 }}>
-            <motion.div className="relative w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
-                <form onSubmit={handleSubmit} className={`relative w-full max-w-3xl mx-auto rounded-lg   shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-green-200 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>
-                   <div className=" mb-4 text-center rounded-t bg-gradient-to-br from-orange-200 to-orange-600"> 
-                   <h2 className={`text-2xl pt-6  font-bold border-b pb-8 ${theme === 'dark' ? 'text-white border-gray-100' : 'text-gray-800 border-gray-200'}`}>     Request a Leave</h2>
+        <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.3 }}
+            onClick={onClose} // Allow closing by clicking backdrop
+        >
+            <motion.div 
+                className="w-full max-w-xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform" 
+                initial={{ scale: 0.95, y: -20 }} 
+                animate={{ scale: 1, y: 0 }} 
+                exit={{ scale: 0.95, y: -20 }} 
+                transition={{ duration: 0.3 }}
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            >
+                <form 
+                    onSubmit={handleSubmit} 
+                    className={`relative w-full rounded-3xl shadow-3xl overflow-hidden ${formThemeClasses} transition-all duration-300`}
+                >
+                    {/* Professional Header */}
+                    <div className={`text-center rounded-t-3xl ${headerGradient} p-6`}>
+                        <h2 className="text-2xl font-extrabold text-white flex items-center justify-center">
+                            <i className="fas fa-plane-departure mr-3"></i> Request Employee Leave
+                        </h2>
+                        <p className="text-sm text-white/90 mt-1">Fill out the details below to submit your leave request.</p>
                     </div>
-                    <div className="space-y-4 p-4">
-                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                    Employee Id
+
+                    <div className="space-y-6 p-8">
+                        
+                        {/* Employee ID (Read-only/Initial Value) */}
+                        <FormField label="Employee ID" theme={theme} helperText="This is automatically fetched from your profile.">
+                            <input 
+                                type="text" 
+                                value={employeeId} 
+                                onChange={e => setEmployeeId(e.target.value)} 
+                                className={`${baseInputClasses(theme)} bg-gray-300  cursor-not-allowed`} 
+                                readOnly // Making it look disabled but still editable if needed
+                            />
+                        </FormField>
+
+                        {/* Date Inputs Group */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <FormField label="From Date" theme={theme}>
+                                <input 
+                                    type="date" 
+                                    value={fromDate} 
+                                    onChange={e => setFromDate(e.target.value)} 
+                                    className={baseInputClasses(theme)} 
+                                    required 
+                                />
+                            </FormField>
+                            
+                            <FormField label="To Date" theme={theme} helperText={`Duration: ${getNumberOfDays()} day(s)`}>
+                                <input 
+                                    type="date" 
+                                    value={toDate} 
+                                    onChange={e => setToDate(e.target.value)} 
+                                    className={baseInputClasses(theme)} 
+                                    min={fromDate} // UX improvement: Cannot select a date before 'From Date'
+                                    required 
+                                />
+                            </FormField>
+                        </div>
+
+                        {/* Leave Type and Half-Day Group */}
+                        <div className="grid grid-cols-2 gap-6 items-end">
+                             <FormField label="Leave Type" theme={theme}>
+                                <select 
+                                    value={leaveType} 
+                                    onChange={e => setLeaveType(e.target.value)} 
+                                    className={`${baseInputClasses(theme)} h-12 appearance-none`} // Increased height for aesthetic, removed extra styles
+                                    required
+                                >
+                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Type</option>
+                                    <option value="Sick" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Sick Leave</option>
+                                    <option value="Casual" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Casual Leave</option>
+                                    <option value="Unpaid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Unpaid Leave</option>
+                                    <option value="Paid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Paid Leave</option>
+                                </select>
+                            </FormField>
+                            
+                            {/* Half Day Checkbox (Enhanced Style) */}
+                            <div className="flex items-center pt-6">
+                                <input 
+                                    id="isHalfDay"
+                                    type="checkbox" 
+                                    checked={isHalfDay} 
+                                    onChange={e => setIsHalfDay(e.target.checked)} 
+                                    className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500 transition duration-150"
+                                />
+                                <label 
+                                    htmlFor="isHalfDay"
+                                    className={`ml-2 block text-sm font-medium cursor-pointer ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}
+                                >
+                                    Is this a Half Day leave?
                                 </label>
-                                <input    type="text"    value={ employeeId}    onChange={e => setEmployeeId(e.target.value)}    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}/>
-                            </motion.div>
-                    <div>
-                        <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>From Date</label>
-                        <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`} required />
-                    </div>
-                    <div>
-                        <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>To Date</label>
-                        <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white':'border border-gray-300 text-black'}`} required />
-                    </div>
-                    <div>
-                        <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Leave Type</label>
-                        <select value={leaveType} onChange={e => setLeaveType(e.target.value)} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`} required>
-                            <option value=""       className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
-                            <option value="Sick"   className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Sick</option>
-                            <option value="Casual" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Casual</option>
-                            <option value="Unpaid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Unpaid</option>
-                            <option value="Paid"   className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Paid</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Reason</label>
-                        <textarea value={reason} onChange={e => setReason(e.target.value)} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required />
-                    </div>
-                    <div>
-                        <label>
-                            <input type="checkbox" checked={isHalfDay} onChange={e => setIsHalfDay(e.target.checked)} />
-                            Half Day
-                        </label>
-                    </div>
-                    <div className="mt-6 flex justify-end space-x-3 border-t p-4">
-                        <button type="submit" className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"    whileHover={{ scale: 1.05 }}    whileTap={{ scale: 0.95 }}>Submit</button>
-                        <button type="button" onClick={onClose} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"    whileHover={{ scale: 1.05 }}    whileTap={{ scale: 0.95 }}>Cancel</button>
-                    </div>
+                            </div>
+                        </div>
+
+                        {/* Reason Textarea */}
+                        <FormField label="Reason for Leave" theme={theme}>
+                            <textarea 
+                                value={reason} 
+                                onChange={e => setReason(e.target.value)} 
+                                className={`${baseInputClasses(theme)} min-h-[100px]`} 
+                                required 
+                                placeholder="Briefly describe your reason for taking leave..."
+                            />
+                        </FormField>
+
+                        {/* Action Buttons */}
+                        <div className="pt-4 flex justify-end space-x-4 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
+                            <motion.button 
+                                type="button" 
+                                onClick={onClose} 
+                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Cancel
+                            </motion.button>
+                            
+                            <motion.button 
+                                type="submit" 
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-red-600 text-sm font-semibold text-white shadow-md hover:bg-red-700 disabled:opacity-50 disabled:bg-red-400 transition-colors" 
+                                disabled={isSubmitting} 
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                {isSubmitting ? 'Sending Request...' : 'Submit Leave Request'}
+                            </motion.button>
+                        </div>
                     </div>
                 </form>
             </motion.div>

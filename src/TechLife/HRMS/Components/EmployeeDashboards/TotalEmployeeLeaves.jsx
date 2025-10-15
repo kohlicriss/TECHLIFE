@@ -32,14 +32,15 @@ const initialEmployeeData = [
 
 const TOTAL_EMPLOYEES = initialEmployeeData.length;
 
-
-const Dropdown = ({ label, options, value, onChange }) => (
+const Dropdown = ({ label, options, value, onChange }) => {
+const {theme} = useContext(Context);
+  return (
   <div className="flex flex-col w-full md:w-auto">
-    <label className="text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <label className={`text-sm font-medium ${theme==='dark'?' text-gray-50 ':'text-gray-700'} mb-1`}>{label}</label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition duration-150 ease-in-out"
+      className={`block w-full pl-3 pr-10 py-2 text-base border border-gray-300 ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} rounded-lg shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition duration-150 ease-in-out`}
     >
       {options.map((option) => (
         <option key={option} value={option}>
@@ -48,7 +49,7 @@ const Dropdown = ({ label, options, value, onChange }) => (
       ))}
     </select>
   </div>
-);
+)};
 
 const LeaveBadge = ({ label, consumed, total }) => (
     <div className="flex justify-between text-xs py-1 px-2 rounded-full font-medium"
@@ -106,8 +107,8 @@ export default function EmployeeTable({ onBack }) {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-6 border-b-2 border-sky-400 pb-2">
+    <div className={`p-4 md:p-8 ${theme==='dark'?'bg-gray-900':'bg-gray-50'} min-h-screen`}>
+      <h1 className={`text-3xl font-extrabold ${theme==='dark'?'text-gray-50':'text-gray-800'} mb-6 border-b-2 border-sky-400 pb-2`}>
         Employee Leave & Attendance Dashboard 📊
       </h1>
        <button
@@ -116,7 +117,7 @@ export default function EmployeeTable({ onBack }) {
       >
         ← Back to Dashboard
       </button>
-      <div className="mb-8 p-4 md:p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+      <div className={`mb-8 p-4 md:p-6 ${theme==='dark'?'bg-gray-700':'bg-white'} rounded-xl shadow-lg border border-gray-100`}>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 items-end">
           <Dropdown
             label="Leave Type:"
@@ -136,8 +137,8 @@ export default function EmployeeTable({ onBack }) {
             value={selectedMonth}
             onChange={setSelectedMonth}
           />
-          <div className="col-span-2 md:col-span-1 p-2 bg-sky-50 rounded-lg border-l-4 border-sky-400">
-              <p className="text-sm text-gray-600 font-medium">Total Employees</p>
+          <div className={`col-span-2 md:col-span-1 p-2  ${theme==='dark'?'bg-gray-700 border border-gray-300':'bg-sky-50'} rounded-lg border-l-4 border-sky-400`}>
+              <p className={`text-sm ${theme==='dark'?'text-gray-50':'text-gray-600'} font-medium`}>Total Employees</p>
               <p className="text-2xl font-bold text-sky-700">{TOTAL_EMPLOYEES}</p>
           </div>
         </div>
@@ -161,22 +162,22 @@ export default function EmployeeTable({ onBack }) {
                   const isEven = index % 2 === 0;
 
                   return (
-                    <tr key={employee.employeeId} className={isEven ? 'bg-gray-50 hover:bg-sky-50 transition duration-150' : 'bg-white hover:bg-sky-50 transition duration-150'}>
+                    <tr key={employee.employeeId} className={`border-b transition-colors duration-200 ${theme==='dark'?'bg-gray-700 hover:bg-gray-600':'hover:bg-gray-100'}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">{employee.name}</div>
-                        <div className="text-xs text-gray-500">{employee.employeeId}</div>
+                        <div className={`text-sm font-semibold ${theme==='dark'?'text-gray-50':'text-gray-900'}`}>{employee.name}</div>
+                        <div className={`text-xs ${theme==='dark'?'text-gray-50':'text-gray-500'}`}>{employee.employeeId}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           {totalLeaves} Days
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">{consumedLeaves} Days</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className="font-bold text-sky-600">{employee.monthlyOnTime}</span> On-Time Entries
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${theme==='dark'?'text-red-400':'text-red-600'}`}>{consumedLeaves} Days</td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm`}>
+                          <span className={`font-bold ${theme==='dark'?'text-sky-400':'text-sky-600'}`}>{employee.monthlyOnTime}</span> On-Time Entries
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.shiftName} / <span className="font-medium text-orange-600">{overtimeHours} hrs OT</span>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme==='dark'?'text-gray-50':'text-gray-500'}`}>
+                          {employee.shiftName} / <span className={`font-medium ${theme==='dark'?'text-orange-300':'text-orange-600'}`}>{overtimeHours} hrs OT</span>
                       </td>
                     </tr>
                   );
@@ -186,22 +187,22 @@ export default function EmployeeTable({ onBack }) {
         </div>
 
         {/* Mobile View (Small Screens) */}
-        <div className="md:hidden divide-y divide-gray-200 bg-white">
+        <div className={`md:hidden divide-y divide-gray-200 ${theme==='dark'?'bg-gray-700':'bg-white'}`}>
             {filteredAndSortedData.map((employee) => {
                 const { totalLeaves, consumedLeaves } = getTotals(employee);
                 const overtimeHours = (employee.monthlyOvertime.seconds / 3600).toFixed(1);
 
                 return (
-                    <div key={employee.employeeId} className="p-4 border-b border-gray-200 bg-white shadow-sm">
+                    <div key={employee.employeeId} className={`p-4 border-b border-gray-200 ${theme==='dark'?'bg-gray-700':'bg-white'} shadow-sm`}>
                         <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-lg font-bold text-sky-700">{employee.name}</h3>
-                            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{employee.employeeId}</span>
+                            <h3 className={`text-lg font-bold ${theme==='dark'?'text-sky-300':'text-sky-700'}`}>{employee.name}</h3>
+                            <span className={`text-sm font-medium ${theme==='dark'?'text-gray-50 bg-gray-800':'text-gray-500 bg-gray-100'} px-2 py-1 rounded-full`}>{employee.employeeId}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="font-medium text-gray-700">Total Leaves: <span className="text-green-600 font-bold">{totalLeaves}</span></div>
-                            <div className="font-medium text-gray-700">Consumed: <span className="text-red-600 font-bold">{consumedLeaves}</span></div>
-                            <div className="font-medium text-gray-700">On-Time: <span className="font-bold">{employee.monthlyOnTime}</span></div>
-                            <div className="font-medium text-gray-700">Overtime: <span className="text-orange-600 font-bold">{overtimeHours} hrs</span></div>
+                            <div className={`font-medium ${theme==='dark'?'text-gray-50':'text-gray-700'}`}>Total Leaves: <span className={`${theme==='dark'?'text-green-300':'text-green-600'} font-bold`}>{totalLeaves}</span></div>
+                            <div className={`font-medium ${theme==='dark'?'text-gray-50':'text-gray-700'}`}>Consumed: <span className={`${theme==='dark'?'text-red-300':'text-red-600'} font-bold`}>{consumedLeaves}</span></div>
+                            <div className={`font-medium ${theme==='dark'?'text-gray-50':'text-gray-700'}`}>On-Time: <span className="font-bold">{employee.monthlyOnTime}</span></div>
+                            <div className={`font-medium ${theme==='dark'?'text-gray-50':'text-gray-700'}`}>Overtime: <span className={`${theme==='dark'?'text-orange-300':'text-orange-600'} font-bold`}>{overtimeHours} hrs</span></div>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                             <LeaveBadge label="Paid" consumed={employee.paidConsumed} total={employee.paid} />
@@ -215,7 +216,7 @@ export default function EmployeeTable({ onBack }) {
         </div>
 
         {filteredAndSortedData.length === 0 && (
-          <div className="p-6 text-center text-gray-600 bg-white text-lg font-medium">
+          <div className={`p-6 text-center ${theme==='dark'?'text-gray-50 bg-gray-800':'text-gray-600 bg-gray-100'} text-lg font-medium`}>
             <span role="img" aria-label="Not Found">😔</span> No data found for the selected filters.
           </div>
         )}

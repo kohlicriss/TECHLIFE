@@ -7,8 +7,8 @@ import {BarChart,Bar,XAxis,YAxis,CartesianGrid,} from "recharts";
 import { FaFileAlt, FaRegUser, FaUserEdit, FaUsers } from 'react-icons/fa';
 import { FiUser } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
-import LeaveDetails from "./LeaveDetails";
 import { Context } from '../HrmsContext';
+import { FaRegCircleXmark } from "react-icons/fa6";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -932,6 +932,50 @@ const EmployeePieChart = () => {
 //    );
 //};
 //
+
+
+const LeaveDetails = ({ leave, onClose }) => {
+  const {theme}=useContext(Context)
+  if (!leave) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center  bg-opacity-25 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100'} rounded-lg shadow-xl p-6 max-w-lg w-full relative`}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+        >
+          <button
+            onClick={onClose}
+            className={`w-20 h-20 absolute top-3 right-3 ${theme==='dark'?'text-gray-200':'text-gray-500'} hover:text-gray-700 text-xl`}
+          >
+         <FaRegCircleXmark className="w-8 h-8"  />
+          </button>
+          <h2 className={`text-2xl font-bold mb-4 ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Leave Request Summary</h2>
+          <div className="space-y-2">
+            <div><strong>Employee ID:</strong> {leave.employeeId}</div>
+            <div><strong>Leave Type:</strong> {leave.leaveType}</div>
+            <div><strong>Status:</strong> {leave.status}</div>
+            <div><strong>Request On:</strong> {leave.reqOn}</div>
+            <div><strong>Request To:</strong> {leave.reqTo}</div>
+            <div><strong>Leave Reason:</strong>{leave.leaveReason || "-"} </div>
+            <div><strong>Rejection Reason:</strong>{leave.rejectionReason || "-"} </div>
+            <div><strong>Approved On:</strong>{leave.approvedOn || "-"} </div>
+            <div><strong>Half Day:</strong>{leave.halfDay ? "Yes" : "No"} </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+
 const AdminLeaveHistory = () => {
     const { theme } = useContext(Context);
     const [leaveRequests, setLeaveRequests] = useState([]);
@@ -1266,6 +1310,26 @@ const AdminLeaveHistory = () => {
         </motion.div>
     );
 };
+const FormInput = ({ label, theme, ...props }) => {
+    // Determine the border/text color based on the theme
+    const inputClasses = theme === 'dark' 
+        ? 'border-gray-600 bg-gray-700 text-white' 
+        : 'border-gray-300 bg-white text-gray-800';
+
+    return (
+        <div>
+            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                {label}
+            </label>
+            <input 
+                {...props} 
+                className={`w-full px-4 py-2 border rounded-lg transition duration-300 ease-in-out focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none ${inputClasses}`} 
+            />
+        </div>
+    );
+};
+// ----------------------------------------------------------------
+
 function EmployeeAttendanceForm({ onClose, onSubmit }) {
     const { theme } = useContext(Context);
     const [formData, setFormData] = useState({
@@ -1294,106 +1358,221 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
     const handleConfirmSubmit = async () => {
         setIsSubmitting(true);
         try {
+            // Note: The alert is now handled by the onSubmit success message in the parent component, 
+            // but is kept here for direct feedback if the parent isn't setup.
             await axios.post(
                 "https://hrms.anasolconsultancyservices.com/api/attendance/personalleaves/add",
                 formData
             );
-            alert(`Added Attendance successfully! 🎉}`);
+            alert(`Attendance added successfully! 🎉`);
             onSubmit(formData);
             setShowConfirm(false);
             onClose();
         } catch (error) {
-            alert("Failed to submit attendance. Please try again.");
+            console.error("Submission error:", error);
+            alert("Failed to submit attendance. Please check your network and data, then try again.");
         } finally {
             setIsSubmitting(false);
         }
     };
+    
+    // Determine main form background and text color
+    const formThemeClasses = theme === 'dark' 
+        ? 'bg-gray-800 text-white border-gray-700' 
+        : 'bg-white text-gray-800 border-green-200';
 
     return (
-        <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <motion.div className="relative w-full max-w-3xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ duration: 0.3 }}>
-                <form onSubmit={handleSubmit} className={`relative w-full max-w-3xl mx-auto rounded-lg shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-green-200 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>
-                    <div className="mb-4 text-center rounded-t bg-gradient-to-br from-orange-200 to-orange-600">
-                        <h2 className={`text-2xl pt-6 font-bold border-b pb-8 ${theme === 'dark' ? 'text-white border-gray-100' : 'text-gray-800 border-gray-200'}`}>Add Employee Attendance</h2>
+        <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.3 }}
+            onClick={onClose} // Close on backdrop click
+        >
+            <motion.div 
+                className="w-full max-w-2xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform"
+                initial={{ scale: 0.95, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                exit={{ scale: 0.95, opacity: 0 }} 
+                transition={{ duration: 0.3 }}
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the form
+            >
+                <form 
+                    onSubmit={handleSubmit} 
+                    className={`relative rounded-3xl shadow-2xl ${formThemeClasses} transition-all duration-300`}
+                >
+                    <div className="text-center rounded-t-3xl overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+                            <h2 className="text-2xl font-extrabold text-white">
+                                Add Employee Attendance
+                            </h2>
+                        </div>
                     </div>
-                    <div className="space-y-4 p-4">
-                        {/* ...existing input fields... */}
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee ID:</label>
-                            <input type="text" name="employeeId" value={formData.employeeId} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required />
+
+                    <div className="space-y-6 p-6">
+                        {/* Row 1: Employee ID */}
+                        <FormInput 
+                            label="Employee ID"
+                            theme={theme}
+                            type="text" 
+                            name="employeeId" 
+                            value={formData.employeeId} 
+                            onChange={handleChange} 
+                            required 
+                        />
+                        
+                        {/* Row 2: Month & Year */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormInput 
+                                label="Month (1-12)"
+                                theme={theme}
+                                type="number" 
+                                name="month" 
+                                value={formData.month} 
+                                onChange={handleChange} 
+                                required 
+                                min="1" 
+                                max="12"
+                            />
+                            <FormInput 
+                                label="Year (e.g., 2025)"
+                                theme={theme}
+                                type="number" 
+                                name="year" 
+                                value={formData.year} 
+                                onChange={handleChange} 
+                                required 
+                                min="2000" 
+                                max="2100"
+                            />
                         </div>
-                        <div className="flex gap-2">
-                            <div className="flex-1">
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Month:</label>
-                                <input type="number" name="month" value={formData.month} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required min="1" max="12" />
-                            </div>
-                            <div className="flex-1">
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Year:</label>
-                                <input type="number" name="year" value={formData.year} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required min="2000" max="2100" />
-                            </div>
+                        
+                        <h3 className={`text-lg font-semibold border-b pb-2 ${theme === 'dark' ? 'text-gray-300 border-gray-700' : 'text-gray-700 border-gray-200'}`}>
+                            Leave Details (Days)
+                        </h3>
+
+                        {/* Row 3: Paid & Sick Leaves */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormInput 
+                                label="Paid Leaves"
+                                theme={theme}
+                                type="number" 
+                                name="paid" 
+                                value={formData.paid} 
+                                onChange={handleChange} 
+                                required 
+                                min="0"
+                            />
+                            <FormInput 
+                                label="Sick Leaves"
+                                theme={theme}
+                                type="number" 
+                                name="sick" 
+                                value={formData.sick} 
+                                onChange={handleChange} 
+                                required 
+                                min="0" 
+                            />
                         </div>
-                        <div className="flex gap-2">
-                            <div className="flex-1">
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Paid:</label>
-                                <input type="number" name="paid" value={formData.paid} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required min="0" />
-                            </div>
-                            <div className="flex-1">
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Sick:</label>
-                                <input type="number" name="sick" value={formData.sick} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required min="0" />
-                            </div>
+
+                        {/* Row 4: Casual & Unpaid Leaves */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormInput 
+                                label="Casual Leaves"
+                                theme={theme}
+                                type="number" 
+                                name="casual" 
+                                value={formData.casual} 
+                                onChange={handleChange} 
+                                required 
+                                min="0"
+                            />
+                            <FormInput 
+                                label="Unpaid Leaves"
+                                theme={theme}
+                                type="number" 
+                                name="unpaid" 
+                                value={formData.unpaid} 
+                                onChange={handleChange} 
+                                required 
+                                min="0" 
+                            />
                         </div>
-                        <div className="flex gap-2">
-                            <div className="flex-1">
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Casual:</label>
-                                <input type="number" name="casual" value={formData.casual} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required min="0" />
-                            </div>
-                            <div className="flex-1">
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Unpaid:</label>
-                                <input type="number" name="unpaid" value={formData.unpaid} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required min="0" />
-                            </div>
-                        </div>
-                        <div>
-                            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Shift Name:</label>
-                            <input type="text" name="shiftName" value={formData.shiftName} onChange={handleChange} className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`} required />
-                        </div>
-                        <div className="mt-6 flex justify-end space-x-3 border-t p-4">
-                            <button type="submit" className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors" disabled={isSubmitting} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Submit</button>
-                            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Cancel</button>
+                        
+                        {/* Row 5: Shift Name */}
+                        <FormInput 
+                            label="Shift Name"
+                            theme={theme}
+                            type="text" 
+                            name="shiftName" 
+                            value={formData.shiftName} 
+                            onChange={handleChange} 
+                            required 
+                        />
+
+                        {/* Action Buttons */}
+                        <div className="pt-4 flex justify-end space-x-3">
+                            <motion.button 
+                                type="button" 
+                                onClick={onClose} 
+                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Cancel
+                            </motion.button>
+                            <motion.button 
+                                type="submit" 
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-colors" 
+                                disabled={isSubmitting} 
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                {isSubmitting ? 'Processing...' : 'Submit Attendance'}
+                            </motion.button>
                         </div>
                     </div>
                 </form>
-                {/* Confirmation Box */}
+                
+                {/* Confirmation Box (Modal) */}
                 <AnimatePresence>
                     {showConfirm && (
                         <motion.div
-                            className="fixed inset-0 z-60 flex items-center justify-center  bg-opacity-25 backdrop-blur-sm"
+                            className="fixed inset-0 z-60 flex items-center justify-center bg-black/40"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
                             <motion.div
-                                className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm text-center`}
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
+                                className={`rounded-xl shadow-2xl p-8 w-full max-w-sm text-center ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
+                                initial={{ scale: 0.8, y: -50 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.8, y: -50 }}
                             >
-                                <h3 className="text-lg font-bold mb-4 text-indigo-600">Confirm Submission</h3>
-                                <p className="mb-6 text-gray-700 dark:text-gray-200">Are you sure you want to submit this attendance record?</p>
+                                <h3 className="text-xl font-extrabold mb-3 text-indigo-600">Confirm Submission</h3>
+                                <p className="mb-6 text-gray-600 dark:text-gray-300">
+                                    Please confirm the attendance record for **Employee ID {formData.employeeId}**
+                                </p>
                                 <div className="flex justify-center gap-4">
-                                    <button
-                                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                                    <motion.button
+                                        className="px-5 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
                                         onClick={handleConfirmSubmit}
                                         disabled={isSubmitting}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                     >
                                         {isSubmitting ? "Submitting..." : "Yes, Submit"}
-                                    </button>
-                                    <button
-                                        className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
+                                    </motion.button>
+                                    <motion.button
+                                        className="px-5 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition dark:bg-gray-600 dark:text-gray-200"
                                         onClick={() => setShowConfirm(false)}
                                         disabled={isSubmitting}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
                                     >
                                         Cancel
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </motion.div>
                         </motion.div>
@@ -1402,28 +1581,55 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
             </motion.div>
         </motion.div>
     );
-  };
+};
   const API_ENDPOINT = "https://hrms.anasolconsultancyservices.com/api/attendance/shifts";
 
+// --- Custom Input Component for clean JSX ---
+const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
+    // Determine the border/text color based on the theme
+    const inputClasses = theme === 'dark' 
+        ? 'border-gray-600 bg-gray-700 text-white' 
+        : 'border-gray-300 bg-white text-gray-800';
+
+    return (
+        <div>
+            <label 
+                htmlFor={props.id || props.name} 
+                className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}
+            >
+                {label}
+            </label>
+            <input 
+                type={type}
+                {...props} 
+                className={`w-full px-4 py-2 border rounded-lg transition duration-300 ease-in-out focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 focus:outline-none ${inputClasses}`} 
+            />
+            {helperText && (
+                <p className={`text-xs mt-1 italic ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {helperText}
+                </p>
+            )}
+        </div>
+    );
+};
+// ---------------------------------------------
+
 const ShiftForm = ({onClose}) => {
-    // State for form data
+    // Logic (UNCHANGED)
     const { theme } = useContext(Context);
     const [formData, setFormData] = useState({
         shiftName: '',
-        startTime: '', // Initialize with a default HH:MM for easy user input
+        startTime: '',
         endTime: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submissionMessage, setSubmissionMessage] = useState('');
 
-    // Utility function to convert HH:MM to HH:MM:SS
-    // The input type="time" gives HH:MM, we append :00 for seconds.
     const convertToHHMMSS = (timeString) => {
         if (!timeString || timeString.length !== 5) return '';
         return `${timeString}:00`;
     };
 
-    // Handle input changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevData => ({
@@ -1432,12 +1638,11 @@ const ShiftForm = ({onClose}) => {
         }));
     };
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmissionMessage(''); // Clear previous messages
+        setSubmissionMessage('');
 
-        // 1. Initial Confirmation Box
+        // The original logic with window.confirm (preserved as requested)
         const isConfirmed = window.confirm(
             "Are you sure you want to submit this shift data?\n" +
             `Shift Name: ${formData.shiftName}\n` +
@@ -1446,12 +1651,11 @@ const ShiftForm = ({onClose}) => {
         );
 
         if (!isConfirmed) {
-            return; // User cancelled the submission
+            return;
         }
 
         setIsSubmitting(true);
 
-        // Prepare data for the API
         const dataToSubmit = {
             shiftName: formData.shiftName,
             startTime: convertToHHMMSS(formData.startTime),
@@ -1459,19 +1663,15 @@ const ShiftForm = ({onClose}) => {
         };
 
         try {
-            // 2. API Call
             const response = await axios.post(API_ENDPOINT, dataToSubmit);
 
-            // 3. Post-Submission Confirmation/Success Box
             alert(`Shift submitted successfully! 🎉\nStatus: ${response.status}\nMessage: ${response.data.message || 'Data received by server.'}`);
             setSubmissionMessage('Success: Shift data submitted!');
-            // Optionally clear the form
             setFormData({ shiftName: '', startTime: '', endTime: '' });
             onClose();
 
         } catch (error) {
             console.error('Submission Error:', error.response?.data || error.message);
-            // 3. Post-Submission Error Box
             alert(`Submission failed! 😔\nError: ${error.response?.data?.message || error.message}`);
             setSubmissionMessage(`Error: Submission failed! ${error.response?.data?.message || error.message}`);
         } finally {
@@ -1479,99 +1679,126 @@ const ShiftForm = ({onClose}) => {
         }
     };
 
+    // UI Redesign Starts Here
+    const formThemeClasses = theme === 'dark' 
+        ? 'bg-gray-800 text-white border-gray-700' 
+        : 'bg-white text-gray-800 border-gray-100';
+    
+    const headerGradient = 'bg-gradient-to-r from-teal-500 to-cyan-600';
+
     return (
-        <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-25 backdrop-blur-sm p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <motion.div className="relative w-full max-w-3xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ duration: 0.3 }}>
-                <form onSubmit={handleSubmit} className={`relative w-full max-w-3xl mx-auto rounded-lg shadow-2xl my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100 border border-green-200 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>
-                    <div className="mb-4 text-center rounded-t bg-gradient-to-br from-orange-200 to-orange-600">
-                        <h2 className={`text-2xl pt-6 font-bold border-b pb-8 ${theme === 'dark' ? 'text-white border-gray-100' : 'text-gray-800 border-gray-200'}`}>Create New Shift</h2>
-                    </div>
-                
-                {/* Shift Name Input */}
-                <div className="space-y-4 p-4">
-                <div className="mb-4">
-                    <label htmlFor="shiftName" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                        Shift Name
-                    </label>
-                    <input
-                        type="text"
-                        id="shiftName"
-                        name="shiftName"
-                        value={formData.shiftName}
-                        onChange={handleChange}
-                        required
-                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                        placeholder="e.g., Morning Shift"
-                    />
-                </div>
-
-                {/* Start Time Input */}
-                <div className="mb-4">
-                    <label htmlFor="startTime" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                        Start Time (HH:MM)
-                    </label>
-                    <input
-                        type="time" // Use type="time" for native time picker/input
-                        id="startTime"
-                        name="startTime"
-                        value={formData.startTime}
-                        onChange={handleChange}
-                        required
-                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                    />
-                    <p className={`text-sm mt-1  ${theme==='dark' ? 'text-white':'text-black'}`}>
-                        *Will be submitted as {convertToHHMMSS(formData.startTime)}
-                    </p>
-                </div>
-
-                {/* End Time Input */}
-                <div className="mb-6">
-                    <label htmlFor="endTime" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                        End Time (HH:MM)
-                    </label>
-                    <input
-                        type="time" // Use type="time" for native time picker/input
-                        id="endTime"
-                        name="endTime"
-                        value={formData.endTime}
-                        onChange={handleChange}
-                        required
-                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                    />
-                     <p className={`text-sm mt-1  ${theme==='dark' ? 'text-white':'text-black'}`}>
-                        *Will be submitted as {convertToHHMMSS(formData.endTime)}
-                    </p>
-                </div>
-                </div>
-
-                {/* Submission Button */}
-                 <div className="mt-6 flex justify-end space-x-3 border-t p-4">
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={` py-2 px-4 rounded-md text-white font-semibold transition duration-300 ease-in-out ${
-                        isSubmitting 
-                            ? 'bg-indigo-400 cursor-not-allowed' 
-                            : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
-                    }`}
+        <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.3 }}
+            onClick={onClose} // Allow closing by clicking backdrop
+        >
+            <motion.div 
+                className="w-full max-w-lg mx-auto my-auto max-h-[90vh] overflow-y-auto transform" 
+                initial={{ scale: 0.9, y: -50 }} 
+                animate={{ scale: 1, y: 0 }} 
+                exit={{ scale: 0.9, y: -50 }} 
+                transition={{ duration: 0.3 }}
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            >
+                <form 
+                    onSubmit={handleSubmit} 
+                    className={`relative w-full rounded-3xl shadow-3xl overflow-hidden ${formThemeClasses} transition-all duration-300`}
                 >
-                    {isSubmitting ? 'Submitting...' : 'Create Shift'}
-                </button>
-                <button type="button" onClick={onClose} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Cancel</button>
-                </div>
+                    {/* Professional Header */}
+                    <div className={`text-center rounded-t-3xl ${headerGradient} p-6`}>
+                        <h2 className="text-2xl font-extrabold text-white">
+                            <i className="fas fa-clock mr-2"></i> Create New Shift
+                        </h2>
+                        <p className="text-sm text-white/90 mt-1">Define the operational hours for a new shift.</p>
+                    </div>
 
-                {/* Submission Status Message */}
-                {submissionMessage && (
-                    <p 
-                        className={`mt-4 text-center p-2 rounded-md text-sm ${
-                            submissionMessage.startsWith('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}
-                    >
-                        {submissionMessage}
-                    </p>
-                )}
-            </form>
-        </motion.div>
+                    <div className="space-y-6 p-8">
+                        
+                        {/* Shift Name Input */}
+                        <Form 
+                            label="Shift Name"
+                            theme={theme}
+                            type="text" 
+                            name="shiftName" 
+                            value={formData.shiftName} 
+                            onChange={handleChange} 
+                            required 
+                            placeholder="e.g., Night Shift, General Duty"
+                        />
+                        
+                        {/* Time Inputs Grouped and Side-by-Side */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            {/* Start Time Input */}
+                            <Form 
+                                label="Start Time (HH:MM)"
+                                theme={theme}
+                                type="time" 
+                                name="startTime" 
+                                value={formData.startTime} 
+                                onChange={handleChange} 
+                                required 
+                                helperText={`Submits as: ${convertToHHMMSS(formData.startTime)}`}
+                            />
+                            
+                            {/* End Time Input */}
+                            <Form 
+                                label="End Time (HH:MM)"
+                                theme={theme}
+                                type="time" 
+                                name="endTime" 
+                                value={formData.endTime} 
+                                onChange={handleChange} 
+                                required 
+                                helperText={`Submits as: ${convertToHHMMSS(formData.endTime)}`}
+                            />
+                        </div>
+
+                        {/* Submission Status Message (Better Visual Placement) */}
+                        <AnimatePresence>
+                            {submissionMessage && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className={`mt-4 text-center p-3 rounded-lg text-sm font-medium ${
+                                        submissionMessage.startsWith('Success') 
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-100' 
+                                            : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-100'
+                                    }`}
+                                >
+                                    {submissionMessage}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        
+                        {/* Action Buttons */}
+                        <div className="pt-4 flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
+                            <motion.button 
+                                type="button" 
+                                onClick={onClose} 
+                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Cancel
+                            </motion.button>
+                            
+                            <motion.button 
+                                type="submit" 
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:bg-indigo-400 transition-colors" 
+                                disabled={isSubmitting} 
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                {isSubmitting ? 'Creating Shift...' : 'Create Shift'}
+                            </motion.button>
+                        </div>
+                    </div>
+                </form>
+            </motion.div>
         </motion.div>
     );
 };

@@ -437,6 +437,27 @@ const ProjectCard = () => {
         </motion.div>
     );
 };
+const FormInput = ({ label, theme, placeholder, type = 'text', ...props }) => {
+    const inputClasses = theme === 'dark' 
+        ? 'border-gray-600 bg-gray-700 text-white' 
+        : 'border-gray-300 bg-white text-gray-800';
+
+    return (
+        <div className='relative mb-2'>
+            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                {label}
+            </label>
+            <input 
+                type={type} 
+                placeholder={placeholder} 
+                {...props} 
+                className={`w-full px-4 py-2 border rounded-lg transition duration-300 text-sm 
+                    focus:ring-4 focus:ring-indigo-500/40 focus:border-indigo-500 focus:outline-none 
+                    ${inputClasses}`} 
+            />
+        </div>
+    );
+};
 // --- MyTeam Data and Component ---
 const MyTeam = () => {
     const { userData,theme } = useContext(Context);
@@ -532,67 +553,128 @@ const MyTeam = () => {
                 )}
             </div>
             {/* Add/Edit Form */}
-            <AnimatePresence>
-                {showForm && (
-                    <motion.div
-                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                    <motion.form
-                            className={`w-full max-w-3xl rounded-lg shadow-2xl  relative ${theme==='dark' ? 'bg-gray-800 text-white':'bg-white text-black'}`}
-                            onSubmit={handleAddOrEdit}
-                            initial={{ scale: 0.9, y: 50 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 50 }}
-                            transition={{ duration: 0.3 }}
-                     >    
-                        <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-blue-100 to-blue-400">
-                        <h3 className="text-2xl font-bold  border-gray-200   pt-6  text-gray-600 border-lg pb-8"> <FaUsers className={`w-6 h-6 ${theme==='dark'?'text-white':'text-gray-800'}text-white`}/>{editIndex !== null ? "Edit Team Member" : "Add Team Member"}</h3>  
-                        </div>
-                        <div className="space-y-4 p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div className='relative mb-2'>
-                                <label className={`block text-sm  font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Profile Image & Name</label>
-                            <input type="text" placeholder="Profile Image URL + Name" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                            </div>
-                            <div className='relative mb-2'>
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee ID</label>
-                            <input type="text" placeholder="Employee ID" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.employee_id} onChange={e => setFormData({ ...formData, employee_id: e.target.value })} required />
-                            </div>
-                            <div className='relative mb-2'>
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Date</label>
-                            <input type="date" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
-                            </div>
-                            <div className='relative mb-2'>
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Role</label>
-                            <input type="text" placeholder="Role" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required />
-                            </div>
-                            <div className='relative mb-2'>
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Login Time</label>
-                            <input type="text" placeholder="Login Time" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.login_time} onChange={e => setFormData({ ...formData, login_time: e.target.value })} />
-                            </div>
-                            <div className='relative mb-2'>
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Logout Time</label>
-                            <input type="text" placeholder="Logout Time" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.logout_time} onChange={e => setFormData({ ...formData, logout_time: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
-                            <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
-                        </div>
-                        </div>
-                    </motion.form>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+           <AnimatePresence>
+    {showForm && (
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            // Added backdrop click to close
+            onClick={() => { setShowForm(false); setEditIndex(null); }} 
+        >
+            <motion.form
+                // Reduced max-width for better focus
+                className={`w-full max-w-xl rounded-3xl shadow-2xl relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
+                onSubmit={handleAddOrEdit}
+                initial={{ scale: 0.8, y: -50 }} // Smoother animation
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.8, y: -50 }}
+                transition={{ duration: 0.3 }}
+                // Prevent modal closure when clicking inside
+                onClick={(e) => e.stopPropagation()}
+            > 
+                {/* Professional Header */}
+                <div className={`text-center rounded-t-3xl p-6 bg-gradient-to-r from-blue-600 to-indigo-700`}>
+                    <h3 className="text-2xl font-extrabold text-white flex items-center justify-center space-x-3"> 
+                        {/* Using a clear icon */}
+                        <FaUsers className='w-6 h-6 text-white'/> 
+                        <span>{editIndex !== null ? "Edit Team Member Details" : "Add New Team Member"}</span>
+                    </h3> 
+                    <p className="text-sm text-white/80 mt-1">Provide the necessary details for team management.</p>
+                </div>
+
+                <div className="space-y-6 p-8">
+                    {/* Form Fields Grid - Cleaner gap and padding */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        
+                        {/* 1. Name Input */}
+                        <FormInput 
+                            label="Employee Full Name"
+                            theme={theme}
+                            placeholder="e.g., John Doe" 
+                            value={formData.name} 
+                            onChange={e => setFormData({ ...formData, name: e.target.value })} 
+                            required 
+                            // Note: Removed the "Profile Image URL" text from the label for simplicity, as it's not a true file upload field.
+                        />
+                        
+                        {/* 2. Employee ID */}
+                        <FormInput 
+                            label="Employee ID"
+                            theme={theme}
+                            placeholder="e.g., E_123" 
+                            value={formData.employee_id} 
+                            onChange={e => setFormData({ ...formData, employee_id: e.target.value })} 
+                            required 
+                        />
+                        
+                        {/* 3. Date */}
+                        <FormInput 
+                            label="Assignment Date"
+                            theme={theme}
+                            type="date" 
+                            value={formData.date} 
+                            onChange={e => setFormData({ ...formData, date: e.target.value })} 
+                            required 
+                        />
+                        
+                        {/* 4. Role */}
+                        <FormInput 
+                            label="Role/Designation"
+                            theme={theme}
+                            placeholder="e.g., Backend Developer" 
+                            value={formData.role} 
+                            onChange={e => setFormData({ ...formData, role: e.target.value })} 
+                            required 
+                        />
+
+                        {/* 5. Login Time - Changed to type="time" for better UX */}
+                        <FormInput 
+                            label="Login Time"
+                            theme={theme}
+                            type="time" 
+                            placeholder="HH:MM AM/PM" 
+                            value={formData.login_time} 
+                            onChange={e => setFormData({ ...formData, login_time: e.target.value })} 
+                        />
+                        
+                        {/* 6. Logout Time - Changed to type="time" for better UX */}
+                        <FormInput 
+                            label="Logout Time"
+                            theme={theme}
+                            type="time" 
+                            placeholder="HH:MM AM/PM" 
+                            value={formData.logout_time} 
+                            onChange={e => setFormData({ ...formData, logout_time: e.target.value })} 
+                        />
+                    </div>
+                    
+                    {/* Action Buttons - Professional Footer Style */}
+                    <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
+                        <motion.button 
+                            type="button" 
+                            className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600" 
+                            onClick={() => { setShowForm(false); setEditIndex(null); }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Cancel
+                        </motion.button>
+                        <motion.button 
+                            type="submit" 
+                            className="px-5 py-2.5 rounded-lg border border-transparent bg-blue-600 text-sm font-semibold text-white shadow-md hover:bg-blue-700 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            {editIndex !== null ? "Update Details" : "Add Team Member"}
+                        </motion.button>
+                    </div>
+                </div>
+            </motion.form>
+        </motion.div>
+    )}
+</AnimatePresence>
             <div className="overflow-x-auto rounded-xl">
                 <table className="min-w-full ">
                     <thead className={`w-full ${theme==='dark' ? 'bg-gray-500 text-white':'bg-blue-50 text-blue-800'}`}>
@@ -653,6 +735,29 @@ const MyTeam = () => {
     );
 };
 
+const Form = ({ label, theme, placeholder, type = 'text', ...props }) => {
+    // Standard input styling based on theme
+    const inputClasses = theme === 'dark' 
+        ? 'border-gray-600 bg-gray-700 text-white' 
+        : 'border-gray-300 bg-white text-gray-800';
+
+    return (
+        <div className='relative'>
+            {/* The label is now placed normally, instead of using the complex absolute positioning */}
+            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                {label}
+            </label>
+            <input 
+                type={type} 
+                placeholder={placeholder} 
+                {...props} 
+                className={`w-full px-4 py-2 border rounded-lg transition duration-300 text-sm 
+                    focus:ring-2 focus:ring-green-600/40 focus:border-green-600 focus:outline-none 
+                    ${inputClasses}`} 
+            />
+        </div>
+    );
+};
 // --- ProjectStatus Data and Component ---
 function ProjectStatus() {
     const { userData,theme } = useContext(Context);
@@ -746,56 +851,109 @@ function ProjectStatus() {
                 )}
             </div>
             <AnimatePresence>
-                {showForm && (
-                    <motion.div
-                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <motion.form
-                            className={`w-full max-w-md  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
-                            onSubmit={handleAddOrEdit}
-                            initial={{ scale: 0.9, y: 50 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 50 }}
-                            transition={{ duration: 0.3 }}
+    {showForm && (
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            // Added backdrop click to close
+            onClick={() => { setShowForm(false); setEditIndex(null); }} 
+        >
+            <motion.form
+                // Professional width and clean background classes
+                className={`w-full max-w-lg rounded-3xl shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
+                onSubmit={handleAddOrEdit}
+                initial={{ scale: 0.8, y: -50 }} // Smoother animation
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.8, y: -50 }}
+                transition={{ duration: 0.3 }}
+                // Prevent modal closure when clicking inside
+                onClick={(e) => e.stopPropagation()}
+            > 
+                {/* Professional Header - Using Green/Teal for "Status/Project" theme */}
+                <div className="text-center rounded-t-3xl p-6 bg-gradient-to-r from-green-500 to-teal-600">
+                    <h3 className="text-2xl font-extrabold text-white flex items-center justify-center space-x-3"> 
+                        {/* Using a clear icon (assuming you have access to a project/check icon) */}
+                        <i className="fas fa-tasks mr-2"></i>
+                        <span>{editIndex !== null ? "Edit Project Status" : "Update Project Status"}</span>
+                    </h3> 
+                    <p className="text-sm text-white/90 mt-1">Submit the current progress and estimated duration.</p>
+                </div>
+
+                <div className="space-y-6 p-8">
+                    <div className="grid grid-cols-1 gap-6">
+                        
+                        {/* 1. Project ID */}
+                        <Form 
+                            label="Project ID"
+                            theme={theme}
+                            placeholder="e.g., PROJ-2025-001" 
+                            value={formData.Project_id} 
+                            onChange={e => setFormData({ ...formData, Project_id: e.target.value })} 
+                            required 
+                        />
+                        
+                        {/* 2. Project Name */}
+                        <Form 
+                            label="Project Name"
+                            theme={theme}
+                            placeholder="e.g., HRMS Deployment" 
+                            value={formData.Project_name} 
+                            onChange={e => setFormData({ ...formData, Project_name: e.target.value })} 
+                            required 
+                        />
+                        
+                        {/* 3. Status (%) */}
+                        <Form 
+                            label="Status Percentage (%)"
+                            theme={theme}
+                            type="number" 
+                            placeholder="0 to 100" 
+                            value={formData.Status} 
+                            onChange={e => setFormData({ ...formData, Status: e.target.value })} 
+                            required 
+                            min="0"
+                            max="100"
+                        />
+                        
+                        {/* 4. Duration */}
+                        <Form 
+                            label="Estimated Duration (e.g., 4 weeks)"
+                            theme={theme}
+                            type="text" 
+                            placeholder="e.g., 4 Weeks Remaining" 
+                            value={formData.Duration} 
+                            onChange={e => setFormData({ ...formData, Duration: e.target.value })} 
+                            required 
+                        />
+                    </div>
+                    
+                    {/* Action Buttons - Professional Footer */}
+                    <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
+                        <motion.button 
+                            type="button" 
+                            className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600" 
+                            onClick={() => { setShowForm(false); setEditIndex(null); }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            <div className=" mb-4 text-center rounded-lg bg-gradient-to-br from-green-100 to-green-400">
-                            <h3 className={`text-2xl font-bold  border-gray-200   pt-6   border-lg pb-8 ${theme==='dark' ? 'text-gray-600 ':'text-gray-800'}`}>{editIndex !== null ? "Edit Project Status" : "Update Project Status"}</h3>
-                            </div>
-                             <div className="space-y-4 p-4">
-                            <div className="grid grid-cols-1 gap-2">
-                                <div className='relative mb-2'>
-                                 <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project ID</label>   
-                                <input type="text" placeholder="Project ID" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Project_id} onChange={e => setFormData({ ...formData, Project_id: e.target.value })} required />
-                                </div>
-                                <div className='relative mb-2'>
-                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Project Name</label>   
-                                <input type="text" placeholder="Project Name" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Project_name} onChange={e => setFormData({ ...formData, Project_name: e.target.value })} required />
-                                </div>
-                                <div className='relative mb-2'>
-                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Status (%)</label>
-                                <input type="number" placeholder="Status (%)" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Status} onChange={e => setFormData({ ...formData, Status: e.target.value })} required />
-                                </div>
-                                <div className='relative mb-2'>
-                                <label className={`absolute -top-3 left-2 px-1 text-sm font-medium ${theme==='dark' ? 'bg-gray-700 text-white':'bg-white text-gray-800'}`}>Duration</label>
-                                <input type="text" placeholder="Duration" className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none" value={formData.Duration} onChange={e => setFormData({ ...formData, Duration: e.target.value })} required />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 mt-2 justify-center">
-                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editIndex !== null ? "Update" : "Add"}</button>
-                                <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => { setShowForm(false); setEditIndex(null); }}>Cancel</button>
-                            </div>
-                            </div>
-                        </motion.form>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            Cancel
+                        </motion.button>
+                        <motion.button 
+                            type="submit" 
+                            className="px-5 py-2.5 rounded-lg border border-transparent bg-green-600 text-sm font-semibold text-white shadow-md hover:bg-green-700 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            {editIndex !== null ? "Update Status" : "Add Status"}
+                        </motion.button>
+                    </div>
+                </div>
+            </motion.form>
+        </motion.div>
+    )}
+</AnimatePresence>
             
     {/* Table container with responsive overflow */}
     <div className="overflow-x-auto rounded-xl">
@@ -861,6 +1019,45 @@ function ProjectStatus() {
     );
 }
 
+const Forms = ({ label, theme, placeholder, type = 'text', children, className = '', ...props }) => {
+    // Standard input styling based on theme
+    const inputClasses = theme === 'dark' 
+        ? 'border-gray-600 bg-gray-700 text-white' 
+        : 'border-gray-300 bg-white text-gray-800';
+
+    const inputStyle = `w-full px-4 py-3 border rounded-lg transition duration-300 text-sm 
+                        focus:ring-2 focus:ring-purple-600/40 focus:border-purple-600 focus:outline-none 
+                        ${inputClasses} ${className}`;
+
+    return (
+        <div className='relative'>
+            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                {label}
+            </label>
+            {type === 'textarea' ? (
+                <textarea 
+                    placeholder={placeholder} 
+                    {...props} 
+                    className={`${inputStyle} min-h-[100px]`} 
+                />
+            ) : type === 'select' ? (
+                 <select 
+                    {...props} 
+                    className={`${inputStyle} appearance-none h-12`}
+                 >
+                    {children}
+                 </select>
+            ) : (
+                <input 
+                    type={type} 
+                    placeholder={placeholder} 
+                    {...props} 
+                    className={inputStyle} 
+                />
+            )}
+        </div>
+    );
+};
 // ...existing code...
 function Project() {
     const { userData,theme } = useContext(Context);
@@ -923,7 +1120,7 @@ function Project() {
         status: "Ongoing",
         start_date: "",
         end_date: "",
-        Team_Lead:"",
+        team_Lead:"",
         Priority: "Medium",
         Open_task: 0,
         Closed_task: 0,
@@ -947,7 +1144,7 @@ function Project() {
             status: "Ongoing",
             start_date: "",
             end_date: "",
-            Team_lead:"",
+            team_Lead:"",
             Priority: "Medium",
             Open_task: 0,
             Closed_task: 0,
@@ -1048,366 +1245,373 @@ const handleRowClick = (proj) => {
             </div>
             {/* Full-page overlay for the form */}
             <AnimatePresence>
-                {showCreateForm && (
-                    <motion.div
-                        className="fixed backdrop-blur-sm bg-opacity-30 inset-0 z-50 flex items-center justify-center "
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                         <motion.div className="relative  w-full max-w-3xl mx-auto  my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95 md:scale-100"    initial={{ scale: 0.9, opacity: 0 }}    animate={{ scale: 1, opacity: 1 }}    exit={{ scale: 0.9, opacity: 0 }}    transition={{ duration: 0.3 }}>
-                        <motion.form
-                            className={`w-full max-w-3xl  rounded-lg shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} `}
-                            onSubmit={handleCreateProject}
-                            initial={{ scale: 0.9, y: 50 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 50 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            <div className="  mb-4 text-start rounded-t bg-gradient-to-br from-purple-400 to-purple-700">
-                                 
-                                           
-                            <h3 className={`text-2xl font-bold   border-gray-200   pt-6 ml-10   border-lg pb-8 ${theme === 'dark' ? 'text-gray-200 ' : 'text-gray-800 '}`}>Create New Project</h3>
-                            </div>
-                            <div className="space-y-4 p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Project Name</label>
-                                 
-                                <input
-                                    type="text"
-                                    placeholder="Project Name"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.project_name}
-                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                    required
-                                />
-                                </div>
-                                 <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}> Team Lead</label>
-                                 
-                                <input
-                                    type="text"
-                                    placeholder="Team Lead + Profile image URl"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.project_name}
-                                    onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                    required 
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Status</label>
-                                 
-                                <select
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
-                                    value={newProject.status}
-                                    onChange={e => setNewProject({ ...newProject, status: e.target.value })}
-                                >
-                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
-                                    <option value="Ongoing"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
-                                    <option value="Upcoming"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
-                                    <option value="Completed"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
-                                </select>
-                                </div>
-                                <div className="relative mt-1">
-                                    <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Start Date</label>
-                                <input
-                                    type="date"
-                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.start_date}
-                                    onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
-                                    required
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                    <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>End Date</label>
-                                <input
-                                    type="date"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.end_date}
-                                    onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
-                                    required
-                                />
-                                </div>
-                                   <div className="relative mt-1">
-                                <label className={`block text-sm font-medium   ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Priority</label>
-                             
-                                <select
-                                   className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none  ${theme==='dark' ? 'border border-gray-100  ':'border border-gray-300 '} shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
-                                    value={newProject.Priority}
-                                    onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
-                                >
-                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select</option>
-                                    <option value="High"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
-                                    <option value="Medium"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
-                                    <option value="Low"className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
-                                </select>
-                                </div>
-                                 <div className="relative mt-1">
-                                <label className={`block text-sm font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Open Tasks</label>
-                               
-                                <input
-                                    type="number"
-                                    placeholder="Open Tasks"
-                                     className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.Open_task}
-                                    onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Closed Tasks</label>
-                                <input
-                                    type="number"
-                                    placeholder="Closed Tasks"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    value={newProject.Closed_task}
-                                    onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
-                                />
-                                </div>
-                                <div className="relative mt-1">
-                                <label className={`block text-sm  font-medium  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Project Rating</label>
-                                <input
-                                    type="number"
-                                    placeholder="Rating (1-5)"
-                                    className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                    min="1"
-                                    max="5"
-                                    value={newProject.rating}
-                                    onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
-                                />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Employee_team</label>
-                                    <textarea
-                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                        value={newProject.Employee_team}
-                                        onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
-                                    />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Remark</label>
-                                    <textarea
-                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                        value={newProject.remark}
-                                        onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
-                                    />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Completion Note</label>
-                                    <textarea
-                                        className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                        value={newProject.completionNote}
-                                        onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
-                                    />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                        Related Links:</label>
-                                    {newProject.relatedLinks.map((link, index) => (
-                                        <div key={index} className="flex gap-2 mb-0">
-                                            <input
-                                                type="url"
-                                                value={link}
-                                                onChange={e => handleRelatedLinkChange(index, e.target.value)}
-                                                className={`w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${theme==='dark' ? 'border border-gray-100 text-white ':'border border-gray-300 text-black'}`}
-                                                placeholder="Enter related link URL"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => removeRelatedLink(index)}
-                                                className="px-3 py-2 text-red-600 hover:text-red-800"
-                                                disabled={newProject.relatedLinks.length === 1}
-                                            >
-                                                <FaTrashAlt />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={addRelatedLink}
-                                        className="flex items-center text-indigo-600 hover:text-indigo-800"
-                                    >
-                                        <FaPlus className="mr-1" />
-                                        Add Related Link
-                                    </button>
-                                </div>
-                                <div className="mt-2">
-                                    <label className={`block text-sm font-medium  mb-0 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
-                                        Attach Files</label>
-                                    <div className="flex items-center">
-                                        <label className="flex items-center cursor-pointer">
-                                            <FaPaperclip className="mr-2" />
-                                            <span className={`text-sm  ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Attach</span>
-                                            <input
-                                                type="file"
-                                                multiple
-                                                onChange={handleFileChange}
-                                                className="hidden"
-                                            />
-                                        </label>
-                                    </div>
-                                    {files.length > 0 && (
-                                        <div className="mt-2">
-                                            <ul className="space-y-2">
-                                                {files.map((file, index) => (
-                                                    <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
-                                                        <span className="text-sm text-gray-800 truncate" title={file.name}>{file.name}</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeFile(index)}
-                                                            className="text-red-500 hover:text-red-700 ml-4"
-                                                            aria-label={`Remove ${file.name}`}
-                                                        >
-                                                            <FaTrashAlt />
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex mt-2 gap-4 justify-center">
-                                <motion.button
-                                    type="submit"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    Add Project
-                                </motion.button>
-                                <motion.button
-                                    type="button"
-                                    className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
-                                    onClick={() => setShowCreateForm(false)}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    Cancel
-                                </motion.button>
-                            </div>
-                            </div>
-                        </motion.form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-    {showEditForm && (
+    {showCreateForm && (
         <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            // Allow closing by clicking backdrop
+            onClick={() => setShowCreateForm(false)} 
+        >
+            <motion.div 
+                className="relative w-full max-w-xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300"
+                initial={{ scale: 0.95, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                exit={{ scale: 0.95, opacity: 0 }} 
+                transition={{ duration: 0.3 }}
+                onClick={(e) => e.stopPropagation()} // Prevent closure when clicking inside
+            >
+                <motion.form
+                    className={`w-full max-w-xl rounded-3xl shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} `}
+                    onSubmit={handleCreateProject}
+                >
+                    {/* Professional Header */}
+                    <div className="text-start rounded-t-3xl p-6 bg-gradient-to-r from-purple-600 to-indigo-700">
+                        <h3 className="text-2xl font-extrabold text-white flex items-center space-x-3"> 
+                            <i className="fas fa-rocket mr-2"></i> <span>Create New Project</span>
+                        </h3>
+                        <p className="text-sm text-white/90 mt-1">Define project scope, timeline, and initial resources.</p>
+                    </div>
+
+                    <div className="space-y-6 p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            
+                            {/* Row 1: Project Name & Team Lead */}
+                            <Forms 
+                                label="Project Name"
+                                theme={theme}
+                                placeholder="e.g., Q3 HRMS Update"
+                                value={newProject.project_name}
+                                onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
+                                required
+                            />
+                            <Forms 
+                                label="Team Lead (Name & Image URL)"
+                                theme={theme}
+                                placeholder="Name + Profile image URL"
+                                value={newProject.team_Lead} // Assuming a state field named team_lead exists
+                                onChange={e => setNewProject({ ...newProject, team_lead: e.target.value })} // Adjust state key if needed
+                                required
+                            />
+
+                            {/* Row 2: Status & Priority */}
+                            <Forms 
+                                label="Project Status"
+                                theme={theme}
+                                type="select"
+                                value={newProject.status}
+                                onChange={e => setNewProject({ ...newProject, status: e.target.value })}
+                            >
+                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Status</option>
+                                <option value="Ongoing" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
+                                <option value="Upcoming" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
+                                <option value="Completed" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
+                            </Forms>
+                            <Forms 
+                                label="Project Priority"
+                                theme={theme}
+                                type="select"
+                                value={newProject.Priority}
+                                onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
+                            >
+                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Priority</option>
+                                <option value="High" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
+                                <option value="Medium" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
+                                <option value="Low" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
+                            </Forms>
+
+                            {/* Row 3: Dates */}
+                            <Forms 
+                                label="Start Date"
+                                theme={theme}
+                                type="date"
+                                value={newProject.start_date}
+                                onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
+                                required
+                            />
+                            <Forms 
+                                label="End Date"
+                                theme={theme}
+                                type="date"
+                                value={newProject.end_date}
+                                onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
+                                required
+                            />
+
+                            {/* Row 4: Tasks & Rating */}
+                            <Forms 
+                                label="Open Tasks"
+                                theme={theme}
+                                type="number"
+                                placeholder="0"
+                                value={newProject.Open_task}
+                                onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
+                            />
+                             <Forms 
+                                label="Closed Tasks"
+                                theme={theme}
+                                type="number"
+                                placeholder="0"
+                                value={newProject.Closed_task}
+                                onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
+                            />
+                             <Forms 
+                                label="Project Rating (1-5)"
+                                theme={theme}
+                                type="number"
+                                placeholder="1-5"
+                                min="1"
+                                max="5"
+                                value={newProject.rating}
+                                onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Textareas: Full width, better labeled */}
+                        <Forms 
+                            label="Employee Team / Members (Comma Separated)"
+                            theme={theme}
+                            type="textarea"
+                            placeholder="List team members, e.g., Alice, Bob, Charlie"
+                            value={newProject.Employee_team}
+                            onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
+                        />
+                        <Forms 
+                            label="Remark / Internal Notes"
+                            theme={theme}
+                            type="textarea"
+                            placeholder="Add any internal remarks or dependencies here."
+                            value={newProject.remark}
+                            onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
+                        />
+                        <Forms 
+                            label="Completion Note (Visible upon closure)"
+                            theme={theme}
+                            type="textarea"
+                            placeholder="Final notes on project closure."
+                            value={newProject.completionNote}
+                            onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
+                        />
+
+                        {/* Related Links & Attachments */}
+                        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            {/* Related Links Block (Preserving your dynamic logic) */}
+                            <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Related Links:</label>
+                            {newProject.relatedLinks.map((link, index) => (
+                                <div key={index} className="flex gap-2 items-center">
+                                    <input
+                                        type="url"
+                                        value={link}
+                                        onChange={e => handleRelatedLinkChange(index, e.target.value)} // Assuming this function exists
+                                        className={FormInput({ theme }).inputStyle} // Reuse general input style
+                                        placeholder="Enter related link URL"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeRelatedLink(index)} // Assuming this function exists
+                                        className="p-2 text-red-600 hover:text-red-800 disabled:opacity-50 transition"
+                                        disabled={newProject.relatedLinks.length === 1}
+                                    >
+                                        <FaTrashAlt />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addRelatedLink} // Assuming this function exists
+                                className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium text-sm transition"
+                            >
+                                <FaPlus className="mr-1 w-4 h-4" /> Add Related Link
+                            </button>
+
+                            {/* Attach Files Block (Preserving your dynamic logic) */}
+                            <label className={`block text-sm font-medium pt-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Attach Files:</label>
+                            <div className="flex items-center space-x-3">
+                                <label className="flex items-center cursor-pointer px-4 py-2 border border-gray-400 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                    <i className="fas fa-paperclip mr-2"></i> Choose File(s)
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handleFileChange} // Assuming this function exists
+                                        className="hidden"
+                                    />
+                                </label>
+                                <p className="text-sm italic text-gray-500 dark:text-gray-400">{files.length > 0 ? `${files.length} file(s) attached` : "No files selected."}</p>
+                            </div>
+                            {files.length > 0 && ( // Display attached files list
+                                <ul className="space-y-1 mt-2 p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 max-h-32 overflow-y-auto">
+                                    {files.map((file, index) => (
+                                        <li key={index} className="flex justify-between items-center text-sm">
+                                            <span className="text-gray-800 dark:text-gray-200 truncate" title={file.name}>{file.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(index)} // Assuming this function exists
+                                                className="text-red-500 hover:text-red-700 ml-2"
+                                                aria-label={`Remove ${file.name}`}
+                                            >
+                                                <FaTrashAlt className="w-4 h-4" />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
+                            <motion.button
+                                type="button"
+                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                                onClick={() => setShowCreateForm(false)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Cancel
+                            </motion.button>
+                            <motion.button
+                                type="submit"
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-purple-600 text-sm font-semibold text-white shadow-md hover:bg-purple-700 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Create Project
+                            </motion.button>
+                        </div>
+                    </div>
+                </motion.form>
+            </motion.div>
+        </motion.div>
+    )}
+</AnimatePresence>
+            <AnimatePresence>
+    {showEditForm && (
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            // Allow closing by clicking backdrop
+            onClick={() => setShowEditForm(false)}
         >
             <motion.form
-                className={`w-full max-w-3xl rounded-lg shadow-2xl relative ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
+                // Reduced max-width for simpler edit form
+                className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
                 onSubmit={handleUpdateProject}
-                initial={{ scale: 0.9, y: 50 }}
+                initial={{ scale: 0.8, y: -50 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
+                exit={{ scale: 0.8, y: -50 }}
                 transition={{ duration: 0.3 }}
+                onClick={(e) => e.stopPropagation()}
             >
-                <div className="mb-4 text-center rounded-t bg-gradient-to-br from-purple-100 to-purple-400">
-                    <h3 className={`text-2xl font-bold pt-6 pb-8 ${theme === 'dark' ? 'text-gray-600 ' : 'text-gray-800 '}`}>Edit Project</h3>
+                {/* Professional Header */}
+                <div className="text-center rounded-t-3xl p-6 bg-gradient-to-r from-purple-500 to-fuchsia-600">
+                    <h3 className="text-2xl font-extrabold text-white flex items-center justify-center space-x-3">
+                        <i className="fas fa-edit mr-2"></i> <span>Edit Project</span>
+                    </h3>
+                    <p className="text-sm text-white/90 mt-1">Modify core details and progress metrics.</p>
                 </div>
-                <div className="space-y-4 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <input
-                            type="text"
+
+                <div className="space-y-6 p-8">
+                    <div className="grid grid-cols-1 gap-y-4 gap-x-6">
+                        
+                        {/* 1. Project Name */}
+                        <Forms
+                            label="Project Name"
+                            theme={theme}
                             placeholder="Project Name"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                             value={editProjectData?.project_name || ""}
                             onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
                             required
                         />
-                        <select
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.status || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
-                        >
-                            <option value="">Select Status</option>
-                            <option value="Ongoing">Ongoing</option>
-                            <option value="Upcoming">Upcoming</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                        <input
-                            type="date"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.start_date || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
-                            required
-                        />
-                        <input
-                            type="date"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.end_date || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
-                            required
-                        />
-                        <select
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.Priority || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
-                        >
-                            <option value="">Select Priority</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                        </select>
-                        <input
-                            type="number"
-                            placeholder="Open Tasks"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.Open_task || 0}
-                            onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
-                        />
-                        <input
-                            type="number"
-                            placeholder="Closed Tasks"
-                            className="w-full px-3 mt-2 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
-                                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                            value={editProjectData?.Closed_task || 0}
-                            onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
-                        />
+
+                        {/* 2. Status & Priority */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <Forms
+                                label="Status"
+                                theme={theme}
+                                type="select"
+                                value={editProjectData?.status || ""}
+                                onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
+                            >
+                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Status</option>
+                                <option value="Ongoing">Ongoing</option>
+                                <option value="Upcoming">Upcoming</option>
+                                <option value="Completed">Completed</option>
+                            </Forms>
+                             <Forms
+                                label="Priority"
+                                theme={theme}
+                                type="select"
+                                value={editProjectData?.Priority || ""}
+                                onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
+                            >
+                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Priority</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </Forms>
+                        </div>
+                        
+                        {/* 3. Dates */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <Forms
+                                label="Start Date"
+                                theme={theme}
+                                type="date"
+                                value={editProjectData?.start_date || ""}
+                                onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
+                                required
+                            />
+                            <Forms
+                                label="End Date"
+                                theme={theme}
+                                type="date"
+                                value={editProjectData?.end_date || ""}
+                                onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        {/* 4. Tasks */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <Forms
+                                label="Open Tasks"
+                                theme={theme}
+                                type="number"
+                                placeholder="Open Tasks"
+                                value={editProjectData?.Open_task || 0}
+                                onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
+                            />
+                            <Forms
+                                label="Closed Tasks"
+                                theme={theme}
+                                type="number"
+                                placeholder="Closed Tasks"
+                                value={editProjectData?.Closed_task || 0}
+                                onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
+                            />
+                        </div>
                     </div>
-                    {/* Add more fields as needed */}
-                    <div className="flex mt-2 gap-4 justify-center">
-                        <motion.button
-                            type="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Update Project
-                        </motion.button>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
                         <motion.button
                             type="button"
-                            className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded"
+                            className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
                             onClick={() => setShowEditForm(false)}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
                             Cancel
+                        </motion.button>
+                        <motion.button
+                            type="submit"
+                            className="px-5 py-2.5 rounded-lg border border-transparent bg-fuchsia-600 text-sm font-semibold text-white shadow-md hover:bg-fuchsia-700 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Update Project
                         </motion.button>
                     </div>
                 </div>
@@ -1458,7 +1662,7 @@ const handleRowClick = (proj) => {
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
                                 <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.Priority} onChange={e => { e.stopPropagation(); proj.Priority = e.target.value}} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                    <select value={proj.Priority} onChange={e => {proj.Priority = e.target.value}} onClick={e => { e.stopPropagation()}} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
                                           proj.Priority === "High"
                                             ? "bg-red-100 text-red-700"
                                             : proj.Priority === "Medium"
@@ -1472,7 +1676,7 @@ const handleRowClick = (proj) => {
                                  </select>
                                 </td>
                                 <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.status} onChange={e => { e.stopPropagation(); proj.status = e.target.value}}  className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
+                                    <select value={proj.status} onChange={e => {proj.status = e.target.value}} onClick={e => { e.stopPropagation()}}  className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
                                           proj.status === "Ongoing"
                                             ? "bg-blue-100 text-blue-700"
                                             : proj.status === "Upcoming"

@@ -289,20 +289,6 @@ const StatusColorsMap={
                     Project ID: <span className="text-red-500 font-semibold">{project.project_id}</span>
                   </p>
                 </div>
-                <div className="relative">
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className={`appearance-none px-4 py-2 pr-12 rounded-md border border-gray-300 ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-gray-800'} text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="InProgress">InProgress</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-2 flex items-center pr-2 pointer-events-none">
-                    <TbEyeDotted className="text-gray-400" />
-                  </div>
-                </div>
               </div>
 
               {/* Team Members */}
