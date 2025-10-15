@@ -152,11 +152,12 @@ const UpdateHistoryPopup = ({
     };
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-fadeIn">
-            <div className={`rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
+            {/* Added flex and flex-col for proper layout stacking */}
+            <form onSubmit={handleUpdateHistorySubmit} className={`rounded-3xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden shadow-2xl animate-slideUp ${
                 theme === 'dark' ? 'bg-gray-800' : 'bg-white'
             }`}>
                 {/* Header */}
-                <div className={`px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white relative overflow-hidden`}>
+                <div className={`px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white relative overflow-hidden flex-shrink-0`}>
                     <div className="absolute inset-0 bg-black/10"></div>
                     <div className="relative flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -172,14 +173,15 @@ const UpdateHistoryPopup = ({
                             onClick={() => setShowUpdateHistoryPopup(false)} 
                             className="p-3 hover:bg-white/20 rounded-full transition-all duration-200 group" 
                             aria-label="Close"
+                            type="button" // Important for buttons inside a form not to submit by default
                         >
                             <XCircle className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" />
                         </button>
                     </div>
                 </div>
-                {/* Form Content */}
-                <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-                    <form onSubmit={handleUpdateHistorySubmit} className="p-8 space-y-8">
+                {/* Form Content - Now fully scrollable */}
+                <div className="overflow-y-auto flex-grow p-8">
+                    <div className="space-y-8">
                         {/* Basic Information Section */}
                         <div className="space-y-6">
                             <div className="flex items-center space-x-2">
@@ -253,10 +255,10 @@ const UpdateHistoryPopup = ({
                                 )}
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-                {/* Footer */}
-                <div className={`px-8 py-6 border-t flex justify-end space-x-4 ${
+                {/* Footer - fixed bottom position with flex-shrink-0 */}
+                <div className={`px-8 py-6 border-t flex justify-end space-x-4 flex-shrink-0 ${
                     theme === 'dark' 
                         ? 'bg-gray-700 border-gray-600' 
                         : 'bg-gray-50 border-gray-200'
@@ -273,17 +275,16 @@ const UpdateHistoryPopup = ({
                         Cancel
                     </button>
                     <button 
-                        type="button" 
-                        onClick={handleUpdateHistorySubmit}
+                        type="submit" 
                         className={`px-10 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl
-                                    hover:shadow-lg transform hover:scale-105 transition-all duration-200 
-                                    focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2`}
+                                hover:shadow-lg transform hover:scale-105 transition-all duration-200 
+                                focus:ring-4 focus:ring-blue-500/30 flex items-center space-x-2`}
                     >
                         <Upload className="w-5 h-5" />
                         <span>Update Changes</span>
                     </button>
                 </div>
-            </div>
+            </form>
         </div>
     );
 };
@@ -639,7 +640,7 @@ const TaskViewPage = () => {
         <>
             <div className={`min-h-screen p-0 flex items-start justify-center font-sans ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 to-gray-100'}`}>
                 <div className={`w-full max-w-full pt-6 pb-6 sm:pt-8 sm:pb-8 md:pt-10 md:pb-10 px-0 rounded-3xl shadow-2xl border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
-                    <div className={`flex items-center justify-between mb-8 pb-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className={`flex items-center justify-between  pb-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <button
                             onClick={() => navigate(`/tasks/${userData?.employeeId}`)}
                             className={`p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700 hover:text-indigo-400' : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-700'}`}
