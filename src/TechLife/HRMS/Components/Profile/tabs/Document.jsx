@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload, IoTrashOutline } from 'react-icons/io5';
 import { Context } from '../../HrmsContext';
 import { publicinfoApi } from '../../../../../axiosInstance';
@@ -86,6 +86,7 @@ const identityFields = {
       label: "Aadhaar Image", 
       name: "aadhaarImage", 
       type: "file",
+      required: true,
       hint: "Upload clear image of your Aadhaar card" 
     },
   ],
@@ -122,6 +123,7 @@ const identityFields = {
       label: "PAN Image", 
       name: "panImage", 
       type: "file",
+      required: true,
       hint: "Upload clear image of your PAN card" 
     },
   ],
@@ -187,6 +189,7 @@ const identityFields = {
       label: "License Image", 
       name: "licenseImage", 
       type: "file",
+      required: true,
       hint: "Upload clear image of your driving license" 
     },
   ],
@@ -201,16 +204,18 @@ const identityFields = {
     { 
       label: "Country Code", 
       name: "countryCode", 
-      type: "text", 
+      type: "select",
+      options: ["IND", "USA", "PAK", "CAN", "GBR", "AUS", "JPN", "DEU", "CHN", "RUS", "BRA", "ZAF"],
       required: true,
-      hint: "2-3 character country code (e.g., IN, USA)" 
+      hint: "Select the 3-character country code"
     },
     { 
       label: "Passport Type", 
       name: "passportType", 
-      type: "text", 
+      type: "select",
+      options: ["Regular", "Official", "Diplomatic"],
       required: true,
-      hint: "Type of passport (e.g., P, S, D)" 
+      hint: "Select the type of your passport"
     },
     { 
       label: "Date of Birth", 
@@ -273,6 +278,7 @@ const identityFields = {
       label: "Passport Image", 
       name: "passportImage", 
       type: "file",
+      required: true,
       hint: "Upload clear image of your passport" 
     },
   ],
@@ -331,6 +337,7 @@ const identityFields = {
       label: "Voter Image", 
       name: "uploadVoter", 
       type: "file",
+      required: true,
       hint: "Upload clear image of your voter ID" 
     },
   ],
@@ -405,6 +412,7 @@ const Document = () => {
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
   const location = useLocation();
+  const fileInputRef = useRef(null);
   const { theme, userData,matchedArray } = useContext(Context);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
@@ -530,8 +538,6 @@ const Document = () => {
 
     if (!data.countryCode) {
       errors.countryCode = 'Country code is required';
-    } else if (data.countryCode.length < 2 || data.countryCode.length > 3) {
-      errors.countryCode = 'Country code must be 2-3 characters';
     }
 
     if (!data.passportType) {
@@ -691,8 +697,11 @@ const Document = () => {
   };
 
   const handleFileChange = (field, file) => {
-    setEditingData(prev => ({ ...prev, [field]: file }));
+    // When a file is selected or removed, update the state.
+    // If we are editing, we also need to clear the existing URL string.
+    setEditingData(prev => ({...prev, [field]: file }));
   };
+  
 
   const handleUpdate = async (subSection) => {
     setIsUpdating(true);
@@ -753,7 +762,8 @@ const Document = () => {
       }
 
       const dto = { ...editingData };
-      delete dto[fileInputField];
+      // Always delete the file property from the DTO, whether it's a File object or a URL string
+      delete dto[fileInputField]; 
       formData.append(backendDtoPartName, new Blob([JSON.stringify(dto)], { type: 'application/json' }));
 
       const updateEmployeeId = documentEmployeeId;
@@ -769,7 +779,7 @@ const Document = () => {
           url = `employee/${method === 'put' ? `${updateEmployeeId}/driving` : `drivinglicense/${updateEmployeeId}`}`;
           break;
         case 'passport':
-          url = `employee/${method === 'put' ? `${updateEmployeeId}/passport` : `passportdetails/${updateEmployeeId}`}`;
+          url = `employee/${method === 'put' ? `${updateEmployeeId}/passport` : `passport/details/${updateEmployeeId}`}`;
           break;
         case 'voter':
           url = `employee/${updateEmployeeId}/voter`;
@@ -890,14 +900,15 @@ const Document = () => {
       </div>
     </div>
   );
-
+  
   const renderField = (label, name, type = 'text', required = false, options = [], isDisabled = false, hint = '') => {
     const isError = errors[name];
     const fieldValue = editingData[name] || '';
-
+    
+  
     const handleLocalFieldChange = (value) => {
       handleEditFieldChange(name, value);
-
+  
       if (name === 'panNumber' && value) {
         if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) {
           setErrors(prev => ({ ...prev, [name]: 'PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)' }));
@@ -912,7 +923,9 @@ const Document = () => {
         }
       }
     };
-
+  
+    const newlySelectedFile = editingData[name] instanceof File ? editingData[name] : null;
+  
     return (
       <div className="group relative" key={name}>
         <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
@@ -928,8 +941,7 @@ const Document = () => {
             </span>
           )}
         </label>
-
-        {/* Hint text */}
+  
         {hint && (
           <p className={`text-xs mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -937,7 +949,7 @@ const Document = () => {
             {hint}
           </p>
         )}
-
+  
         {type === 'select' ? (
           <div className="relative">
             <select
@@ -1003,26 +1015,58 @@ const Document = () => {
           } ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
             <input
               type="file"
+              ref={fileInputRef}
               onChange={(e) => handleFileChange(name, e.target.files?.[0])}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               disabled={isDisabled}
               accept=".jpg,.jpeg,.png,.pdf"
             />
-            <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
-              <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
-                theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-              }`} />
-              <p className={`text-xs sm:text-sm font-medium mb-1 ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                Drop your file here, or <span className="text-blue-600">browse</span>
-              </p>
-              <p className={`text-xs ${
-                theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
-              }`}>
-                PNG, JPG, PDF up to 10MB
-              </p>
-            </div>
+            {newlySelectedFile ? (
+              <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
+                <IoDocumentText className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
+                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                }`} />
+                <p className={`text-xs sm:text-sm font-medium mb-3 truncate ${
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`} title={newlySelectedFile.name}>
+                  {newlySelectedFile.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleFileChange(name, null);
+                    if(fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
+                  }}
+                  className={`inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-red-900/50 text-red-300 hover:bg-red-900'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  }`}
+                >
+                  <IoTrashOutline />
+                  <span>Remove</span>
+                </button>
+              </div>
+            ) : (
+              <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
+                <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                }`} />
+                <p className={`text-xs sm:text-sm font-medium mb-1 ${
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  {editingData[name] ? "Replace current file" : "Drop your file here, or "} <span className="text-blue-600">browse</span>
+                </p>
+                <p className={`text-xs ${
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+                }`}>
+                  PNG, JPG, PDF up to 10MB
+                </p>
+              </div>
+            )}
           </div>
         ) : type === 'textarea' ? (
           <textarea
@@ -1068,7 +1112,7 @@ const Document = () => {
             disabled={isDisabled}
           />
         )}
-
+  
         {isError && (
           <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
             <IoWarning className="w-4 h-4 flex-shrink-0" />
@@ -1122,7 +1166,14 @@ const Document = () => {
                 {fields.map((f) => {
                   const isIdField = ['aadhaarNumber', 'panNumber', 'licenseNumber', 'passportNumber', 'voterIdNumber'].includes(f.name);
                   const isDisabled = isUpdate && isIdField;
-                  return renderField(f.label, f.name, f.type, f.required, f.options, isDisabled, f.hint);
+                  
+                  let isRequired = f.required;
+                  const fileFieldsOptionalOnUpdate = ['aadhaarImage', 'panImage', 'uploadVoter'];
+                  if (f.type === 'file' && isUpdate && fileFieldsOptionalOnUpdate.includes(f.name)) {
+                    isRequired = false;
+                  }
+
+                  return renderField(f.label, f.name, f.type, isRequired, f.options, isDisabled, f.hint);
                 })}
               </div>
 
@@ -1260,7 +1311,7 @@ const Document = () => {
 
     return (
       <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500
-                     overflow-hidden group hover:scale-[1.02] ${
+                          overflow-hidden group hover:scale-[1.02] ${
         theme === 'dark'
           ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
           : `bg-white ${config.borderColor}`
@@ -1299,8 +1350,8 @@ const Document = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
              {((fromContextMenu && isAdmin && hasData) || 
-  (matchedArray?.includes("PROFILES_DOCUMENTS_DELETE") && hasData) 
-  ) && (
+   (matchedArray?.includes("PROFILES_DOCUMENTS_DELETE") && hasData) 
+   ) && (
     <button
       onClick={() => onDelete(subSectionKey)}
       className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
@@ -1312,7 +1363,7 @@ const Document = () => {
       <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
       <span className="hidden sm:inline">Delete</span>
     </button>
-)}
+  )}
 
               {!isReadOnly && (
                 <button

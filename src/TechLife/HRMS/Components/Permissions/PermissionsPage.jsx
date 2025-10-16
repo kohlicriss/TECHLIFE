@@ -465,7 +465,7 @@ const PermissionsPage = () => {
   return (
     <>
       {isAddRoleModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-151">
           <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center mb-4">
               <FaInfoCircle className="w-6 h-6 text-blue-500" />
