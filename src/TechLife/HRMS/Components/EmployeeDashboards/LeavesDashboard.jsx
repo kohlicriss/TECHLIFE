@@ -268,7 +268,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
 
     return (
         <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" 
+            className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-black/50 bg-opacity-40 backdrop-blur-sm" 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
@@ -383,7 +383,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             <motion.button 
                                 type="button" 
                                 onClick={onClose} 
-                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100  dark:border-gray-600"
                                 whileHover={{ scale: 1.05 }} 
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -392,7 +392,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             
                             <motion.button 
                                 type="submit" 
-                                className="px-5 py-2.5 rounded-lg border border-transparent bg-red-600 text-sm font-semibold text-white shadow-md hover:bg-red-700 disabled:opacity-50 disabled:bg-red-400 transition-colors" 
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-blue-600 text-sm font-semibold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:bg-red-400 transition-colors" 
                                 disabled={isSubmitting} 
                                 whileHover={{ scale: 1.05 }} 
                                 whileTap={{ scale: 0.95 }}

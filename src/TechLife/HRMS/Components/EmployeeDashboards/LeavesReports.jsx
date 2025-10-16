@@ -16,10 +16,6 @@ import {
 import { useEffect } from 'react';
 import axios from 'axios';
 
-
-// The following components are from your original code, with updated styling and layout.
-// They are re-ordered here for clarity.
-
 const Attendance = () => {
     const navigate = useNavigate();
     const [selectedPeriod, setSelectedPeriod] = useState('Today');
