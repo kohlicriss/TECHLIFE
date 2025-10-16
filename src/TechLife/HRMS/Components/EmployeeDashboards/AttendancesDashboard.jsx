@@ -33,15 +33,15 @@ const Edit = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width
 const X = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
 
 const ATTENDANCE_DATA = [
-    { employeeId: "EMP001", date: "15-10-2025", effective_hour: "09:00:00", is_present: "Present", Day: "Wednesday", login_time: "09:00:00", logout_time: "17:00:00" },
-    { employeeId: "EMP001", date: "16-10-2025", effective_hour: "09:05:00", is_present: "Present", Day: "Thursday", login_time: "09:05:00", logout_time: "17:05:00" },
-    { employeeId: "EMP001", date: "17-10-2025", effective_hour: "N/A", is_present: "Absent", Day: "Friday", login_time: "N/A", logout_time: "N/A" },
-    { employeeId: "EMP001", date: "20-10-2025", effective_hour: "N/A", is_present: "Holiday", Day: "Monday", is_holiday: "Yes", login_time: "N/A", logout_time: "N/A" },
-    { employeeId: "EMP001", date: "21-10-2025", effective_hour: "08:58:00", is_present: "Present", Day: "Tuesday", login_time: "08:58:00", logout_time: "16:58:00" },
-    { employeeId: "EMP001", date: "22-10-2025", effective_hour: "09:10:00", is_present: "Present", Day: "Wednesday", login_time: "09:10:00", logout_time: "17:10:00" },
-    { employeeId: "EMP001", date: "23-10-2025", effective_hour: "N/A", is_present: "Absent", Day: "Thursday", login_time: "N/A", logout_time: "N/A" },
-    { employeeId: "EMP001", date: "24-10-2025", effective_hour: "09:00:00", is_present: "Present", Day: "Friday", login_time: "09:00:00", logout_time: "17:00:00" },
-    { employeeId: "EMP001", date: "25-10-2025", effective_hour: "09:15:00", is_present: "Present", Day: "Saturday", login_time: "09:15:00", logout_time: "17:15:00" },
+    { employeeId: "EMP001", date: "15-10-2025", effectiveHour: "09:00:00", isPresent: "Present", day: "Wednesday", login: "09:00:00", logout: "17:00:00" },
+    { employeeId: "EMP001", date: "16-10-2025", effectiveHour: "09:05:00", isPresent: "Present", day: "Thursday", login: "09:05:00", logout: "17:05:00" },
+    { employeeId: "EMP001", date: "17-10-2025", effectiveHour: "N/A",      isPresent: "Absent",  day: "Friday",   login: "N/A", logout: "N/A" },
+    { employeeId: "EMP001", date: "20-10-2025", effectiveHour: "N/A",      isPresent: "Holiday", day: "Monday", holiday: "Yes", login: "N/A", logout: "N/A" },
+    { employeeId: "EMP001", date: "21-10-2025", effectiveHour: "08:58:00", isPresent: "Present", day: "Tuesday", login: "08:58:00", logout: "16:58:00" },
+    { employeeId: "EMP001", date: "22-10-2025", effectiveHour: "09:10:00", isPresent: "Present", day: "Wednesday", login: "09:10:00", logout: "17:10:00" },
+    { employeeId: "EMP001", date: "23-10-2025", effectiveHour: "N/A",      isPresent: "Absent",  day: "Thursday", login: "N/A", logout: "N/A" },
+    { employeeId: "EMP001", date: "24-10-2025", effectiveHour: "09:00:00", isPresent: "Present", day: "Friday", login: "09:00:00", logout: "17:00:00" },
+    { employeeId: "EMP001", date: "25-10-2025", effectiveHour: "09:15:00", isPresent: "Present", day: "Saturday", login: "09:15:00", logout: "17:15:00" },
 ];
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
@@ -79,10 +79,10 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay, onClose }) => {
     const displayAttendance = {
         employeeId: attendance.employeeId || "EMP001 (Default)",
         date: attendance.date || dateString,
-        effective_hour: attendance.effective_hour || "N/A",
-        is_present: attendance.is_present === 'N/A' ? "Not Logged" : attendance.is_present,
-        login_time: attendance.login_time || "N/A",
-        logout_time: attendance.logout_time || "N/A",
+        effectiveHour: attendance.effectiveHour || "N/A",
+        isPresent: attendance.isPresent === 'N/A' ? "Not Logged" : attendance.isPresent,
+        login: attendance.login || "N/A",
+        logout: attendance.logout || "N/A",
     };
 
     return (
@@ -104,16 +104,16 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay, onClose }) => {
                         <p><strong>Employee ID:</strong> <span className="font-medium">{displayAttendance.employeeId}</span></p>
                         <p><strong>Status:</strong> 
                             <span className={`font-bold ml-1 px-2 py-0.5 rounded-full text-sm ${
-                                displayAttendance.is_present === 'Present' ? 'bg-green-200 text-green-800' :
-                                displayAttendance.is_present === 'Absent' ? 'bg-red-200 text-red-800' :
-                                displayAttendance.is_present === 'Holiday' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'
+                                displayAttendance.isPresent === 'Present' ? 'bg-green-200 text-green-800' :
+                                displayAttendance.isPresent === 'Absent' ? 'bg-red-200 text-red-800' :
+                                displayAttendance.isPresent === 'Holiday' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'
                             }`}>
-                                {displayAttendance.is_present}
+                                {displayAttendance.isPresent}
                             </span>
                         </p>
-                        <p><strong>Effective Hour:</strong> <span className="font-medium">{displayAttendance.effective_hour}</span></p>
-                        <p><strong>Login Time:</strong> <span className="font-medium">{displayAttendance.login_time}</span></p>
-                        <p><strong>Logout Time:</strong> <span className="font-medium">{displayAttendance.logout_time}</span></p>
+                        <p><strong>Effective Hour:</strong> <span className="font-medium">{displayAttendance.effectiveHour}</span></p>
+                        <p><strong>Login Time:</strong> <span className="font-medium">{displayAttendance.login}</span></p>
+                        <p><strong>Logout Time:</strong> <span className="font-medium">{displayAttendance.logout}</span></p>
                     </div>
                 </div>
 
@@ -127,10 +127,10 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay, onClose }) => {
                             {eventsOnThisDay.map((event, index) => (
                                 <div key={index} className="border-l-4 border-teal-400 pl-3 bg-white p-2 rounded shadow-sm">
                                     <p className="font-bold text-gray-800">{event.event}</p>
-                                    <p className="text-sm text-gray-600 italic truncate">{event.Description}</p>
-                                    {event.start_date !== event.end_date && (
+                                    <p className="text-sm text-gray-600 italic truncate">{event.description}</p>
+                                    {event.startDate !== event.endDate && (
                                         <p className="text-xs text-teal-600 mt-1">
-                                            Multi-day event: {event.start_date} - {event.end_date}
+                                            Multi-day event: {event.startDate} - {event.endDate}
                                         </p>
                                     )}
                                 </div>
@@ -177,7 +177,7 @@ function App() {
         for (let day = 1; day <= totalDays; day++) {
             const dateString = `${String(day).padStart(2, '0')}-${String(currentMonth + 1).padStart(2, '0')}-${currentYear}`;
             // Added login/logout time to attendance data for detail modal
-            const attendance = ATTENDANCE_DATA.find(data => data.date === dateString) || { is_present: 'N/A', login_time: 'N/A', logout_time: 'N/A' };
+            const attendance = ATTENDANCE_DATA.find(data => data.date === dateString) || { isPresent: 'N/A', login: 'N/A', logout: 'N/A' };
             days.push({ date: dateString, type: 'day', day: day, dateString, attendance });
         }
         return days;
@@ -209,15 +209,15 @@ function App() {
     const handleFormSubmit = (e) => {
         e.preventDefault();
         const event = e.target.event.value;
-        const Description = e.target.Description.value;
-        const start_date = toStandardDate(e.target.start_date.value);
-        const end_date = toStandardDate(e.target.end_date.value);
+        const description = e.target.description.value;
+        const startDate = toStandardDate(e.target.startDate.value);
+        const endDate = toStandardDate(e.target.endDate.value);
 
         const newEvent = {
-            start_date,
-            end_date,
+            startDate,
+            endDate,
             event,
-            Description
+            description
         };
 
         setEvents(prevEvents => [...prevEvents, newEvent]);
@@ -237,8 +237,8 @@ function App() {
                 <div className="mb-2">
                     <label className="block text-gray-700 font-medium mb-2" htmlFor="start_date">Start Date</label>
                     <input
-                        id="start_date"
-                        name="start_date"
+                        id="startDate"
+                        name="startDate"
                         type="date"
                         required
                         defaultValue={toIsoDate(selectedDateForForm.start)}
@@ -249,8 +249,8 @@ function App() {
                 <div className="mb-2">
                     <label className="block text-gray-700 font-medium mb-2" htmlFor="end_date">End Date</label>
                     <input
-                        id="end_date"
-                        name="end_date"
+                        id="endDate"
+                        name="endDate"
                         type="date"
                         required
                         defaultValue={toIsoDate(selectedDateForForm.end)}
@@ -273,8 +273,8 @@ function App() {
                 <div className="mb-3">
                     <label className="block text-gray-700 font-medium mb-2" htmlFor="Description">Description</label>
                     <textarea
-                        id="Description"
-                        name="Description"
+                        id="description"
+                        name="description"
                         rows="3"
                         required
                         placeholder="Details about the event..."
@@ -305,8 +305,8 @@ function App() {
     const EventListModal = () => {
         const currentMonthEvents = events
             .filter(event => {
-                const eventStart = new Date(event.start_date.split('-').reverse().join('-'));
-                const eventEnd = new Date(event.end_date.split('-').reverse().join('-'));
+                const eventStart = new Date(event.startDate.split('-').reverse().join('-'));
+                const eventEnd = new Date(event.endDate.split('-').reverse().join('-'));
                 const targetMonthStart = new Date(currentYear, currentMonth, 1);
                 const targetMonthEnd = new Date(currentYear, currentMonth + 1, 0);
 
@@ -315,7 +315,7 @@ function App() {
 
                 return startsBeforeMonthEnd && endsAfterMonthStart;
             })
-            .sort((a, b) => new Date(a.start_date.split('-').reverse().join('-')) - new Date(b.start_date.split('-').reverse().join('-')));
+            .sort((a, b) => new Date(a.startDate.split('-').reverse().join('-')) - new Date(b.startDate.split('-').reverse().join('-')));
 
         return (
             <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"> 
@@ -334,13 +334,13 @@ function App() {
                     ) : (
                         <div className="space-y-6">
                             {currentMonthEvents.map((event, index) => (
-                                <div key={`${event.start_date}-${index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
+                                <div key={`${event.startDate}-${index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
                                     <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
                                         <Clock className="inline w-4 h-4 mr-2" />
-                                        Date: {event.start_date} {event.start_date !== event.end_date && (`- ${event.end_date}`)}
+                                        Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
                                     </p>
                                     <p className="text-xl font-semibold text-gray-800 mb-2">{event.event}</p>
-                                    <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.Description}</p>
+                                    <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.description}</p>
                                 </div>
                             ))}
                         </div>
@@ -367,8 +367,8 @@ function App() {
         const isToday = dateString === new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
 
         const eventsOnThisDay = events.filter(event => {
-            const eventStart = new Date(event.start_date.split('-').reverse().join('-'));
-            const eventEnd = new Date(event.end_date.split('-').reverse().join('-'));
+            const eventStart = new Date(event.startDate.split('-').reverse().join('-'));
+            const eventEnd = new Date(event.endDate.split('-').reverse().join('-'));
             const current = new Date(dateString.split('-').reverse().join('-'));
 
             eventStart.setHours(0, 0, 0, 0);
@@ -382,13 +382,13 @@ function App() {
         let statusColor = 'bg-white';
         let statusIcon = null;
 
-        if (attendance.is_present === 'Present') {
+        if (attendance.isPresent === 'Present') {
             statusColor = 'bg-green-100 border-green-300';
             statusIcon = <CheckCircle className="w-4 h-4 text-green-600" />;
-        } else if (attendance.is_present === 'Absent') {
+        } else if (attendance.isPresent === 'Absent') {
             statusColor = 'bg-red-100 border-red-300';
             statusIcon = <AlertTriangle className="w-4 h-4 text-red-600" />;
-        } else if (attendance.is_present === 'Holiday') {
+        } else if (attendance.isPresent === 'Holiday') {
             statusColor = 'bg-yellow-100 border-yellow-300';
             statusIcon = <AlertTriangle className="w-4 h-4 text-yellow-600" />;
         }
@@ -398,9 +398,9 @@ function App() {
                 <p className="text-xs font-semibold text-indigo-600 border-b pb-1 mb-1">Attendance Info</p>
                 <div className="text-sm space-y-1">
                     <p>📅 Date: <span className="font-medium">{attendance.date || dateString}</span></p>
-                    <p>⏰ Hour: <span className="font-medium">{attendance.effective_hour || 'N/A'}</span></p>
-                    <p>✅ Present: <span className={`font-bold ${attendance.is_present === 'Present' ? 'text-green-600' : 'text-red-600'}`}>
-                        {attendance.is_present}
+                    <p>⏰ Hour: <span className="font-medium">{attendance.effectiveHour || 'N/A'}</span></p>
+                    <p>✅ Present: <span className={`font-bold ${attendance.isPresent === 'Present' ? 'text-green-600' : 'text-red-600'}`}>
+                        {attendance.isPresent}
                     </span></p>
                 </div>
             </div>
