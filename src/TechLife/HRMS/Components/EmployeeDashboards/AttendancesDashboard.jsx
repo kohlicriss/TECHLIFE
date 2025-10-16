@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import axios from 'axios';
 import { useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, SidebarOpen } from "lucide-react";
+import { SidebarOpen } from "lucide-react";
 import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
 import { authApi, dashboardApi, publicinfoApi } from "../../../../axiosInstance";
@@ -15,10 +15,504 @@ import { IoPersonOutline } from "react-icons/io5";
 import AttendanceTable from "./TotalEmployeeAttendance";
 import { LiaFileAlt } from "react-icons/lia";
 
-// --- Constants and Helper Functions ---
-const PIE_COLORS = ["#4F46E5", "#F97316"]; // Tailwind's indigo-600 and orange-500
+
+
+const PIE_COLORS = ["#4F46E5", "#F97316"]; 
 const BAR_COLORS = { work: "#4F46E5", break: "#F97316" };
 const STANDARD_WORKDAY_HOURS = 8;
+
+// Assuming these icons (Calendar, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Edit, X) are imported from a library like 'lucide-react' or similar.
+// Since the imports aren't provided, I will define simple placeholders for them.
+const Calendar = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+const Clock = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+const CheckCircle = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+const AlertTriangle = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+const ChevronLeft = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>;
+const ChevronRight = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
+const Edit = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
+const X = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+
+const ATTENDANCE_DATA = [
+    { employeeId: "EMP001", date: "15-10-2025", effective_hour: "09:00:00", is_present: "Present", Day: "Wednesday", login_time: "09:00:00", logout_time: "17:00:00" },
+    { employeeId: "EMP001", date: "16-10-2025", effective_hour: "09:05:00", is_present: "Present", Day: "Thursday", login_time: "09:05:00", logout_time: "17:05:00" },
+    { employeeId: "EMP001", date: "17-10-2025", effective_hour: "N/A", is_present: "Absent", Day: "Friday", login_time: "N/A", logout_time: "N/A" },
+    { employeeId: "EMP001", date: "20-10-2025", effective_hour: "N/A", is_present: "Holiday", Day: "Monday", is_holiday: "Yes", login_time: "N/A", logout_time: "N/A" },
+    { employeeId: "EMP001", date: "21-10-2025", effective_hour: "08:58:00", is_present: "Present", Day: "Tuesday", login_time: "08:58:00", logout_time: "16:58:00" },
+    { employeeId: "EMP001", date: "22-10-2025", effective_hour: "09:10:00", is_present: "Present", Day: "Wednesday", login_time: "09:10:00", logout_time: "17:10:00" },
+    { employeeId: "EMP001", date: "23-10-2025", effective_hour: "N/A", is_present: "Absent", Day: "Thursday", login_time: "N/A", logout_time: "N/A" },
+    { employeeId: "EMP001", date: "24-10-2025", effective_hour: "09:00:00", is_present: "Present", Day: "Friday", login_time: "09:00:00", logout_time: "17:00:00" },
+    { employeeId: "EMP001", date: "25-10-2025", effective_hour: "09:15:00", is_present: "Present", Day: "Saturday", login_time: "09:15:00", logout_time: "17:15:00" },
+];
+const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+
+const toIsoDate = (dateString) => {
+    if (!dateString) return '';
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateString;
+};
+
+const toStandardDate = (isoDateString) => {
+    if (!isoDateString) return '';
+    const parts = isoDateString.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return isoDateString;
+};
+
+
+// --- New Component for Day Details ---
+
+const DayDetailsModal = ({ dayData, eventsOnThisDay, onClose }) => {
+    if (dayData.type === 'blank') return null;
+
+    const { dateString, attendance } = dayData;
+    
+    // Fallback data for dates without explicit ATTENDANCE_DATA
+    const displayAttendance = {
+        employeeId: attendance.employeeId || "EMP001 (Default)",
+        date: attendance.date || dateString,
+        effective_hour: attendance.effective_hour || "N/A",
+        is_present: attendance.is_present === 'N/A' ? "Not Logged" : attendance.is_present,
+        login_time: attendance.login_time || "N/A",
+        logout_time: attendance.logout_time || "N/A",
+    };
+
+    return (
+        <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-100">
+                <div className="flex justify-between items-center border-b pb-3 mb-4">
+                    <h2 className="text-2xl font-bold text-indigo-700 flex items-center">
+                        <Calendar className="mr-2 w-6 h-6" /> Details for {displayAttendance.date}
+                    </h2>
+                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Attendance Details */}
+                <div className="mb-6 p-4 border rounded-lg bg-indigo-50">
+                    <h3 className="text-xl font-semibold text-indigo-800 mb-3 border-b pb-1">Attendance</h3>
+                    <div className="space-y-2 text-gray-700">
+                        <p><strong>Employee ID:</strong> <span className="font-medium">{displayAttendance.employeeId}</span></p>
+                        <p><strong>Status:</strong> 
+                            <span className={`font-bold ml-1 px-2 py-0.5 rounded-full text-sm ${
+                                displayAttendance.is_present === 'Present' ? 'bg-green-200 text-green-800' :
+                                displayAttendance.is_present === 'Absent' ? 'bg-red-200 text-red-800' :
+                                displayAttendance.is_present === 'Holiday' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'
+                            }`}>
+                                {displayAttendance.is_present}
+                            </span>
+                        </p>
+                        <p><strong>Effective Hour:</strong> <span className="font-medium">{displayAttendance.effective_hour}</span></p>
+                        <p><strong>Login Time:</strong> <span className="font-medium">{displayAttendance.login_time}</span></p>
+                        <p><strong>Logout Time:</strong> <span className="font-medium">{displayAttendance.logout_time}</span></p>
+                    </div>
+                </div>
+
+                {/* Event Details */}
+                <div className="p-4 border rounded-lg bg-teal-50">
+                    <h3 className="text-xl font-semibold text-teal-800 mb-3 border-b pb-1">Events ({eventsOnThisDay.length})</h3>
+                    {eventsOnThisDay.length === 0 ? (
+                        <p className="text-gray-500 italic">No events scheduled for this day.</p>
+                    ) : (
+                        <div className="space-y-3 max-h-40 overflow-y-auto">
+                            {eventsOnThisDay.map((event, index) => (
+                                <div key={index} className="border-l-4 border-teal-400 pl-3 bg-white p-2 rounded shadow-sm">
+                                    <p className="font-bold text-gray-800">{event.event}</p>
+                                    <p className="text-sm text-gray-600 italic truncate">{event.Description}</p>
+                                    {event.start_date !== event.end_date && (
+                                        <p className="text-xs text-teal-600 mt-1">
+                                            Multi-day event: {event.start_date} - {event.end_date}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-end mt-6">
+                    <button onClick={onClose} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150">
+                        Got It
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// --- App Component ---
+
+function App() {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [events, setEvents] = useState([]);
+    const [selectedDateForForm, setSelectedDateForForm] = useState({ start: null, end: null });
+    const [showEventForm, setShowEventForm] = useState(false);
+    const [showEventsList, setShowEventsList] = useState(false);
+    // New State for Day Details Modal
+    const [showDayDetails, setShowDayDetails] = useState(null); // Stores dayData object when open
+    // New State for Edit Mode
+    const [isEditing, setIsEditing] = useState(false);
+
+
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    const calendarDays = useMemo(() => {
+        const totalDays = getDaysInMonth(currentYear, currentMonth);
+        const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+        const days = [];
+        for (let i = 0; i < firstDay; i++) {
+            days.push({ key: `blank-${i}`, type: 'blank' });
+        }
+        for (let day = 1; day <= totalDays; day++) {
+            const dateString = `${String(day).padStart(2, '0')}-${String(currentMonth + 1).padStart(2, '0')}-${currentYear}`;
+            // Added login/logout time to attendance data for detail modal
+            const attendance = ATTENDANCE_DATA.find(data => data.date === dateString) || { is_present: 'N/A', login_time: 'N/A', logout_time: 'N/A' };
+            days.push({ date: dateString, type: 'day', day: day, dateString, attendance });
+        }
+        return days;
+    }, [currentYear, currentMonth]);
+
+    const changeMonth = useCallback((amount) => {
+        setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + amount, 1));
+        // Close any open modals when changing month
+        setShowDayDetails(null);
+        setShowEventForm(false);
+        setShowEventsList(false);
+    }, []);
+
+    // Updated handleDayClick logic
+    const handleDayClick = (dayData) => {
+        if (dayData.type === 'blank') return;
+
+        if (isEditing) {
+            // Edit mode: Open Event Form
+            setSelectedDateForForm({ start: dayData.dateString, end: dayData.dateString });
+            setShowEventForm(true);
+            setIsEditing(false); // Optionally turn off edit mode after one click
+        } else {
+            // Default mode: Open Day Details Modal
+            setShowDayDetails(dayData);
+        }
+    };
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        const event = e.target.event.value;
+        const Description = e.target.Description.value;
+        const start_date = toStandardDate(e.target.start_date.value);
+        const end_date = toStandardDate(e.target.end_date.value);
+
+        const newEvent = {
+            start_date,
+            end_date,
+            event,
+            Description
+        };
+
+        setEvents(prevEvents => [...prevEvents, newEvent]);
+
+        setShowEventForm(false);
+        e.target.reset();
+    };
+
+    // Event form component (No change in internal structure, just moved outside App for cleanliness if possible, but kept here per original structure)
+    const EventFormModal = () => (
+        <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"> 
+            <form onSubmit={handleFormSubmit} className="bg-white p-4 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
+                <h2 className="text-2xl font-bold text-indigo-700 mb-3 border-b pb-2 flex items-center">
+                    <Calendar className="mr-2" /> Add/Edit Event
+                </h2>
+
+                <div className="mb-2">
+                    <label className="block text-gray-700 font-medium mb-2" htmlFor="start_date">Start Date</label>
+                    <input
+                        id="start_date"
+                        name="start_date"
+                        type="date"
+                        required
+                        defaultValue={toIsoDate(selectedDateForForm.start)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                    />
+                </div>
+
+                <div className="mb-2">
+                    <label className="block text-gray-700 font-medium mb-2" htmlFor="end_date">End Date</label>
+                    <input
+                        id="end_date"
+                        name="end_date"
+                        type="date"
+                        required
+                        defaultValue={toIsoDate(selectedDateForForm.end)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                    />
+                </div>
+
+                <div className="mb-2">
+                    <label className="block text-gray-700 font-medium mb-2" htmlFor="event">Event Title</label>
+                    <input
+                        id="event"
+                        name="event"
+                        type="text"
+                        required
+                        placeholder="e.g., Team Meeting"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                    />
+                </div>
+
+                <div className="mb-3">
+                    <label className="block text-gray-700 font-medium mb-2" htmlFor="Description">Description</label>
+                    <textarea
+                        id="Description"
+                        name="Description"
+                        rows="3"
+                        required
+                        placeholder="Details about the event..."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                    ></textarea>
+                </div>
+
+                <div className="flex justify-end space-x-4">
+                    <button
+                        type="button"
+                        onClick={() => setShowEventForm(false)}
+                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-150"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md"
+                    >
+                        Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+
+    // Event List Component (Updated to use fixed positioning for the modal)
+    const EventListModal = () => {
+        const currentMonthEvents = events
+            .filter(event => {
+                const eventStart = new Date(event.start_date.split('-').reverse().join('-'));
+                const eventEnd = new Date(event.end_date.split('-').reverse().join('-'));
+                const targetMonthStart = new Date(currentYear, currentMonth, 1);
+                const targetMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+                const startsBeforeMonthEnd = eventStart <= targetMonthEnd;
+                const endsAfterMonthStart = eventEnd >= targetMonthStart;
+
+                return startsBeforeMonthEnd && endsAfterMonthStart;
+            })
+            .sort((a, b) => new Date(a.start_date.split('-').reverse().join('-')) - new Date(b.start_date.split('-').reverse().join('-')));
+
+        return (
+            <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"> 
+                <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-6">
+                        <h2 className="text-3xl font-extrabold text-teal-600 flex items-center">
+                            <Calendar className="mr-3 w-7 h-7" /> Events for {MONTHS[currentMonth]} {currentYear}
+                        </h2>
+                        <button onClick={() => setShowEventsList(false)} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {currentMonthEvents.length === 0 ? (
+                        <p className="text-gray-500 text-lg text-center py-10">No events added for this month yet. 🎉</p>
+                    ) : (
+                        <div className="space-y-6">
+                            {currentMonthEvents.map((event, index) => (
+                                <div key={`${event.start_date}-${index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
+                                    <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
+                                        <Clock className="inline w-4 h-4 mr-2" />
+                                        Date: {event.start_date} {event.start_date !== event.end_date && (`- ${event.end_date}`)}
+                                    </p>
+                                    <p className="text-xl font-semibold text-gray-800 mb-2">{event.event}</p>
+                                    <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.Description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => setShowEventsList(false)}
+                        className="mt-8 px-6 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-150 shadow-lg float-right"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // Calendar Day Box Component (Updated onClick handler)
+    const DayBox = ({ dayData }) => {
+        if (dayData.type === 'blank') {
+            return <div className="p-2 border border-gray-100 bg-gray-50 min-h-[20px] sm:min-h-[40px]"></div>;
+        }
+
+        const { day, dateString, attendance } = dayData;
+        const isToday = dateString === new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+
+        const eventsOnThisDay = events.filter(event => {
+            const eventStart = new Date(event.start_date.split('-').reverse().join('-'));
+            const eventEnd = new Date(event.end_date.split('-').reverse().join('-'));
+            const current = new Date(dateString.split('-').reverse().join('-'));
+
+            eventStart.setHours(0, 0, 0, 0);
+            eventEnd.setHours(0, 0, 0, 0);
+            current.setHours(0, 0, 0, 0);
+
+            return current >= eventStart && current <= eventEnd;
+        });
+
+        const hasEvents = eventsOnThisDay.length > 0;
+        let statusColor = 'bg-white';
+        let statusIcon = null;
+
+        if (attendance.is_present === 'Present') {
+            statusColor = 'bg-green-100 border-green-300';
+            statusIcon = <CheckCircle className="w-4 h-4 text-green-600" />;
+        } else if (attendance.is_present === 'Absent') {
+            statusColor = 'bg-red-100 border-red-300';
+            statusIcon = <AlertTriangle className="w-4 h-4 text-red-600" />;
+        } else if (attendance.is_present === 'Holiday') {
+            statusColor = 'bg-yellow-100 border-yellow-300';
+            statusIcon = <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+        }
+
+        const AttendanceHover = () => (
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 p-3 bg-white border border-indigo-300 rounded-lg shadow-xl z-10 w-48 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none text-left">
+                <p className="text-xs font-semibold text-indigo-600 border-b pb-1 mb-1">Attendance Info</p>
+                <div className="text-sm space-y-1">
+                    <p>📅 Date: <span className="font-medium">{attendance.date || dateString}</span></p>
+                    <p>⏰ Hour: <span className="font-medium">{attendance.effective_hour || 'N/A'}</span></p>
+                    <p>✅ Present: <span className={`font-bold ${attendance.is_present === 'Present' ? 'text-green-600' : 'text-red-600'}`}>
+                        {attendance.is_present}
+                    </span></p>
+                </div>
+            </div>
+        );
+
+        return (
+            <div
+                className={`relative group p-2 sm:p-3 border border-gray-300 transition-all duration-200 cursor-pointer ${statusColor} ${isToday ? 'ring-4 ring-indigo-400 font-bold' : ''} ${hasEvents ? 'shadow-lg border-2 border-indigo-500' : 'hover:shadow-lg'} min-h-[50px] sm:min-h-[70px] flex flex-col justify-start ${isEditing ? 'cursor-crosshair ring-2 ring-pink-500' : ''}`}
+                // IMPORTANT: Pass the full dayData object
+                onClick={() => handleDayClick(dayData)} 
+            >
+                {/* Date and Icon (Top of Box) */}
+                <div className="flex justify-between items-start mb-1">
+                    <span className={`text-lg sm:text-xl ${isToday ? 'text-indigo-700' : 'text-gray-900'}`}>{day}</span>
+                    <div className='flex-shrink-0'>{statusIcon}</div>
+                </div>
+
+                {/* Event Indicator (Bottom of Box) */}
+                {hasEvents && (
+                    <div className='mt-auto'>
+                           <p className={`text-xs text-indigo-700 font-semibold truncate ${eventsOnThisDay.length > 1 ? 'border-t border-indigo-300 pt-1' : ''}`}>
+                            {eventsOnThisDay.length} {eventsOnThisDay.length > 1 ? 'Events' : 'Event'}
+                        </p>
+                    </div>
+                )}
+                <AttendanceHover />
+            </div>
+        );
+    };
+
+    return (
+        <div className="p-4 sm:p-8">
+            <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-4 sm:p-6 relative">
+
+                {/* Modals are fixed position outside the calendar flow */}
+                {showEventForm && <EventFormModal />}
+                {showEventsList && <EventListModal />}
+                {showDayDetails && (
+                    <DayDetailsModal 
+                        dayData={showDayDetails} 
+                        eventsOnThisDay={events.filter(event => {
+                            const eventStart = new Date(event.start_date.split('-').reverse().join('-'));
+                            const eventEnd = new Date(event.end_date.split('-').reverse().join('-'));
+                            const current = new Date(showDayDetails.dateString.split('-').reverse().join('-'));
+                            eventStart.setHours(0, 0, 0, 0);
+                            eventEnd.setHours(0, 0, 0, 0);
+                            current.setHours(0, 0, 0, 0);
+                            return current >= eventStart && current <= eventEnd;
+                        })}
+                        onClose={() => setShowDayDetails(null)} 
+                    />
+                )}
+
+                <div className={`${(showEventForm || showEventsList || showDayDetails) ? 'pointer-events-none opacity-50' : ''}`}>
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4">
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4 sm:mb-0">
+                            {MONTHS[currentMonth]} <span className="text-indigo-600">{currentYear}</span>
+                        </h1>
+
+                        <div className="flex space-x-2 sm:space-x-4">
+                            {/* New Edit Button */}
+                            <button
+                                onClick={() => setIsEditing(prev => !prev)}
+                                className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 text-white font-semibold text-sm rounded-lg shadow-md transition duration-150 transform hover:scale-105 ${isEditing ? 'bg-indigo-700 hover:bg-indigo-800 ring-2 ring-pink-300' : 'bg-indigo-500 hover:bg-indigo-600'}`}
+                            >
+                                <Edit className="w-4 h-4 mr-1 sm:mr-2"/> {isEditing ? 'Cancel Edit' : 'Edit '}
+                            </button>
+
+                            <button
+                                onClick={() => setShowEventsList(true)}
+                                className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-pink-500 text-white font-semibold text-sm rounded-lg shadow-md hover:bg-pink-600 transition duration-150 transform hover:scale-105"
+                            >
+                                <Calendar className="w-4 h-4 mr-1 sm:mr-2"/> Events
+                            </button>
+
+                            <button
+                                onClick={() => changeMonth(-1)}
+                                className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => changeMonth(1)}
+                                className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Days of Week Header */}
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                        {DAYS_OF_WEEK.map(day => (
+                            <div key={day} className="text-center font-semibold text-xs sm:text-sm text-indigo-700 p-2 bg-indigo-100 rounded">
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Calendar Grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                        {calendarDays.map((day, index) => (
+                            <DayBox key={day.key || day.dateString || `day-${index}`} dayData={day} />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// export default App; // Uncomment if exporting
 
 const calculateHours = (login, logout) => {
     if (!login || !logout) return 0;
@@ -275,7 +769,7 @@ const ProgressBarCard = ({ currentValue, targetValue, description, icon,iconBgCo
 };
 
 // --- Sub-Component for Hours and Schedule Bar ---
-const MyComponent = ({ Data, selectedDate }) => {
+const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGED
     const [hoveredHour, setHoveredHour] = useState(null);
     const {theme} = useContext(Context);
 
@@ -304,8 +798,8 @@ const MyComponent = ({ Data, selectedDate }) => {
 
     // Calculate metrics for selected date
     const calculateMetrics = useMemo(() => {
-        if (!Data || selectedDate === "All") return null;
-        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+        if (!Data || selectedMetricDate === "All") return null; // <--- USE selectedMetricDate
+        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate); // <--- USE selectedMetricDate
         if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
 
         const totalWorkingSeconds =
@@ -327,14 +821,14 @@ const MyComponent = ({ Data, selectedDate }) => {
             breakHours: formatDuration(breakSeconds),
             overtime: formatDuration(overtimeSeconds)
         };
-    }, [selectedDate, Data]);
+    }, [selectedMetricDate, Data]); // <--- USE selectedMetricDate
     const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
     const renderScheduleBar = useCallback(() => {
-        if (!Data || selectedDate === "All")
+        if (!Data || selectedMetricDate === "All") // <--- USE selectedMetricDate
             return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
-        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
+        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate); // <--- USE selectedMetricDate
         if (!dayData)
-            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedDate}.</motion.div>;
+            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedMetricDate}.</motion.div>; // <--- USE selectedMetricDate
         const timePoints = new Set();
     if (dayData.Start_time) {
         timePoints.add(dayData.Start_time);
@@ -431,7 +925,8 @@ const MyComponent = ({ Data, selectedDate }) => {
                 </div>
             </div>
         );
-    }, [selectedDate, Data, hoveredHour, getHourValue, scaleHour]);
+    }, [selectedMetricDate, Data, hoveredHour, getHourValue, scaleHour]); // <--- USE selectedMetricDate
+
     return (
         <motion.div
             className="p-4"
@@ -510,6 +1005,7 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [selectedDate, setSelectedDate] = useState("All");
+    const [selectedMetricDate, setSelectedMetricDate] = useState("All");
     const isMobile = useMediaQuery('(max-width:768px)');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [startTime, setStartTime] = useState(null);
@@ -601,7 +1097,7 @@ const updateProfileField = async (field, value) => {
     const year = today.getFullYear();
     const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
     try {
-        await dashboardApi.put(url, { [field]: value });
+        await dashboardApi.get(url, { [field]: value });
         setProfileData(prev => ({ ...prev, [field]: value }));
     } catch (error) {
         console.error(`Error updating ${field}:`, error);
@@ -1257,30 +1753,20 @@ const maxHoursInSeconds = 8 * 3600;
                 </div>
 
             </div>
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 w-full my-4 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-600  ${theme==='dark'?'bg-gray-700':'bg-gradient-to-br from-indigo-50 via-white to-indigo-100'} shadow-lg`}>
-    {/* Shift Card */}
-    <div className={`flex flex-col items-center p-3 rounded-xl ${theme==='dark'?'bg-gray-800':' bg-gradient-to-br from-orange-50 via-white to-orange-100'} shadow w-full`}>
-        <span className="text-lg font-semibold text-yellow-500 mb-1">Shift</span>
-        <span className="font-bold text-lg text-yellow-500 md:text-xl mb-1">{profileData.shift || '-'}</span>
-        <select
-            value={profileData.shift}
-            onChange={handleShiftChange}
-            className="px-3 py-1 rounded-lg bg-yellow-500 text-white text-xs font-semibold hover:bg-yellow-600 transition  w-full"
-        >
-            <option value="">Select Shift</option>
-            {SHIFT_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-            ))}
-        </select>
-    </div>
+            <div className={`grid grid-cols-1 md:grid-cols-1`}>
     {/* Other Stats */}
-    <div className={`flex flex-col items-center p-3 rounded-xl   shadow w-full ${theme==='dark'?'bg-gray-800':'bg-gradient-to-br from-orange-50 via-white to-orange-100'}`}>
+    <div className={`flex flex-col items-start p-3 rounded-xl   shadow w-full ${theme==='dark'?'bg-gray-800':'bg-gradient-to-br from-orange-50 via-white to-orange-100'}`}>
         <span className="text-lg font-semibold text-green-500 mb-1">Attendance % (Ontime)</span>
         <span className={`font-bold text-lg md:text-xl mb-2 ${profileData.onTime >= 75 ? 'text-green-500' : profileData.onTime >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>{profileData.onTime || 0}%</span>
         <div  className="flex flex-col items-start">
+            <div className={`grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 w-full`}>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>shift: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.shift || '-'}</span></span>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Login: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.loginTime ? new Date(profileData.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>   
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Avg. Working Hours: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.avgWorkingHours || 0}</span></span>
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Login: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.loginTime ? new Date(profileData.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Mode: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.mode || '-'}</span></span> 
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Logout: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.logoutTime ? new Date(profileData.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>
+        </div>
+
         </div>
     </div>
 </div>
@@ -1415,7 +1901,7 @@ const maxHoursInSeconds = 8 * 3600;
         </div>
     </motion.div>
                                 {/* Stat Cards Grid */}
-                        <motion.div
+                      { /*  <motion.div
                             className="p-6 h-full flex flex-col justify-between"
                             initial={{ opacity: 0, x: 50 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -1467,8 +1953,10 @@ const maxHoursInSeconds = 8 * 3600;
                                     );
                                 })}
                             </div>
-                        </motion.div>
+                        </motion.div> */}
+                        <App/>
                     </div>
+                    
 
                             {/* Charts Grid */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -1482,54 +1970,53 @@ const maxHoursInSeconds = 8 * 3600;
                                         <ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown
                                     </h2>
                                     <div className="mb-6 flex justify-center gap-2 flex-wrap">
-                                        <div className="mb-6 flex justify-center gap-2 flex-wrap">
-    {/* Previous Button */}
-    {startIndex > 0 && (
-        <motion.button
-            onClick={() => setStartIndex(prev => Math.max(0, prev - datesPerPage))}
-            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Previous dates"
-        >
-            <ChevronLeft className="w-5 h-5" />
-        </motion.button>
-    )}
-
-    {dates.slice(startIndex, startIndex + datesPerPage).map((date) => {
-        const pieItem = rawPieData.find((item) => item.Date === date);
-        const barItem = barChartData.find((item) => item.Date === date);
-        // Prefer pieItem, fallback to barItem, else just use the date
-        const dataItem = pieItem || barItem;
-        const dateToSet = date === "All" ? "All" : (dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date);
-        return (
-            <motion.button
-                key={date}
-                onClick={() => setSelectedDate(dateToSet)}
-                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center ${selectedDate === dateToSet ? "bg-indigo-600 text-white shadow-md" : "bg-gray-200 text-gray-700"} ${theme === 'dark' ? (selectedDate === dateToSet ? "bg-indigo-500 text-white shadow-md" : "bg-gray-400 text-gray-300") : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-            >
-                {date === "All" ? "All" : date}
-            </motion.button>
-        );
-    })}
-    
-    {/* Next Button */}
-    {startIndex + datesPerPage < dates.length && (
-        <motion.button
-            onClick={() => setStartIndex(prev => prev + datesPerPage)}
-            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Next dates"
-        >
-            <ChevronRight className="w-5 h-5" /> 
-        </motion.button>
-    )}
-</div>
+                                       <div className="mb-6 flex justify-center gap-2 flex-wrap">
+                                       {/* Previous Button */}
+                                       {startIndex > 0 && (
+                                        <motion.button
+                                           onClick={() => setStartIndex(prev => Math.max(0, prev - datesPerPage))}
+                                           className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+                                           whileHover={{ scale: 1.1 }}
+                                           whileTap={{ scale: 0.9 }}
+                                           aria-label="Previous dates"
+                                        >
+                                          <ChevronLeft className="w-5 h-5" />
+                                        </motion.button>
+                                       )}
+                                       {dates.filter(date => date !== "All").slice(startIndex, startIndex + datesPerPage).map((date) => {
+                                          const pieItem = rawPieData.find((item) => item.Date === date);
+                                          const barItem = barChartData.find((item) => item.Date === date);
+                                          const dataItem = pieItem || barItem;
+                                          const dateToSet = dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date;
+                                          return (
+                                             <motion.button
+                                                key={date}
+                                                onClick={() => setSelectedMetricDate(dateToSet)} 
+                                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+                                                whileHover={{ scale: 1.1 }}
+                                                whileTap={{ scale: 0.9 }}
+                                             >
+                                                {date}
+                                             </motion.button>
+                                          );
+                                       })}
+                                       
+                                       {/* Next Button */}
+                                       {startIndex + datesPerPage < dates.length && (
+                                           <motion.button
+                                               onClick={() => setStartIndex(prev => prev + datesPerPage)}
+                                               className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
+                                               whileHover={{ scale: 1.1 }}
+                                               whileTap={{ scale: 0.9 }}
+                                               aria-label="Next dates"
+                                           >
+                                             <ChevronRight className="w-5 h-5" /> 
+                                           </motion.button>
+                                       )}
                                     </div>
-                                    <MyComponent Data={Data} selectedDate={selectedDate} />
+                                     </div>
+                                     
+                                     <MyComponent Data={Data} selectedMetricDate={selectedMetricDate} />
                                     <div className="flex-grow flex items-center justify-center">
                                         <ResponsiveContainer width="100%" height={isMobile ? 180 : 200}>
                                             <PieChart>
