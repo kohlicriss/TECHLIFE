@@ -151,7 +151,7 @@ export const updateMessage = async (messageId, newContent, senderId) => {
 
 export const deleteMessageForMe = async (messageId, userId) => {
   try {
-    const response = await chatApi.post(`/chat/${messageId}/me?userId=${userId}`);
+    const response = await chatApi.post(`/chat/delete/${messageId}/me?userId=${userId}`);
     console.log('Response:', response);
     return response.data;
   } catch (error) {
@@ -162,7 +162,7 @@ export const deleteMessageForMe = async (messageId, userId) => {
 
 export const deleteMessageForEveryone = async (messageId, userId) => {
   try {
-    const response = await chatApi.post(`/chat/${messageId}/everyone?userId=${userId}`);
+    const response = await chatApi.post(`/chat/delete/${messageId}/everyone?userId=${userId}`);
     console.log('Response:', response);
     return response.data;
   } catch (error) {

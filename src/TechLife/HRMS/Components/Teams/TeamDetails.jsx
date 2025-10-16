@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { Context } from '../HrmsContext';
 import EditTeamModal from './EditTeamModal';
 
-// Custom Notification Component
+// Custom Notification Component (unchanged)
 const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
     const [isVisible, setIsVisible] = useState(false);
 
@@ -87,12 +87,14 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
     );
 };
 
+// LoadingSpinner Component (unchanged)
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center h-40 sm:h-64">
         <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-t-2 border-b-2 border-blue-500"></div>
     </div>
 );
 
+// ErrorDisplay Component (unchanged)
 const ErrorDisplay = ({ message }) => (
     <div className="text-center p-4 sm:p-8 bg-red-100 text-red-700 rounded-lg">
         <h3 className="font-bold text-base sm:text-lg">Oops! Something went wrong.</h3>
@@ -100,6 +102,7 @@ const ErrorDisplay = ({ message }) => (
     </div>
 );
 
+// TeamDetails Component (updated to show ONLY role)
 const TeamDetails = () => {
     const { teamId } = useParams();
     const navigate = useNavigate();
@@ -173,6 +176,7 @@ const TeamDetails = () => {
         try {
             setLoading(true);
             const teamResponse = await publicinfoApi.get(`employee/team/employee/${teamId}`);
+            // Note: The API response is handled as an array, taking the first element for team data.
             const teamData = Array.isArray(teamResponse.data) ? teamResponse.data[0] : teamResponse.data;
             setTeam(teamData);
 
@@ -293,6 +297,19 @@ const TeamDetails = () => {
                                                     ID: {member.employeeId}
                                                 </p>
                                             </div>
+                                            
+                                            {/* Role Display: The only tag kept, using indigo color */}
+                                            {member.role && (
+                                                <div className={`text-xs font-bold px-2 sm:px-3 py-1 rounded-full flex items-center flex-shrink-0 ${
+                                                    theme === 'dark' ? 'bg-indigo-800 text-indigo-200' : 'bg-indigo-100 text-indigo-800'
+                                                }`}>
+                                                    <span className="break-words">Role: {member.role}</span>
+                                                </div>
+                                            )}
+                                            
+                                            {/* The following block was removed to stop rendering 
+                                                the 'jobTitlePrimary' (e.g., MANAGER, Backend Engeneer) tag:
+                                            
                                             {member.jobTitlePrimary && (
                                                 <div className={`text-xs font-bold px-2 sm:px-3 py-1 rounded-full flex items-center flex-shrink-0 ${
                                                     member.jobTitlePrimary === 'TEAM_LEAD' 
@@ -302,7 +319,8 @@ const TeamDetails = () => {
                                                     {member.jobTitlePrimary === 'TEAM_LEAD' && <FaUserShield className="mr-1 sm:mr-2 w-3 h-3"/>}
                                                     <span className="break-words">{member.jobTitlePrimary}</span>
                                                 </div>
-                                            )}
+                                            )} 
+                                            */}
                                         </li>
                                     ))}
                                 </ul>

@@ -186,6 +186,14 @@ const Profiles = () => {
     const [viewedEmployeeHeaderData, setViewedEmployeeHeaderData] = useState(null);
     const [isEditingHeader, setIsEditingHeader] = useState(false);
     const [editingHeaderData, setEditingHeaderData] = useState({});
+    
+    // 🚨 NEW: Add states for change detection and error handling
+    const [initialHeaderData, setInitialHeaderData] = useState({});
+    const [formError, setFormError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    // 🚨 NEW: Add mobile validation error state
+    const [mobileError, setMobileError] = useState(null);
+    
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [isImageFullView, setIsImageFullView] = useState(false);
     const fileInputRef = useRef(null);
@@ -263,6 +271,50 @@ const Profiles = () => {
         { name: "Documents", path: "documents", icon: MdBusiness },
         { name: "Achievements", path: "achievements", icon: MdStar },
     ];
+
+    // 🚨 NEW: Mobile number validation function
+    const validateMobileNumber = (number) => {
+        // Remove all non-digit characters for validation
+        const cleanNumber = number.replace(/\D/g, '');
+        
+        if (cleanNumber.length === 11) {
+            return {
+                isValid: false,
+                error: "Mobile number cannot be 11 digits. Please enter a 10-digit mobile number."
+            };
+        }
+        
+        if (cleanNumber.length > 0 && cleanNumber.length < 10) {
+            return {
+                isValid: false,
+                error: "Mobile number must be at least 10 digits."
+            };
+        }
+        
+        if (cleanNumber.length > 12) {
+            return {
+                isValid: false,
+                error: "Mobile number cannot exceed 12 digits."
+            };
+        }
+        
+        return {
+            isValid: true,
+            error: null
+        };
+    };
+
+    // 🚨 NEW: Function to check if form has changes
+    const hasFormChanges = () => {
+        const currentData = {
+            ...editingHeaderData,
+            department: selectedDepartmentValue || editingHeaderData.department
+        };
+        
+        return Object.keys(currentData).some(key => 
+            currentData[key] !== initialHeaderData[key]
+        );
+    };
 
     // Load initial departments
     useEffect(() => {
@@ -445,14 +497,50 @@ const Profiles = () => {
         setEmployeeData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
+    // 🚨 MODIFIED: handleHeaderEditClick to store initial data for comparison
     const handleHeaderEditClick = () => {
         if (!canEditHeader) return;
-        setEditingHeaderData(displayHeader || {});
+        const currentData = displayHeader || {};
+        setEditingHeaderData(currentData);
+        setInitialHeaderData(currentData); // Store initial state for comparison
+        setFormError(null); // Clear any previous errors
+        setMobileError(null); // Clear mobile validation error
         setIsEditingHeader(true);
     };
 
+    // 🚨 MODIFIED: handleHeaderSave with change detection and error handling
     const handleHeaderSave = async (e) => {
         e.preventDefault();
+        
+        // Clear any previous errors
+        setFormError(null);
+        setMobileError(null);
+        
+        // 🚨 NEW: Validate mobile number first
+        if (editingHeaderData.contact) {
+            const mobileValidation = validateMobileNumber(editingHeaderData.contact);
+            if (!mobileValidation.isValid) {
+                setMobileError(mobileValidation.error);
+                return;
+            }
+        }
+        
+        // Check if there are any changes
+        if (!hasFormChanges()) {
+            showConfirmModal(
+                'No Changes Detected',
+                'You haven\'t made any changes to the form. Please make some changes before submitting.',
+                'OK',
+                () => {
+                    closeConfirmModal();
+                },
+                'info'
+            );
+            return;
+        }
+
+        setIsSubmitting(true);
+        
         try {
             const payload = {
                 ...editingHeaderData,
@@ -460,6 +548,7 @@ const Profiles = () => {
             };
             console.log("Sending payload:", payload);
             const res = await publicinfoApi.put(`employee/${profileEmployeeId}/header`, payload);
+            
             // ✅ PRESERVE existing employeeImage when updating
             if (!isOwnProfile) {
                 setViewedEmployeeHeaderData(prev => ({
@@ -472,18 +561,67 @@ const Profiles = () => {
                     employeeImage: prev?.employeeImage || res.data.employeeImage
                 }));
             }
+            
             setIsEditingHeader(false);
             setSelectedDepartmentDisplay('');
             setSelectedDepartmentValue('');
+            setFormError(null);
+            setMobileError(null);
             showNotification('success', 'Success', 'Header information updated successfully!');
+            
         } catch (err) {
             console.error("❌ Error updating header:", err);
-            showNotification('error', 'Error', 'Failed to update header information. Please check the details and try again.');
+            
+            // Handle different types of API errors
+            let errorMessage = 'Failed to update header information. Please try again.';
+            
+            if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err.response?.status === 400) {
+                errorMessage = 'Invalid data provided. Please check all fields and try again.';
+            } else if (err.response?.status === 401) {
+                errorMessage = 'You are not authorized to perform this action.';
+            } else if (err.response?.status === 403) {
+                errorMessage = 'Access denied. You don\'t have permission to edit this information.';
+            } else if (err.response?.status === 404) {
+                errorMessage = 'Employee not found. Please refresh the page and try again.';
+            } else if (err.response?.status >= 500) {
+                errorMessage = 'Server error occurred. Please try again later.';
+            }
+            
+            // Set the error to display below the form
+            setFormError(errorMessage);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+    // 🚨 MODIFIED: handleHeaderInputChange with mobile validation
     const handleHeaderInputChange = e => {
-        setEditingHeaderData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        
+        // 🚨 NEW: Special handling for contact field
+        if (name === 'contact') {
+            // Clear mobile error when user starts typing
+            setMobileError(null);
+            
+            // Validate on every change for immediate feedback
+            if (value.length > 0) {
+                const validation = validateMobileNumber(value);
+                if (!validation.isValid) {
+                    setMobileError(validation.error);
+                }
+            }
+        }
+        
+        setEditingHeaderData(prev => ({ ...prev, [name]: value }));
+        
+        // Clear form error when user starts typing
+        if (formError) {
+            setFormError(null);
+        }
     };
 
     const handleTabClick = path => {
@@ -905,7 +1043,13 @@ const Profiles = () => {
                 </div>
             </div>
             <button
-                onClick={() => setIsEditingHeader(false)}
+                onClick={() => {
+                    setIsEditingHeader(false);
+                    setFormError(null);
+                    setMobileError(null);
+                    setSelectedDepartmentDisplay('');
+                    setSelectedDepartmentValue('');
+                }}
                 className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 text-white"
             >
                 <IoClose className="h-5 w-5 sm:h-6 sm:h-6" />
@@ -1072,15 +1216,25 @@ const Profiles = () => {
                                     value={editingHeaderData.contact || ''}
                                     onChange={handleHeaderInputChange}
                                     className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-teal-300 focus:border-teal-500 focus:ring-4 focus:ring-teal-100 ${
+                                        mobileError ? (theme === 'dark' ? 'border-red-500 bg-red-900/20' : 'border-red-500 bg-red-50') :
                                         theme === 'dark'
                                             ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                                             : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
                                     }`}
                                     placeholder="Enter contact number"
                                 />
+                                {/* 🚨 NEW: Mobile validation error display */}
+                                {mobileError && (
+                                    <div className="absolute top-full left-0 mt-1 flex items-center space-x-1">
+                                        <FaExclamationTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />
+                                        <span className={`text-xs ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                                            {mobileError}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
-                            <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Primary contact phone number
+                            <p className={`mt-2 text-xs ${mobileError ? 'mt-6' : 'mt-2'} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Primary contact phone number (10 digits recommended)
                             </p>
                         </div>
                         <div className="group lg:col-span-2">
@@ -1106,6 +1260,23 @@ const Profiles = () => {
                             </p>
                         </div>
                     </div>
+                    
+                    {/* 🚨 MODIFIED: Error Display Section - Updated to handle mobile errors */}
+                    {(formError || mobileError) && (
+                        <div className={`mt-6 p-4 rounded-xl border-l-4 ${theme === 'dark' ? 'bg-red-900/20 border-red-500 text-red-300' : 'bg-red-50 border-red-500 text-red-700'}`}>
+                            <div className="flex items-start">
+                                <FaExclamationTriangle className={`flex-shrink-0 w-5 h-5 mt-0.5 mr-3 ${theme === 'dark' ? 'text-red-400' : 'text-red-500'}`} />
+                                <div className="flex-1">
+                                    <h4 className={`font-medium ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                                        {mobileError ? 'Mobile Number Validation Error' : 'Error Updating Header'}
+                                    </h4>
+                                    <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-700'}`}>
+                                        {mobileError || formError}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </form>
             </div>
         </div>
@@ -1119,21 +1290,34 @@ const Profiles = () => {
                         setIsEditingHeader(false);
                         setSelectedDepartmentDisplay('');
                         setSelectedDepartmentValue('');
+                        setFormError(null);
+                        setMobileError(null);
                     }}
+                    disabled={isSubmitting}
                     className={`w-full sm:w-auto px-8 py-3 border-2 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${
                         theme === 'dark'
                             ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
                             : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
-                    }`}
+                    } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                     Cancel Changes
                 </button>
                 <button
                     type="submit"
                     onClick={handleHeaderSave}
-                    className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl text-base transition-all duration-300 transform hover:scale-105 hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 shadow-lg"
+                    disabled={isSubmitting || mobileError}
+                    className={`w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl text-base transition-all duration-300 transform hover:scale-105 hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 shadow-lg flex items-center justify-center ${
+                        isSubmitting || mobileError ? 'opacity-75 cursor-not-allowed' : ''
+                    }`}
                 >
-                    Save Changes
+                    {isSubmitting ? (
+                        <>
+                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Saving...
+                        </>
+                    ) : (
+                        'Save Changes'
+                    )}
                 </button>
             </div>
         </div>
