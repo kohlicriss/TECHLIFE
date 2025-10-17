@@ -180,6 +180,12 @@ import EmployeeTable from "./TotalEmployeeLeaves";
 // const Context = React.createContext({ theme: 'light', userData: { employeeId: '001' } }); 
 
 // --- Custom Input/Select Component for clean JSX ---
+// Assume dependencies (useContext, useState, axios, motion, Context) are imported.
+// FormField and baseInputClasses are left unchanged as they are not the source of the error.
+
+// Assume dependencies (useContext, useState, axios, motion, Context) are imported.
+// FormField and baseInputClasses remain the same.
+
 const FormField = ({ label, theme, children, helperText, className = '' }) => {
     return (
         <div className={`space-y-1 ${className}`}>
@@ -197,47 +203,98 @@ const FormField = ({ label, theme, children, helperText, className = '' }) => {
 };
 
 const baseInputClasses = (theme) => `w-full px-4 py-3 border rounded-lg transition duration-300 text-sm 
-    focus:ring-2 focus:ring-red-500/40 focus:border-red-500 focus:outline-none 
+    focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 focus:outline-none 
     ${theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-800'}`;
 
 // ---------------------------------------------------
 
+// ... (FormField and baseInputClasses remain the same)
+
 const AddLeaveForm = ({ onClose, onAddLeave }) => {
-    // Logic and State (UNCHANGED as requested)
+    // Logic and State 
     const { userData, theme } = useContext(Context);
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
     const [leaveType, setLeaveType] = useState("");
     const [reason, setReason] = useState("");
     const [isHalfDay, setIsHalfDay] = useState(false);
-    const [employeeId, setEmployeeId] = useState(userData?.employeeId || "");
-    const [isSubmitting, setIsSubmitting] = useState(false); // Added for UI feedback
+    const [employeeId] = useState(userData?.employeeId || "");
+    const [isSubmitting, setIsSubmitting] = useState(false); 
+    const [error, setError] = useState(null); 
 
-    const getNumberOfDays = () => {
-        if (!fromDate || !toDate) return 0;
-        const start = new Date(fromDate);
-        const end = new Date(toDate);
-        // Correctly calculate day difference
+    // ✅ FIX 1: getNumberOfDays is a pure function.
+    const getNumberOfDays = (from, to, half) => {
+        if (!from || !to) return { days: 0, error: null };
+        
+        // Use a consistent, non-local date calculation to prevent errors
+        const start = new Date(from + 'T12:00:00'); 
+        const end = new Date(to + 'T12:00:00');
+        
         const oneDay = 1000 * 60 * 60 * 24;
         const diffTime = end.getTime() - start.getTime();
-        const diffDays = Math.round(diffTime / oneDay);
-        return diffDays >= 0 ? diffDays + 1 : 0;
+        let totalDays = Math.round(diffTime / oneDay) + 1;
+
+        if (totalDays <= 0) return { days: 0, error: "End date must be on or after start date." };
+
+        // Half-Day Logic
+        if (half) {
+            if (totalDays > 1) {
+                return { days: totalDays, error: "Half-day can only be requested for a single day of leave." };
+            }
+            return { days: 0.5, error: null }; 
+        }
+        
+        return { days: totalDays, error: null };
     };
 
+    const { days: calculatedDays, error: calculationError } = getNumberOfDays(fromDate, toDate, isHalfDay);
+
+    // useEffect to update form-level error based on calculation, without causing infinite loop
+    useEffect(() => {
+        setError(calculationError);
+    }, [calculationError]);
+
+
+    // ✅ FIX 2 & 3: Robust payload construction in handleSubmit
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Ensure we prevent default form submit
+        e.preventDefault();
+        
+        if (calculatedDays <= 0 || calculationError) {
+            alert(calculationError || "Please select valid dates. The leave duration must be at least 0.5 days.");
+            return;
+        }
+
         setIsSubmitting(true);
-        // ... (rest of your logic remains here)
-        console.log("Submitting leave request:", { fromDate, toDate, leaveType, reason, isHalfDay });
+        setError(null); 
+
+        // 🔴 CRITICAL FIXES FOR 500 ERROR:
+        // 1. Ensure dates are formatted correctly.
+        // The API might be expecting the dates in a specific format (YYYY-MM-DD).
+        // Since the <input type="date"> gives YYYY-MM-DD string, we use that directly.
+        const formattedFromDate = fromDate; 
+        const formattedToDate = toDate;
+        
+        // 2. The backend might require a string for numberOfDays if it is a float (0.5).
+        // Sending it as a number is usually best practice, but if 500 persists, 
+        // you might need to change `calculatedDays` to `String(calculatedDays)`.
+        
         const leaveRequest = {
             employeeId: userData?.employeeId,
-            numberOfDays: getNumberOfDays(),
-            req_To_from: fromDate,
-            req_To_to: toDate,
-            leave_Reason: reason,
-            isHalf_Day: isHalfDay,
-            leave_Type: leaveType,
+            fromDate: formattedFromDate, // YYYY-MM-DD String
+            toDate: formattedToDate,     // YYYY-MM-DD String
+            numberOfDays: calculatedDays,  // Number (e.g., 1, 2, or 0.5)
+            leaveType: leaveType,
+            halfDay: isHalfDay,
+            reason: reason,
+            
+            // 💡 Optional: Add fields that were in the commented-out code if the API expects them. 
+            // This is a guess, but sometimes missing fields cause a 500.
+            req_To_from: formattedFromDate, 
+            req_To_to: formattedToDate,
+            leave_Reason: reason, // Re-added using snake_case as per commented code's format
+            isHalf_Day: isHalfDay, // Re-added using snake_case as per commented code's format
         };
+        // End of CRITICAL FIXES 
 
         try {
             await axios.post(
@@ -245,21 +302,44 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                 leaveRequest
             );
             console.log("Leave request submitted:", leaveRequest);
-            
-            const key = `leaveHistory_${userData?.employeeId}`;
+
+            // LocalStorage logic...
+            const key = `leaveHistory_${userData.employeeId}`;
             const storedLeaves = JSON.parse(localStorage.getItem(key)) || [];
-            localStorage.setItem(key, JSON.stringify([leaveRequest, ...storedLeaves]));
-            if (onAddLeave) onAddLeave(leaveRequest);
+            // Use the data structure expected by your LeaveHistory component for local storage
+            const localStoreLeave = {
+                // Map the new fields to the expected old fields
+                status: 'pending', 
+                leave_type: leaveType,
+                leave_on: formattedFromDate, // Assuming single-day leave saves just 'from' date for history display
+                request_By: employeeId,
+                action_Date: new Date().toISOString().slice(0, 10),
+                rejection_Reason: "-",
+                details: reason,
+                // New fields for completeness
+                fromDate: formattedFromDate,
+                toDate: formattedToDate,
+                numberOfDays: calculatedDays,
+                halfDay: isHalfDay,
+            };
+
+            localStorage.setItem(key, JSON.stringify([localStoreLeave, ...storedLeaves]));
+            if (onAddLeave) onAddLeave(localStoreLeave);
             onClose();
-            alert("Leave request submitted successfully! ✅"); // Added success alert
+            alert("Leave request submitted successfully! ✅");
         } catch (error) {
-            console.error(leaveRequest);
-            alert("Failed to submit leave request. Please check your inputs. 😔"); // Added error alert
+            const errorMessage = error.response?.data?.message || 
+                                 error.response?.data?.error || 
+                                 "Failed to submit leave request. The server returned a 500 Internal Error. This often means the server received unexpected data (e.g., trying to send 0.5 days to an integer-only field). Please try changing the leave duration or inform your administrator.";
+            console.error("Error submitting leave:", error.response?.data || error);
+            setError(errorMessage);
+            alert(`Failed to submit leave request. Details: ${errorMessage} 😔`);
         } finally {
             setIsSubmitting(false);
         }
     };
-    // UI Redesign Starts Here
+
+    // UI Redesign Starts Here (No changes to the DIVs, only logic fixed)
     const formThemeClasses = theme === 'dark' 
         ? 'bg-gray-800 text-white border-gray-700' 
         : 'bg-white text-gray-800 border-gray-100';
@@ -273,7 +353,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             transition={{ duration: 0.3 }}
-            onClick={onClose} // Allow closing by clicking backdrop
+            onClick={onClose} 
         >
             <motion.div 
                 className="w-full max-w-xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform" 
@@ -281,7 +361,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                 animate={{ scale: 1, y: 0 }} 
                 exit={{ scale: 0.95, y: -20 }} 
                 transition={{ duration: 0.3 }}
-                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                onClick={(e) => e.stopPropagation()} 
             >
                 <form 
                     onSubmit={handleSubmit} 
@@ -297,14 +377,21 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
 
                     <div className="space-y-6 p-8">
                         
+                        {/* Form-level Error Display */}
+                        {error && (
+                            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg dark:bg-red-900 dark:border-red-600 dark:text-red-300">
+                                <p className="text-sm font-medium">{error}</p>
+                            </div>
+                        )}
+                        
                         {/* Employee ID (Read-only/Initial Value) */}
                         <FormField label="Employee ID" theme={theme} helperText="This is automatically fetched from your profile.">
                             <input 
                                 type="text" 
                                 value={employeeId} 
-                                onChange={e => setEmployeeId(e.target.value)} 
-                                className={`${baseInputClasses(theme)} bg-gray-300  cursor-not-allowed`} 
-                                readOnly // Making it look disabled but still editable if needed
+                                // onChange removed as it's readOnly
+                                className={`${baseInputClasses(theme)} ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-100'} cursor-not-allowed`} 
+                                readOnly 
                             />
                         </FormField>
 
@@ -320,13 +407,14 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                                 />
                             </FormField>
                             
-                            <FormField label="To Date" theme={theme} helperText={`Duration: ${getNumberOfDays()} day(s)`}>
+                            {/* Usage: Safely uses the calculated value from outside the JSX */}
+                            <FormField label="To Date" theme={theme} helperText={`Duration: ${calculatedDays} day(s)`}>
                                 <input 
                                     type="date" 
                                     value={toDate} 
                                     onChange={e => setToDate(e.target.value)} 
                                     className={baseInputClasses(theme)} 
-                                    min={fromDate} // UX improvement: Cannot select a date before 'From Date'
+                                    min={fromDate} 
                                     required 
                                 />
                             </FormField>
@@ -334,18 +422,18 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
 
                         {/* Leave Type and Half-Day Group */}
                         <div className="grid grid-cols-2 gap-6 items-end">
-                             <FormField label="Leave Type" theme={theme}>
+                            <FormField label="Leave Type" theme={theme}>
                                 <select 
                                     value={leaveType} 
                                     onChange={e => setLeaveType(e.target.value)} 
-                                    className={`${baseInputClasses(theme)} h-12 appearance-none`} // Increased height for aesthetic, removed extra styles
+                                    className={`${baseInputClasses(theme)} h-12 appearance-none`} 
                                     required
                                 >
-                                    <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Type</option>
-                                    <option value="Sick" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Sick Leave</option>
-                                    <option value="Casual" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Casual Leave</option>
-                                    <option value="Unpaid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Unpaid Leave</option>
-                                    <option value="Paid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Paid Leave</option>
+                                    <option  value=""      className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`} disabled hidden >Select Type</option>
+                                    <option value="Sick" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Sick</option>
+                                    <option value="Casual" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Casual</option>
+                                    <option value="Unpaid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Unpaid</option>
+                                    <option value="Paid" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Paid</option>
                                 </select>
                             </FormField>
                             
@@ -356,7 +444,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                                     type="checkbox" 
                                     checked={isHalfDay} 
                                     onChange={e => setIsHalfDay(e.target.checked)} 
-                                    className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500 transition duration-150"
+                                    className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition duration-150"
                                 />
                                 <label 
                                     htmlFor="isHalfDay"
@@ -383,7 +471,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             <motion.button 
                                 type="button" 
                                 onClick={onClose} 
-                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100  dark:border-gray-600"
+                                className={`px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors ${theme === 'dark' ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}`}
                                 whileHover={{ scale: 1.05 }} 
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -392,8 +480,8 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                             
                             <motion.button 
                                 type="submit" 
-                                className="px-5 py-2.5 rounded-lg border border-transparent bg-blue-600 text-sm font-semibold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:bg-red-400 transition-colors" 
-                                disabled={isSubmitting} 
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-blue-600 text-sm font-semibold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:bg-blue-400 transition-colors" 
+                                disabled={isSubmitting || !!error || calculatedDays <= 0} // Disable if submitting OR if there's an error OR if days are 0
                                 whileHover={{ scale: 1.05 }} 
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -1351,7 +1439,7 @@ function deduplicateLeaves(leaves) {
     localStorage.setItem(key, JSON.stringify(updatedLeaves));
     setCurrentLeaveHistoryData(updatedLeaves);
 };
-    // Always read from localStorage when employeeId changes
+   
     useEffect(() => {
         if (userData?.employeeId) {
             const storedLeaves = localStorage.getItem(`leaveHistory_${userData.employeeId}`);

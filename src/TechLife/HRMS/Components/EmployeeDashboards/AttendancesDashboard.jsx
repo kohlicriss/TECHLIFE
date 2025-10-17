@@ -1256,32 +1256,22 @@ useEffect(() => {
     };
     const handleVisibilityChange = () => {
         if (document.visibilityState === 'hidden') {
-            // Screen is off or tab is in background
-            handleDisconnect();
+            if (isLoggedIn) {
+                console.log("User moved to another tab/window is minimized. Only showing alert.");
+            }
         } else if (document.visibilityState === 'visible') {
-            // Screen is on or tab is active
             handleConnect();
         }
-        if (document.visibilityState === 'hidden' && isLoggedIn) {
-        console.log("User moved to another tab/window is minimized.");
-    }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // --- Tab Change/Close (beforeunload) ---
-    //const handleBeforeUnload = (event) => {
-    //if (isLoggedIn) {
-    //    const message = "Are you sure you want to disconnect? Your session will end.";
-    //    event.returnValue = message;
-    //    handleDisconnect(); 
-    //}
-//};
-
-    //window.addEventListener('beforeunload', handleBeforeUnload);
-
-
-    // Cleanup function for useEffect
+    const handleBeforeUnload = (event) => {
+        if (isLoggedIn) {
+            console.log("Disconnecting due to beforeunload (closing tab/window or refresh)...");
+            handleDisconnect(); 
+        }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
     return () => { 
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
@@ -1292,9 +1282,9 @@ useEffect(() => {
             clockTimerRef.current = null;
         }
         document.removeEventListener('visibilitychange', handleVisibilityChange);
-        //window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('beforeunload', handleBeforeUnload); // Cleanup లో add చేశాను
     };
-}, [isLoggedIn, startTime, currentAttendanceId]); // Depend on currentAttendanceId
+}, [isLoggedIn, startTime, currentAttendanceId]);
    
     const handleModeChange = (newMode) => {  updateProfileField("mode", newMode); setMode(newMode); setShowModeConfirm(false); };
 const handleRefresh = () => {
