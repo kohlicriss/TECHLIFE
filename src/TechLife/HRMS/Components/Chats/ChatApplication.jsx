@@ -838,10 +838,9 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         ...chatData.groups,
     ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
-
     useEffect(() => {
         const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
-        setChatUnreadCount(totalUnread);
+        setChatUnreadCount(totalUnread); 
     }, [allChats, setChatUnreadCount]);
 
     const handleTypingEvent = useCallback((payload) => {
@@ -877,6 +876,23 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             return newTypingUsers;
         });
     }, [currentUser.id, allChats]);
+
+    const onSidebarUpdate = useCallback((payload) => {
+        const updatedChatList = JSON.parse(payload.body);
+        const { privateChatsWith: updatedPrivate, groups: updatedGroups } = transformOverviewToChatList(updatedChatList, currentUser.id);
+
+        setChatData(prev => ({
+            ...prev,
+            privateChatsWith: prev.privateChatsWith.map(pc => {
+                const update = updatedPrivate.find(upc => upc.chatId === pc.chatId);
+                return update ? { ...pc, ...update } : pc;
+            }),
+            groups: prev.groups.map(g => {
+                const update = updatedGroups.find(ug => ug.chatId === g.chatId);
+                return update ? { ...g, ...update } : g;
+            })
+        }));
+    }, [currentUser.id]);
 
     useEffect(() => {
         onMessageReceivedRef.current = onMessageReceived;
@@ -921,7 +937,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         return { ...prev, privateChatsWith: newPrivateChats };
                     });
                 };
-
+                subscriptions.current['sidebar'] = client.subscribe(`/user/queue/sidebar`, onSidebarUpdate);
                 subscriptions.current['private'] = client.subscribe(`/user/queue/private`, messageHandler);
                 subscriptions.current['private-ack'] = client.subscribe(`/user/queue/private-ack`, messageHandler);
                 subscriptions.current['group-ack'] = client.subscribe(`/user/queue/group-ack`, messageHandler);
@@ -939,12 +955,20 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         stompClient.current = client;
 
         return () => {
+            // This cleanup runs when the component unmounts (e.g., navigating to Profile)
+            if (selectedChat && stompClient.current?.active) {
+                const destination = `/app/presence/close/${selectedChat.chatId}`;
+                stompClient.current.publish({ destination, body: "{}" });
+                console.log(`Sent CLOSE presence for ${selectedChat.chatId} on component unmount.`);
+            }
+
             if (stompClient.current?.active) {
                 stompClient.current.deactivate();
                 stompClient.current = null;
+                console.log("STOMP client deactivated on component unmount.");
             }
         };
-    }, [currentUser?.id, isChatDataReady]);
+    }, [currentUser?.id, isChatDataReady, selectedChat]);
 
     const groupIds = useMemo(() => {
         return (chatData.groups || []).map(g => g.chatId).sort().join(',');
@@ -1040,30 +1064,32 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     }, [selectedChat, currentUser.id, navigate]);
 
     const handleChatSelect = useCallback((chat) => {
-        setChatData(prev => {
-            const isGroup = chat.type === 'group';
-            const list = isGroup ? prev.groups : prev.privateChatsWith;
-            const exists = list.some(c => c.chatId === chat.chatId);
+        if (selectedChat && selectedChat.chatId !== chat.chatId && stompClient.current?.active) {
+            const destination = `/app/presence/close/${selectedChat.chatId}`;
+            stompClient.current.publish({ destination, body: "{}" });
+            console.log(`Sent CLOSE presence for previous chat: ${selectedChat.chatId}`);
+        }
 
-            if (exists) {
+        // Optimistic UI update for immediate feedback
+        if (chat.unreadMessageCount > 0) {
+            setChatData(prev => {
+                const isGroup = chat.type === 'group';
+                const list = isGroup ? prev.groups : prev.privateChatsWith;
                 const updatedList = list.map(c =>
                     c.chatId === chat.chatId ? { ...c, unreadMessageCount: 0 } : c
                 );
                 return isGroup
                     ? { ...prev, groups: updatedList }
                     : { ...prev, privateChatsWith: updatedList };
-            }
-            else {
-                const newChat = { ...chat, unreadMessageCount: 0 };
-                return isGroup
-                    ? { ...prev, groups: [newChat, ...prev.groups] }
-                    : { ...prev, privateChatsWith: [newChat, ...prev.privateChatsWith] };
-            }
-        });
+            });
+        }
+
         openChat(chat);
         setSearchTerm('');
 
-    }, [openChat]);
+    }, [openChat, selectedChat]);
+
+
 
     useEffect(() => {
         const handleBeforeUnload = () => {

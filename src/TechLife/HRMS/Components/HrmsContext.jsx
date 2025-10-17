@@ -206,7 +206,8 @@ useEffect(() => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray,chatUnreadCount,setChatUnreadCount
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray,
+                chatUnreadCount,setChatUnreadCount
             }}
         >
             {/* UISidebarContext will be provided in HrmsApp */}
