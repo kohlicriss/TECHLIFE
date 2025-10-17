@@ -20,7 +20,8 @@ import {
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
 
-function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
+  const { chatUnreadCount } = useContext(Context);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData, setUserData, theme } = useContext(Context);
