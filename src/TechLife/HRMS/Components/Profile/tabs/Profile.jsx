@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoPeopleOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoTrashOutline, IoCreateOutline } from "react-icons/io5";
+import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoTrashOutline, IoCreateOutline } from "react-icons/io5";
 import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
 import { useParams, useLocation } from "react-router-dom";
@@ -33,16 +33,6 @@ const Modal = ({ children, onClose, title, type, theme }) => {
     );
 };
 
-// Default Profile (Only static relations/identity)
-const defaultProfile = {
-  relations: {
-    fatherName: "Albert Smith",
-    motherName: "Marry Smith",
-    spouseName: "Jane Smith",
-    children: "2",
-    siblings: "1",
-  },
-};
 
 const sectionFields = {
   primaryDetails: [
@@ -192,38 +182,6 @@ const sectionFields = {
       hint: "Enter district name (up to 50 characters)"
     },
   ],
-  relations: [
-    { 
-      label: "Father Name", 
-      name: "fatherName", 
-      type: "text",
-      hint: "Enter your father's name"
-    },
-    { 
-      label: "Mother Name", 
-      name: "motherName", 
-      type: "text",
-      hint: "Enter your mother's name"
-    },
-    { 
-      label: "Spouse Name", 
-      name: "spouseName", 
-      type: "text",
-      hint: "Enter your spouse's name if married"
-    },
-    { 
-      label: "Children", 
-      name: "children", 
-      type: "number",
-      hint: "Enter number of children"
-    },
-    { 
-      label: "Siblings", 
-      name: "siblings", 
-      type: "number",
-      hint: "Enter number of siblings"
-    },
-  ],
   education: [
     { 
       label: "Degree Type", 
@@ -287,6 +245,7 @@ const sectionFields = {
       label: "Degree Certificate", 
       name: "addFiles", 
       type: "file",
+      required: true,
       hint: "Upload degree certificate (JPG, PNG, PDF)"
     },
   ],
@@ -389,18 +348,6 @@ const sectionConfig = {
     title: 'Address Information',
     description: 'Current residential address'
   },
-  relations: {
-    icon: IoPeopleOutline,
-    color: 'from-purple-500 to-purple-700',
-    bgColor: 'bg-purple-50',
-    darkBgColor: 'bg-purple-900/20',
-    borderColor: 'border-purple-200',
-    darkBorderColor: 'border-purple-700',
-    textColor: 'text-purple-700',
-    darkTextColor: 'text-purple-400',
-    title: 'Family Relations',
-    description: 'Family members and relationships'
-  },
   education: {
     icon: IoSchoolOutline,
     color: 'from-yellow-500 to-amber-700',
@@ -436,7 +383,7 @@ const hasActualData = (data, sectionKey) => {
     return data.length > 0;
   }
   
-  // For objects, check if any field has meaningful value
+  // For objects, check if any field has a meaningful value
   const fieldsToCheck = sectionFields[sectionKey];
   if (!fieldsToCheck) return false;
   
@@ -606,7 +553,7 @@ const handleNetworkError = (error) => {
   }
   
   if (error.response) {
-    // Server responded with error status
+    // Server responded with an error status
     switch (error.response.status) {
       case 400:
         return error.response.data?.message || 'Invalid data provided. Please check all fields.';
@@ -626,8 +573,8 @@ const handleNetworkError = (error) => {
         return 'An unexpected error occurred. Please try again.';
     }
   } else if (error.request) {
-    // Request was made but no response received
-    return 'Unable to connect to server. Please check your internet connection.';
+    // Request was made but no response was received
+    return 'Unable to connect to the server. Please check your internet connection.';
   } else {
     // Something else happened
     return 'An unexpected error occurred. Please try again.';
@@ -648,7 +595,7 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [errors, setErrors] = useState({});
-  const [completionStats, setCompletionStats] = useState({ completed: 0, total: 6 });
+  const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
   const [selectedFile, setSelectedFile] = useState(null);
 
   // 🚨 NEW: State for tracking initial form data and change detection
@@ -679,9 +626,9 @@ function Profile() {
 
   const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
 
-  // 🚨 NEW: Function to check if form has changes
+  // 🚨 NEW: Function to check if the form has changes
   const hasFormChanges = (currentData, initialData, selectedFile = null) => {
-    // If there's a file selected, consider it as a change
+    // If there's a file selected, consider it a change
     if (selectedFile) return true;
 
     // Deep compare objects
@@ -693,7 +640,7 @@ function Profile() {
     const currentFields = Object.keys(currentData || {});
     const initialFields = Object.keys(initialData || {});
     
-    // Check if number of fields changed
+    // Check if the number of fields has changed
     if (currentFields.length !== initialFields.length) return true;
 
     // Check each field
@@ -743,11 +690,10 @@ function Profile() {
           hasActualData(contactRes.data, 'contactDetails'), 
           hasActualData(addressRes.data, 'address'), 
           hasActualData(eduRes.data, 'education'), 
-          hasActualData(expRes.data, 'experience'), 
-          hasActualData(defaultProfile.relations, 'relations')
+          hasActualData(expRes.data, 'experience'),
         ];
         const completed = sections.filter(Boolean).length;
-        setCompletionStats({ completed, total: 6 });
+        setCompletionStats({ completed, total: 5 });
 
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -784,15 +730,13 @@ function Profile() {
         dataToEdit = contactdetails;
       } else if (section === "address") {
         dataToEdit = addressData;
-      } else if (section === "relations") {
-        dataToEdit = defaultProfile.relations;
       } else if (section === "education") {
         if (itemData) {
           dataToEdit = itemData; // Edit specific education item
         } else if (isAdd || (eduData && eduData.length === 0)) {
           dataToEdit = {}; // Add new education
         } else {
-          dataToEdit = eduData[0]; // Default to first education item
+          dataToEdit = eduData[0]; // Default to the first education item
         }
       } else if (section === "experience") {
         if (itemData) {
@@ -800,7 +744,7 @@ function Profile() {
         } else if (isAdd || (experience && experience.length === 0)) {
           dataToEdit = {}; // Add new experience
         } else {
-          dataToEdit = experience[0]; // Default to first experience item
+          dataToEdit = experience[0]; // Default to the first experience item
         }
       }
       const finalData = dataToEdit || {};
@@ -868,9 +812,6 @@ function Profile() {
         case 'experience':
           setPopup({show: true, message: "Experience deletion should be done per entry. This feature needs backend support for bulk deletion.", type: 'error'});
           return;
-        case 'relations':
-          setPopup({show: true, message: "Relations cannot be deleted as they are static data.", type: 'error'});
-          return;
         default:
           throw new Error("Invalid section for deletion");
       }
@@ -899,10 +840,9 @@ function Profile() {
         sectionKey === 'address' ? false : hasActualData(addressData, 'address'),
         hasActualData(eduData, 'education'),
         hasActualData(experience, 'experience'),
-        hasActualData(defaultProfile.relations, 'relations')
       ];
       const completed = sections.filter(Boolean).length;
-      setCompletionStats({ completed, total: 6 });
+      setCompletionStats({ completed, total: 5 });
 
     } catch (err) {
       console.error(`Failed to delete ${sectionTitle}:`, err);
@@ -919,7 +859,7 @@ function Profile() {
       [field]: value,
     }));
     
-    // Clear network error when user starts typing
+    // Clear network error when the user starts typing
     setNetworkError(null);
     
     // Clear existing field error
@@ -963,10 +903,9 @@ function Profile() {
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(experience, 'experience'), 
-        hasActualData(defaultProfile.relations, 'relations')
+        hasActualData(experience, 'experience'),
       ];
-      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update primary details:", error);
@@ -995,10 +934,9 @@ function Profile() {
         hasActualData(updatedData.data, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(experience, 'experience'), 
-        hasActualData(defaultProfile.relations, 'relations')
+        hasActualData(experience, 'experience'),
       ];
-      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update contact details:", error);
@@ -1027,10 +965,9 @@ function Profile() {
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(updatedData.data, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(experience, 'experience'), 
-        hasActualData(defaultProfile.relations, 'relations')
+        hasActualData(experience, 'experience'),
       ];
-      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update address:", error);
@@ -1073,10 +1010,9 @@ function Profile() {
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(updatedEduRes.data, 'education'), 
-        hasActualData(experience, 'experience'), 
-        hasActualData(defaultProfile.relations, 'relations')
+        hasActualData(experience, 'experience'),
       ];
-      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update education details:", error);
@@ -1113,10 +1049,9 @@ function Profile() {
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(updatedExperienceRes.data, 'experience'), 
-        hasActualData(defaultProfile.relations, 'relations')
+        hasActualData(updatedExperienceRes.data, 'experience'),
       ];
-      setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update experience details:", error);
@@ -1130,12 +1065,6 @@ function Profile() {
     }
   };
 
-  const handleUpdateRelations = () => {
-    console.error("Backend endpoint for updating relations does not exist in your controller.");
-    setPopup({show: true, message: "This section cannot be updated yet. A backend API endpoint is missing.", type: 'error'});
-    setEditingSection(null);
-  };
-
   // 🚨 MODIFIED: handleSubmit with change detection and pre-submission validation
   const handleSubmit = async (section) => {
     // Clear network error
@@ -1147,15 +1076,23 @@ function Profile() {
     
     fields.forEach(field => {
       const value = editingData[field.name];
-      if (field.required && (!value || value.toString().trim() === '')) {
-        validationErrors[field.name] = `${field.label} is required`;
-      } else if (value && value.toString().trim() !== '') {
-        const validationError = validateFieldByHint(field.name, value, field.hint, field.type);
-        if (validationError) {
-          validationErrors[field.name] = validationError;
-        }
+      if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+          // For file inputs, check if there's no existing file and no new file selected
+          if (field.type === 'file') {
+              if (!editingData[field.name] && !selectedFile) {
+                  validationErrors[field.name] = `${field.label} is required`;
+              }
+          } else {
+              validationErrors[field.name] = `${field.label} is required`;
+          }
+      } else if (value && typeof value === 'string' && value.trim() !== '') {
+          const validationError = validateFieldByHint(field.name, value, field.hint, field.type);
+          if (validationError) {
+              validationErrors[field.name] = validationError;
+          }
       }
     });
+
     
     // If there are validation errors, don't submit
     if (Object.keys(validationErrors).length > 0) {
@@ -1167,7 +1104,7 @@ function Profile() {
     const hasChanges = hasFormChanges(editingData, initialEditingData, selectedFile);
     
     if (!hasChanges) {
-      // Show no changes modal instead of proceeding directly
+      // Show "no changes" modal instead of proceeding directly
       setNoChangesModal({
         show: true,
         section: section,
@@ -1184,7 +1121,7 @@ function Profile() {
     proceedWithSubmission(section);
   };
 
-  // 🚨 NEW: Separate function for actual submission logic
+  // 🚨 NEW: Separate function for the actual submission logic
   const proceedWithSubmission = async (section) => {
     setIsUpdating(true);
     let success = false;
@@ -1198,9 +1135,6 @@ function Profile() {
           break;
         case "address":
           success = await handleUpdateAddress();
-          break;
-        case "relations":
-          handleUpdateRelations();
           break;
         case "education":
           success = await handleUpdateEducation();
@@ -1247,7 +1181,7 @@ function Profile() {
             {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
           </label>
           
-          {/* 🚨 NEW: Hint text always shown */}
+          {/* 🚨 NEW: Hint text is always shown */}
           {hint && (
             <p className={`text-xs mb-2 ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -1258,17 +1192,16 @@ function Profile() {
 
           <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 
               ${isError 
-                  ? 'border-red-300 bg-red-50' 
-                  : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-                  : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                ? 'border-red-300 bg-red-50' 
+                : theme === 'dark'
+                ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
+                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
               }`}>
             <input
               type="file"
               onChange={(e) => handleFileChange(e.target.files?.[0])}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               accept=".jpg,.jpeg,.png,.pdf"
-              required={required}
             />
             <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
               <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
@@ -1282,10 +1215,20 @@ function Profile() {
               <p className={`text-xs ${
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
               }`}>PNG, JPG, PDF up to 10MB</p>
-              {selectedFile && (
+              
+              {selectedFile ? (
                   <p className={`mt-2 text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
                       Selected: {selectedFile.name}
                   </p>
+              ) : fieldValue && (
+                  <div className="mt-2 text-center">
+                      <p className={`text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                          Current file: {fieldValue.substring(fieldValue.lastIndexOf('/') + 1)}
+                      </p>
+                      <p className={`text-xs italic ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
+                          Upload a new file to replace it.
+                      </p>
+                  </div>
               )}
             </div>
           </div>
@@ -1309,7 +1252,7 @@ function Profile() {
           {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
         </label>
         
-        {/* 🚨 NEW: Hint text always shown */}
+        {/* 🚨 NEW: Hint text is always shown */}
         {hint && (
           <p className={`text-xs mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -1637,12 +1580,12 @@ function Profile() {
     const config = sectionConfig[sectionKey];
     const IconComponent = config.icon;
     
-    // UPDATED: Use hasActualData function instead of simple boolean check
+    // UPDATED: Use hasActualData function instead of a simple boolean check
     const hasData = hasActualData(data, sectionKey);
     
     return (
       <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                       overflow-hidden group hover:scale-[1.02] mb-6 sm:mb-8 ${
+                          overflow-hidden group hover:scale-[1.02] mb-6 sm:mb-8 ${
         theme === 'dark'
           ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
           : `bg-white ${config.borderColor}`
@@ -1683,7 +1626,7 @@ function Profile() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-              {/* Always show Add button for education and experience */}
+              {/* Always show the "Add" button for education and experience */}
               {(sectionKey === 'education' || sectionKey === 'experience') && (!isReadOnly || isAdmin) && (
                 <button
                   onClick={() => openEditSection(sectionKey, null, true)}
@@ -1695,18 +1638,18 @@ function Profile() {
                 </button>
               )}
 
-              {/* UPDATED: Show Add or Edit button for primaryDetails, contactDetails, and address sections based on hasData */}
+              {/* UPDATED: Show "Add" or "Edit" button for primaryDetails, contactDetails, and address sections based on hasData */}
               {(!isReadOnly || isAdmin) && !['education', 'experience'].includes(sectionKey) && (
                 <button 
                   onClick={() => openEditSection(sectionKey)} 
                   className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 cursor-pointer rounded-lg sm:rounded-xl font-semibold transition-all duration-300 
-                              transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-sm
-                              ${hasData 
-                                ? theme === 'dark'
-                                  ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
-                                  : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
-                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
-                              }`}
+                                transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-sm
+                                ${hasData 
+                                  ? theme === 'dark'
+                                    ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
+                                    : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
+                                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                                }`}
                 >
                   {hasData ? (
                     <>
@@ -1767,8 +1710,8 @@ function Profile() {
                 <button 
                   onClick={() => openEditSection(sectionKey, null, true)}
                   className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
-                               text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 
-                               transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
+                                text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 
+                                transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
                 >
                   <IoAdd className="w-4 h-4" />
                   <span>Add {title}</span>
@@ -1924,13 +1867,6 @@ function Profile() {
               <DetailItem label="Country" value={addressData?.country} />
               <DetailItem label="District" value={addressData?.district} />
             </Section>
-            <Section sectionKey="relations" title="Family Relations" data={defaultProfile.relations}>
-              <DetailItem label="Father Name" value={defaultProfile.relations?.fatherName} />
-              <DetailItem label="Mother Name" value={defaultProfile.relations?.motherName} />
-              <DetailItem label="Spouse Name" value={defaultProfile.relations?.spouseName} />
-              <DetailItem label="Children" value={defaultProfile.relations?.children} />
-              <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
-            </Section>
 
             {/* Updated Education Section */}
             <Section sectionKey="education" title="Education Details" data={eduData}>
@@ -1966,103 +1902,103 @@ function Profile() {
         
         {popup.show && (
           <Modal
-              onClose={() => setPopup({ show: false, message: '', type: '' })}
-              title={popup.type === 'success' ? 'Success' : 'Error'}
-              type={popup.type}
-              theme={theme}
+            onClose={() => setPopup({ show: false, message: '', type: '' })}
+            title={popup.type === 'success' ? 'Success' : 'Error'}
+            type={popup.type}
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
-              <div className="flex justify-end">
-                  <button
-                      onClick={() => setPopup({ show: false, message: '', type: '' })}
-                      className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
-                  >
-                      OK
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+            <div className="flex justify-end">
+                <button
+                    onClick={() => setPopup({ show: false, message: '', type: '' })}
+                    className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
+                >
+                    OK
+                </button>
+            </div>
           </Modal>
         )}
 
         {deleteConfirmation.show && (
           <Modal
-              onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-              title="Confirm Deletion"
-              type="confirm"
-              theme={theme}
+            onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+            title="Confirm Deletion"
+            type="confirm"
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                  <button
-                      onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-                      className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
-                  >
-                      Cancel
-                  </button>
-                  <button
-                      onClick={confirmDelete}
-                      className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-                  >
-                      Delete
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                    onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={confirmDelete}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
+                >
+                    Delete
+                </button>
+            </div>
           </Modal>
         )}
 
         {/* NEW: Individual item deletion confirmation */}
         {deleteItemConfirmation.show && (
           <Modal
-              onClose={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
-              title="Confirm Deletion"
-              type="confirm"
-              theme={theme}
+            onClose={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
+            title="Confirm Deletion"
+            type="confirm"
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Are you sure you want to delete this {deleteItemConfirmation.type} record? This action cannot be undone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                  <button
-                      onClick={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
-                      className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
-                  >
-                      Cancel
-                  </button>
-                  <button
-                      onClick={confirmDeleteItem}
-                      className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-                  >
-                      Delete
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Are you sure you want to delete this {deleteItemConfirmation.type} record? This action cannot be undone.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                    onClick={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={confirmDeleteItem}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
+                >
+                    Delete
+                </button>
+            </div>
           </Modal>
         )}
 
         {/* 🚨 NEW: No Changes Detected Modal */}
         {noChangesModal.show && (
           <Modal
-              onClose={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
-              title="No Changes Detected"
-              type="confirm"
-              theme={theme}
+            onClose={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
+            title="No Changes Detected"
+            type="confirm"
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  You haven't made any changes to the form. Are you sure you want to submit without any modifications?
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                  <button
-                      onClick={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
-                      className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
-                  >
-                      Go Back & Make Changes
-                  </button>
-                  <button
-                      onClick={noChangesModal.onContinue}
-                      className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 transition-colors text-sm"
-                  >
-                      Continue Anyway
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                You haven't made any changes to the form. Are you sure you want to submit without any modifications?
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                    onClick={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                >
+                    Go Back & Make Changes
+                </button>
+                <button
+                    onClick={noChangesModal.onContinue}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 transition-colors text-sm"
+                >
+                    Continue Anyway
+                </button>
+            </div>
           </Modal>
         )}
       </div>

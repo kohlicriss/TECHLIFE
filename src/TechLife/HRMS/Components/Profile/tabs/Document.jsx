@@ -205,7 +205,11 @@ const identityFields = {
       label: "Country Code", 
       name: "countryCode", 
       type: "select",
-      options: ["IND", "USA", "PAK", "CAN", "GBR", "AUS", "JPN", "DEU", "CHN", "RUS", "BRA", "ZAF"],
+      options: [
+  "IND", "USA", "AUS", "ZLD", "DEU", "JPN", "GBR", "CAN", "FRA", "CHN",
+  "BRA", "RUS", "ITA", "ESP", "MEX", "ZAF", "NZL", "ARG", "KOR", "NLD",
+  "BEL", "SWE", "CHE", "AUT", "NOR", "FIN", "POL", "GRC", "TUR", "IDN"
+],
       required: true,
       hint: "Select the 3-character country code"
     },
