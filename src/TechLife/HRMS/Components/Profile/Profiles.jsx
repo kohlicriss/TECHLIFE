@@ -265,7 +265,7 @@ const Profiles = () => {
         .substring(0, 2);
     
     const tabs = [
-        { name: "About", path: "about", icon: MdPerson },
+        // { name: "About", path: "about", icon: MdPerson },
         { name: "Profile", path: "profile", icon: HiIdentification },
         { name: "Job", path: "job", icon: MdWork },
         { name: "Documents", path: "documents", icon: MdBusiness },
@@ -816,7 +816,7 @@ const Profiles = () => {
             <div className="max-w-md mx-auto p-3">
                 <Routes>
                     <Route index element={<Navigate to="profile" replace />} />
-                    <Route path="about" element={<About />} />
+                    {/* <Route path="about" element={<About />} /> */}
                     <Route path="profile" element={<Profile />} />
                     <Route path="job" element={<Job />} />
                     <Route path="documents" element={<Document />} />
@@ -1066,18 +1066,21 @@ const Profiles = () => {
                                 Employee ID
                             </label>
                             <div className="relative">
-                                <input
-                                    type="text"
-                                    name="employeeId"
-                                    value={editingHeaderData.employeeId || ''}
-                                    onChange={handleHeaderInputChange}
-                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
-                                        theme === 'dark'
-                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                    }`}
-                                    placeholder="Enter employee ID"
-                                />
+                               <input
+  type="text"
+  name="employeeId"
+  value={editingHeaderData.employeeId || ''}
+  onChange={handleHeaderInputChange}
+  disabled
+  className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 
+  focus:border-blue-500 focus:ring-4 focus:ring-blue-100 pointer-events-none cursor-not-allowed opacity-70 ${
+    theme === 'dark'
+      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+      : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+  }`}
+  placeholder="Enter employee ID"
+/>
+
                             </div>
                             <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                 Unique identifier for the employee

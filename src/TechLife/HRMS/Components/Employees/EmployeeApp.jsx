@@ -52,7 +52,7 @@ const styles = `
   }
 `;
 
-// Inject styles (Ensure this doesn't create duplicate style tags if running in a controlled environment)
+// Inject styles
 try {
     if (!document.getElementById('custom-employee-styles')) {
         const styleSheet = document.createElement("style");
@@ -130,9 +130,9 @@ const InputField = ({
     options = [], 
     multiple = false,
     accept,
-    theme 
+    theme,
+    maxLength
 }) => {
-    // FIX: Ensure value is a string for input/select elements, preventing React warnings/errors
     const normalizedValue = value === null || value === undefined ? '' : value;
 
     const baseInputClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
@@ -167,7 +167,7 @@ const InputField = ({
                 {label}
                 {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
             </label>
-
+            
             {hint && (
                 <p className={`text-xs mb-2 ${
                     theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -180,7 +180,7 @@ const InputField = ({
                 <div className="relative">
                     <select
                         name={name}
-                        value={normalizedValue} // Use normalizedValue
+                        value={normalizedValue}
                         onChange={onChange}
                         onBlur={onBlur}
                         className={selectClass}
@@ -204,13 +204,14 @@ const InputField = ({
             ) : type === 'textarea' ? (
                 <textarea
                     name={name}
-                    value={normalizedValue} // Use normalizedValue
+                    value={normalizedValue}
                     onChange={onChange}
                     onBlur={onBlur}
                     placeholder={placeholder}
                     className={textareaClass}
                     required={required}
                     rows={4}
+                    maxLength={maxLength}
                 />
             ) : type === 'file' ? (
                 <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 ${
@@ -248,12 +249,13 @@ const InputField = ({
                 <input
                     type={type}
                     name={name}
-                    value={normalizedValue} // Use normalizedValue
+                    value={normalizedValue}
                     onChange={onChange}
                     onBlur={onBlur}
                     placeholder={placeholder}
                     className={baseInputClass}
                     required={required}
+                    maxLength={maxLength}
                 />
             )}
 
@@ -267,16 +269,17 @@ const InputField = ({
     );
 };
 
+
 // --- Field Definitions for the Combined Form ---
 const credentialsFormFields = [
     { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
-    { label: "Username/Email", name: "username", type: "email", required: true, hint: "This will be the login username (e.g., work email)." },
-    { label: "Password", name: "password", type: "password", required: true, hint: "Temporary password (min 6 characters)." },
-    { label: "Role", name: "role", type: "text", required: true, hint: "Primary role (e.g., ADMIN, MANAGER, EMPLOYEE, HR)." },
+    { label: "Username", name: "username", type: "text", required: true, hint: "Must start with 'ACS' and match Employee ID (8-30 chars).", maxLength: 30 },
+    { label: "Password", name: "password", type: "password", required: true, hint: "Temporary password (8-30 characters).", maxLength: 30 },
+    { label: "Role", name: "role", type: "text", required: true, hint: "E.g., ROLE_ADMIN, ROLE_MANAGER, ROLE_EMPLOYEE, ROLE_HR." },
 ];
 
 const employeeFormFields = [
-    { label: "Employee ID", name: "employeeId", type: "text", required: true, hint: "Must be 'ACS' followed by 8 digits (e.g., ACS12345678)." },
+    { label: "Employee ID", name: "employeeId", type: "text", required: true, hint: "Must start with 'ACS' and match Username (8-30 chars).", maxLength: 30 },
     { label: "First Name", name: "firstName", type: "text", required: true, hint: "Enter employee's first name." },
     { label: "Display Name", name: "displayName", type: "text", required: false, hint: "Name to display in the system (optional)." },
     { label: "Marital Status", name: "maritalStatus", type: "select", required: true, options: ["Single", "Married", "Divorced", "Widowed"], hint: "Select employee's marital status." },
@@ -517,17 +520,14 @@ function EmployeeApp() {
     const [flippedCard, setFlippedCard] = useState(null);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, employee: null });
 
-    // --- MERGED FORM STATE ---
     const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
-    const [submissionStatus, setSubmissionStatus] = useState(''); // For button text
+    const [submissionStatus, setSubmissionStatus] = useState('');
     const initialFormData = {
-        // Credentials fields
         fullName: '',
         username: '',
         password: '',
         role: '',
-        // Employee fields
         employeeId: '',
         firstName: '',
         displayName: '',
@@ -745,7 +745,6 @@ function EmployeeApp() {
         
         setFormData(prev => {
             const updatedData = { ...prev, [name]: value };
-            // Auto-populate first name and display name from full name
             if (name === 'fullName') {
                 updatedData.firstName = value.split(' ')[0] || '';
                 updatedData.displayName = value;
@@ -773,16 +772,60 @@ function EmployeeApp() {
         }
     };
 
+    // MODIFIED: Added real-time onBlur validation
+    const handleBlurValidation = (e) => {
+        const { name, value } = e.target;
+        let error = '';
+    
+        if (name === 'username' || name === 'employeeId') {
+            if (value && !value.startsWith('ACS')) {
+                error = "Incorrect format. Must start with 'ACS'.";
+            } else if (value && (value.length < 8 || value.length > 30)) {
+                error = "Must be between 8 and 30 characters.";
+            }
+        }
+    
+        if (name === 'password') {
+            if (value && (value.length < 8 || value.length > 30)) {
+                error = "Password must be 8-30 characters.";
+            }
+        }
+    
+        setFormErrors(prev => {
+            const newErrors = { ...prev };
+            if (error) {
+                newErrors[name] = error;
+            } else {
+                delete newErrors[name];
+            }
+            return newErrors;
+        });
+    };
+
+    // MODIFIED: Updated validation rules including the match check
     const validateForm = (data) => {
         const errors = {};
-        // Credentials validation
         if (!data.fullName) errors.fullName = "Full name is required.";
-        if (!data.username) errors.username = "Username/Email is required.";
-        if (!data.password || data.password.length < 6) errors.password = "Password must be at least 6 characters.";
+        
+        if (!data.username) errors.username = "Username is required.";
+        else if (data.username.length < 8 || data.username.length > 30) errors.username = "Username must be 8-30 characters.";
+        else if (!data.username.startsWith('ACS')) errors.username = "Username must start with 'ACS'.";
+
+        if (!data.password) errors.password = "Password is required.";
+        else if (data.password.length < 8 || data.password.length > 30) errors.password = "Password must be 8-30 characters.";
+
         if (!data.role) errors.role = "Role is required.";
         
-        // Employee validation
-        if (!data.employeeId || !/^ACS\d{8}$/.test(data.employeeId)) errors.employeeId = "Employee ID must be 'ACS' + 8 digits.";
+        if (!data.employeeId) errors.employeeId = "Employee ID is required.";
+        else if (data.employeeId.length < 8 || data.employeeId.length > 30) errors.employeeId = "Employee ID must be 8-30 characters.";
+        else if (!data.employeeId.startsWith('ACS')) errors.employeeId = "Employee ID must start with 'ACS'.";
+        
+        // NEW: Check if username and employeeId match
+        if (data.username && data.employeeId && data.username !== data.employeeId) {
+            errors.username = "Username and Employee ID must match.";
+            errors.employeeId = "Username and Employee ID must match.";
+        }
+
         if (!data.firstName) errors.firstName = "First name is required.";
         if (!data.maritalStatus) errors.maritalStatus = "Marital status is required.";
         if (!data.departmentId) errors.departmentId = "Department ID is required.";
@@ -802,7 +845,6 @@ function EmployeeApp() {
         setIsUpdating(true);
         setFormErrors({});
 
-        // DTO for Credentials Endpoint
         const credentialsDto = {
             fullName: formData.fullName,
             username: formData.username,
@@ -810,7 +852,6 @@ function EmployeeApp() {
             role: formData.role.toUpperCase(),
         };
 
-        // DTO for Employee Endpoint
         const employeeDto = {
             employeeId: formData.employeeId,
             firstName: formData.firstName,
@@ -820,19 +861,16 @@ function EmployeeApp() {
         };
 
         try {
-            // STEP 1: Create User Credentials
             setSubmissionStatus('Creating User...');
             await authApi.post("/register", credentialsDto);
 
-            // STEP 2: Create Employee Profile (only if credentials succeeded)
             setSubmissionStatus('Creating Employee...');
             await publicinfoApi.post('employee', employeeDto);
 
-            // SUCCESS
             setPopup({ show: true, message: 'Employee and user account created successfully!', type: 'success' });
             setIsAddEmployeeModalOpen(false);
-            setFormData(initialFormData); // Reset form
-            fetchAllEmployees(); // Refresh the employee list
+            setFormData(initialFormData);
+            fetchAllEmployees();
 
         } catch (error) {
             console.error("Error creating employee:", error);
@@ -852,7 +890,7 @@ function EmployeeApp() {
     };
 
     const renderField = (field, currentErrors, handleChange, fieldValue) => {
-        const { label, name, type, required, options = [], hint } = field;
+        const { label, name, type, required, options = [], hint, maxLength } = field;
         const isError = currentErrors[name];
 
         if (type === 'department-dropdown') {
@@ -879,14 +917,15 @@ function EmployeeApp() {
                 placeholder={`Enter ${label.toLowerCase()}...`}
                 value={fieldValue}
                 onChange={handleChange}
+                onBlur={handleBlurValidation} // MODIFIED: Added onBlur handler
                 isError={isError}
                 options={options}
                 theme={theme}
+                maxLength={maxLength}
             />
         );
     };
 
-    // --- RENDER COMBINED MODAL ---
     const renderAddEmployeeModal = () => {
         if (!isAddEmployeeModalOpen) return null;
 
@@ -1272,7 +1311,6 @@ function EmployeeApp() {
         );
     }
     
-    // The main app background for context when the modal is open
     if (isAddEmployeeModalOpen) {
         return (
             <>
@@ -1286,122 +1324,122 @@ function EmployeeApp() {
         <div className={`min-h-screen px-0 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
             <div className="max-w-7xl mx-auto">
              <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.5, delay: 0.2 }}
-    className={`rounded-none sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg border mb-4 sm:mb-6 mx-2 sm:mx-0 ${
-        theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-    }`}
+   initial={{ opacity: 0, scale: 0.95 }}
+   animate={{ opacity: 1, scale: 1 }}
+   transition={{ duration: 0.5, delay: 0.2 }}
+   className={`rounded-none sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg border mb-4 sm:mb-6 mx-2 sm:mx-0 ${
+       theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+   }`}
 >
-    <div className="mb-3">
-        <div className="relative group max-w-full sm:max-w-sm md:max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <IoSearchOutline className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-            </div>
-            <input
-                type="text"
-                className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 pl-7 sm:pl-8 border rounded-md sm:rounded-lg transition-all duration-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none placeholder-gray-500 text-xs sm:text-sm ${
-                    theme === 'dark'
-                        ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
-                        : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
-                }`}
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-    </div>
+   <div className="mb-3">
+       <div className="relative group max-w-full sm:max-w-sm md:max-w-md">
+           <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+               <IoSearchOutline className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+           </div>
+           <input
+               type="text"
+               className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 pl-7 sm:pl-8 border rounded-md sm:rounded-lg transition-all duration-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none placeholder-gray-500 text-xs sm:text-sm ${
+                   theme === 'dark'
+                       ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
+                       : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
+               }`}
+               placeholder="Search..."
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+           />
+       </div>
+   </div>
 
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {dynamicFilters.map(filter => {
-                const IconComponent = filter.icon;
-                return (
-                    <div key={filter.name} className="relative group min-w-0 flex-1 sm:flex-initial">
-                        <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 flex items-center pointer-events-none">
-                            <IconComponent className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                        </div>
-                        <select
-                            className={`px-3 sm:px-4 py-2 sm:py-2.5 pl-6 sm:pl-7 pr-4 sm:pr-5 border rounded-md sm:rounded-lg transition-all duration-300 appearance-none cursor-pointer min-w-[100px] sm:min-w-[120px] text-xs truncate focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
-                                theme === 'dark'
-                                    ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
-                                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
-                            }`}
-                            value={selectedFilters[filter.name]}
-                            onChange={(e) => setSelectedFilters({
-                                ...selectedFilters,
-                                [filter.name]: e.target.value,
-                            })}
-                        >
-                            {filter.options.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center pointer-events-none">
-                            <IoChevronDownOutline className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
+   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
+       <div className="flex flex-wrap gap-1.5 sm:gap-2">
+           {dynamicFilters.map(filter => {
+               const IconComponent = filter.icon;
+               return (
+                   <div key={filter.name} className="relative group min-w-0 flex-1 sm:flex-initial">
+                       <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 flex items-center pointer-events-none">
+                           <IconComponent className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                       </div>
+                       <select
+                           className={`px-3 sm:px-4 py-2 sm:py-2.5 pl-6 sm:pl-7 pr-4 sm:pr-5 border rounded-md sm:rounded-lg transition-all duration-300 appearance-none cursor-pointer min-w-[100px] sm:min-w-[120px] text-xs truncate focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+                               theme === 'dark'
+                                   ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
+                                   : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
+                           }`}
+                           value={selectedFilters[filter.name]}
+                           onChange={(e) => setSelectedFilters({
+                               ...selectedFilters,
+                               [filter.name]: e.target.value,
+                           })}
+                       >
+                           {filter.options.map(option => (
+                               <option key={option} value={option}>{option}</option>
+                           ))}
+                       </select>
+                       <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center pointer-events-none">
+                           <IoChevronDownOutline className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                       </div>
+                   </div>
+               );
+           })}
+       </div>
 
-        <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
-            <button
-                onClick={clearFilters}
-                className={`px-4 sm:px-5 py-1.5 sm:py-2 border rounded-md sm:rounded-lg font-medium transition-all duration-200 focus:ring-2 focus:ring-gray-500/20 text-xs flex items-center justify-center space-x-1.5 ${
-                    theme === 'dark'
-                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                }`}
-            >
-                <IoRefreshOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                <span>Clear</span>
-            </button>
+       <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
+           <button
+               onClick={clearFilters}
+               className={`px-4 sm:px-5 py-1.5 sm:py-2 border rounded-md sm:rounded-lg font-medium transition-all duration-200 focus:ring-2 focus:ring-gray-500/20 text-xs flex items-center justify-center space-x-1.5 ${
+                   theme === 'dark'
+                       ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                       : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+               }`}
+           >
+               <IoRefreshOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+               <span>Clear</span>
+           </button>
 
-            {matchedArray && matchedArray.includes("CREAT_USER") && (
-                <button
-                    onClick={() => setIsAddEmployeeModalOpen(true)}
-                    className="px-4 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-md sm:rounded-lg hover:shadow-md transform hover:scale-105 transition-all duration-200 focus:ring-2 focus:ring-blue-500/30 text-xs flex items-center justify-center space-x-1.5"
-                >
-                    <IoAddCircleOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span>Add</span>
-                </button>
-            )}
+           {matchedArray && matchedArray.includes("CREAT_USER") && (
+               <button
+                   onClick={() => setIsAddEmployeeModalOpen(true)}
+                   className="px-4 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-md sm:rounded-lg hover:shadow-md transform hover:scale-105 transition-all duration-200 focus:ring-2 focus:ring-blue-500/30 text-xs flex items-center justify-center space-x-1.5"
+               >
+                   <IoAddCircleOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                   <span>Add</span>
+               </button>
+           )}
 
-            {matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
-                <button
-                    onClick={handleTerminateEmployees}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors duration-200 text-xs flex items-center justify-center space-x-1.5"
-                >
-                    <IoTrashOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span>Terminate</span>
-                </button>
-            )}
+           {matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
+               <button
+                   onClick={handleTerminateEmployees}
+                   className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors duration-200 text-xs flex items-center justify-center space-x-1.5"
+               >
+                   <IoTrashOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                   <span>Terminate</span>
+               </button>
+           )}
 
-            <div className={`flex rounded-md p-0.5 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
-                        viewMode === 'grid'
-                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-                    }`}
-                >
-                    <IoGridOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                </button>
-                <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
-                        viewMode === 'list'
-                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-                    }`}
-                >
-                    <IoListOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                </button>
-            </div>
-        </div>
-    </div>
+           <div className={`flex rounded-md p-0.5 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+               <button
+                   onClick={() => setViewMode('grid')}
+                   className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
+                       viewMode === 'grid'
+                           ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                           : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+                   }`}
+               >
+                   <IoGridOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+               </button>
+               <button
+                   onClick={() => setViewMode('list')}
+                   className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
+                       viewMode === 'list'
+                           ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                           : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+                   }`}
+               >
+                   <IoListOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+               </button>
+           </div>
+       </div>
+   </div>
 </motion.div>
 
                 <div className="flex items-center justify-between mb-4 sm:mb-3 mx-4 sm:mx-0">
@@ -1477,83 +1515,83 @@ function EmployeeApp() {
                                                 } hover:scale-105`}
                                                 style={{ backfaceVisibility: 'hidden' }}
                                             >
-                                              <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
-    {/* Background decoration */}
-    <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
-        <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
-    </div>
+                                             <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
+   {/* Background decoration */}
+   <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
+       <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
+   </div>
 
-    {/* Profile Image Section */}
-    <div className="flex flex-col items-center text-center mb-3 z-10">
-        <div className="relative mb-2">
-            {employee.employeeImage ? (
-                <div className="relative">
-                    <img
-                        src={employee.employeeImage}
-                        alt={`${employee.displayName}'s profile picture`}
-                        className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105"
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-                </div>
-            ) : (
-                <div className="relative">
-                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-105">
-                        {generateInitials(employee.displayName)}
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-                </div>
-            )}
-        </div>
+   {/* Profile Image Section */}
+   <div className="flex flex-col items-center text-center mb-3 z-10">
+       <div className="relative mb-2">
+           {employee.employeeImage ? (
+               <div className="relative">
+                   <img
+                       src={employee.employeeImage}
+                       alt={`${employee.displayName}'s profile picture`}
+                       className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105"
+                   />
+                   <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+               </div>
+           ) : (
+               <div className="relative">
+                   <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-105">
+                       {generateInitials(employee.displayName)}
+                   </div>
+                   <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+               </div>
+           )}
+       </div>
 
-        {/* Name and Job Title */}
-        <div className="w-full px-1">
-            <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {employee.displayName}
-            </h3>
-            <p className="text-blue-600 font-semibold text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full truncate">
-                {employee.jobTitlePrimary || "Not Updated Job Title"  }
-            </p>
-        </div>
-    </div>
+       {/* Name and Job Title */}
+       <div className="w-full px-1">
+           <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+               {employee.displayName}
+           </h3>
+           <p className="text-blue-600 font-semibold text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full truncate">
+               {employee.jobTitlePrimary || "Not Updated Job Title" }
+           </p>
+       </div>
+   </div>
 
-    {/* Employee Details Section - Fixed height container */}
-    <div className="flex-1 flex flex-col justify-end min-h-0">
-        <div className="space-y-1.5 px-1">
-            {/* Employee ID */}
-            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-            }`}>
-                <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
-            </div>
+   {/* Employee Details Section - Fixed height container */}
+   <div className="flex-1 flex flex-col justify-end min-h-0">
+       <div className="space-y-1.5 px-1">
+           {/* Employee ID */}
+           <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+               theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+           }`}>
+               <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
+               <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
+           </div>
 
-            {/* Department */}
-            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-            }`}>
-                <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
-                <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
-            </div>
+           {/* Department */}
+           <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+               theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+           }`}>
+               <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+               <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
+           </div>
 
-            {/* Location */}
-            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-            }`}>
-                <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
-                <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
-            </div>
+           {/* Location */}
+           <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+               theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+           }`}>
+               <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
+               <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
+           </div>
 
-            {/* Email */}
-            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-            }`}>
-                <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
-                <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
-                    {employee.workEmail || 'N/A'}
-                </span>
-            </div>
-        </div>
-    </div>
+           {/* Email */}
+           <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+               theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+           }`}>
+               <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
+               <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
+                   {employee.workEmail || 'N/A'}
+               </span>
+           </div>
+       </div>
+   </div>
 </div>
 
                                             </div>
@@ -1588,7 +1626,7 @@ function EmployeeApp() {
                                                             <span className="font-medium">Start Chat</span>
                                                         </button>
 
-                                                        {hasManagementAccess && (
+                                                        {matchedArray.includes("GET_PUBLIC") && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -1706,7 +1744,7 @@ function EmployeeApp() {
                                                                 <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
                                                             </button>
 
-                                                            {hasManagementAccess && (
+                                                            {matchedArray.includes("GET_PUBLIC") && (
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -1723,7 +1761,7 @@ function EmployeeApp() {
                                                                 </button>
                                                             )}
 
-                                                            <button
+                                                           { matchedArray.includes("EMPLOYEE_VIEW_DOCS") && <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleDocumentsClick(employee);
@@ -1736,7 +1774,7 @@ function EmployeeApp() {
                                                                 title="Documents"
                                                             >
                                                                 <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                            </button>
+                                                            </button>}
                                                         </div>
                                                     </div>
 
@@ -1779,58 +1817,58 @@ function EmployeeApp() {
                     </motion.div>
                 )}
 
-              <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
-    <button
-        onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
-        disabled={pageNumber === 0}
-        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
-            theme === 'dark'
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-    >
-        <IoArrowBack className="w-3 h-3 sm:w-4 sm:h-4" />
-        <span>Previous</span>
-    </button>
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
+   <button
+       onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
+       disabled={pageNumber === 0}
+       className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
+           theme === 'dark'
+               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+       } disabled:opacity-50 disabled:cursor-not-allowed`}
+   >
+       <IoArrowBack className="w-3 h-3 sm:w-4 sm:h-4" />
+       <span>Previous</span>
+   </button>
 
-    <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-        <span className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-            Page {pageNumber + 1}
-        </span>
-        <select
-            value={pageSize}
-            onChange={(e) => {
-                setPageSize(parseInt(e.target.value));
-                setPageNumber(0);
-            }}
-            className={`px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg text-xs sm:text-sm ${
-                theme === 'dark'
-                    ? 'bg-gray-700 text-white border-gray-600'
-                    : 'bg-gray-100 text-gray-800 border-gray-300'
-            }`}
-        >
-            <option value="15">15 per page</option>
-            <option value="30">30 per page</option>
-            <option value="50">50 per page</option>
-        </select>
-    </div>
+   <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+       <span className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+           Page {pageNumber + 1}
+       </span>
+       <select
+           value={pageSize}
+           onChange={(e) => {
+               setPageSize(parseInt(e.target.value));
+               setPageNumber(0);
+           }}
+           className={`px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg text-xs sm:text-sm ${
+               theme === 'dark'
+                   ? 'bg-gray-700 text-white border-gray-600'
+                   : 'bg-gray-100 text-gray-800 border-gray-300'
+           }`}
+       >
+           <option value="15">15 per page</option>
+           <option value="30">30 per page</option>
+           <option value="50">50 per page</option>
+       </select>
+   </div>
 
-    <button
-        onClick={() => setPageNumber(prev => prev + 1)}
-        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
-            theme === 'dark'
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        }`}
-        disabled={filteredEmployees.length < pageSize}
-    >
-        <span>{filteredEmployees.length < pageSize ? 'Last Page' : 'Next'}</span>
-        {filteredEmployees.length < pageSize ? (
-            <IoLockClosed className="w-3 h-3 sm:w-4 sm:h-4" />
-        ) : (
-            <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
-        )}
-    </button>
+   <button
+       onClick={() => setPageNumber(prev => prev + 1)}
+       className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
+           theme === 'dark'
+               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+       }`}
+       disabled={filteredEmployees.length < pageSize}
+   >
+       <span>{filteredEmployees.length < pageSize ? 'Last Page' : 'Next'}</span>
+       {filteredEmployees.length < pageSize ? (
+           <IoLockClosed className="w-3 h-3 sm:w-4 sm:h-4" />
+       ) : (
+           <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
+       )}
+   </button>
 </div>
             </div>
 
