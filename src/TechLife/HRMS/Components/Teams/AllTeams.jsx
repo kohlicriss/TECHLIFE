@@ -1,12 +1,42 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { publicinfoApi, authApi } from '../../../../axiosInstance';
-import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch, FaChevronLeft, FaChevronRight, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa'; 
-import { IoCheckmarkCircle, IoWarning, IoAddCircleOutline, IoKeyOutline } from 'react-icons/io5';
+import { FaUsers, FaPlus, FaUserShield, FaTimes, FaChevronDown, FaChevronUp, FaTrash, FaEye, FaSearch, FaChevronLeft, FaChevronRight, FaCheckCircle, FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
+import { IoCheckmarkCircle, IoWarning } from 'react-icons/io5';
 import { X } from 'lucide-react';
 import { Context } from '../HrmsContext';
 import ConfirmationModal from './ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Utility Hooks & Components for Inline Role Assignment ---
+
+// Utility Hook for fetching all employees
+const useEmployeeList = () => {
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    const fetchEmployees = useCallback(async () => {
+        if (loading) return;
+        setLoading(true);
+        try {
+            const response = await publicinfoApi.get(`employee/0/100/employeeId/asc/employees`);
+            const list = response.data.content || [];
+            setEmployees(list);
+        } catch (error) {
+            console.error('Failed to fetch employees for modal:', error);
+            setEmployees([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [loading]);
+
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
+
+    return { employees, loading };
+};
+// --- End Utility Hooks ---
 
 // Custom Notification Component
 const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
@@ -75,8 +105,8 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
                         <button
                             onClick={handleClose}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                                type === 'success' 
-                                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                                type === 'success'
+                                    ? 'bg-green-500 hover:bg-green-600 text-white'
                                     : 'bg-red-500 hover:bg-red-600 text-white'
                             }`}
                         >
@@ -204,39 +234,39 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
-    
+
     // Pagination States
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [allDataLoaded, setAllDataLoaded] = useState(false);
-    const PAGE_SIZE = 10; 
-    
+    const PAGE_SIZE = 10;
+
     const isFetchingRef = useRef(false);
     const scrollAreaRef = useRef(null);
     const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
 
     // Load projects for the current page
     const loadProjects = useCallback(async (page = 0, append = false) => {
-        if (isFetchingRef.current || (page > 0 && !hasMoreData && !searchTerm)) return; // Prevent unnecessary re-fetches
+        if (isFetchingRef.current || (page > 0 && !hasMoreData && !searchTerm)) return;
 
         isFetchingRef.current = true;
         setLoading(true);
-        
+
         try {
             console.log(`[API CALL - ProjectDropdown] Fetching projects: Page ${page}, Size ${PAGE_SIZE}`);
-            // Note: SearchTerm functionality would require adapting the backend endpoint to support search. 
+            // Note: SearchTerm functionality would require adapting the backend endpoint to support search.
             // For now, this loads pages sequentially.
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/projectId/asc/projects`);
             console.log(`[API SUCCESS - ProjectDropdown] Projects fetched for page ${page}:`, response.data);
-            
+
             const fetchedProjects = response.data?.content || [];
             const newProjects = Array.isArray(fetchedProjects) ? fetchedProjects : [];
-            
+
             setProjects(prev => append ? [...prev, ...newProjects] : newProjects);
-            
+
             setCurrentPage(page);
             setTotalPages(response.data?.totalPages || 1);
-            
+
             if (response.data?.last === true || newProjects.length < PAGE_SIZE) {
                 setHasMoreData(false);
                 setAllDataLoaded(true);
@@ -254,12 +284,12 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
             setLoading(false);
             isFetchingRef.current = false;
         }
-    }, [hasMoreData, searchTerm]); // Added searchTerm dependency for future API adaptation
+    }, [hasMoreData, searchTerm]);
 
     // Handle scroll event for infinite loading
     const handleScroll = useCallback((e) => {
         const { scrollTop, scrollHeight, clientHeight } = e.target;
-        
+
         // Check if user scrolled near bottom (within 50px)
         if (scrollHeight - scrollTop <= clientHeight + 50) {
             if (hasMoreData && !loading && !isFetchingRef.current && !searchTerm) {
@@ -271,10 +301,10 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     // FIX: Only load initially if opened and list is empty
     useEffect(() => {
         if (isOpen && projects.length === 0 && !loading && !searchTerm) {
-            loadProjects(0, false); 
+            loadProjects(0, false);
         }
     }, [isOpen, loadProjects, projects.length, loading, searchTerm]);
-    
+
     // FIX: Clear state when closing or starting a new search
     useEffect(() => {
         if (!isOpen) {
@@ -295,17 +325,17 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
 
     const safeProjects = Array.isArray(projects) ? projects : [];
 
-    const filteredProjects = safeProjects.filter(proj => 
+    const filteredProjects = safeProjects.filter(proj =>
         proj.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         proj.projectId?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <div 
-                onClick={toggleDropdown} 
+            <div
+                onClick={toggleDropdown}
                 // Adjusted styling to match InputField
-                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-between text-sm 
+                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-between text-sm
                     focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
                     error ? 'border-red-300 bg-red-50' : (theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' : 'border-gray-200 bg-white hover:border-gray-300')
                 } ${disabled ? 'opacity-50' : ''}`}
@@ -315,13 +345,13 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                 </span>
                 <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>} 
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             <AnimatePresence>
                 {isOpen && !disabled && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: -10 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        exit={{ opacity: 0, y: -10 }} 
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
                         className={`absolute top-full left-0 right-0 mt-2 border rounded-lg shadow-lg z-50 ${
                             theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
                         }`}
@@ -329,19 +359,19 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                         <div className="p-2 border-b border-gray-200 dark:border-gray-600">
                             <div className="relative">
                                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search projects..." 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
+                                <input
+                                    type="text"
+                                    placeholder="Search projects..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${
                                         theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                                    }`} 
+                                    }`}
                                 />
                             </div>
                         </div>
-                        <div 
-                            className="max-h-60 overflow-y-auto" 
+                        <div
+                            className="max-h-60 overflow-y-auto"
                             ref={scrollAreaRef}
                             onScroll={handleScroll}
                         >
@@ -350,9 +380,9 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                                 filteredProjects.map(project => {
                                     const isSelected = value?.value === project.projectId;
                                     return (
-                                        <div 
-                                            key={project.projectId} 
-                                            onClick={() => handleSelect(project)} 
+                                        <div
+                                            key={project.projectId}
+                                            onClick={() => handleSelect(project)}
                                             className={`p-3 cursor-pointer flex items-center justify-between ${
                                                 isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`
                                             }`}
@@ -380,7 +410,7 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                                     No projects found.
                                 </div>
                             )}
-                            
+
                             {/* Loading indicator for infinite scroll */}
                             {loading && projects.length > 0 && (
                                 <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -388,7 +418,7 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
                                 </div>
                             )}
                         </div>
-                        
+
                         {allDataLoaded && projects.length > 0 && (
                             <div className={`p-2 border-t text-center text-xs font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
                                 🎯 All projects loaded
@@ -401,47 +431,46 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 };
 
-// Employee Dropdown with Infinite Scroll
+// Employee Dropdown is left here but no longer used in renderCreateTeamModal
 const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = false, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [hasMoreData, setHasMoreData] = useState(true);
-    
+
     // Pagination States
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [allDataLoaded, setAllDataLoaded] = useState(false);
     const PAGE_SIZE = 15;
-    
+
     const isFetchingRef = useRef(false);
     const scrollAreaRef = useRef(null);
     const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
-    
+
     // Load employees for the current page
     const loadEmployees = useCallback(async (page = 0, append = false) => {
-        if (isFetchingRef.current || (page > 0 && !hasMoreData && !searchTerm)) return; // Prevent unnecessary re-fetches
+        if (isFetchingRef.current || (page > 0 && !hasMoreData && !searchTerm)) return;
 
         isFetchingRef.current = true;
         setLoading(true);
-        
+
         try {
             console.log(`[API CALL - EmployeeDropdown] Fetching employees: Page ${page}, Size ${PAGE_SIZE}`);
-             // Note: SearchTerm functionality would require adapting the backend endpoint to support search. 
             // For now, this loads pages sequentially.
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/employees`);
             console.log(`[API SUCCESS - EmployeeDropdown] Employees fetched for page ${page}:`, response.data);
-            
+
             const responseData = response.data || {};
-            const fetchedEmployees = responseData.content || []; 
+            const fetchedEmployees = responseData.content || [];
             const newEmployees = Array.isArray(fetchedEmployees) ? fetchedEmployees : [];
-            
+
             setEmployees(prev => append ? [...prev, ...newEmployees] : newEmployees);
-            
+
             setCurrentPage(page);
             setTotalPages(responseData.totalPages || 1);
-            
+
             // Check if we've reached the end using responseData.last
             if (responseData.last === true || newEmployees.length < PAGE_SIZE) {
                 setHasMoreData(false);
@@ -458,14 +487,14 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
             setHasMoreData(false);
         } finally {
             setLoading(false);
-            isFetchingRef.current = false; 
+            isFetchingRef.current = false;
         }
-    }, [hasMoreData, searchTerm]); // Added searchTerm dependency for future API adaptation
+    }, [hasMoreData, searchTerm]);
 
     // Handle scroll event for infinite loading
     const handleScroll = useCallback((e) => {
         const { scrollTop, scrollHeight, clientHeight } = e.target;
-        
+
         // Check if user scrolled near bottom (within 50px)
         if (scrollHeight - scrollTop <= clientHeight + 50) {
             if (hasMoreData && !loading && !isFetchingRef.current && !searchTerm) {
@@ -480,8 +509,8 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
             loadEmployees(0, false);
         }
     }, [isOpen, loadEmployees, employees.length, loading, searchTerm]);
-    
-     // FIX: Clear state when closing or starting a new search
+
+    // FIX: Clear state when closing or starting a new search
     useEffect(() => {
         if (!isOpen) {
             setSearchTerm('');
@@ -511,7 +540,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
     };
 
     const safeEmployees = Array.isArray(employees) ? employees : [];
-    
+
     const filteredEmployees = safeEmployees.filter(emp => {
         const displayName = emp.displayName || (emp.firstName + ' ' + emp.lastName);
         return (
@@ -521,8 +550,8 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
     });
 
     const renderSelectedValue = () => {
-        const defaultPlaceholder = placeholder || (isMulti ? 'Select team members...' : 'Select a team lead...');
-        
+        const defaultPlaceholder = placeholder || (isMulti ? 'Select team members...' : 'Select an employee...');
+
         if (isMulti) {
             const currentValues = Array.isArray(value) ? value : [];
             if (currentValues.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
@@ -543,9 +572,9 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <div onClick={toggleDropdown} 
+            <div onClick={toggleDropdown}
                 // Adjusted styling to match InputField
-                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-between text-sm 
+                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-between text-sm
                     focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
                     error ? 'border-red-300 bg-red-50' : (theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' : 'border-gray-200 bg-white hover:border-gray-300')
                 } ${disabled ? 'opacity-50' : ''}`}
@@ -553,7 +582,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                 <div className="flex-1">{renderSelectedValue()}</div>
                 <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
-             {error && <p className="text-red-500 text-xs mt-1">{error}</p>} 
+             {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             <AnimatePresence>
                 {isOpen && !disabled && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute top-full left-0 right-0 mt-2 border rounded-lg shadow-lg z-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
@@ -563,8 +592,8 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                 <input type="text" placeholder="Search employees..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`} />
                             </div>
                         </div>
-                        <div 
-                            className="max-h-60 overflow-y-auto" 
+                        <div
+                            className="max-h-60 overflow-y-auto"
                             ref={scrollAreaRef}
                             onScroll={handleScroll}
                         >
@@ -595,14 +624,14 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                     No employees found.
                                 </div>
                             )}
-                            
+
                             {loading && employees.length > 0 && (
                                 <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Loading more employees...
                                 </div>
                             )}
                         </div>
-                        
+
                         {allDataLoaded && employees.length > 0 && (
                             <div className={`p-2 border-t text-center text-xs font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
                                 👥 All employees loaded
@@ -637,20 +666,22 @@ const AllTeams = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
-    const [expandedTeams, setExpandedTeams] = useState(new Set()); 
+    const [expandedTeams, setExpandedTeams] = useState(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [matchedArray, setMatchedArray] = useState(null);
-    const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); 
-    const [displayMode, setDisplayMode] = useState('MY_TEAMS'); 
+    const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+    const [displayMode, setDisplayMode] = useState('MY_TEAMS');
     const [adminallteams, setAdminAllTeams] = useState([]);
 
     // Form state
     const [teamName, setTeamName] = useState('');
-    const [teamLead, setTeamLead] = useState(null);
-    const [teamMembers, setTeamMembers] = useState([]);
+    const [employeeRoles, setEmployeeRoles] = useState({}); // Stores {employeeId: role}
     const [selectedProject, setSelectedProject] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formErrors, setFormErrors] = useState({});
+
+    // Fetch employee list once for the modal
+    const { employees: allEmployees, loading: employeesLoading } = useEmployeeList();
 
     // Notification state
     const [notification, setNotification] = useState({
@@ -662,8 +693,6 @@ const AllTeams = () => {
 
     const { userData, theme } = useContext(Context);
     const userRoles = userData?.roles || [];
-    const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
-    const canCreateTeam = userRoles.includes('ADMIN') || userRoles.includes('HR');
 
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
@@ -672,8 +701,8 @@ const AllTeams = () => {
 
     const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : userData?.employeeId;
 
-    const loggedinuserRole = userData?.roles[0] 
-        ? `ROLE_${userData.roles[0]}` 
+    const loggedinuserRole = userData?.roles[0]
+        ? `ROLE_${userData.roles[0]}`
         : null;
 
     // Custom notification handlers
@@ -710,7 +739,7 @@ const AllTeams = () => {
     const fetchTeams = async () => {
         try {
             setLoading(true);
-            
+
             if (!employeeIdToFetch) {
                 setError("Employee ID not found. Please login again.");
                 return;
@@ -719,7 +748,7 @@ const AllTeams = () => {
             console.log(`[API CALL - fetchTeams] Fetching teams for employee: ${employeeIdToFetch}`);
             const response = await publicinfoApi.get(`employee/team/${employeeIdToFetch}`);
             console.log('[API SUCCESS - fetchTeams] Teams fetched:', response.data);
-            
+
             const teamsArray = Array.isArray(response.data) ? response.data : [response.data];
             setTeams(teamsArray || []);
             setError(null);
@@ -737,23 +766,23 @@ const AllTeams = () => {
             setLoading(false);
             return;
         }
-        
+
         setLoading(true);
         setAdminAllTeams([]);
-        
+
         try {
             console.log("[API CALL - fetchAdminAllTeams] Fetching all teams for admin view.");
             let response = await publicinfoApi.get(
                 "employee/0/19/teamId/asc/teams"
             );
-            
+
             const teamsData = response.data.content;
             setAdminAllTeams(teamsData);
             console.log("Admin Fetched Teams (ALL_TEAMS view) ✅", teamsData);
             setError(null);
         } catch (error) {
             console.error("[API ERROR - fetchAdminAllTeams] Error From Admin Fetching All Teams ❌", error.response?.data || error.message);
-            setAdminAllTeams([]); 
+            setAdminAllTeams([]);
             setError('Failed to load all teams directory.');
         } finally {
             setLoading(false);
@@ -782,22 +811,47 @@ const AllTeams = () => {
         } else if (displayMode === 'ALL_TEAMS') {
             fetchAdminAllTeams();
         }
-    }, [displayMode, canCreateTeam, employeeIdToFetch, matchedArray]);
-    
-    const currentDataSource = displayMode === 'MY_TEAMS' ? teams : adminallteams;
+    }, [displayMode, employeeIdToFetch, matchedArray]);
 
-    const filteredCurrentTeams = (Array.isArray(currentDataSource) ? currentDataSource : []).filter(team =>
-        team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const currentDataSource = displayMode === 'MY_TEAMS' ? teams : adminallteams;
 
     const validateForm = () => {
         const errors = {};
         if (!teamName.trim()) errors.teamName = "Team Name is required.";
-        if (!teamLead) errors.teamLead = "Team Lead is required.";
-        if (teamMembers.length === 0) errors.teamMembers = "At least one Team Member is required.";
+
+        const selectedIds = Object.keys(employeeRoles);
+        if (selectedIds.length === 0) {
+            errors.teamMembers = "At least one Team Member is required.";
+        } else {
+            // Check if any selected member has an empty role
+            const hasEmptyRole = selectedIds.some(id => !employeeRoles[id]?.trim());
+            if (hasEmptyRole) {
+                errors.teamMembers = "All selected members must have a role.";
+            }
+        }
         if (!selectedProject) errors.selectedProject = "Project selection is required.";
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
+    };
+
+    // New handlers for inline role assignment
+    const toggleEmployeeSelection = (employeeId) => {
+        setEmployeeRoles(prev => {
+            const newRoles = { ...prev };
+            if (newRoles.hasOwnProperty(employeeId)) {
+                delete newRoles[employeeId];
+            } else {
+                newRoles[employeeId] = ''; // Initialize with empty role
+            }
+            return newRoles;
+        });
+    };
+
+    const handleRoleChange = (employeeId, role) => {
+        setEmployeeRoles(prev => ({
+            ...prev,
+            [employeeId]: role
+        }));
     };
 
     const handleCreateTeam = async (e) => {
@@ -807,26 +861,35 @@ const AllTeams = () => {
         setIsSubmitting(true);
         setFormErrors({});
 
+        // --- MODIFIED PAYLOAD TO MATCH USER'S REQUESTED STRUCTURE ---
         const newTeamData = {
-            teamName,
+            teamName: teamName,
             teamDescription: "Default Description",
-            employeeIds: [teamLead?.value, ...teamMembers.map(member => member.value)].filter(Boolean),
-            projectId: selectedProject?.value
+            projectId: selectedProject?.value,
+            employeeRoles: employeeRoles // Sending the key/value map directly
         };
+        // -----------------------------------------------------------
 
         try {
-            console.log('[API CALL - handleCreateTeam] Creating new team with data:', newTeamData);
-            await publicinfoApi.post('employee/team', newTeamData);
-            console.log('[API SUCCESS - handleCreateTeam] Team created successfully.');
+            console.log('[API CALL - handleCreateTeam] Creating new team with data (JSON format):', newTeamData);
             
+            // Log the payload in a stringified JSON format for easy copy/paste verification
+            console.log('--- API Payload JSON START ---');
+            console.log(JSON.stringify(newTeamData, null, 2));
+            console.log('--- API Payload JSON END ---');
+            
+            const response = await publicinfoApi.post('employee/team', newTeamData);
+            console.log('[API SUCCESS - handleCreateTeam] Team created successfully. Response:', response.data);
+
             if (displayMode === 'MY_TEAMS') {
                 await fetchTeams();
+            } else {
+                await fetchAdminAllTeams();
             }
 
             setIsCreateModalOpen(false);
             setTeamName('');
-            setTeamLead(null);
-            setTeamMembers([]);
+            setEmployeeRoles({}); // Reset the new state
             setSelectedProject(null);
             showNotification('success', 'Team Created Successfully!', 'The new team has been created successfully.');
         } catch (err) {
@@ -846,18 +909,18 @@ const AllTeams = () => {
         if (!selectedTeam) return;
 
         setIsSubmitting(true);
-        
+
         try {
             console.log(`[API CALL - confirmDelete] Deleting team with ID: ${selectedTeam.teamId}`);
             await publicinfoApi.delete(`employee/${selectedTeam.teamId}/team`);
             console.log('[API SUCCESS - confirmDelete] Team deleted successfully.');
-            
+
             if (displayMode === 'MY_TEAMS') {
                 setTeams(teams.filter(t => t.teamId !== selectedTeam.teamId));
             } else if (displayMode === 'ALL_TEAMS') {
                 setAdminAllTeams(adminallteams.filter(t => t.teamId !== selectedTeam.teamId));
             }
-            
+
             setIsDeleteModalOpen(false);
             setSelectedTeam(null);
             showNotification('success', 'Team Deleted Successfully!', 'The team has been deleted successfully.');
@@ -867,6 +930,14 @@ const AllTeams = () => {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const resetCreateModalState = () => {
+        setIsCreateModalOpen(false);
+        setTeamName('');
+        setEmployeeRoles({});
+        setSelectedProject(null);
+        setFormErrors({});
     };
 
     const renderCreateTeamModal = () => {
@@ -885,17 +956,10 @@ const AllTeams = () => {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h2 className="text-lg sm:text-xl md:text-2xl font-bold break-words">Create New Team</h2>
-                                    <p className="text-white/90 text-xs sm:text-sm break-words">Organize employees into a new team.</p>
+                                    <p className="text-white/90 text-xs sm:text-sm break-words">Organize employees into a new team and define their roles.</p>
                                 </div>
                             </div>
-                            <button onClick={() => {
-                                setIsCreateModalOpen(false);
-                                setTeamName('');
-                                setTeamLead(null);
-                                setTeamMembers([]);
-                                setSelectedProject(null);
-                                setFormErrors({});
-                            }} className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all group flex-shrink-0">
+                            <button onClick={resetCreateModalState} className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all group flex-shrink-0">
                                 <FaTimes className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform" />
                             </button>
                         </div>
@@ -904,7 +968,7 @@ const AllTeams = () => {
                     <div className="overflow-y-auto flex-grow">
                         <form className="p-4 sm:p-6 md:p-8" onSubmit={handleCreateTeam}>
                             <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                                
+
                                 {/* Team Name - Uses InputField */}
                                 <div>
                                     <InputField
@@ -925,46 +989,78 @@ const AllTeams = () => {
                                     <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
                                         Project <span className="text-red-500">*</span>
                                     </label>
-                                    <ProjectDropdown 
-                                        value={selectedProject} 
-                                        onChange={setSelectedProject} 
-                                        theme={theme} 
-                                        error={formErrors.selectedProject} 
+                                    <ProjectDropdown
+                                        value={selectedProject}
+                                        onChange={setSelectedProject}
+                                        theme={theme}
+                                        error={formErrors.selectedProject}
                                     />
                                     {formErrors.selectedProject && <p className="text-red-500 text-xs mt-1">{formErrors.selectedProject}</p>}
                                 </div>
 
-                                {/* Team Lead - Uses EmployeeDropdown (Single) */}
+                                {/* Team Members with Inline Role Inputs */}
                                 <div>
-                                    <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
-                                        Team Lead <span className="text-red-500">*</span>
-                                    </label>
-                                    <EmployeeDropdown 
-                                        value={teamLead} 
-                                        onChange={setTeamLead} 
-                                        theme={theme} 
-                                        error={formErrors.teamLead} 
-                                        isMulti={false}
-                                    />
-                                    {formErrors.teamLead && <p className="text-red-500 text-xs mt-1">{formErrors.teamLead}</p>}
-                                </div>
-                                
-                                {/* Team Members - Uses EmployeeDropdown (Multi) */}
-                                <div>
-                                    <label className={`block text-xs sm:text-sm font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                    <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
                                         Team Members <span className="text-red-500">*</span>
                                     </label>
-                                    <EmployeeDropdown 
-                                        value={teamMembers} 
-                                        onChange={setTeamMembers} 
-                                        theme={theme} 
-                                        error={formErrors.teamMembers} 
-                                        isMulti={true} 
-                                    />
-                                    {formErrors.teamMembers && <p className="text-red-500 text-xs mt-1">{formErrors.teamMembers}</p>}
+
+                                    <div className={`max-h-80 overflow-y-auto p-2 border-2 rounded-lg sm:rounded-xl
+                                        ${theme === 'dark' ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
+                                        {employeesLoading ? (
+                                            <div className="text-center py-3 text-sm text-gray-500">Loading employees...</div>
+                                        ) : allEmployees.length === 0 ? (
+                                            <div className="text-center py-3 text-sm text-gray-500">No employees found.</div>
+                                        ) : (
+                                            allEmployees.map(emp => {
+                                                const isSelected = employeeRoles.hasOwnProperty(emp.employeeId);
+                                                return (
+                                                    <div key={emp.employeeId} className="py-2 border-b border-gray-200 dark:border-gray-600 last:border-0">
+                                                        <label className="flex items-start cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => toggleEmployeeSelection(emp.employeeId)}
+                                                                className="mt-1 mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                                                            />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                                                    {emp.displayName || (emp.firstName + ' ' + emp.lastName)}
+                                                                </div>
+                                                                <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                    {emp.employeeId}
+                                                                </div>
+                                                                {isSelected && (
+                                                                    <div className="mt-2">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={employeeRoles[emp.employeeId] || ''}
+                                                                            onChange={(e) => handleRoleChange(emp.employeeId, e.target.value)}
+                                                                            placeholder="Enter role (e.g., Backend, Lead, QA)"
+                                                                            className={`w-full px-3 py-1.5 text-sm border rounded-lg
+                                                                                ${theme === 'dark'
+                                                                                    ? 'bg-gray-600 border-gray-500 text-white'
+                                                                                    : 'bg-white border-gray-300 text-gray-800'}
+                                                                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none`}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+
+                                    {formErrors.teamMembers && (
+                                        <div className="mt-2 flex items-center space-x-2 text-red-600">
+                                            <IoWarning className="w-4 h-4 flex-shrink-0" />
+                                            <p className="text-xs sm:text-sm font-medium">{formErrors.teamMembers}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            
+
                             {formErrors.general && (
                                 <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'}`}>
                                     <div className="flex items-center">
@@ -977,27 +1073,20 @@ const AllTeams = () => {
                     </div>
 
                     <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
-                        <button 
-                            type="button" 
-                            onClick={() => {
-                                setIsCreateModalOpen(false);
-                                setTeamName('');
-                                setTeamLead(null);
-                                setTeamMembers([]);
-                                setSelectedProject(null);
-                                setFormErrors({});
-                            }} 
+                        <button
+                            type="button"
+                            onClick={resetCreateModalState}
                             className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg font-semibold transition-all text-sm ${theme === 'dark' ? 'border-gray-600 text-gray-300 hover:bg-gray-600' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="button" 
-                            onClick={handleCreateTeam} 
-                            disabled={isSubmitting} 
+                        <button
+                            type="button"
+                            onClick={handleCreateTeam}
+                            disabled={isSubmitting}
                             className={`w-full sm:w-auto px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-lg
-                                            hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center space-x-2 text-sm
-                                            ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
+                                hover:shadow-lg transform hover:scale-105 transition-all flex items-center justify-center space-x-2 text-sm
+                                ${isSubmitting ? 'cursor-not-allowed opacity-75' : ''}`}
                         >
                             {isSubmitting ? (
                                 <>
@@ -1039,11 +1128,11 @@ const AllTeams = () => {
         if (error && isMyTeamsMode) {
             return <ErrorDisplay message={error} />;
         }
-        
+
         const teamsToRenderAfterSearch = (Array.isArray(currentDataSource) ? currentDataSource : []).filter(team =>
             team.teamName && team.teamName.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        
+
         if (teamsToRenderAfterSearch.length === 0) {
             return (
                 <div className="text-center py-12 sm:py-16 px-4">
@@ -1064,22 +1153,21 @@ const AllTeams = () => {
                 </div>
             );
         }
-        
+
         return (
             <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mx-4 sm:mx-0">
                     {teamsToRenderAfterSearch.map((team, index) => {
                         const teamId = team.teamId || index;
                         const isExpanded = isTeamExpanded(teamId);
-                        
+
                         const leadOrManager = team.employees?.find(emp => emp.jobTitlePrimary === 'TEAM_LEAD' || emp.jobTitlePrimary === 'MANAGER');
                         const otherMembers = team.employees?.filter(emp => emp !== leadOrManager) || [];
-                        
+
                         const membersToShow = isExpanded ? otherMembers : otherMembers.slice(0, 4);
                         const hasMoreMembers = otherMembers.length > 4;
-                        
+
                         const membersToDisplay = leadOrManager ? [leadOrManager, ...membersToShow] : membersToShow;
-                        const teamLead = leadOrManager?.jobTitlePrimary === 'TEAM_LEAD' ? leadOrManager : null;
 
                         return (
                             <div key={teamId} className={`rounded-none sm:rounded-lg shadow-lg overflow-hidden border transition-shadow duration-300 flex flex-col ${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' : 'bg-white border-gray-200 hover:shadow-xl'}`}>
@@ -1115,27 +1203,27 @@ const AllTeams = () => {
                                     <div className="space-y-2">
                                         <div className="flex flex-wrap gap-1 sm:gap-2">
                                             {membersToDisplay?.map(member => {
-                                                        const displayName = member.displayName || (member.firstName + ' ' + member.lastName);
-                                                        const isYou = member.employeeId === employeeIdToFetch;
-                                                        const isLead = member.jobTitlePrimary === 'TEAM_LEAD' || member.jobTitlePrimary === 'MANAGER';
-                                                        
-                                                        let tagClass;
-                                                        if (isYou) {
-                                                            tagClass = theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800';
-                                                        } else if (isLead) {
-                                                            tagClass = theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-indigo-100 text-indigo-800';
-                                                        } else {
-                                                            tagClass = theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800';
-                                                        }
+                                                const displayName = member.displayName || (member.firstName + ' ' + member.lastName);
+                                                const isYou = member.employeeId === employeeIdToFetch;
+                                                const isLead = member.jobTitlePrimary === 'TEAM_LEAD' || member.jobTitlePrimary === 'MANAGER';
 
-                                                        return (
-                                                            <span key={member.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full break-words ${tagClass}`}>
-                                                                {displayName}
-                                                                {isYou && ' (You)'}
-                                                                {isLead && !isYou && ` (${member.jobTitlePrimary})`}
-                                                            </span>
-                                                        );
-                                                    })}
+                                                let tagClass;
+                                                if (isYou) {
+                                                    tagClass = theme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800';
+                                                } else if (isLead) {
+                                                    tagClass = theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-indigo-100 text-indigo-800';
+                                                } else {
+                                                    tagClass = theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800';
+                                                }
+
+                                                return (
+                                                    <span key={member.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full break-words ${tagClass}`}>
+                                                        {displayName}
+                                                        {isYou && ' (You)'}
+                                                        {isLead && !isYou && ` (${member.jobTitlePrimary})`}
+                                                    </span>
+                                                );
+                                            })}
                                         </div>
                                         {hasMoreMembers && (
                                             <button
@@ -1163,7 +1251,7 @@ const AllTeams = () => {
 
     return (
         <div className={`relative flex min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-            
+
             {hasAdminPermissions && !isRightSidebarOpen && (
                 <button
                     onClick={() => setIsRightSidebarOpen(true)}
@@ -1188,7 +1276,7 @@ const AllTeams = () => {
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 sm:mb-6 gap-4 mx-4 sm:mx-0">
                         <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold flex items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                            <FaUsers className="mr-2 sm:mr-3 text-blue-500" /> 
+                            <FaUsers className="mr-2 sm:mr-3 text-blue-500" />
                             {displayMode === 'MY_TEAMS' ? 'My Teams' : (fromContextMenu ? 'Employee Teams' : 'All Teams')}
                         </h1>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full md:w-auto">
@@ -1216,7 +1304,7 @@ const AllTeams = () => {
                     {renderContent()}
 
                     {renderCreateTeamModal()}
-                    
+
                     <ConfirmationModal
                         isOpen={isDeleteModalOpen}
                         onClose={() => setIsDeleteModalOpen(false)}

@@ -292,13 +292,6 @@ const sectionFields = {
   ],
   experience: [
     { 
-      label: "ID", 
-      name: "id", 
-      type: "text", 
-      required: true,
-      hint: "Enter unique experience ID"
-    },
-    { 
       label: "Company Name", 
       name: "companyName", 
       type: "text", 
@@ -434,7 +427,7 @@ const sectionConfig = {
   },
 };
 
-// NEW: Helper function to check if data has meaningful values
+// 🚨 NEW: Helper function to check if data has meaningful values
 const hasActualData = (data, sectionKey) => {
   if (!data) return false;
   
@@ -451,6 +444,194 @@ const hasActualData = (data, sectionKey) => {
     const value = data[field.name];
     return value && value !== "" && value !== null && value !== undefined;
   });
+};
+
+// 🚨 NEW: Comprehensive validation function based on hints
+const validateFieldByHint = (fieldName, value, hint, fieldType) => {
+  if (!value || value.trim() === '') return null;
+  
+  const trimmedValue = value.trim();
+  
+  // Extract validation rules from hints
+  switch (fieldName) {
+    case 'firstName':
+    case 'middleName':
+    case 'lastName':
+      if (trimmedValue.length > 50) {
+        return `${fieldName} must not exceed 50 characters`;
+      }
+      if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        return `${fieldName} must contain only letters and spaces`;
+      }
+      break;
+      
+    case 'displayName':
+      if (trimmedValue.length > 100) {
+        return 'Display name must not exceed 100 characters';
+      }
+      break;
+      
+    case 'nationality':
+      if (trimmedValue.length > 50) {
+        return 'Nationality must not exceed 50 characters';
+      }
+      if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        return 'Nationality must contain only letters and spaces';
+      }
+      break;
+      
+    case 'dateOfBirth':
+      const birthDate = new Date(trimmedValue);
+      const today = new Date();
+      if (birthDate >= today) {
+        return 'Date of birth must be in the past';
+      }
+      break;
+      
+    case 'workEmail':
+    case 'personalEmail':
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedValue)) {
+        return 'Please enter a valid email address';
+      }
+      break;
+      
+    case 'mobileNumber':
+      const cleanMobile = trimmedValue.replace(/\D/g, '');
+      if (cleanMobile.length !== 10) {
+        return 'Mobile number must be exactly 10 digits';
+      }
+      if (!/^[6-9]/.test(cleanMobile)) {
+        return 'Indian mobile number must start with 6, 7, 8, or 9';
+      }
+      break;
+      
+    case 'workNumber':
+      const cleanWork = trimmedValue.replace(/\D/g, '');
+      if (cleanWork.length < 3 || cleanWork.length > 15) {
+        return 'Work number must be between 3-15 digits';
+      }
+      break;
+      
+    case 'street':
+      if (trimmedValue.length > 100) {
+        return 'Street address must not exceed 100 characters';
+      }
+      break;
+      
+    case 'city':
+    case 'state':
+    case 'country':
+    case 'district':
+      if (trimmedValue.length > 50) {
+        return `${fieldName} must not exceed 50 characters`;
+      }
+      if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        return `${fieldName} must contain only letters and spaces`;
+      }
+      break;
+      
+    case 'zip':
+      const cleanZip = trimmedValue.replace(/\D/g, '');
+      if (cleanZip.length !== 6) {
+        return 'ZIP code must be exactly 6 digits';
+      }
+      break;
+      
+    case 'degreeType':
+      if (trimmedValue.length > 100) {
+        return 'Degree type must not exceed 100 characters';
+      }
+      break;
+      
+    case 'universityOrCollege':
+      if (trimmedValue.length > 200) {
+        return 'Institution name must not exceed 200 characters';
+      }
+      break;
+      
+    case 'branchOrSpecialization':
+      if (trimmedValue.length > 100) {
+        return 'Specialization must not exceed 100 characters';
+      }
+      break;
+      
+    case 'startYear':
+    case 'endYear':
+      const year = parseInt(trimmedValue);
+      if (isNaN(year) || year < 1900 || year > 2099) {
+        return 'Year must be between 1900-2099';
+      }
+      break;
+      
+    case 'cgpaOrPercentage':
+      const score = parseFloat(trimmedValue);
+      if (isNaN(score) || score < 0 || score > 100) {
+        return 'CGPA/Percentage must be between 0-100';
+      }
+      break;
+      
+    case 'companyName':
+    case 'jobTitle':
+      if (trimmedValue.length < 2 || trimmedValue.length > 100) {
+        return `${fieldName} must be between 2-100 characters`;
+      }
+      break;
+      
+    case 'description':
+      if (trimmedValue.length > 1000) {
+        return 'Description must not exceed 1000 characters';
+      }
+      break;
+      
+    default:
+      break;
+  }
+  
+  return null;
+};
+
+// 🚨 NEW: Network error handler
+const handleNetworkError = (error) => {
+  if (!navigator.onLine) {
+    return 'No internet connection. Please check your network and try again.';
+  }
+  
+  if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+    return 'Network error occurred. Please check your internet connection and try again.';
+  }
+  
+  if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+    return 'Request timed out. Please check your connection and try again.';
+  }
+  
+  if (error.response) {
+    // Server responded with error status
+    switch (error.response.status) {
+      case 400:
+        return error.response.data?.message || 'Invalid data provided. Please check all fields.';
+      case 401:
+        return 'Session expired. Please log in again.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 404:
+        return 'Resource not found. Please refresh the page and try again.';
+      case 500:
+        return 'Server error occurred. Please try again later.';
+      case 502:
+      case 503:
+      case 504:
+        return 'Service temporarily unavailable. Please try again in a few moments.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
+    }
+  } else if (error.request) {
+    // Request was made but no response received
+    return 'Unable to connect to server. Please check your internet connection.';
+  } else {
+    // Something else happened
+    return 'An unexpected error occurred. Please try again.';
+  }
 };
 
 function Profile() {
@@ -470,6 +651,17 @@ function Profile() {
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 6 });
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // 🚨 NEW: State for tracking initial form data and change detection
+  const [initialEditingData, setInitialEditingData] = useState({});
+  const [noChangesModal, setNoChangesModal] = useState({ 
+    show: false, 
+    section: null,
+    onContinue: null 
+  });
+
+  // 🚨 NEW: State for network errors
+  const [networkError, setNetworkError] = useState(null);
+
   // State for popups
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
@@ -486,6 +678,36 @@ function Profile() {
   const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
 
   const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
+
+  // 🚨 NEW: Function to check if form has changes
+  const hasFormChanges = (currentData, initialData, selectedFile = null) => {
+    // If there's a file selected, consider it as a change
+    if (selectedFile) return true;
+
+    // Deep compare objects
+    const normalizeValue = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    };
+
+    const currentFields = Object.keys(currentData || {});
+    const initialFields = Object.keys(initialData || {});
+    
+    // Check if number of fields changed
+    if (currentFields.length !== initialFields.length) return true;
+
+    // Check each field
+    for (const key of currentFields) {
+      const currentValue = normalizeValue(currentData[key]);
+      const initialValue = normalizeValue(initialData[key]);
+      
+      if (currentValue !== initialValue) {
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   // Save editing data to localStorage
   useEffect(() => {
@@ -539,17 +761,21 @@ function Profile() {
     }
   }, [profileEmployeeId, fromContextMenu, targetEmployeeId]);
 
+  // 🚨 MODIFIED: openEditSection to store initial data
   const openEditSection = (section, itemData = null, isAdd = false) => {
     if (isReadOnly) {
       setPopup({ show: true, message: "You can only view this employee's profile. Editing is not allowed.", type: 'error' });
       return;
     }
     setErrors({});
+    setNetworkError(null); // Clear any previous network errors
     
     // Load from localStorage if available
     const savedData = localStorage.getItem(`profile-editing-${section}`);
     if (savedData && !itemData && !isAdd) {
-      setEditingData(JSON.parse(savedData));
+      const parsedData = JSON.parse(savedData);
+      setEditingData(parsedData);
+      setInitialEditingData(parsedData); // Store as initial data
     } else {
       let dataToEdit = {};
       if (section === "primaryDetails") {
@@ -577,7 +803,9 @@ function Profile() {
           dataToEdit = experience[0]; // Default to first experience item
         }
       }
-      setEditingData(dataToEdit || {});
+      const finalData = dataToEdit || {};
+      setEditingData(finalData);
+      setInitialEditingData(finalData); // Store initial state for comparison
     }
 
     setSelectedFile(null);
@@ -684,11 +912,17 @@ function Profile() {
     }
   };
 
+  // 🚨 MODIFIED: handleEditFieldChange with real-time validation
   const handleEditFieldChange = (field, value) => {
     setEditingData((prev) => ({
       ...prev,
       [field]: value,
     }));
+    
+    // Clear network error when user starts typing
+    setNetworkError(null);
+    
+    // Clear existing field error
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -696,13 +930,27 @@ function Profile() {
         return newErrors;
       });
     }
+    
+    // 🚨 NEW: Real-time validation based on hints
+    const fieldConfig = sectionFields[editingSection?.section]?.find(f => f.name === field);
+    if (fieldConfig) {
+      const validationError = validateFieldByHint(field, value, fieldConfig.hint, fieldConfig.type);
+      if (validationError) {
+        setErrors((prev) => ({
+          ...prev,
+          [field]: validationError
+        }));
+      }
+    }
   };
 
   const handleFileChange = (file) => {
     setSelectedFile(file);
   };
 
+  // 🚨 MODIFIED: handleUpdatePrimaryDetails with network error handling
   const handleUpdatePrimaryDetails = async () => {
+    setNetworkError(null);
     try {
       const url = `/employee/${profileEmployeeId}/primary/details`;
       await publicinfoApi.put(url, editingData);
@@ -721,13 +969,20 @@ function Profile() {
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Primary Details." });
+      console.error("Failed to update primary details:", error);
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
+  // 🚨 MODIFIED: handleUpdateContactDetails with network error handling
   const handleUpdateContactDetails = async () => {
+    setNetworkError(null);
     try {
       const url = `/employee/${profileEmployeeId}/contact`;
       await publicinfoApi.put(url, editingData);
@@ -746,13 +1001,20 @@ function Profile() {
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Contact Details." });
+      console.error("Failed to update contact details:", error);
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
+  // 🚨 MODIFIED: handleUpdateAddress with network error handling
   const handleUpdateAddress = async () => {
+    setNetworkError(null);
     try {
       const url = `/employee/${profileEmployeeId}/address`;
       await publicinfoApi.put(url, editingData);
@@ -771,13 +1033,20 @@ function Profile() {
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 6 });
       return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Address." });
+      console.error("Failed to update address:", error);
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
+  // 🚨 MODIFIED: handleUpdateEducation with network error handling
   const handleUpdateEducation = async () => {
+    setNetworkError(null);
     try {
       const isUpdate = !!(editingData && editingData.id);
       const method = isUpdate ? 'put' : 'post';
@@ -811,13 +1080,19 @@ function Profile() {
       return true;
     } catch (error) {
       console.error("Failed to update education details:", error);
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Education." });
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
+  // 🚨 MODIFIED: handleUpdateExperience with network error handling
   const handleUpdateExperience = async () => {
+    setNetworkError(null);
     try {
       const isUpdate = !!(editingData && editingData.id);
       const url = `/employee/${profileEmployeeId}/previousExperience/${editingData.id}`;
@@ -845,8 +1120,12 @@ function Profile() {
       return true;
     } catch (error) {
       console.error("Failed to update experience details:", error);
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Experience." });
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
@@ -857,7 +1136,56 @@ function Profile() {
     setEditingSection(null);
   };
 
+  // 🚨 MODIFIED: handleSubmit with change detection and pre-submission validation
   const handleSubmit = async (section) => {
+    // Clear network error
+    setNetworkError(null);
+    
+    // 🚨 NEW: Validate all fields before submission
+    const fields = sectionFields[section] || [];
+    const validationErrors = {};
+    
+    fields.forEach(field => {
+      const value = editingData[field.name];
+      if (field.required && (!value || value.toString().trim() === '')) {
+        validationErrors[field.name] = `${field.label} is required`;
+      } else if (value && value.toString().trim() !== '') {
+        const validationError = validateFieldByHint(field.name, value, field.hint, field.type);
+        if (validationError) {
+          validationErrors[field.name] = validationError;
+        }
+      }
+    });
+    
+    // If there are validation errors, don't submit
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
+    // Check if there are any changes
+    const hasChanges = hasFormChanges(editingData, initialEditingData, selectedFile);
+    
+    if (!hasChanges) {
+      // Show no changes modal instead of proceeding directly
+      setNoChangesModal({
+        show: true,
+        section: section,
+        onContinue: () => {
+          // User chose to continue anyway
+          setNoChangesModal({ show: false, section: null, onContinue: null });
+          proceedWithSubmission(section);
+        }
+      });
+      return;
+    }
+
+    // If there are changes, proceed with submission
+    proceedWithSubmission(section);
+  };
+
+  // 🚨 NEW: Separate function for actual submission logic
+  const proceedWithSubmission = async (section) => {
     setIsUpdating(true);
     let success = false;
     try {
@@ -891,6 +1219,7 @@ function Profile() {
     if (success) {
       setEditingSection(null);
       setErrors({});
+      setNetworkError(null);
       localStorage.removeItem(`profile-editing-${section}`); // Clear localStorage on successful submission
       setPopup({ show: true, message: 'Profile section updated successfully!', type: 'success' });
     }
@@ -901,6 +1230,7 @@ function Profile() {
       localStorage.removeItem(`profile-editing-${editingSection.section}`);
     }
     setEditingSection(null);
+    setNetworkError(null); // Clear network error when canceling
   };
   
   const renderField = (label, name, type = "text", required = false, options = [], hint = "") => {
@@ -917,7 +1247,7 @@ function Profile() {
             {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
           </label>
           
-          {/* Hint text */}
+          {/* 🚨 NEW: Hint text always shown */}
           {hint && (
             <p className={`text-xs mb-2 ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -979,7 +1309,7 @@ function Profile() {
           {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
         </label>
         
-        {/* Hint text */}
+        {/* 🚨 NEW: Hint text always shown */}
         {hint && (
           <p className={`text-xs mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -1109,6 +1439,25 @@ function Profile() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                 {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
               </div>
+              
+              {/* 🚨 NEW: Network Error Display */}
+              {networkError && (
+                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
+                  theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                }`}>
+                  <div className="flex items-start">
+                    <IoWarning className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                        Network Error
+                      </h4>
+                      <p className={`font-medium text-sm mt-1 ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                        {networkError}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {errors.general && (
                 <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
@@ -1684,6 +2033,34 @@ function Profile() {
                       className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
                   >
                       Delete
+                  </button>
+              </div>
+          </Modal>
+        )}
+
+        {/* 🚨 NEW: No Changes Detected Modal */}
+        {noChangesModal.show && (
+          <Modal
+              onClose={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
+              title="No Changes Detected"
+              type="confirm"
+              theme={theme}
+          >
+              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  You haven't made any changes to the form. Are you sure you want to submit without any modifications?
+              </p>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                  <button
+                      onClick={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
+                      className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                  >
+                      Go Back & Make Changes
+                  </button>
+                  <button
+                      onClick={noChangesModal.onContinue}
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 transition-colors text-sm"
+                  >
+                      Continue Anyway
                   </button>
               </div>
           </Modal>
