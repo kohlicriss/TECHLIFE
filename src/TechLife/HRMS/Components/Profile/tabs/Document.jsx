@@ -86,7 +86,7 @@ const identityFields = {
       label: "Aadhaar Image", 
       name: "aadhaarImage", 
       type: "file",
-      required: true,
+      required: true, // Required on Add
       hint: "Upload clear image of your Aadhaar card" 
     },
   ],
@@ -123,7 +123,7 @@ const identityFields = {
       label: "PAN Image", 
       name: "panImage", 
       type: "file",
-      required: true,
+      required: true, // Required on Add
       hint: "Upload clear image of your PAN card" 
     },
   ],
@@ -189,7 +189,7 @@ const identityFields = {
       label: "License Image", 
       name: "licenseImage", 
       type: "file",
-      required: true,
+      required: true, // Required on Add
       hint: "Upload clear image of your driving license" 
     },
   ],
@@ -205,11 +205,7 @@ const identityFields = {
       label: "Country Code", 
       name: "countryCode", 
       type: "select",
-      options: [
-  "IND", "USA", "AUS", "ZLD", "DEU", "JPN", "GBR", "CAN", "FRA", "CHN",
-  "BRA", "RUS", "ITA", "ESP", "MEX", "ZAF", "NZL", "ARG", "KOR", "NLD",
-  "BEL", "SWE", "CHE", "AUT", "NOR", "FIN", "POL", "GRC", "TUR", "IDN"
-],
+      options: ["IND", "USA", "PAK", "CAN", "GBR", "AUS", "JPN", "DEU", "CHN", "RUS", "BRA", "ZAF"],
       required: true,
       hint: "Select the 3-character country code"
     },
@@ -282,7 +278,7 @@ const identityFields = {
       label: "Passport Image", 
       name: "passportImage", 
       type: "file",
-      required: true,
+      required: true, // Required on Add
       hint: "Upload clear image of your passport" 
     },
   ],
@@ -341,7 +337,7 @@ const identityFields = {
       label: "Voter Image", 
       name: "uploadVoter", 
       type: "file",
-      required: true,
+      required: true, // Required on Add
       hint: "Upload clear image of your voter ID" 
     },
   ],
@@ -701,8 +697,6 @@ const Document = () => {
   };
 
   const handleFileChange = (field, file) => {
-    // When a file is selected or removed, update the state.
-    // If we are editing, we also need to clear the existing URL string.
     setEditingData(prev => ({...prev, [field]: file }));
   };
   
@@ -766,7 +760,6 @@ const Document = () => {
       }
 
       const dto = { ...editingData };
-      // Always delete the file property from the DTO, whether it's a File object or a URL string
       delete dto[fileInputField]; 
       formData.append(backendDtoPartName, new Blob([JSON.stringify(dto)], { type: 'application/json' }));
 
@@ -1038,7 +1031,7 @@ const Document = () => {
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation(); // Prevent the file dialog from opening
                     handleFileChange(name, null);
                     if(fileInputRef.current) {
                         fileInputRef.current.value = "";
@@ -1062,7 +1055,8 @@ const Document = () => {
                 <p className={`text-xs sm:text-sm font-medium mb-1 ${
                   theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                 }`}>
-                  {editingData[name] ? "Replace current file" : "Drop your file here, or "} <span className="text-blue-600">browse</span>
+                  {editingData[name] && typeof editingData[name] === 'string' ? "Replace current file or " : "Drop your file here, or "} 
+                  <span className="text-blue-600">browse</span>
                 </p>
                 <p className={`text-xs ${
                   theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
@@ -1171,11 +1165,14 @@ const Document = () => {
                   const isIdField = ['aadhaarNumber', 'panNumber', 'licenseNumber', 'passportNumber', 'voterIdNumber'].includes(f.name);
                   const isDisabled = isUpdate && isIdField;
                   
+                  // --- UPDATED LOGIC FOR CONDITIONAL REQUIRED STAR ---
                   let isRequired = f.required;
-                  const fileFieldsOptionalOnUpdate = ['aadhaarImage', 'panImage', 'uploadVoter'];
+                  // Now includes licenseImage and passportImage
+                  const fileFieldsOptionalOnUpdate = ['aadhaarImage', 'panImage', 'uploadVoter', 'licenseImage', 'passportImage']; 
                   if (f.type === 'file' && isUpdate && fileFieldsOptionalOnUpdate.includes(f.name)) {
                     isRequired = false;
                   }
+                  // --- END OF UPDATED LOGIC ---
 
                   return renderField(f.label, f.name, f.type, isRequired, f.options, isDisabled, f.hint);
                 })}

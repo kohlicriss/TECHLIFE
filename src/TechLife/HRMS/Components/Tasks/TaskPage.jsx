@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Edit, X, Plus, Trash2, Upload, AlertCircle, ChevronRight, ChevronLeft, CheckCircle, Info, XCircle, ChevronDown, Search } from "lucide-react";
+// Assuming 'Context' is a valid context import
 import { Context } from "../HrmsContext"; 
+// Assuming 'axiosInstance' is correctly set up
 import { authApi, publicinfoApi, tasksApi } from '../../../../axiosInstance'; 
 
-// --- Helper Components ---
+// --- Helper Components (Defined in the original snippet) ---
 
 const CalendarIcon = ({ theme }) => (
     <svg
@@ -38,12 +40,14 @@ const Modal = ({ children, onClose, title, type, theme }) => {
         icon = <AlertCircle className="h-6 w-6 text-yellow-500" />;
     }
 
+    // Modal structure includes backdrop and dynamic styling
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] animate-fadeIn">
             <div className={`p-6 rounded-3xl shadow-2xl w-full max-w-md m-4 border animate-slideUp ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="flex items-center mb-4">
                     {icon && <span className="mr-3">{icon}</span>}
                     <h3 className={`text-xl font-bold ${titleClass}`}>{title}</h3>
+                    {/* Add an explicit close button for non-alert modals */}
                     {type !== "success" && type !== "error" && (
                         <button onClick={onClose} className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                             <X size={20} />
@@ -641,7 +645,7 @@ const TasksPage = () => {
         resetFormData();
     };
 
-    // MODIFIED: Added file validation
+    // --- MODIFIED VALIDATION ---
     const validateForm = () => {
         const newErrors = {};
         if (!formData.title || formData.title.trim().length < 3) newErrors.title = 'Title must be at least 3 characters';
@@ -656,15 +660,15 @@ const TasksPage = () => {
         
         // File Validation Logic
         if (formMode === 'create' && files.length === 0) {
+            // Only require a new file on creation
             newErrors.attachedFileLinks = 'At least one file attachment is required.';
         }
-        if (formMode === 'edit' && files.length === 0 && (!formData.attachedFileLinks || formData.attachedFileLinks.length === 0)) {
-            newErrors.attachedFileLinks = 'At least one file attachment is required.';
-        }
+        // No file validation needed for edit mode, as per the request
         
         setFormErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+    // --- END MODIFICATION ---
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -689,7 +693,6 @@ const TasksPage = () => {
 
     const handleFileChange = (e) => {
         setFiles(prev => [...prev, ...Array.from(e.target.files)]);
-         // Clear file-related error when a file is selected
          if (formErrors.attachedFileLinks) {
             setFormErrors(prev => {
                 const newErrors = { ...prev };
@@ -785,7 +788,6 @@ const TasksPage = () => {
 
     // --- Render Functions ---
 
-    // MODIFIED: Added `required` prop to the function signature
     const renderField = (label, name, type = "text", required = false, options = [], isDisabled = false) => {
         const isError = formErrors[name];
         const fieldValue = formData[name] || "";
@@ -947,7 +949,6 @@ const TasksPage = () => {
                         disabled={finalDisabled}
                     />
                 ) : type === "file" ? (
-                    // MODIFIED: Added error display for file input
                     <div>
                         <div className={`relative border-2 border-dashed rounded-xl transition-all duration-300
                             ${isError 
@@ -1124,8 +1125,10 @@ const TasksPage = () => {
                             </div>
 
                             <div className="mt-8">
-                                {/* MODIFIED: Added 'true' to make file input required */}
-                                {renderField('Attached Files', 'attachedFileLinks', 'file', true)}
+                                {/* --- MODIFIED LINE --- */}
+                                {/* The 'required' prop is now conditional: true if creating, false if editing */}
+                                {renderField('Attached Files', 'attachedFileLinks', 'file', !isUpdate)}
+                                {/* --- END MODIFICATION --- */}
                                 
                                 {files.length > 0 && (
                                     <div className="mt-6 space-y-3">
@@ -1228,6 +1231,7 @@ const TasksPage = () => {
 
         );
     };
+
 
     const renderTaskTable = (taskList, tableTitle, noTasksMessage, showAssignedTo) => (
         <div className="mb-8 hidden md:block">

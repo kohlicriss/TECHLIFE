@@ -612,7 +612,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
             className="relative"
           >
             <Bell
-              size={22}
+              size={28}
               className={
                 isNotificationsActive
                   ? "text-blue-600 fill-blue-100"
@@ -621,11 +621,11 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
                   : "text-gray-600 hover:text-black"
               }
             />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
+          {unreadCount > 0 && (
+  <span className="absolute -top-2 -right-3 flex min-w-5 h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+    {unreadCount}
+  </span>
+)}
           </Link>
           <div className="hidden sm:block">
             <DarkModeToggle
