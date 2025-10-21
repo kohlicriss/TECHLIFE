@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
-import { authApi } from "../../../axiosInstance";
+import { authApi, notificationsApi } from "../../../axiosInstance";
 
 export const Context = createContext();
 export const UISidebarContext = createContext();
@@ -24,10 +24,16 @@ const HrmsContext = ({ children }) => {
     const [matchedArray,setMatchedArray]=useState([]);
     const [chatUnreadCount,setChatUnreadCount]=useState(0);
 
+    // --- New State for Notification Pagination ---
+    const [notificationPageNumber, setNotificationPageNumber] = useState(0);
+    const [notificationPageSize, setNotificationPageSize] = useState(10); // You can change this page size
+    const [hasMoreNotifications, setHasMoreNotifications] = useState(true); // Centralized hasMore status
+    // ---------------------------------------------
+
         useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
         const storedUserImage = localStorage.getItem("loggedInUserImage");
- 
+
         if (storedUser) {
             const userObject = JSON.parse(storedUser);
             if (storedUserImage) {
@@ -35,7 +41,7 @@ const HrmsContext = ({ children }) => {
             }
             setUserData(userObject);
         }
- 
+
         const storedAccessToken = localStorage.getItem("accessToken");
         const storedRefreshToken = localStorage.getItem("refreshToken");
         if (storedAccessToken) {
@@ -49,7 +55,7 @@ const HrmsContext = ({ children }) => {
 
 
             const LoggedInUserRole = userData?.roles[0]?`ROLE_${userData?.roles[0]}` 
-  : null;
+ : null;
 
 
      useEffect(() => {
@@ -113,7 +119,7 @@ useEffect(() => {
 
     const fetchUnreadCount = useCallback(async () => {
         try {
-            const res = await axios.get(`https://hrms.anasolconsultancyservices.com/api/notification/unread-count/${userData?.employeeId}`);
+            const res = await notificationsApi.get(`/unread-count/${userData?.employeeId}`);
             setUnreadCount(res.data);
             console.log("Notification count", res.data);
         } catch (err) {
@@ -124,7 +130,7 @@ useEffect(() => {
     const markAsRead = useCallback(async (id) => {
         try {
             setGdata((prev) => prev.map((msg) => (msg.id === id ? { ...msg, read: true } : msg)));
-            await axios.post(`https://hrms.anasolconsultancyservices.com/api/notification/read/${id}`);
+            await notificationsApi.post(`/read/${id}`);
             fetchUnreadCount();
         } catch (err) {
             console.error("Error marking notification as read:", err);
@@ -136,37 +142,94 @@ useEffect(() => {
     }, []);
 
     const fetchNotifications = useCallback(async () => {
+        // Guard clause to prevent API call if employeeId is not yet loaded
+        if (!userData?.employeeId) { 
+            console.warn("Attempted to fetch notifications without employeeId. Aborting.");
+            return;
+        }
+
         try {
-            const res = await axios.get(`https://hrms.anasolconsultancyservices.com/api/notification/all/${userData?.employeeId}`);
+            const res = await notificationsApi.get(`/all/${userData?.employeeId}?page=${notificationPageNumber}&size=${notificationPageSize}`);
+            
             const data = res.data;
-            setGdata(data);
-            const latestUnread = data.find((msg) => !msg.read);
+            let notificationsArray = [];
+            let isLastPage = false; // Flag to check if this is the last page
+
+            // Check if API returned a Page object or just an array
+            if (Array.isArray(data)) {
+                notificationsArray = data;
+                // If the array is smaller than the requested page size, assume last page
+                if (notificationsArray.length < notificationPageSize) {
+                    isLastPage = true;
+                }
+            } else if (data && Array.isArray(data.content)) {
+                notificationsArray = data.content;
+                isLastPage = data.last; // Use 'last' flag from Spring Boot Page object
+            }
+
+            // Centralized logic to control infinite scroll in consumer component
+            setHasMoreNotifications(!isLastPage); 
+
+            // Handle infinite scroll/pagination logic
+            if (notificationPageNumber === 0) {
+                setGdata(notificationsArray);
+            } else {
+                // Append new list to the old one, using a Set to prevent duplicates
+                setGdata((prev) => {
+                    const existingIds = new Set(prev.map(n => n.id));
+                    const newNotifications = notificationsArray.filter(n => !existingIds.has(n.id));
+                    return [...prev, ...newNotifications];
+                });
+            }
+
+            const latestUnread = notificationsArray.find((msg) => !msg.read);
             setLastSseMsgId(latestUnread ? latestUnread.id : null);
-            console.log("Initial notification fetch:", data);
+            console.log("Fetched notifications page:", notificationPageNumber, notificationsArray);
+
         } catch (err) {
             console.error("Error fetching notifications:", err);
+            // On API error, disable further scrolling until user attempts refresh
+            if (notificationPageNumber > 0) {
+                 setHasMoreNotifications(false);
+            }
         }
-    }, [userData?.employeeId]);
+    }, [userData?.employeeId, notificationPageNumber, notificationPageSize]);
 
     useEffect(() => {
-        console.log("Setting up SSE connection...");
-        const eventSource = new EventSource(`https://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData?.employeeId}`);
-        eventSource.onopen = () => { console.log("SSE connection established."); };
+        // 1. Guard clause: Ensure employeeId is available before attempting connection.
+        if (!userData?.employeeId) {
+            console.log("SSE: Waiting for employeeId to establish connection.");
+            return;
+        }
+
+        console.log(`SSE: Setting up connection for Employee ID: ${userData.employeeId}`);
+        
+        // 2. Establish connection using the now-available employeeId
+        const eventSource = new EventSource(`https://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData.employeeId}`);
+        
+        eventSource.onopen = () => { 
+            console.log("SSE: Connection established successfully."); 
+        };
+        
         eventSource.addEventListener("notification", (event) => {
             try {
                 const incoming = JSON.parse(event.data);
                 console.log("📨 New Notification (SSE):", incoming);
+                
                 setGdata((prev) => {
                     const isDuplicate = prev.some((n) => n.id === incoming.id);
                     if (isDuplicate) return prev;
                     return [incoming, ...prev];
                 });
+                
                 setLastSseMsgId(incoming.id);
                 fetchUnreadCount();
+                
                 if (Notification.permission === "granted") {
                     const notification = new Notification(incoming.subject, {
                         body: incoming.message, icon: logo, data: { id: incoming.id, link: incoming.link },
                     });
+                    
                     notification.onclick = (e) => {
                         e.preventDefault();
                         if (incoming.link) { window.open(incoming.link, "_self"); }
@@ -177,20 +240,32 @@ useEffect(() => {
                 }
             } catch (err) { console.error("⚠ Error parsing SSE data:", err); }
         });
+        
         eventSource.onerror = (err) => {
+            // Log the error and close the connection.
             console.error("SSE connection error:", err);
             eventSource.close();
         };
+        
+        // 3. Cleanup function: Closes the connection when component unmounts 
         return () => {
-            console.log("Closing SSE connection");
+            console.log("SSE: Closing connection.");
             eventSource.close();
         };
+        
     }, [userData?.employeeId, markAsRead, fetchUnreadCount]);
 
     useEffect(() => {
+        // This will now re-run whenever fetchNotifications changes (i.e., when page number changes)
         fetchNotifications();
-        fetchUnreadCount();
-    }, [fetchNotifications, fetchUnreadCount]);
+    }, [fetchNotifications]); 
+
+    useEffect(() => {
+        // Fetch count only on initial load
+        if (userData?.employeeId) {
+            fetchUnreadCount();
+        }
+    }, [userData?.employeeId, fetchUnreadCount]);
 
     useEffect(() => {
         localStorage.setItem("theme", theme);
@@ -206,7 +281,14 @@ useEffect(() => {
                 setUserProfileData, theme, setTheme,
                 isChatWindowVisible,
                 setIsChatWindowVisible,
-                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray,chatUnreadCount,setChatUnreadCount
+                permissionsdata,setPermissionsData,setGlobalSearch,globalSearch,matchedArray,chatUnreadCount,setChatUnreadCount,
+
+                // --- Exporting new pagination values and setters ---
+                notificationPageNumber,
+                setNotificationPageNumber,
+                notificationPageSize,
+                setNotificationPageSize,
+                hasMoreNotifications, // <--- EXPORTED: New state for infinite scroll
             }}
         >
             {/* UISidebarContext will be provided in HrmsApp */}

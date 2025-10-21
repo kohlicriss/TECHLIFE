@@ -245,7 +245,7 @@ const sectionFields = {
       label: "Degree Certificate", 
       name: "addFiles", 
       type: "file",
-      required: true,
+      required: true, 
       hint: "Upload degree certificate (JPG, PNG, PDF)"
     },
   ],
@@ -374,16 +374,14 @@ const sectionConfig = {
   },
 };
 
-// 🚨 NEW: Helper function to check if data has meaningful values
+// Helper function to check if data has meaningful values
 const hasActualData = (data, sectionKey) => {
   if (!data) return false;
   
-  // For arrays (education/experience), check if array has elements
   if (Array.isArray(data)) {
     return data.length > 0;
   }
   
-  // For objects, check if any field has a meaningful value
   const fieldsToCheck = sectionFields[sectionKey];
   if (!fieldsToCheck) return false;
   
@@ -393,13 +391,12 @@ const hasActualData = (data, sectionKey) => {
   });
 };
 
-// 🚨 NEW: Comprehensive validation function based on hints
+// Comprehensive validation function based on hints
 const validateFieldByHint = (fieldName, value, hint, fieldType) => {
   if (!value || value.trim() === '') return null;
   
   const trimmedValue = value.trim();
   
-  // Extract validation rules from hints
   switch (fieldName) {
     case 'firstName':
     case 'middleName':
@@ -538,7 +535,7 @@ const validateFieldByHint = (fieldName, value, hint, fieldType) => {
   return null;
 };
 
-// 🚨 NEW: Network error handler
+// Network error handler
 const handleNetworkError = (error) => {
   if (!navigator.onLine) {
     return 'No internet connection. Please check your network and try again.';
@@ -553,7 +550,6 @@ const handleNetworkError = (error) => {
   }
   
   if (error.response) {
-    // Server responded with an error status
     switch (error.response.status) {
       case 400:
         return error.response.data?.message || 'Invalid data provided. Please check all fields.';
@@ -573,10 +569,8 @@ const handleNetworkError = (error) => {
         return 'An unexpected error occurred. Please try again.';
     }
   } else if (error.request) {
-    // Request was made but no response was received
     return 'Unable to connect to the server. Please check your internet connection.';
   } else {
-    // Something else happened
     return 'An unexpected error occurred. Please try again.';
   }
 };
@@ -598,7 +592,6 @@ function Profile() {
   const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
   const [selectedFile, setSelectedFile] = useState(null);
 
-  // 🚨 NEW: State for tracking initial form data and change detection
   const [initialEditingData, setInitialEditingData] = useState({});
   const [noChangesModal, setNoChangesModal] = useState({ 
     show: false, 
@@ -606,14 +599,11 @@ function Profile() {
     onContinue: null 
   });
 
-  // 🚨 NEW: State for network errors
   const [networkError, setNetworkError] = useState(null);
 
-  // State for popups
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
 
-  // NEW: State for individual education and experience editing
   const [deleteItemConfirmation, setDeleteItemConfirmation] = useState({ show: false, type: '', item: null, id: null });
 
   const searchParams = new URLSearchParams(location.search);
@@ -626,12 +616,9 @@ function Profile() {
 
   const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
 
-  // 🚨 NEW: Function to check if the form has changes
   const hasFormChanges = (currentData, initialData, selectedFile = null) => {
-    // If there's a file selected, consider it a change
     if (selectedFile) return true;
 
-    // Deep compare objects
     const normalizeValue = (value) => {
       if (value === null || value === undefined) return '';
       return String(value).trim();
@@ -640,10 +627,8 @@ function Profile() {
     const currentFields = Object.keys(currentData || {});
     const initialFields = Object.keys(initialData || {});
     
-    // Check if the number of fields has changed
     if (currentFields.length !== initialFields.length) return true;
 
-    // Check each field
     for (const key of currentFields) {
       const currentValue = normalizeValue(currentData[key]);
       const initialValue = normalizeValue(initialData[key]);
@@ -656,7 +641,6 @@ function Profile() {
     return false;
   };
 
-  // Save editing data to localStorage
   useEffect(() => {
     if (editingSection) {
       localStorage.setItem(`profile-editing-${editingSection.section}`, JSON.stringify(editingData));
@@ -684,13 +668,12 @@ function Profile() {
         setEduData(eduRes.data);
         setExperience(expRes.data);
 
-        // Updated completion calculation using hasActualData
         const sections = [
           hasActualData(primaryRes.data, 'primaryDetails'), 
           hasActualData(contactRes.data, 'contactDetails'), 
           hasActualData(addressRes.data, 'address'), 
           hasActualData(eduRes.data, 'education'), 
-          hasActualData(expRes.data, 'experience'),
+          hasActualData(expRes.data, 'experience'), 
         ];
         const completed = sections.filter(Boolean).length;
         setCompletionStats({ completed, total: 5 });
@@ -707,21 +690,19 @@ function Profile() {
     }
   }, [profileEmployeeId, fromContextMenu, targetEmployeeId]);
 
-  // 🚨 MODIFIED: openEditSection to store initial data
   const openEditSection = (section, itemData = null, isAdd = false) => {
     if (isReadOnly) {
       setPopup({ show: true, message: "You can only view this employee's profile. Editing is not allowed.", type: 'error' });
       return;
     }
     setErrors({});
-    setNetworkError(null); // Clear any previous network errors
+    setNetworkError(null);
     
-    // Load from localStorage if available
     const savedData = localStorage.getItem(`profile-editing-${section}`);
     if (savedData && !itemData && !isAdd) {
       const parsedData = JSON.parse(savedData);
       setEditingData(parsedData);
-      setInitialEditingData(parsedData); // Store as initial data
+      setInitialEditingData(parsedData);
     } else {
       let dataToEdit = {};
       if (section === "primaryDetails") {
@@ -732,24 +713,24 @@ function Profile() {
         dataToEdit = addressData;
       } else if (section === "education") {
         if (itemData) {
-          dataToEdit = itemData; // Edit specific education item
+          dataToEdit = itemData;
         } else if (isAdd || (eduData && eduData.length === 0)) {
-          dataToEdit = {}; // Add new education
+          dataToEdit = {};
         } else {
-          dataToEdit = eduData[0]; // Default to the first education item
+          dataToEdit = eduData[0];
         }
       } else if (section === "experience") {
         if (itemData) {
-          dataToEdit = itemData; // Edit specific experience item
+          dataToEdit = itemData;
         } else if (isAdd || (experience && experience.length === 0)) {
-          dataToEdit = {}; // Add new experience
+          dataToEdit = {};
         } else {
-          dataToEdit = experience[0]; // Default to the first experience item
+          dataToEdit = experience[0];
         }
       }
       const finalData = dataToEdit || {};
       setEditingData(finalData);
-      setInitialEditingData(finalData); // Store initial state for comparison
+      setInitialEditingData(finalData);
     }
 
     setSelectedFile(null);
@@ -760,12 +741,10 @@ function Profile() {
     setDeleteConfirmation({ show: true, sectionKey });
   };
 
-  // NEW: Handle individual item deletion
   const handleDeleteItem = (type, item, id) => {
     setDeleteItemConfirmation({ show: true, type, item, id });
   };
 
-  // NEW: Confirm individual item deletion
   const confirmDeleteItem = async () => {
     const { type, item, id } = deleteItemConfirmation;
     
@@ -833,7 +812,6 @@ function Profile() {
           break;
       }
 
-      // Updated completion calculation
       const sections = [
         sectionKey === 'primaryDetails' ? false : hasActualData(primarydata, 'primaryDetails'),
         sectionKey === 'contactDetails' ? false : hasActualData(contactdetails, 'contactDetails'),
@@ -852,17 +830,14 @@ function Profile() {
     }
   };
 
-  // 🚨 MODIFIED: handleEditFieldChange with real-time validation
   const handleEditFieldChange = (field, value) => {
     setEditingData((prev) => ({
       ...prev,
       [field]: value,
     }));
     
-    // Clear network error when the user starts typing
     setNetworkError(null);
     
-    // Clear existing field error
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -871,7 +846,6 @@ function Profile() {
       });
     }
     
-    // 🚨 NEW: Real-time validation based on hints
     const fieldConfig = sectionFields[editingSection?.section]?.find(f => f.name === field);
     if (fieldConfig) {
       const validationError = validateFieldByHint(field, value, fieldConfig.hint, fieldConfig.type);
@@ -888,7 +862,6 @@ function Profile() {
     setSelectedFile(file);
   };
 
-  // 🚨 MODIFIED: handleUpdatePrimaryDetails with network error handling
   const handleUpdatePrimaryDetails = async () => {
     setNetworkError(null);
     try {
@@ -897,13 +870,12 @@ function Profile() {
       const updatedData = await publicinfoApi.get(url);
       setPrimaryData(updatedData.data);
       
-      // Updated completion calculation
       const sections = [
         hasActualData(updatedData.data, 'primaryDetails'), 
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(experience, 'experience'),
+        hasActualData(experience, 'experience'), 
       ];
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
@@ -919,7 +891,6 @@ function Profile() {
     }
   };
 
-  // 🚨 MODIFIED: handleUpdateContactDetails with network error handling
   const handleUpdateContactDetails = async () => {
     setNetworkError(null);
     try {
@@ -928,13 +899,12 @@ function Profile() {
       const updatedData = await publicinfoApi.get(url);
       setContactDetails(updatedData.data);
       
-      // Updated completion calculation
       const sections = [
         hasActualData(primarydata, 'primaryDetails'), 
         hasActualData(updatedData.data, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(experience, 'experience'),
+        hasActualData(experience, 'experience'), 
       ];
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
@@ -950,7 +920,6 @@ function Profile() {
     }
   };
 
-  // 🚨 MODIFIED: handleUpdateAddress with network error handling
   const handleUpdateAddress = async () => {
     setNetworkError(null);
     try {
@@ -959,13 +928,12 @@ function Profile() {
       const updatedData = await publicinfoApi.get(url);
       setAddressData(updatedData.data);
       
-      // Updated completion calculation
       const sections = [
         hasActualData(primarydata, 'primaryDetails'), 
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(updatedData.data, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(experience, 'experience'),
+        hasActualData(experience, 'experience'), 
       ];
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
@@ -981,7 +949,6 @@ function Profile() {
     }
   };
 
-  // 🚨 MODIFIED: handleUpdateEducation with network error handling
   const handleUpdateEducation = async () => {
     setNetworkError(null);
     try {
@@ -1004,13 +971,12 @@ function Profile() {
       const updatedEduRes = await publicinfoApi.get(`employee/${profileEmployeeId}/degreeDetails`);
       setEduData(updatedEduRes.data);
 
-      // Updated completion calculation
       const sections = [
         hasActualData(primarydata, 'primaryDetails'), 
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(updatedEduRes.data, 'education'), 
-        hasActualData(experience, 'experience'),
+        hasActualData(experience, 'experience'), 
       ];
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
@@ -1026,7 +992,6 @@ function Profile() {
     }
   };
 
-  // 🚨 MODIFIED: handleUpdateExperience with network error handling
   const handleUpdateExperience = async () => {
     setNetworkError(null);
     try {
@@ -1043,13 +1008,12 @@ function Profile() {
       const updatedExperienceRes = await publicinfoApi.get(`employee/${profileEmployeeId}/previousExperience`);
       setExperience(updatedExperienceRes.data);
 
-      // Updated completion calculation
       const sections = [
         hasActualData(primarydata, 'primaryDetails'), 
         hasActualData(contactdetails, 'contactDetails'), 
         hasActualData(addressData, 'address'), 
         hasActualData(eduData, 'education'), 
-        hasActualData(updatedExperienceRes.data, 'experience'),
+        hasActualData(updatedExperienceRes.data, 'experience'), 
       ];
       setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
@@ -1065,19 +1029,15 @@ function Profile() {
     }
   };
 
-  // 🚨 MODIFIED: handleSubmit with change detection and pre-submission validation
   const handleSubmit = async (section) => {
-    // Clear network error
     setNetworkError(null);
     
-    // 🚨 NEW: Validate all fields before submission
     const fields = sectionFields[section] || [];
     const validationErrors = {};
     
     fields.forEach(field => {
       const value = editingData[field.name];
       if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
-          // For file inputs, check if there's no existing file and no new file selected
           if (field.type === 'file') {
               if (!editingData[field.name] && !selectedFile) {
                   validationErrors[field.name] = `${field.label} is required`;
@@ -1094,22 +1054,18 @@ function Profile() {
     });
 
     
-    // If there are validation errors, don't submit
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
     
-    // Check if there are any changes
     const hasChanges = hasFormChanges(editingData, initialEditingData, selectedFile);
     
     if (!hasChanges) {
-      // Show "no changes" modal instead of proceeding directly
       setNoChangesModal({
         show: true,
         section: section,
         onContinue: () => {
-          // User chose to continue anyway
           setNoChangesModal({ show: false, section: null, onContinue: null });
           proceedWithSubmission(section);
         }
@@ -1117,11 +1073,9 @@ function Profile() {
       return;
     }
 
-    // If there are changes, proceed with submission
     proceedWithSubmission(section);
   };
 
-  // 🚨 NEW: Separate function for the actual submission logic
   const proceedWithSubmission = async (section) => {
     setIsUpdating(true);
     let success = false;
@@ -1154,7 +1108,7 @@ function Profile() {
       setEditingSection(null);
       setErrors({});
       setNetworkError(null);
-      localStorage.removeItem(`profile-editing-${section}`); // Clear localStorage on successful submission
+      localStorage.removeItem(`profile-editing-${section}`);
       setPopup({ show: true, message: 'Profile section updated successfully!', type: 'success' });
     }
   };
@@ -1164,7 +1118,7 @@ function Profile() {
       localStorage.removeItem(`profile-editing-${editingSection.section}`);
     }
     setEditingSection(null);
-    setNetworkError(null); // Clear network error when canceling
+    setNetworkError(null);
   };
   
   const renderField = (label, name, type = "text", required = false, options = [], hint = "") => {
@@ -1181,7 +1135,6 @@ function Profile() {
             {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
           </label>
           
-          {/* 🚨 NEW: Hint text is always shown */}
           {hint && (
             <p className={`text-xs mb-2 ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -1216,20 +1169,14 @@ function Profile() {
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
               }`}>PNG, JPG, PDF up to 10MB</p>
               
-              {selectedFile ? (
+              {/* --- MODIFICATION START --- */}
+              {/* Only show selected file name, do not show existing fieldValue (the URL) */}
+              {selectedFile && (
                   <p className={`mt-2 text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
                       Selected: {selectedFile.name}
                   </p>
-              ) : fieldValue && (
-                  <div className="mt-2 text-center">
-                      <p className={`text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                          Current file: {fieldValue.substring(fieldValue.lastIndexOf('/') + 1)}
-                      </p>
-                      <p className={`text-xs italic ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
-                          Upload a new file to replace it.
-                      </p>
-                  </div>
               )}
+              {/* --- END MODIFICATION --- */}
             </div>
           </div>
           
@@ -1252,7 +1199,6 @@ function Profile() {
           {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
         </label>
         
-        {/* 🚨 NEW: Hint text is always shown */}
         {hint && (
           <p className={`text-xs mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -1383,7 +1329,6 @@ function Profile() {
                 {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
               </div>
               
-              {/* 🚨 NEW: Network Error Display */}
               {networkError && (
                 <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
                   theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
@@ -1483,7 +1428,6 @@ function Profile() {
     </div>
   );
 
-  // NEW: Individual Education/Experience Item Component
   const EducationExperienceItem = ({ type, item, index, onEdit, onDelete }) => {
     const config = sectionConfig[type];
     const IconComponent = config.icon;
@@ -1580,7 +1524,6 @@ function Profile() {
     const config = sectionConfig[sectionKey];
     const IconComponent = config.icon;
     
-    // UPDATED: Use hasActualData function instead of a simple boolean check
     const hasData = hasActualData(data, sectionKey);
     
     return (
@@ -1626,7 +1569,6 @@ function Profile() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-              {/* Always show the "Add" button for education and experience */}
               {(sectionKey === 'education' || sectionKey === 'experience') && (!isReadOnly || isAdmin) && (
                 <button
                   onClick={() => openEditSection(sectionKey, null, true)}
@@ -1638,7 +1580,6 @@ function Profile() {
                 </button>
               )}
 
-              {/* UPDATED: Show "Add" or "Edit" button for primaryDetails, contactDetails, and address sections based on hasData */}
               {(!isReadOnly || isAdmin) && !['education', 'experience'].includes(sectionKey) && (
                 <button 
                   onClick={() => openEditSection(sectionKey)} 
@@ -1725,7 +1666,6 @@ function Profile() {
   };
 
   const ProgressIndicator = () => {
-    // UPDATED: Use hasActualData for progress calculation
     const profileSections = [
       hasActualData(primarydata, 'primaryDetails'),
       hasActualData(contactdetails, 'contactDetails'),
@@ -1946,7 +1886,6 @@ function Profile() {
           </Modal>
         )}
 
-        {/* NEW: Individual item deletion confirmation */}
         {deleteItemConfirmation.show && (
           <Modal
             onClose={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
@@ -1974,7 +1913,6 @@ function Profile() {
           </Modal>
         )}
 
-        {/* 🚨 NEW: No Changes Detected Modal */}
         {noChangesModal.show && (
           <Modal
             onClose={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
