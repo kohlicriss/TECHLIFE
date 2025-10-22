@@ -424,34 +424,38 @@ const Profiles = () => {
         setActiveTab(location.pathname);
     }, [location.pathname]);
 
-    const handleImageUpload = async e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => setProfileImagePreview(reader.result);
-        reader.readAsDataURL(file);
-        const formData = new FormData();
-        formData.append("employeeImage", file);
-        try {
-            const res = await publicinfoApi.post(
-                `employee/${profileEmployeeId}/upload`,
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
-            if (!isOwnProfile) {
-                setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
-            } else {
-                setHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
-            }
-            showNotification('success', 'Success', 'Profile picture updated successfully!');
-            setIsImageModalOpen(false);
-            setIsImageFullView(false);
-        } catch (err) {
-            console.error("Error uploading image:", err);
-            showNotification('error', 'Error', 'Failed to upload image. Please try again.');
-            setProfileImagePreview(null);
-        }
-    };
+  const handleImageUpload = async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => setProfileImagePreview(reader.result);
+        reader.readAsDataURL(file);
+        const formData = new FormData();
+        formData.append("employeeImage", file);
+        try {
+            const res = await publicinfoApi.post(
+                `employee/${profileEmployeeId}/upload`,
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            );
+            if (!isOwnProfile) {
+                setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
+            } else {
+                setHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
+                // FIX: If it is the user's own profile, update the local storage image key.
+                if (res.data.employeeImage) {
+                    localStorage.setItem("loggedInUserImage", res.data.employeeImage);
+                }
+            }
+            showNotification('success', 'Success', 'Profile picture updated successfully!');
+            setIsImageModalOpen(false);
+            setIsImageFullView(false);
+        } catch (err) {
+            console.error("Error uploading image:", err);
+            showNotification('error', 'Error', 'Failed to upload image. Please try again.');
+            setProfileImagePreview(null);
+        }
+    };
 
     const handleDeleteImage = () => {
         showConfirmModal(

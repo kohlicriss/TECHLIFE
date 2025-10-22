@@ -449,12 +449,13 @@ const Achivements = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
-      setPopup({ show: true, message: 'Please fix the errors in the form before submitting.', type: 'error' });
+      setPopup({ show: true, message: 'Please fill the feilds in the form before submitting.', type: 'error' });
       return;
     }
 
+    // ... (rest of the FormData setup remains the same)
     const achievementDTO = {
       certificationName: formData.certificationName,
       issuingAuthorityName: formData.issuingAuthorityName,
@@ -471,45 +472,52 @@ const Achivements = () => {
     if (formData.achievementFile) {
       submissionData.append('achievementFile', formData.achievementFile);
     }
-    
+
     if (isEditMode && selectedAchievement?.id) {
       achievementDTO.id = selectedAchievement.id;
     }
-    
+
     submissionData.append('achievementsDTO', new Blob([JSON.stringify(achievementDTO)], { type: 'application/json' }));
+    // --- END FormData setup ---
 
     try {
-      let response;
       if (isEditMode) {
         const url = `/employee/${employeeIdToFetch}/${selectedAchievement.id}/achievements`;
-        response = await publicinfoApi.put(url, submissionData, {
+        await publicinfoApi.put(url, submissionData, { // Just await, no need to store response here
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        setAchievements(achievements.map(ach => ach.id === selectedAchievement.id ? response.data : ach));
         setPopup({ show: true, message: 'Achievement updated successfully!', type: 'success' });
       } else {
         const url = `/employee/achievements/${employeeIdToFetch}`;
-        response = await publicinfoApi.post(url, submissionData, {
+        await publicinfoApi.post(url, submissionData, { // Just await
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        setAchievements([...achievements, response.data]);
         setPopup({ show: true, message: 'Achievement added successfully!', type: 'success' });
       }
-      handleCloseModal();
+
+      // --- MODIFICATION START ---
+      // Instead of manually updating state with potentially stale response data,
+      // re-fetch the entire list to ensure consistency.
+      await fetchAchievements();
+      // --- MODIFICATION END ---
+
+      handleCloseModal(); // Close modal after success and re-fetch
+
     } catch (err) {
       console.error('Error saving achievement:', err.response?.data || err.message);
-      setPopup({ 
-        show: true, 
-        message: err.response?.data?.message || 'Failed to save achievement. Please check your input and try again.', 
-        type: 'error' 
+      setPopup({
+        show: true,
+        message: err.response?.data?.message || 'Failed to save achievement. Please check your input and try again.',
+        type: 'error'
       });
     }
+    // No finally block needed here, isSubmitting isn't used in this version
   };
 
   const getAchievementFileUrl = (filePath) => {
     if (!filePath) return null;
-    const baseUrl = publicinfoApi.defaults.baseURL;
-    return `${baseUrl.replace('/publicinfo', '')}/file/employee/${filePath}`;
+    // Directly return the filePath, as it contains the full S3 URL
+    return filePath;
   };
 
   if (loading) return (
