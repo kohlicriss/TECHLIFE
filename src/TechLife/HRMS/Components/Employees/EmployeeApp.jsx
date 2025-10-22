@@ -654,17 +654,38 @@ function EmployeeApp() {
         setDeleteConfirmation({ show: true, employee });
     };
 
-    const confirmDelete = async () => {
+   const confirmDelete = async () => {
         const { employee } = deleteConfirmation;
         if (!employee) return;
+        const employeeIdToDelete = employee.employeeId.toLowerCase();
 
         try {
+            // 1. Delete employee record from publicinfo service
             await publicinfoApi.delete(`employee/${employee.employeeId}`);
+
+            // 2. Delete user credentials from auth service (New API call)
+            // It automatically passes the employeeId as a path variable.
+            await authApi.delete(`delete/${employeeIdToDelete}`); 
+            
+            // Update local state and show success notification
             setEmployeeData(prevData => prevData.filter(emp => emp.employeeId !== employee.employeeId));
-            setPopup({ show: true, message: `Employee ${employee.displayName} has been deleted.`, type: 'success' });
+            setPopup({ 
+                show: true, 
+                message: `Employee ${employee.displayName} and associated user credentials have been successfully deleted.`, 
+                type: 'success' 
+            });
+            
         } catch (err) {
-            console.error("Error deleting employee:", err);
-            setPopup({ show: true, message: 'Failed to delete employee. Please try again.', type: 'error' });
+            console.error("Error deleting employee and user:", err);
+            
+            const errorMessage = err.response?.data?.message || 'The user service may have failed to delete credentials. Please verify the backend logs.';
+
+            setPopup({ 
+                show: true, 
+                message: `Failed to complete full deletion. ${errorMessage}`, 
+                type: 'error' 
+            });
+            
         } finally {
             setDeleteConfirmation({ show: false, employee: null });
             setFlippedCard(null);
@@ -1674,7 +1695,7 @@ function EmployeeApp() {
                                                                 className="px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200 text-xs sm:text-sm w-full flex items-center space-x-2"
                                                             >
                                                                 <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                                <span className="font-medium">Delete Employee</span>
+                                                                <span className="font-medium">Terminate Employee</span>
                                                             </button>
                                                         )}
                                                     </div>
@@ -1896,12 +1917,12 @@ function EmployeeApp() {
             {deleteConfirmation.show && (
                 <Modal
                     onClose={() => setDeleteConfirmation({ show: false, employee: null })}
-                    title="Confirm Deletion"
+                    title="Confirm Termination"
                     type="confirm"
                     theme={theme}
                 >
                     <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Are you sure you want to delete employee <strong>{deleteConfirmation.employee?.displayName}</strong>? This action cannot be undone.
+                        Are you sure you want to Terminate employee <strong>{deleteConfirmation.employee?.displayName}</strong>? This action cannot be undone.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                         <button
@@ -1916,7 +1937,7 @@ function EmployeeApp() {
                             onClick={confirmDelete}
                             className="w-full sm:w-auto px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
                         >
-                            Delete
+                            Terminate
                         </button>
                     </div>
                 </Modal>

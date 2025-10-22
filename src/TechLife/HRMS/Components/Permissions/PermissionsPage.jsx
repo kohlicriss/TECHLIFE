@@ -1,9 +1,9 @@
-import React, { useState, useContext, useEffect, useCallback, useMemo, useRef } from 'react'; // Added missing hooks just in case, though not all might be used now
+import React, { useState, useContext, useEffect, useCallback, useMemo, useRef } from 'react';
 import Select from 'react-select';
 import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaTimes, FaPlus, FaTrashAlt, FaEdit, FaSave, FaUndo } from 'react-icons/fa';
-import { X, Edit3, Trash2 } from 'lucide-react'; // Using Lucide icons
-import { Context } from '../HrmsContext'; // Ensure this path is correct
-import { authApi } from '../../../../axiosInstance'; // Ensure this path is correct
+import { X, Edit3, Trash2 } from 'lucide-react';
+import { Context } from '../HrmsContext';
+import { authApi } from '../../../../axiosInstance';
 
 // Custom Notification Component
 const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
@@ -13,33 +13,29 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
         let timer;
         if (isOpen) {
             setIsVisible(true);
-            // Auto-close for success/error after delay
-            if (type === 'success' || type === 'error') {
+            if (type === 'success' || type === 'error' || type === 'warning') {
                 timer = setTimeout(() => {
                     handleClose();
-                }, 3000); // Auto-close after 3 seconds
+                }, 3000);
             }
         } else {
-             // Immediately start fade out if isOpen becomes false
              setIsVisible(false);
         }
-        // Cleanup timeout on unmount or if isOpen changes before timeout finishes
         return () => clearTimeout(timer);
-    }, [isOpen, type]); // Rerun effect if isOpen or type changes
+    }, [isOpen, type]);
 
-    const handleClose = useCallback(() => { // Wrap in useCallback
+    const handleClose = useCallback(() => {
         setIsVisible(false);
-        // Delay onClose call to allow fade-out animation
-        setTimeout(() => onClose(), 300); // Match transition duration
+        setTimeout(() => onClose(), 300);
     }, [onClose]);
 
-    // Render immediately if isOpen is true, rely on isVisible for animations
-    if (!isOpen && !isVisible) return null; // Only return null if fully closed and animation finished
+    if (!isOpen && !isVisible) return null;
 
     const getIcon = () => {
         switch (type) {
             case 'success': return <FaCheckCircle className="w-6 h-6 text-green-500" />;
             case 'error':   return <FaExclamationTriangle className="w-6 h-6 text-red-500" />;
+            case 'warning': return <FaExclamationTriangle className="w-6 h-6 text-yellow-500" />;
             case 'info':    return <FaInfoCircle className="w-6 h-6 text-blue-500" />;
             default:        return null;
         }
@@ -48,6 +44,7 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
         switch (type) {
             case 'success': return 'text-green-600 dark:text-green-400';
             case 'error':   return 'text-red-600 dark:text-red-400';
+            case 'warning': return 'text-yellow-600 dark:text-yellow-400';
             case 'info':    return 'text-blue-600 dark:text-blue-400';
             default:        return theme === 'dark' ? 'text-white' : 'text-gray-800';
         }
@@ -56,23 +53,21 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
     return (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <div className="flex items-start mb-4"> {/* Changed items-center to items-start for long titles */}
-                    <div className="flex-shrink-0 pt-1">{getIcon()}</div> {/* Added pt-1 for alignment */}
+                <div className="flex items-start mb-4">
+                    <div className="flex-shrink-0 pt-1">{getIcon()}</div>
                     <h3 className={`text-xl font-bold ml-3 flex-grow ${getTitleClass()}`}>{title}</h3>
-                    {/* Show close button only for info or non-auto-closing types */}
-                    {(type === 'info') && (
+                    {(type === 'info' || type === 'warning') && (
                         <button onClick={handleClose} className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0">
                             <X size={20} />
                         </button>
                     )}
                 </div>
                 <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{message}</p>
-                 {/* Explicit OK button only needed for info type */}
-                 {(type === 'info') && (
-                     <div className="mt-5 flex justify-end"> {/* Increased margin top */}
+                 {(type === 'info' || type === 'warning') && (
+                     <div className="mt-5 flex justify-end">
                          <button
                              onClick={handleClose}
-                             className={`px-5 py-2 rounded-lg font-medium text-sm transition-colors bg-blue-500 hover:bg-blue-600 text-white`}
+                             className={`px-5 py-2 rounded-lg font-medium text-sm transition-colors ${type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
                          >
                              OK
                          </button>
@@ -96,20 +91,19 @@ const CustomConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confir
         }
     }, [isOpen]);
 
-    const handleClose = useCallback(() => { // Wrap in useCallback
+    const handleClose = useCallback(() => {
         setIsVisible(false);
-        setTimeout(() => onClose(), 300); // Match transition duration
+        setTimeout(() => onClose(), 300);
     }, [onClose]);
 
-     // Render immediately if isOpen is true, rely on isVisible for animations
-     if (!isOpen && !isVisible) return null; // Only return null if fully closed and animation finished
+     if (!isOpen && !isVisible) return null;
 
     const getIcon = () => {
         switch (type) {
              case 'danger':  return <FaExclamationTriangle className="w-6 h-6 text-red-500" />;
              case 'warning': return <FaExclamationTriangle className="w-6 h-6 text-yellow-500" />;
              case 'info':    return <FaInfoCircle className="w-6 h-6 text-blue-500" />;
-             default:        return <FaExclamationTriangle className="w-6 h-6 text-yellow-500" />; // Default to warning
+             default:        return <FaExclamationTriangle className="w-6 h-6 text-yellow-500" />;
          }
     };
     const getTitleClass = () => {
@@ -117,23 +111,23 @@ const CustomConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confir
              case 'danger':  return 'text-red-600 dark:text-red-400';
              case 'warning': return 'text-yellow-600 dark:text-yellow-400';
              case 'info':    return 'text-blue-600 dark:text-blue-400';
-             default:        return 'text-yellow-600 dark:text-yellow-400'; // Default to warning
+             default:        return 'text-yellow-600 dark:text-yellow-400';
          }
     };
     const getConfirmButtonClass = () => {
         switch (type) {
              case 'danger':  return 'bg-red-600 hover:bg-red-700 focus-visible:outline-red-600';
-             case 'warning': return 'bg-yellow-500 hover:bg-yellow-600 focus-visible:outline-yellow-500 text-white'; // Yellow needs white text often
+             case 'warning': return 'bg-yellow-500 hover:bg-yellow-600 focus-visible:outline-yellow-500 text-white';
              case 'info':    return 'bg-blue-600 hover:bg-blue-700 focus-visible:outline-blue-600';
-             default:        return 'bg-yellow-500 hover:bg-yellow-600 focus-visible:outline-yellow-500 text-white'; // Default to warning
+             default:        return 'bg-yellow-500 hover:bg-yellow-600 focus-visible:outline-yellow-500 text-white';
          }
     };
 
     return (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <div className="flex items-start mb-4"> {/* Changed items-center to items-start */}
-                    <div className="flex-shrink-0 pt-1">{getIcon()}</div> {/* Added pt-1 */}
+                <div className="flex items-start mb-4">
+                    <div className="flex-shrink-0 pt-1">{getIcon()}</div>
                     <h3 className={`text-xl font-bold ml-3 flex-grow ${getTitleClass()}`}>{title}</h3>
                     <button onClick={handleClose} className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0">
                         <X size={20} />
@@ -169,22 +163,19 @@ const CustomConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confir
 
 // Main Permissions Page Component
 const PermissionsPage = () => {
-    const { theme, permissionsdata = [], userData, setPermissionsData } = useContext(Context); // Default permissionsdata to empty array
+    const { theme, permissionsdata = [], userData, setPermissionsData } = useContext(Context);
     const [permissions, setPermissions] = useState({});
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [matchedObject, setMatchedObject] = useState(null);
     const [activeRoleTab, setActiveRoleTab] = useState(null);
 
-    // Notification state
     const [notification, setNotification] = useState({ isOpen: false, type: '', title: '', message: '' });
-    // Confirmation modal state
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', confirmText: '', onConfirm: null, type: 'warning', isConfirming: false });
 
-    const userRole = useMemo(() => userData?.roles?.[0]?.toUpperCase(), [userData]); // Memoize userRole
+    const userRole = useMemo(() => userData?.roles?.[0]?.toUpperCase(), [userData]);
     const loggedinuserRole = userRole ? userRole : null;
 
-    // Find the permission object for the logged-in user (for UI control checks if needed later)
     useEffect(() => {
         if (loggedinuserRole && permissionsdata && permissionsdata.length > 0) {
             const matched = permissionsdata.find(
@@ -192,7 +183,7 @@ const PermissionsPage = () => {
             );
             setMatchedObject(matched || null);
         } else {
-            setMatchedObject(null); // Reset if data/role changes
+            setMatchedObject(null);
         }
     }, [loggedinuserRole, permissionsdata]);
 
@@ -203,7 +194,6 @@ const PermissionsPage = () => {
     const [newRoleName, setNewRoleName] = useState('');
     const [isAddingRole, setIsAddingRole] = useState(false);
 
-    // Custom notification handlers
     const showNotification = useCallback((type, title, message) => {
         setNotification({ isOpen: true, type, title, message });
     }, []);
@@ -211,7 +201,6 @@ const PermissionsPage = () => {
         setNotification({ isOpen: false, type: '', title: '', message: '' });
     }, []);
 
-    // Custom confirmation handlers
     const showConfirmModal = useCallback((title, message, confirmText, onConfirm, type = 'warning') => {
         setConfirmModal({ isOpen: true, title, message, confirmText, onConfirm, type, isConfirming: false });
     }, []);
@@ -219,18 +208,15 @@ const PermissionsPage = () => {
         setConfirmModal({ isOpen: false, title: '', message: '', confirmText: '', onConfirm: null, type: 'warning', isConfirming: false });
     }, []);
 
-    // --- Helper Functions ---
     const formatPermissionLabel = useCallback((permission) => {
         if (!permission) return '';
-        // Specific overrides first
         if (permission === 'CREAT_USER') return 'Create User';
         if (permission === 'DELETE_USER') return 'Delete User';
         if (permission === 'CREATE_TASK') return 'Create Task';
         if (permission === 'VIEW_TASKS') return 'View Tasks';
         if (permission === 'VIEW_REPORTS') return 'View Reports';
-        if (permission === 'PERMISSIONS_BUTTENS') return 'Permissions Buttons'; // Check spelling if needed
+        if (permission === 'PERMISSIONS_BUTTENS') return 'Permissions Buttons';
         if (permission === 'CREATE_HR') return 'Create HR';
-        // General formatting
         return permission.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
     }, []);
 
@@ -239,16 +225,19 @@ const PermissionsPage = () => {
         if (apiRoleName.startsWith('ROLE_')) {
           return apiRoleName.substring(5).toLowerCase();
         }
-        return apiRoleName.toLowerCase(); // Fallback if needed
+        return apiRoleName.toLowerCase();
     }, []);
 
 
-    // Effect to initialize state when API data (permissionsdata) changes
     useEffect(() => {
         if (permissionsdata && Array.isArray(permissionsdata)) {
             // Create Permission Options
+            // Get all unique permissions from the data, plus any manually added ones
             const allApiPermissions = permissionsdata.flatMap(role => role.permissions || []);
-            const uniqueApiPermissions = [...new Set(allApiPermissions)];
+            const currentManualOptions = allPermissionOptions.filter(opt => !allApiPermissions.includes(opt.value)).map(opt => opt.value);
+            
+            const uniqueApiPermissions = [...new Set([...allApiPermissions, ...currentManualOptions])];
+            
             const options = uniqueApiPermissions.map(p => ({ value: p, label: formatPermissionLabel(p) }))
                                              .sort((a, b) => a.label.localeCompare(b.label));
             setAllPermissionOptions(options);
@@ -256,12 +245,12 @@ const PermissionsPage = () => {
             // Initialize Permissions State & Active Tab
             const initialPermissions = {};
             let firstRoleKey = null;
-            const sortedApiData = [...permissionsdata].sort((a,b) => (a.roleName || "").localeCompare(b.roleName || "")); // Sort roles before processing
+            const sortedApiData = [...permissionsdata].sort((a,b) => (a.roleName || "").localeCompare(b.roleName || ""));
 
             sortedApiData.forEach(apiRole => {
                 const roleKey = mapAPIRoleToKey(apiRole.roleName);
                 if (roleKey) {
-                    if (!firstRoleKey) firstRoleKey = roleKey; // Capture the first valid role key from sorted list
+                    if (!firstRoleKey) firstRoleKey = roleKey;
                     initialPermissions[roleKey] = {
                         id: apiRole.id,
                         permissions: apiRole.permissions ? [...new Set(apiRole.permissions)] : []
@@ -270,27 +259,23 @@ const PermissionsPage = () => {
             });
             setPermissions(initialPermissions);
 
-             // Set active tab: use current if still valid, else first, else null
             setActiveRoleTab(prevTab => {
                 if (prevTab && initialPermissions[prevTab]) {
-                    return prevTab; // Keep current active tab if it still exists
+                    return prevTab;
                 }
-                return firstRoleKey; // Otherwise, set to the first available role or null
+                return firstRoleKey;
             });
 
 
             setLoading(false);
         } else {
-            // Handle case where permissionsdata is empty or invalid
             setAllPermissionOptions([]);
             setPermissions({});
             setActiveRoleTab(null);
             setLoading(false);
         }
-    }, [permissionsdata, formatPermissionLabel, mapAPIRoleToKey]); // Added dependencies
+    }, [permissionsdata, formatPermissionLabel, mapAPIRoleToKey]);
 
-
-    // Add New Permission Option Handler
     const handleAddPermission = useCallback(() => {
         if (!newPermissionLabel.trim()) {
             showNotification('error', 'Validation Error', 'Please enter a label for the new permission.');
@@ -307,9 +292,8 @@ const PermissionsPage = () => {
         showNotification('info', 'Permission Option Added', `"${newPermission.label}" option created. Assign it to roles and save.`);
     }, [newPermissionLabel, allPermissionOptions, formatPermissionLabel, showNotification]);
 
-    // Handle permission selection change for the ACTIVE tab
     const handleSelectionChange = useCallback((selectedOptions, roleKey) => {
-        if (!roleKey) return; // Should have an active role tab
+        if (!roleKey) return;
         const selectedValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
         setPermissions(prev => ({
             ...prev,
@@ -317,7 +301,6 @@ const PermissionsPage = () => {
         }));
     }, []);
 
-    // Handle Add New Role (API call)
     const handleAddNewRole = useCallback(async (e) => {
         e.preventDefault();
         const trimmedRoleName = newRoleName.trim().toUpperCase();
@@ -335,9 +318,8 @@ const PermissionsPage = () => {
 
         try {
             await authApi.post('/role-access', newRoleDto);
-            const response = await authApi.get('/role-access/all'); // Refetch updated list
-            setPermissionsData(response.data); // Update context, triggers useEffect re-initialization
-            // The useEffect will handle setting the active tab correctly based on the new data
+            const response = await authApi.get('/role-access/all');
+            setPermissionsData(response.data);
             setIsAddRoleModalOpen(false);
             setNewRoleName('');
             showNotification('success', 'Role Created', `Role '${newRoleDto.roleName}' created. Assign permissions and save.`);
@@ -351,19 +333,74 @@ const PermissionsPage = () => {
     }, [newRoleName, permissions, mapAPIRoleToKey, setPermissionsData, showNotification]);
 
 
-    // Handle Save Permissions (API call)
+    // --- MODIFIED SUBMIT HANDLER ---
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
 
+        const assignedPermissions = new Set();
+        Object.values(permissions).forEach(role => {
+            role.permissions.forEach(perm => assignedPermissions.add(perm));
+        });
+
+        const allAvailablePermissions = allPermissionOptions.map(opt => opt.value);
+        const unassignedPermissions = allAvailablePermissions.filter(perm => !assignedPermissions.has(perm));
+
         const transformedPermissions = Object.keys(permissions).map(key => {
             const apiRoleName = `ROLE_${key.toUpperCase()}`;
             return {
-                id: permissions[key]?.id, // Include the ID from the state
+                id: permissions[key]?.id,
                 roleName: apiRoleName,
                 permissions: permissions[key]?.permissions || [],
             };
-        }).filter(p => p.id !== undefined); // Ensure we only send roles that were originally loaded (have an ID) or newly created roles might need a different endpoint? Check API.
+        }).filter(p => p.id !== undefined);
+
+        // Find the GARBAGE role or assume ID 136 if not explicitly found in state
+        const garbageRoleKey = 'garbage';
+        const garbageRole = permissions[garbageRoleKey] || permissionsdata.find(r => r.roleName === 'ROLE_GARBAGE');
+        const garbageRoleId = garbageRole?.id || 136; // Fallback to 136
+
+        // Add unassigned permissions to the ROLE_GARBAGE entry in the payload if it exists
+        if (unassignedPermissions.length > 0) {
+            
+            // 1. Ensure the ROLE_GARBAGE object exists in the transformed payload
+            let garbagePayloadIndex = transformedPermissions.findIndex(p => p.roleName === `ROLE_${garbageRoleKey.toUpperCase()}`);
+            
+            if (garbagePayloadIndex === -1 && garbageRole) {
+                // If the garbage role was loaded but filtered out (because it had no permissions before), add it back.
+                 transformedPermissions.push({
+                    id: garbageRoleId,
+                    roleName: `ROLE_${garbageRoleKey.toUpperCase()}`,
+                    permissions: [],
+                });
+                garbagePayloadIndex = transformedPermissions.length - 1;
+            } else if (garbagePayloadIndex === -1 && !garbageRole) {
+                 // Fallback case: if ROLE_GARBAGE wasn't loaded but we know its ID.
+                 // This should not happen if initial data loaded correctly, but safe to handle.
+                 transformedPermissions.push({
+                    id: garbageRoleId, // Use fallback ID
+                    roleName: `ROLE_${garbageRoleKey.toUpperCase()}`,
+                    permissions: [],
+                });
+                garbagePayloadIndex = transformedPermissions.length - 1;
+            }
+
+            // 2. Add unassigned permissions to the ROLE_GARBAGE permissions list
+            if (garbagePayloadIndex !== -1) {
+                 const currentGarbagePermissions = transformedPermissions[garbagePayloadIndex].permissions;
+                 const updatedGarbagePermissions = [...new Set([...currentGarbagePermissions, ...unassignedPermissions])];
+                 transformedPermissions[garbagePayloadIndex].permissions = updatedGarbagePermissions;
+            }
+            
+            // 3. Notify user about the automatic assignment
+            showNotification(
+                'warning', 
+                'Unassigned Permissions Saved', 
+                `The following permissions were not assigned to any role: ${unassignedPermissions.join(', ')}. They have been automatically assigned to the ROLE_GARBAGE role to prevent data loss.`,
+                'Confirm & Save'
+            );
+        }
+
 
         if (transformedPermissions.length === 0) {
             showNotification('info', 'No Changes', 'No permissions data found to save.');
@@ -374,9 +411,21 @@ const PermissionsPage = () => {
 
         try {
             await authApi.post('role-access/updateAll', transformedPermissions);
-            const response = await authApi.get('/role-access/all'); // Refetch to confirm
+            const response = await authApi.get('/role-access/all');
             setPermissionsData(response.data);
             showNotification('success', 'Permissions Saved', 'All changes have been saved successfully!');
+            
+             // FIX: Manually update permissions state to include the garbage changes locally
+             if (unassignedPermissions.length > 0) {
+                setPermissions(prev => ({
+                    ...prev,
+                    [garbageRoleKey]: {
+                        ...prev[garbageRoleKey],
+                        permissions: [...(prev[garbageRoleKey]?.permissions || []), ...unassignedPermissions]
+                    }
+                }));
+            }
+            
         } catch (error) {
             console.error("Error saving permissions:", error);
             const errorMessage = error.response?.data?.message || "An error occurred while saving permissions.";
@@ -384,12 +433,11 @@ const PermissionsPage = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }, [permissions, setPermissionsData, showNotification]);
+    }, [permissions, allPermissionOptions, setPermissionsData, showNotification, permissionsdata]);
 
     // Handle Reset Permissions (Client-side reload from context data)
     const handleReset = useCallback(() => {
         if (permissionsdata && Array.isArray(permissionsdata)) {
-            // Re-run the initialization logic directly
             const initialPermissions = {};
             let firstRoleKey = null;
             const sortedApiData = [...permissionsdata].sort((a,b) => (a.roleName || "").localeCompare(b.roleName || ""));
@@ -405,7 +453,6 @@ const PermissionsPage = () => {
                 }
             });
             setPermissions(initialPermissions);
-            // Reset active tab as well, if desired, or keep current if it still exists
             setActiveRoleTab(prevTab => (initialPermissions[prevTab] ? prevTab : firstRoleKey));
 
             showNotification('info', 'Changes Reset', 'Permissions reverted to last saved state.');
@@ -436,7 +483,6 @@ const PermissionsPage = () => {
                     await authApi.delete(`role-access/delete/${callerRole}/${roleToDeleteName}`);
                     const response = await authApi.get('/role-access/all'); // Refetch updated list
                     setPermissionsData(response.data); // Update context, triggers useEffect re-render
-                    // Active tab logic is handled by the main useEffect now
                     closeConfirmModal();
                     showNotification('success', 'Role Deleted', `Role '${roleToDeleteName}' has been successfully deleted.`);
                 } catch (error) {
@@ -445,7 +491,6 @@ const PermissionsPage = () => {
                     closeConfirmModal(); // Close modal even on error
                     showNotification('error', 'Delete Failed', `Error: ${errorMessage}`);
                 }
-                // No need to set isConfirming false here as modal closes
             },
             'danger' // Use danger type for deletion confirmation
         );
@@ -482,11 +527,11 @@ const customSelectStyles = useMemo(() => ({
         paddingBlock: '2px',
     }),
     indicatorSeparator: () => ({ display: 'none' }),
-    dropdownIndicator: (provided) => ({ /* ... (keep previous styles) ... */ }),
-    clearIndicator: (provided) => ({ /* ... (keep previous styles) ... */ }),
+    dropdownIndicator: (provided) => ({  }),
+    clearIndicator: (provided) => ({  }),
     placeholder: (provided) => ({ ...provided, color: theme === 'dark' ? '#9CA3AF' : '#6B7280' }),
-    menu: (provided) => ({ /* ... (keep previous styles) ... */ }),
-    option: (provided, state) => ({ /* ... (keep previous styles) ... */ }),
+    menu: (provided) => ({  }),
+    option: (provided, state) => ({  }),
 
     // --- Styling the Selected Permission Tags ---
     multiValue: (provided) => ({
@@ -527,8 +572,8 @@ const customSelectStyles = useMemo(() => ({
         transition: 'all 150ms', // Apply transition to all properties
         cursor: 'pointer',
     }),
-    noOptionsMessage: (provided) => ({ /* ... (keep previous styles) ... */ }),
-}), [theme]); // Depend on theme
+    noOptionsMessage: (provided) => ({  }),
+}), [theme]);
 
 
     // --- Render Logic ---
@@ -560,7 +605,7 @@ const customSelectStyles = useMemo(() => ({
                       <button
                         onClick={() => setIsAddRoleModalOpen(false)}
                         className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                        aria-label="Close add role modal" // Accessibility
+                        aria-label="Close add role modal"
                       >
                         <X size={20} />
                       </button>
@@ -577,7 +622,7 @@ const customSelectStyles = useMemo(() => ({
                         placeholder="e.g., ROLE_MANAGER"
                         className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 mb-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500' : 'bg-white border-gray-300 focus:ring-blue-600'}`}
                       />
-                      <div className="flex justify-end gap-3"> {/* Reduced gap */}
+                      <div className="flex justify-end gap-3">
                         <button
                           type="button"
                           onClick={() => setIsAddRoleModalOpen(false)}
@@ -614,7 +659,7 @@ const customSelectStyles = useMemo(() => ({
                     {/* Header */}
                     <div className="mb-6 sm:mb-8 px-4 sm:px-0 flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2"> {/* Reduced margin */}
+                            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
                             Permissions Management
                             </h1>
                             <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Configure role-based permissions</p>
@@ -623,7 +668,7 @@ const customSelectStyles = useMemo(() => ({
                     </div>
 
                     {/* Add New Permission / Add Role Section */}
-                     <div className={`p-4 sm:p-6 rounded-lg shadow-md mb-6 sm:mb-8 mx-4 sm:mx-0 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border'}`}> {/* Added border */}
+                     <div className={`p-4 sm:p-6 rounded-lg shadow-md mb-6 sm:mb-8 mx-4 sm:mx-0 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border'}`}>
                         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                             {/* Add New Permission Form */}
                             <div className="w-full md:w-auto md:flex-grow mb-4 md:mb-0">
@@ -652,7 +697,7 @@ const customSelectStyles = useMemo(() => ({
                             </div>
                             {/* Add New Role Button */}
                             <div className="flex-shrink-0 w-full md:w-auto">
-                                <label className="block text-sm font-medium mb-1 invisible md:visible">_</label> {/* Spacer - invisible on small screens */}
+                                <label className="block text-sm font-medium mb-1 invisible md:visible">_</label>
                                 <button
                                     onClick={() => setIsAddRoleModalOpen(true)}
                                     className="w-full px-4 py-3 bg-green-600 text-white font-semibold text-sm rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
@@ -666,36 +711,32 @@ const customSelectStyles = useMemo(() => ({
 
                     {/* Horizontal Tabs for Roles */}
                     <div className={`mb-6 sm:mb-8 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-                        <div className="flex space-x-1 overflow-x-auto pb-px -mb-px px-4 sm:px-0"> {/* Added padding for scroll */}
+                        <div className="flex space-x-1 overflow-x-auto pb-px -mb-px px-4 sm:px-0">
                             {rolesToRender.map((roleKey) => (
-                                <div key={roleKey} className="relative group flex items-center flex-shrink-0"> {/* Added flex-shrink-0 */}
+                                <div key={roleKey} className="relative group flex items-center flex-shrink-0">
                                     <button
                                         onClick={() => setActiveRoleTab(roleKey)}
-                                        // Padding adjusted: more horizontal, less vertical for tabs
                                         className={`flex items-center gap-2 pl-4 pr-9 py-2.5 text-sm sm:text-base font-medium border-b-2 whitespace-nowrap transition-colors duration-150 rounded-t-md
                                             ${activeRoleTab === roleKey
-                                                ? `border-blue-500 text-blue-600 dark:text-blue-400 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}` // Active tab background matches content area below
-                                                : `border-transparent hover:border-gray-400 dark:hover:border-gray-500 ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}` // Subtle hover background
+                                                ? `border-blue-500 text-blue-600 dark:text-blue-400 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`
+                                                : `border-transparent hover:border-gray-400 dark:hover:border-gray-500 ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`
                                             }
                                         `}
                                     >
                                         <span className="capitalize">{roleKey.replace(/_/g, ' ')}</span>
                                     </button>
-                                    {/* Delete 'X' Icon - Adjusted positioning and visibility */}
-                                    {roleKey !== 'admin' && ( // Don't allow deleting admin
+                                    {roleKey !== 'admin' && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleDeleteRole(roleKey); }}
-                                            // Position inside the button padding area, more intuitive
-                                            className={`absolute top-1/2 right-2 transform -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 ${activeRoleTab === roleKey ? 'opacity-100' : ''}`} // Visible on hover/focus or if active
+                                            className={`absolute top-1/2 right-2 transform -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-150 ${activeRoleTab === roleKey ? 'opacity-100' : ''}`}
                                             title={`Delete ROLE_${roleKey.toUpperCase()}`}
-                                            aria-label={`Delete role ${roleKey}`} // Accessibility
+                                            aria-label={`Delete role ${roleKey}`}
                                         >
                                             <X size={14} />
                                         </button>
                                     )}
                                 </div>
                             ))}
-                             {/* Add a filler div if no roles exist */}
                              {rolesToRender.length === 0 && !loading && (
                                 <div className={`px-4 py-3 text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                                     No roles found. Add a new role to begin.
@@ -707,7 +748,7 @@ const customSelectStyles = useMemo(() => ({
 
                     {/* Active Role's Permission Selection Area */}
                     {activeRoleTab && permissions[activeRoleTab] ? (
-                        <div className={`p-4 sm:p-6 md:p-8 rounded-lg shadow-md mx-4 sm:mx-0 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border'}`}> {/* Added border */}
+                        <div className={`p-4 sm:p-6 md:p-8 rounded-lg shadow-md mx-4 sm:mx-0 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border'}`}>
                             <h2 className={`text-lg sm:text-xl font-semibold capitalize mb-4 pb-2 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                                 Permissions for <span className='text-blue-600 dark:text-blue-400'>{activeRoleTab.replace(/_/g, ' ')}</span> Role
                             </h2>
@@ -719,18 +760,15 @@ const customSelectStyles = useMemo(() => ({
                                 styles={customSelectStyles}
                                 placeholder="Select permissions for this role..."
                                 closeMenuOnSelect={false}
-                                // isDisabled={isSubmitting} // Optionally disable while saving
-                                // className={isSubmitting ? 'opacity-70' : ''}
-                                aria-label={`Select permissions for ${activeRoleTab} role`} // Accessibility
+                                aria-label={`Select permissions for ${activeRoleTab} role`}
                             />
                             <p className={`text-xs mt-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                 {selectedPermissionsForActiveRole.length} / {allPermissionOptions.length} permission(s) selected.
                             </p>
                         </div>
                     ) : (
-                        // Show placeholder only if loading is finished and still no active tab
                         !loading && rolesToRender.length > 0 && (
-                            <div className={`p-6 text-center rounded-lg mx-4 sm:mx-0 ${theme === 'dark' ? 'text-gray-500 bg-gray-800 border border-gray-700' : 'text-gray-600 bg-gray-100 border'}`}> {/* Added background/border */}
+                            <div className={`p-6 text-center rounded-lg mx-4 sm:mx-0 ${theme === 'dark' ? 'text-gray-500 bg-gray-800 border border-gray-700' : 'text-gray-600 bg-gray-100 border'}`}>
                                 Select a role tab above to view or edit its permissions.
                             </div>
                         )
@@ -798,3 +836,4 @@ const customSelectStyles = useMemo(() => ({
 };
 
 export default PermissionsPage;
+ 

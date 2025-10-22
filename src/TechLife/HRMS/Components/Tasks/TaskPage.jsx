@@ -656,8 +656,23 @@ const TasksPage = () => {
         if (formData.description && formData.description.length > 255) newErrors.description = 'Description cannot exceed 255 characters';
         if (formData.remark && formData.remark.length > 200) newErrors.remark = 'Remark cannot exceed 200 characters';
         if (formData.completionNote && formData.completionNote.length > 200) newErrors.completionNote = 'Completion note cannot exceed 200 characters';
-        if (formData.rating && (parseInt(formData.rating) < 1 || parseInt(formData.rating) > 5)) newErrors.rating = 'Rating must be between 1 and 5'; 
         
+        // Specific validation for 'Completed' status
+        if (formData.status === 'Completed') {
+            if (!formData.completedDate) {
+                newErrors.completedDate = 'Completed date is required when status is "Completed"';
+            }
+            if (!formData.rating) {
+                newErrors.rating = 'Rating (1-5) is required when status is "Completed"';
+            } else if (parseInt(formData.rating) < 1 || parseInt(formData.rating) > 5) {
+                newErrors.rating = 'Rating must be between 1 and 5';
+            }
+        } 
+        // Optional validation for rating if it's provided but status is not 'Completed'
+        else if (formData.rating && (parseInt(formData.rating) < 1 || parseInt(formData.rating) > 5)) {
+            newErrors.rating = 'Rating must be between 1 and 5';
+        }
+
         // File Validation Logic
         if (formMode === 'create' && files.length === 0) {
             // Only require a new file on creation
@@ -1081,7 +1096,12 @@ const TasksPage = () => {
                                 {renderField('Priority', 'priority', 'select', true, ['High', 'Medium', 'Low'])}
                                 {renderField('Created Date', 'createdDate', 'date', false, [], true)}
                                 {renderField('Due Date', 'dueDate', 'date', true)}
-                                {renderField('Completed Date', 'completedDate', 'date')}
+                                
+                                {/* --- MODIFIED LINE --- */}
+                                {/* Completed Date is now disabled when formMode is 'create' */}
+                                {renderField('Completed Date', 'completedDate', 'date', false, [], formMode === 'create')}
+                                {/* --- END MODIFICATION --- */}
+
                                 {renderField('Rating (1-5)', 'rating', 'number')}
                                 {renderField('Remark', 'remark', 'textarea')}
                                 {renderField('Completion Note', 'completionNote', 'textarea')}
@@ -1125,10 +1145,8 @@ const TasksPage = () => {
                             </div>
 
                             <div className="mt-8">
-                                {/* --- MODIFIED LINE --- */}
                                 {/* The 'required' prop is now conditional: true if creating, false if editing */}
                                 {renderField('Attached Files', 'attachedFileLinks', 'file', !isUpdate)}
-                                {/* --- END MODIFICATION --- */}
                                 
                                 {files.length > 0 && (
                                     <div className="mt-6 space-y-3">
