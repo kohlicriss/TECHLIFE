@@ -978,7 +978,7 @@ const Profiles = () => {
                                         className="absolute top-0 right-10 p-2 rounded-full transition-colors"
                                         title="Add Achievement"
                                     >
-                                        <IoAdd className="w-5 h-5" />
+                                        {/* <IoAdd className="w-5 h-5" /> */}
                                     </button>
                                 )}
                                 {matchedArray.includes("DELETE_ACHIEVEMENT") && (
@@ -987,7 +987,7 @@ const Profiles = () => {
                                         className="absolute top-0 right-0 p-2 rounded-full transition-colors"
                                         title="Delete Achievement"
                                     >
-                                        <IoTrash className="w-5 h-5" />
+                                        {/* <IoTrash className="w-5 h-5" /> */}
                                     </button>
                                 )}
                                 <Achievements />

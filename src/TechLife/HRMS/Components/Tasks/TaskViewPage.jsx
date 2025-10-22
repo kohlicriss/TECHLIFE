@@ -642,7 +642,7 @@ const TaskViewPage = () => {
                 <div className={`w-full max-w-full pt-6 pb-6 sm:pt-8 sm:pb-8 md:pt-10 md:pb-10 px-0 rounded-3xl shadow-2xl border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                     <div className={`flex items-center justify-between  pb-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <button
-                            onClick={() => navigate(`/tasks/${userData?.employeeId}`)}
+                            onClick={() => navigate(-1)}
                             className={`p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700 hover:text-indigo-400' : 'text-gray-600 hover:bg-gray-100 hover:text-indigo-700'}`}
                             aria-label="Go back to tasks list"
                         >
