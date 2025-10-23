@@ -424,67 +424,97 @@ const Profiles = () => {
         setActiveTab(location.pathname);
     }, [location.pathname]);
 
-  const handleImageUpload = async e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => setProfileImagePreview(reader.result);
-        reader.readAsDataURL(file);
-        const formData = new FormData();
-        formData.append("employeeImage", file);
-        try {
-            const res = await publicinfoApi.post(
-                `employee/${profileEmployeeId}/upload`,
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
-            if (!isOwnProfile) {
-                setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
-            } else {
-                setHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
-                // FIX: If it is the user's own profile, update the local storage image key.
-                if (res.data.employeeImage) {
-                    localStorage.setItem("loggedInUserImage", res.data.employeeImage);
-                }
-            }
-            showNotification('success', 'Success', 'Profile picture updated successfully!');
-            setIsImageModalOpen(false);
-            setIsImageFullView(false);
-        } catch (err) {
-            console.error("Error uploading image:", err);
-            showNotification('error', 'Error', 'Failed to upload image. Please try again.');
-            setProfileImagePreview(null);
-        }
-    };
+ const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // ✅ Preview the selected image before upload
+  const reader = new FileReader();
+  reader.onloadend = () => setProfileImagePreview(reader.result);
+  reader.readAsDataURL(file);
+
+  const formData = new FormData();
+  formData.append("employeeImage", file);
+
+  try {
+    const res = await publicinfoApi.post(
+      `employee/${profileEmployeeId}/upload`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
+    // ✅ If not own profile, update viewed employee data
+    if (!isOwnProfile) {
+      setViewedEmployeeHeaderData((prev) => ({
+        ...prev,
+        employeeImage: res.data.employeeImage,
+      }));
+    } 
+    // ✅ If it’s own profile
+    else {
+      // 1️⃣ Update React header state (UI updates immediately)
+      setHeaderData((prev) => ({
+        ...prev,
+        employeeImage: res.data.employeeImage,
+      }));
+
+      // 2️⃣ Check if "loggedInUserImage" exists
+      const existingImage = localStorage.getItem("loggedInUserImage");
+
+      if (existingImage) {
+        console.log("🔁 Key exists — updating stored image address...");
+      } else {
+        console.log("🆕 Key not found — creating new key and storing image address...");
+      }
+
+      // 3️⃣ Either way, set the image (setItem creates or updates)
+      localStorage.setItem("loggedInUserImage", res.data.employeeImage);
+    }
+
+    // ✅ Show success message and close modals
+    showNotification("success", "Success", "Profile picture updated successfully!");
+    setIsImageModalOpen(false);
+    setIsImageFullView(false);
+  } catch (err) {
+    console.error("Error uploading image:", err);
+    showNotification("error", "Error", "Failed to upload image. Please try again.");
+    setProfileImagePreview(null);
+  }
+};
+
+
+
 
     const handleDeleteImage = () => {
-        showConfirmModal(
-            'Confirm Delete',
-            'Are you sure you want to delete the profile picture? This action cannot be undone.',
-            'Delete',
-            async () => {
-                setConfirmModal(prev => ({ ...prev, isConfirming: true }));
-                try {
-                    await publicinfoApi.delete(`employee/${profileEmployeeId}/deleteImage`);
-                    if (!isOwnProfile) {
-                        setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: null }));
-                    } else {
-                        setHeaderData(prev => ({ ...prev, employeeImage: null }));
-                    }
-                    setProfileImagePreview(null);
-                    closeConfirmModal();
-                    showNotification('success', 'Success', 'Profile picture deleted successfully!');
-                    setIsImageModalOpen(false);
-                    setIsImageFullView(false);
-                } catch (err) {
-                    console.error("Error deleting image:", err);
-                    closeConfirmModal();
-                    showNotification('error', 'Error', 'Failed to delete image. Please try again.');
-                }
-            },
-            'danger'
-        );
-    };
+        showConfirmModal(
+            'Confirm Delete',
+            'Are you sure you want to delete the profile picture? This action cannot be undone.',
+            'Delete',
+            async () => {
+                setConfirmModal(prev => ({ ...prev, isConfirming: true }));
+                try {
+                    await publicinfoApi.delete(`employee/${profileEmployeeId}/deleteImage`);
+                    if (!isOwnProfile) {
+                        setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: null }));
+                    } else {
+                        setHeaderData(prev => ({ ...prev, employeeImage: null }));
+                        // 🚨 ADD THIS LINE to remove from local storage
+                        localStorage.removeItem("loggedInUserImage");
+                    }
+                    setProfileImagePreview(null);
+                    closeConfirmModal();
+                    showNotification('success', 'Success', 'Profile picture deleted successfully!');
+                    setIsImageModalOpen(false);
+                    setIsImageFullView(false);
+                } catch (err) {
+                    console.error("Error deleting image:", err);
+                    closeConfirmModal();
+                    showNotification('error', 'Error', 'Failed to delete image. Please try again.');
+                }
+            },
+            'danger'
+        );
+    };
 
     const handleEditClick = () => {
         setEmployeeData(display);
