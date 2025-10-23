@@ -367,12 +367,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const subscriptions = useRef({});
 
     const chatIdFromUrl = useMemo(() => {
-        if (typeof window !== 'undefined' && window.location.pathname.includes('/with')) {
-            const params = new URLSearchParams(window.location.search);
+        if (location.pathname.includes('/with')) {
+            const params = new URLSearchParams(location.search);
             return params.get('id');
         }
         return null;
-    }, []);
+    }, [location.pathname, location.search]);
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
@@ -474,7 +474,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         }
 
-        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 400;
+        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 200;
         if (isScrolledUp !== showScrollToBottom) {
             setShowScrollToBottom(isScrolledUp);
             if (!isScrolledUp) {
@@ -840,7 +840,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     useEffect(() => {
         const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
-        setChatUnreadCount(totalUnread); 
+        setChatUnreadCount(totalUnread);
     }, [allChats, setChatUnreadCount]);
 
     const handleTypingEvent = useCallback((payload) => {
@@ -911,7 +911,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             return;
         }
 
-        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}`;
+        const token = localStorage.getItem('accessToken');
+        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}&token=${token}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -955,7 +956,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         stompClient.current = client;
 
         return () => {
-            // This cleanup runs when the component unmounts (e.g., navigating to Profile)
             if (selectedChat && stompClient.current?.active) {
                 const destination = `/app/presence/close/${selectedChat.chatId}`;
                 stompClient.current.publish({ destination, body: "{}" });
@@ -1057,6 +1057,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
         setSelectedChat(null);
         setIsChatOpen(false);
+        setShowScrollToBottom(false);
+        setNewMessagesCount(0);
 
         const newUrl = `/chat/${currentUser.id}`;
         navigate(newUrl);
@@ -1070,7 +1072,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             console.log(`Sent CLOSE presence for previous chat: ${selectedChat.chatId}`);
         }
 
-        // Optimistic UI update for immediate feedback
         if (chat.unreadMessageCount > 0) {
             setChatData(prev => {
                 const isGroup = chat.type === 'group';
@@ -1576,16 +1577,17 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const chatsToDisplay = searchChatResults !== null ? searchChatResults : allChats;
 
     useEffect(() => {
-        if (isManuallyClosing.current) {
-            isManuallyClosing.current = false;
-            return;
-        }
-
         if (chatIdFromUrl && allChats.length > 0 && isConnected && !selectedChat) {
+            if (isManuallyClosing.current) {
+                return;
+            }
+
             const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
             if (chatToSelect) {
                 handleChatSelect(chatToSelect);
             }
+        } else if (!chatIdFromUrl) {
+            isManuallyClosing.current = false;
         }
     }, [allChats, chatIdFromUrl, selectedChat, handleChatSelect, isConnected]);
 
@@ -2058,7 +2060,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 {showScrollToBottom && (
                     <button
                         onClick={() => scrollToBottom()}
-                        className="absolute bottom-24 right-8 z-10 bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
+                        className="absolute bottom-24 right-8 z-[110] bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
                         aria-label="Scroll to bottom"
                     >
                         {newMessagesCount > 0 && (
