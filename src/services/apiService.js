@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { publicinfoApi } from '../axiosInstance';
 
 const AUTH_API_URL = 'https://hrms.anasolconsultancyservices.com/api/auth/refresh-token';
 
@@ -254,7 +255,7 @@ export const uploadVoiceMessage = async (voiceData) => {
 
 export const getGroupMembers = async (teamId) => {
   try {
-    const response = await chatApi.get(`/chat/team/employee/${teamId}`);
+    const response = await publicinfoApi.get(`/employee/team/employee/${teamId}`);
     console.log('Response:', response);
     return response.data;
   } catch (error) {
