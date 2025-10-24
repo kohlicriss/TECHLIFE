@@ -110,7 +110,7 @@ window.addEventListener('storage', (event) => {
         console.log("🔄 Token updated in another tab:", event.newValue);
     }
 });
-export const chatApi = createAxiosInstance('http://192.168.0.218:8083/api');
+export const chatApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
 
 export const getChatOverview = async (employeeId, page = 0, size = 10) => {
   try {
