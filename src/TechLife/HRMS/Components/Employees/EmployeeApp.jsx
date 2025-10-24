@@ -36,7 +36,6 @@ import {
     IoKeyOutline,
 } from 'react-icons/io5';
 
-// Add custom CSS for 3D flip animations
 const styles = `
   .preserve-3d {
     transform-style: preserve-3d;
@@ -52,7 +51,6 @@ const styles = `
   }
 `;
 
-// Inject styles
 try {
     if (!document.getElementById('custom-employee-styles')) {
         const styleSheet = document.createElement("style");
@@ -132,11 +130,10 @@ const InputField = ({
     accept,
     theme,
     maxLength,
-    disabled = false // <-- UPDATED: Added disabled prop
+    disabled = false 
 }) => {
     const normalizedValue = value === null || value === undefined ? '' : value;
 
-    // UPDATED: Added disabled styles
     const baseInputClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
         isError
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
@@ -145,7 +142,6 @@ const InputField = ({
             : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
     } disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400 disabled:cursor-not-allowed`;
 
-    // UPDATED: Added disabled styles
     const textareaClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
         isError
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
@@ -154,7 +150,6 @@ const InputField = ({
             : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
     } disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400 disabled:cursor-not-allowed`;
 
-    // UPDATED: Added disabled styles
     const selectClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
         isError
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
@@ -189,7 +184,7 @@ const InputField = ({
                         onBlur={onBlur}
                         className={selectClass}
                         required={required}
-                        disabled={disabled} // <-- UPDATED: Added disabled attribute
+                        disabled={disabled}  
                     >
                         <option value="">Select {label.toLowerCase()}</option>
                         {options.map((option, index) => (
@@ -217,7 +212,7 @@ const InputField = ({
                     required={required}
                     rows={4}
                     maxLength={maxLength}
-                    disabled={disabled} // <-- UPDATED: Added disabled attribute
+                    disabled={disabled} 
                 />
             ) : type === 'file' ? (
                 <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 ${
@@ -234,7 +229,7 @@ const InputField = ({
                         multiple={multiple}
                         onChange={onChange}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        disabled={disabled} // <-- UPDATED: Added disabled attribute
+                        disabled={disabled} 
                     />
                     <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
                         <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${

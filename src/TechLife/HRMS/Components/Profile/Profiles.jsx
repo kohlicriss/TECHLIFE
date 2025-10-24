@@ -265,7 +265,7 @@ const Profiles = () => {
         .substring(0, 2);
     
     const tabs = [
-        // { name: "About", path: "about", icon: MdPerson },
+        { name: "About", path: "about", icon: MdPerson },
         { name: "Profile", path: "profile", icon: HiIdentification },
         { name: "Job", path: "job", icon: MdWork },
         { name: "Documents", path: "documents", icon: MdBusiness },
