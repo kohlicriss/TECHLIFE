@@ -197,8 +197,7 @@ const NoChangesModal = ({ isOpen, onClose, onContinue, theme }) => {
 };
 
 // ----------------------------------------------------------------------------------------------------------------------
-// NEW COMPONENT: Paginated Employee List for Edit Modal
-// This component manages its own infinite scrolling and fetching logic.
+// Paginated Employee List for Edit Modal
 // ----------------------------------------------------------------------------------------------------------------------
 const EmployeeListPaginatedForEdit = ({ employeeRoles, onSelectionChange, onRoleChange, theme, error }) => {
     const [employees, setEmployees] = useState([]);
@@ -349,7 +348,6 @@ const EmployeeListPaginatedForEdit = ({ employeeRoles, onSelectionChange, onRole
 // Main Modal Component
 const EditTeamModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
     const { theme } = useContext(Context);
-    // Removed useEmployeeList - data fetching is now handled by EmployeeListPaginatedForEdit
 
     const [teamName, setTeamName] = useState('');
     const [employeeRoles, setEmployeeRoles] = useState({});
@@ -448,10 +446,11 @@ const EditTeamModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
         setIsSubmitting(true);
         setFormErrors({});
 
-        // Assuming projectId is either in the first project object or defaults to a mock ID
-        const projectIdToSend = (team?.projects?.[0]?.projectId) || "PRO1001";
+        // --- MODIFICATION: Safely extract the existing projectId from team.projects array ---
+        const projectIdToSend = team.projects?.length > 0 ? team.projects[0] : "";
+        
         if (!projectIdToSend) {
-            setFormErrors({ general: 'Error: Project ID is missing.' });
+            setFormErrors({ general: 'Error: Project ID is missing from the existing team data.' });
             setIsSubmitting(false);
             return;
         }
@@ -460,7 +459,7 @@ const EditTeamModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
             teamId: team.teamId,
             teamName: teamName.trim(),
             teamDescription: team.teamDescription || "",
-            projectId: projectIdToSend,
+            projectId: projectIdToSend, // Use the existing projectId
             employeeRoles
         };
         
