@@ -6,12 +6,11 @@ import {
     FaMicrophone, FaPaperclip, FaSmile, FaPaperPlane, FaArrowLeft, FaStop,
     FaFileAlt, FaDownload, FaPlay, FaPause, FaReply, FaEdit, FaThumbtack, FaShare, FaTrash, FaTimes, FaCheck,
     FaChevronDown, FaImage, FaFileAudio, FaAngleDoubleRight, FaUsers, FaUser,
-    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp
+    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp, FaCheckDouble, FaEye
 } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 import {
-    chatApi,
     getMessages,
     deleteMessageForMe,
     deleteMessageForEveryone,
@@ -29,6 +28,7 @@ import {
     searchChatOverview
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
+import { chatApi } from '../../../../axiosInstance';
 
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -591,6 +591,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         }
     }, [currentUser.id, isFetchingMoreMessages, isMessagesLoading, getMessages]);
+
     useEffect(() => {
         if (!selectedChat) return;
 
@@ -1652,17 +1653,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return `last seen on ${date.toLocaleDateString()}`;
     };
 
-    const getStatusRingColor = (status) => {
-        switch (status) {
-            case 'sending': return 'ring-yellow-400';
-            case 'sent': return 'ring-gray-400';
-            case 'delivered': return 'ring-blue-500';
-            case 'seen': return 'ring-green-500';
-            case 'failed': return 'ring-red-500';
-            default: return 'ring-transparent';
-        }
-    };
-
     let lastMessageDate = null;
 
     const currentChatInfo = selectedChat ? allChats.find(c => c.chatId === selectedChat.chatId) : null;
@@ -1980,11 +1970,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                                         </>
                                                                     )}
                                                                 </div>
-                                                                <span className={`text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
+                                                                <span className={`flex items-center justify-end gap-1 text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                    <span className="leading-none">
+                                                                        {msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)}
+                                                                    </span>
+
+                                                                    {msg.isEdited ? <span className="leading-none">(edited)</span> : ''}
+
+                                                                    {isMyMessage && msg.status !== 'sending' && msg.status !== 'failed' && (
+                                                                        <span className="flex-shrink-0">
+                                                                            {msg.status === 'sent' && <FaCheck size={14} className={`${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />}
+                                                                            {msg.status === 'delivered' && <FaCheckDouble size={14} className="text-blue-500" />}
+                                                                            {msg.status === 'seen' && <FaEye size={14} className="text-blue-500" />}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
                                                             </div>
                                                             {isMyMessage && (
                                                                 <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
-                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className={`w-full h-full rounded-full object-cover ring-2 ${getStatusRingColor(msg.status)}`} />
+                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className="w-full h-full rounded-full object-cover" />
                                                                 </div>
                                                             )}
                                                         </div>
@@ -2082,7 +2086,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             )}
 
             {contextMenu.visible && (
-                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-50 text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-[110] text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     <ul className="py-1">
                         {contextMenu.message.type === 'deleted' ? (
                             <li onClick={() => handleDelete(false)} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'text-red-400 hover:bg-gray-700' : ''}`}><FaTrash /> Delete for me</li>
