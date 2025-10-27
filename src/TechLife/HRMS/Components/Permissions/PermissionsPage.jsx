@@ -1,7 +1,7 @@
-import React, { useState, useContext, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import Select from 'react-select';
-import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaTimes, FaPlus, FaTrashAlt, FaEdit, FaSave, FaUndo } from 'react-icons/fa';
-import { X, Edit3, Trash2 } from 'lucide-react';
+import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaPlus, FaSave, FaUndo } from 'react-icons/fa';
+import { X } from 'lucide-react';
 import { Context } from '../HrmsContext';
 import { authApi } from '../../../../axiosInstance';
 
@@ -13,7 +13,7 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
         let timer;
         if (isOpen) {
             setIsVisible(true);
-            if (type === 'success' || type === 'error' || type === 'warning') {
+            if (['success', 'error', 'warning'].includes(type)) {
                 timer = setTimeout(() => {
                     handleClose();
                 }, 3000);
@@ -40,6 +40,7 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
             default:        return null;
         }
     };
+
     const getTitleClass = () => {
         switch (type) {
             case 'success': return 'text-green-600 dark:text-green-400';
@@ -64,20 +65,19 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
                 </div>
                 <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{message}</p>
                  {(type === 'info' || type === 'warning') && (
-                     <div className="mt-5 flex justify-end">
-                         <button
-                             onClick={handleClose}
-                             className={`px-5 py-2 rounded-lg font-medium text-sm transition-colors ${type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
-                         >
-                             OK
-                         </button>
-                     </div>
+                    <div className="mt-5 flex justify-end">
+                        <button
+                            onClick={handleClose}
+                            className={`px-5 py-2 rounded-lg font-medium text-sm transition-colors ${type === 'warning' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                        >
+                            OK
+                        </button>
+                    </div>
                  )}
             </div>
         </div>
     );
 };
-
 
 // Custom Confirmation Modal Component
 const CustomConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, isConfirming, theme, type = 'warning' }) => {
@@ -174,13 +174,11 @@ const PermissionsPage = () => {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', confirmText: '', onConfirm: null, type: 'warning', isConfirming: false });
 
     const userRole = useMemo(() => userData?.roles?.[0]?.toUpperCase(), [userData]);
-    const loggedinuserRole = userRole ? userRole : null;
+    const loggedinuserRole = userRole || null;
 
     useEffect(() => {
-        if (loggedinuserRole && permissionsdata && permissionsdata.length > 0) {
-            const matched = permissionsdata.find(
-            role => role.roleName?.trim() === loggedinuserRole.trim()
-            );
+        if (loggedinuserRole && permissionsdata.length > 0) {
+            const matched = permissionsdata.find(role => role.roleName?.trim() === loggedinuserRole.trim());
             setMatchedObject(matched || null);
         } else {
             setMatchedObject(null);
@@ -223,26 +221,20 @@ const PermissionsPage = () => {
     const mapAPIRoleToKey = useCallback((apiRoleName) => {
         if (!apiRoleName) return null;
         if (apiRoleName.startsWith('ROLE_')) {
-          return apiRoleName.substring(5).toLowerCase();
+            return apiRoleName.substring(5).toLowerCase();
         }
         return apiRoleName.toLowerCase();
     }, []);
 
-
     useEffect(() => {
         if (permissionsdata && Array.isArray(permissionsdata)) {
-            // Create Permission Options
-            // Get all unique permissions from the data, plus any manually added ones
             const allApiPermissions = permissionsdata.flatMap(role => role.permissions || []);
             const currentManualOptions = allPermissionOptions.filter(opt => !allApiPermissions.includes(opt.value)).map(opt => opt.value);
-            
             const uniqueApiPermissions = [...new Set([...allApiPermissions, ...currentManualOptions])];
-            
             const options = uniqueApiPermissions.map(p => ({ value: p, label: formatPermissionLabel(p) }))
-                                             .sort((a, b) => a.label.localeCompare(b.label));
+                .sort((a, b) => a.label.localeCompare(b.label));
             setAllPermissionOptions(options);
 
-            // Initialize Permissions State & Active Tab
             const initialPermissions = {};
             let firstRoleKey = null;
             const sortedApiData = [...permissionsdata].sort((a,b) => (a.roleName || "").localeCompare(b.roleName || ""));
@@ -259,13 +251,7 @@ const PermissionsPage = () => {
             });
             setPermissions(initialPermissions);
 
-            setActiveRoleTab(prevTab => {
-                if (prevTab && initialPermissions[prevTab]) {
-                    return prevTab;
-                }
-                return firstRoleKey;
-            });
-
+            setActiveRoleTab(prevTab => (prevTab && initialPermissions[prevTab]) ? prevTab : firstRoleKey);
 
             setLoading(false);
         } else {
@@ -332,100 +318,90 @@ const PermissionsPage = () => {
         }
     }, [newRoleName, permissions, mapAPIRoleToKey, setPermissionsData, showNotification]);
 
-
-    // --- MODIFIED SUBMIT HANDLER ---
+    // Modified Submit Handler for ROLE_GARBAGE handling
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
+
+        const GARBAGE_ROLE_NAME = 'ROLE_GARBAGE';
+        const GARBAGE_ROLE_KEY = mapAPIRoleToKey(GARBAGE_ROLE_NAME);
 
         const assignedPermissions = new Set();
         Object.values(permissions).forEach(role => {
             role.permissions.forEach(perm => assignedPermissions.add(perm));
         });
-
         const allAvailablePermissions = allPermissionOptions.map(opt => opt.value);
         const unassignedPermissions = allAvailablePermissions.filter(perm => !assignedPermissions.has(perm));
 
-        const transformedPermissions = Object.keys(permissions).map(key => {
-            const apiRoleName = `ROLE_${key.toUpperCase()}`;
-            return {
-                id: permissions[key]?.id,
-                roleName: apiRoleName,
-                permissions: permissions[key]?.permissions || [],
-            };
-        }).filter(p => p.id !== undefined);
+        let transformedPermissions = Object.keys(permissions)
+            .filter(key => key !== GARBAGE_ROLE_KEY) // Exclude garbage role initially
+            .map(key => {
+                const apiRoleName = `ROLE_${key.toUpperCase()}`;
+                return {
+                    id: permissions[key]?.id,
+                    roleName: apiRoleName,
+                    permissions: permissions[key]?.permissions || [],
+                };
+            }).filter(p => p.id !== undefined);
 
-        // Find the GARBAGE role or assume ID 136 if not explicitly found in state
-        const garbageRoleKey = 'garbage';
-        const garbageRole = permissions[garbageRoleKey] || permissionsdata.find(r => r.roleName === 'ROLE_GARBAGE');
-        const garbageRoleId = garbageRole?.id || 136; // Fallback to 136
+        let finalGarbageRole = null;
 
-        // Add unassigned permissions to the ROLE_GARBAGE entry in the payload if it exists
         if (unassignedPermissions.length > 0) {
-            
-            // 1. Ensure the ROLE_GARBAGE object exists in the transformed payload
-            let garbagePayloadIndex = transformedPermissions.findIndex(p => p.roleName === `ROLE_${garbageRoleKey.toUpperCase()}`);
-            
-            if (garbagePayloadIndex === -1 && garbageRole) {
-                // If the garbage role was loaded but filtered out (because it had no permissions before), add it back.
-                 transformedPermissions.push({
-                    id: garbageRoleId,
-                    roleName: `ROLE_${garbageRoleKey.toUpperCase()}`,
-                    permissions: [],
-                });
-                garbagePayloadIndex = transformedPermissions.length - 1;
-            } else if (garbagePayloadIndex === -1 && !garbageRole) {
-                 // Fallback case: if ROLE_GARBAGE wasn't loaded but we know its ID.
-                 // This should not happen if initial data loaded correctly, but safe to handle.
-                 transformedPermissions.push({
-                    id: garbageRoleId, // Use fallback ID
-                    roleName: `ROLE_${garbageRoleKey.toUpperCase()}`,
-                    permissions: [],
-                });
-                garbagePayloadIndex = transformedPermissions.length - 1;
+            let existingGarbageRole = permissions[GARBAGE_ROLE_KEY] || permissionsdata.find(r => r.roleName === GARBAGE_ROLE_NAME);
+
+            if (!existingGarbageRole) {
+                try {
+                    const createDto = { roleName: GARBAGE_ROLE_NAME, permissions: [] };
+                    const createResponse = await authApi.post('/role-access', createDto);
+                    const createdRole = createResponse.data;
+                    if (createdRole && createdRole.id) {
+                        finalGarbageRole = {
+                            id: createdRole.id,
+                            roleName: GARBAGE_ROLE_NAME,
+                            permissions: createdRole.permissions || [],
+                        };
+                        showNotification('info', 'New Role Created', `${GARBAGE_ROLE_NAME} was automatically created to handle unassigned permissions.`);
+                    } else {
+                        throw new Error("API failed to return ID for created GARBAGE role.");
+                    }
+                } catch (error) {
+                    console.error("Failed to auto-create ROLE_GARBAGE:", error);
+                    showNotification('error', 'Setup Failed', `Could not create ${GARBAGE_ROLE_NAME}. Saving process halted.`);
+                    setIsSubmitting(false);
+                    return;
+                }
+            } else {
+                finalGarbageRole = {
+                    id: existingGarbageRole.id,
+                    roleName: GARBAGE_ROLE_NAME,
+                    permissions: existingGarbageRole.permissions || [],
+                };
             }
 
-            // 2. Add unassigned permissions to the ROLE_GARBAGE permissions list
-            if (garbagePayloadIndex !== -1) {
-                 const currentGarbagePermissions = transformedPermissions[garbagePayloadIndex].permissions;
-                 const updatedGarbagePermissions = [...new Set([...currentGarbagePermissions, ...unassignedPermissions])];
-                 transformedPermissions[garbagePayloadIndex].permissions = updatedGarbagePermissions;
+            if (finalGarbageRole) {
+                const updatedGarbagePermissions = [...new Set([...finalGarbageRole.permissions, ...unassignedPermissions])];
+                finalGarbageRole.permissions = updatedGarbagePermissions;
+                transformedPermissions.push(finalGarbageRole);
             }
-            
-            // 3. Notify user about the automatic assignment
+
             showNotification(
                 'warning', 
-                'Unassigned Permissions Saved', 
-                `The following permissions were not assigned to any role: ${unassignedPermissions.join(', ')}. They have been automatically assigned to the ROLE_GARBAGE role to prevent data loss.`,
-                'Confirm & Save'
+                'Unassigned Permissions Assigned', 
+                `The following permissions were not assigned to any role: ${unassignedPermissions.join(', ')}. They have been automatically assigned to ${GARBAGE_ROLE_NAME} (ID: ${finalGarbageRole.id}).`
             );
         }
 
-
         if (transformedPermissions.length === 0) {
-            showNotification('info', 'No Changes', 'No permissions data found to save.');
+            showNotification('info', 'No Changes', 'No roles found in the update payload.');
             setIsSubmitting(false);
             return;
         }
-
 
         try {
             await authApi.post('role-access/updateAll', transformedPermissions);
             const response = await authApi.get('/role-access/all');
             setPermissionsData(response.data);
             showNotification('success', 'Permissions Saved', 'All changes have been saved successfully!');
-            
-             // FIX: Manually update permissions state to include the garbage changes locally
-             if (unassignedPermissions.length > 0) {
-                setPermissions(prev => ({
-                    ...prev,
-                    [garbageRoleKey]: {
-                        ...prev[garbageRoleKey],
-                        permissions: [...(prev[garbageRoleKey]?.permissions || []), ...unassignedPermissions]
-                    }
-                }));
-            }
-            
         } catch (error) {
             console.error("Error saving permissions:", error);
             const errorMessage = error.response?.data?.message || "An error occurred while saving permissions.";
@@ -433,9 +409,8 @@ const PermissionsPage = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }, [permissions, allPermissionOptions, setPermissionsData, showNotification, permissionsdata]);
+    }, [permissions, allPermissionOptions, mapAPIRoleToKey, setPermissionsData, showNotification, permissionsdata]);
 
-    // Handle Reset Permissions (Client-side reload from context data)
     const handleReset = useCallback(() => {
         if (permissionsdata && Array.isArray(permissionsdata)) {
             const initialPermissions = {};
@@ -454,18 +429,15 @@ const PermissionsPage = () => {
             });
             setPermissions(initialPermissions);
             setActiveRoleTab(prevTab => (initialPermissions[prevTab] ? prevTab : firstRoleKey));
-
             showNotification('info', 'Changes Reset', 'Permissions reverted to last saved state.');
         } else {
              showNotification('error', 'Reset Failed', 'Original permissions data not available.');
         }
     }, [permissionsdata, mapAPIRoleToKey, showNotification]);
 
-
-    // Handle Delete Role (Triggered by 'X' icon)
     const handleDeleteRole = useCallback((roleKeyToDelete) => {
         if (!roleKeyToDelete) return;
-        if (roleKeyToDelete === 'admin') { // Basic protection
+        if (roleKeyToDelete === 'admin') {
             showNotification('error', 'Deletion Denied', 'The ADMIN role cannot be deleted.');
             return;
         }
@@ -479,104 +451,86 @@ const PermissionsPage = () => {
             async () => {
                 setConfirmModal(prev => ({ ...prev, isConfirming: true }));
                 try {
-                    const callerRole = loggedinuserRole || 'ADMIN'; // Determine caller role appropriately
+                    const callerRole = loggedinuserRole || 'ADMIN';
                     await authApi.delete(`role-access/delete/${callerRole}/${roleToDeleteName}`);
-                    const response = await authApi.get('/role-access/all'); // Refetch updated list
-                    setPermissionsData(response.data); // Update context, triggers useEffect re-render
+                    const response = await authApi.get('/role-access/all');
+                    setPermissionsData(response.data);
                     closeConfirmModal();
                     showNotification('success', 'Role Deleted', `Role '${roleToDeleteName}' has been successfully deleted.`);
                 } catch (error) {
                     console.error("Failed to delete role:", error);
                     const errorMessage = error.response?.data?.message || "An error occurred.";
-                    closeConfirmModal(); // Close modal even on error
+                    closeConfirmModal();
                     showNotification('error', 'Delete Failed', `Error: ${errorMessage}`);
                 }
             },
-            'danger' // Use danger type for deletion confirmation
+            'danger'
         );
     }, [loggedinuserRole, setPermissionsData, showConfirmModal, closeConfirmModal, showNotification]);
 
-
     // Custom styles for react-select
-    // Inside PermissionsPage component...
-
-const customSelectStyles = useMemo(() => ({
-    control: (provided, state) => ({
-        ...provided,
-        backgroundColor: theme === 'dark' ? '#374151' : '#fff', // gray-700
-        borderColor: state.isFocused
-            ? (theme === 'dark' ? '#60A5FA' : '#3B82F6') // Brighter blue for focus (blue-400 / blue-500)
-            : (theme === 'dark' ? '#4B5563' : '#D1D5DB'), // gray-600 : gray-300
-        minHeight: '48px', // Maintain height for consistency
-        boxShadow: state.isFocused ? `0 0 0 2px ${theme === 'dark' ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.4)'}` : null,
-        borderRadius: '0.5rem', // Slightly larger border-radius for the control
-        padding: '2px 4px', // Add slight padding inside control
-        '&:hover': {
-            borderColor: theme === 'dark' ? '#6B7280' : '#A1A1AA', // gray-500 : gray-400
-        },
-    }),
-    valueContainer: (provided) => ({
-        ...provided,
-        padding: '2px 6px', // Adjust padding inside value container for tags
-        gap: '4px', // Add gap between multi-value items
-    }),
-    input: (provided) => ({
-        ...provided,
-        color: theme === 'dark' ? '#F3F4F6' : '#1F2937',
-        margin: '0px',
-        paddingBlock: '2px',
-    }),
-    indicatorSeparator: () => ({ display: 'none' }),
-    dropdownIndicator: (provided) => ({  }),
-    clearIndicator: (provided) => ({  }),
-    placeholder: (provided) => ({ ...provided, color: theme === 'dark' ? '#9CA3AF' : '#6B7280' }),
-    menu: (provided) => ({  }),
-    option: (provided, state) => ({  }),
-
-    // --- Styling the Selected Permission Tags ---
-    multiValue: (provided) => ({
-        ...provided,
-        backgroundColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.15)', // Use theme-aware blue background (lighter)
-        // backgroundColor: theme === 'dark' ? '#4B5563' : '#E0E7FF', // Alternative: gray/indigo
-        borderRadius: '9999px', // Fully rounded pills
-        margin: '2px', // Minimal margin
-        border: `1px solid ${theme === 'dark' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.3)'}`, // Subtle border matching background
-        // border: `1px solid ${theme === 'dark' ? '#6B7280' : '#C7D2FE'}`, // Alternative border
-        overflow: 'hidden', // Ensure border radius clips remove button
-    }),
-    multiValueLabel: (provided) => ({
-        ...provided,
-        color: theme === 'dark' ? '#BFDBFE' : '#1E40AF', // Lighter blue text (dark) / Darker blue text (light)
-        // color: theme === 'dark' ? '#E5E7EB' : '#4338CA', // Alternative: gray/indigo text
-        padding: '3px', // Adjust padding inside label
-        paddingLeft: '10px', // More padding on the left
-        fontSize: '0.8rem', // Slightly smaller font size for pills
-        fontWeight: '500', // Medium weight
-    }),
-    multiValueRemove: (provided) => ({
-        ...provided,
-        color: theme === 'dark' ? '#93C5FD' : '#3B82F6', // Blueish color for 'x'
-        // color: theme === 'dark' ? '#9CA3AF' : '#6D28D9', // Alternative: gray/violet
-        backgroundColor: 'transparent',
-        borderRadius: '0 9999px 9999px 0',
-        padding: '4px', // Keep padding
-        marginLeft: '1px', // Minimal space
-        marginRight: '1px',
-        // Enhanced Hover/Focus for the 'x'
-        '&:hover, &:focus-visible': {
-            backgroundColor: theme === 'dark' ? '#DC2626' : '#EF4444', // Red background
-            color: 'white',
-            transform: 'scale(1.1)',
-            outline: 'none',
-        },
-        transition: 'all 150ms', // Apply transition to all properties
-        cursor: 'pointer',
-    }),
-    noOptionsMessage: (provided) => ({  }),
-}), [theme]);
-
-
-    // --- Render Logic ---
+    const customSelectStyles = useMemo(() => ({
+        control: (provided, state) => ({
+            ...provided,
+            backgroundColor: theme === 'dark' ? '#374151' : '#fff',
+            borderColor: state.isFocused
+                ? (theme === 'dark' ? '#60A5FA' : '#3B82F6')
+                : (theme === 'dark' ? '#4B5563' : '#D1D5DB'),
+            minHeight: '48px',
+            boxShadow: state.isFocused ? `0 0 0 2px ${theme === 'dark' ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.4)'}` : null,
+            borderRadius: '0.5rem',
+            padding: '2px 4px',
+            '&:hover': {
+                borderColor: theme === 'dark' ? '#6B7280' : '#A1A1AA',
+            },
+        }),
+        valueContainer: (provided) => ({
+            ...provided,
+            padding: '2px 6px',
+            gap: '4px',
+        }),
+        input: (provided) => ({
+            ...provided,
+            color: theme === 'dark' ? '#F3F4F6' : '#1F2937',
+            margin: '0px',
+            paddingBlock: '2px',
+        }),
+        indicatorSeparator: () => ({ display: 'none' }),
+        placeholder: (provided) => ({ ...provided, color: theme === 'dark' ? '#9CA3AF' : '#6B7280' }),
+        multiValue: (provided) => ({
+            ...provided,
+            backgroundColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.15)',
+            borderRadius: '9999px',
+            margin: '2px',
+            border: `1px solid ${theme === 'dark' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.3)'}`,
+            overflow: 'hidden',
+        }),
+        multiValueLabel: (provided) => ({
+            ...provided,
+            color: theme === 'dark' ? '#BFDBFE' : '#1E40AF',
+            padding: '3px',
+            paddingLeft: '10px',
+            fontSize: '0.8rem',
+            fontWeight: '500',
+        }),
+        multiValueRemove: (provided) => ({
+            ...provided,
+            color: theme === 'dark' ? '#93C5FD' : '#3B82F6',
+            backgroundColor: 'transparent',
+            borderRadius: '0 9999px 9999px 0',
+            padding: '4px',
+            marginLeft: '1px',
+            marginRight: '1px',
+            '&:hover, &:focus-visible': {
+                backgroundColor: theme === 'dark' ? '#DC2626' : '#EF4444',
+                color: 'white',
+                transform: 'scale(1.1)',
+                outline: 'none',
+            },
+            transition: 'all 150ms',
+            cursor: 'pointer',
+        }),
+    }), [theme]);
 
     if (loading) {
         return <div className={`flex justify-center items-center h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>Loading Permissions...</div>;
@@ -592,65 +546,63 @@ const customSelectStyles = useMemo(() => ({
         option => permissions[activeRoleTab]?.permissions?.includes(option.value)
     ) : [];
 
-
     return (
         <>
             {/* Add Role Modal */}
-             {isAddRoleModalOpen && (
+            {isAddRoleModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[151]">
-                  <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    <div className="flex items-center mb-4">
-                      <FaPlus className="w-6 h-6 text-blue-500" />
-                      <h2 className={`text-xl font-bold ml-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Add New Role</h2>
-                      <button
-                        onClick={() => setIsAddRoleModalOpen(false)}
-                        className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                        aria-label="Close add role modal"
-                      >
-                        <X size={20} />
-                      </button>
+                    <div className={`p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                        <div className="flex items-center mb-4">
+                            <FaPlus className="w-6 h-6 text-blue-500" />
+                            <h2 className={`text-xl font-bold ml-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Add New Role</h2>
+                            <button
+                                onClick={() => setIsAddRoleModalOpen(false)}
+                                className="ml-auto p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                aria-label="Close add role modal"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddNewRole}>
+                            <label htmlFor="newRoleNameInput" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Role Name (must start with ROLE_)
+                            </label>
+                            <input
+                                id="newRoleNameInput"
+                                type="text"
+                                value={newRoleName}
+                                onChange={(e) => setNewRoleName(e.target.value)}
+                                placeholder="e.g., ROLE_MANAGER"
+                                className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 mb-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500' : 'bg-white border-gray-300 focus:ring-blue-600'}`}
+                            />
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddRoleModalOpen(false)}
+                                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                                    disabled={isAddingRole}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center"
+                                    disabled={isAddingRole || !newRoleName.trim() || !newRoleName.toUpperCase().startsWith('ROLE_')}
+                                >
+                                    {isAddingRole ? (
+                                        <>
+                                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                            Adding...
+                                        </>
+                                    ) : (
+                                        'Add Role'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <form onSubmit={handleAddNewRole}>
-                      <label htmlFor="newRoleNameInput" className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Role Name (must start with ROLE_)
-                      </label>
-                      <input
-                        id="newRoleNameInput"
-                        type="text"
-                        value={newRoleName}
-                        onChange={(e) => setNewRoleName(e.target.value)}
-                        placeholder="e.g., ROLE_MANAGER"
-                        className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 mb-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500' : 'bg-white border-gray-300 focus:ring-blue-600'}`}
-                      />
-                      <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setIsAddRoleModalOpen(false)}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
-                          disabled={isAddingRole}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 bg-blue-600 text-white font-semibold text-sm rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center"
-                          disabled={isAddingRole || !newRoleName.trim() || !newRoleName.toUpperCase().startsWith('ROLE_')}
-                        >
-                          {isAddingRole ? (
-                            <>
-                              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                              Adding...
-                            </>
-                          ) : (
-                            'Add Role'
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
                 </div>
-              )}
-
+            )}
 
             {/* Main Page Content */}
             <div className={`min-h-screen px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
@@ -664,7 +616,6 @@ const customSelectStyles = useMemo(() => ({
                             </h1>
                             <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Configure role-based permissions</p>
                         </div>
-                        {/* Removed Edit Button */}
                     </div>
 
                     {/* Add New Permission / Add Role Section */}
@@ -708,7 +659,6 @@ const customSelectStyles = useMemo(() => ({
                         </div>
                     </div>
 
-
                     {/* Horizontal Tabs for Roles */}
                     <div className={`mb-6 sm:mb-8 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                         <div className="flex space-x-1 overflow-x-auto pb-px -mb-px px-4 sm:px-0">
@@ -745,7 +695,6 @@ const customSelectStyles = useMemo(() => ({
                         </div>
                     </div>
 
-
                     {/* Active Role's Permission Selection Area */}
                     {activeRoleTab && permissions[activeRoleTab] ? (
                         <div className={`p-4 sm:p-6 md:p-8 rounded-lg shadow-md mx-4 sm:mx-0 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border'}`}>
@@ -774,8 +723,7 @@ const customSelectStyles = useMemo(() => ({
                         )
                     )}
 
-
-                    {/* Action Buttons (Save/Reset) - Show if roles exist */}
+                    {/* Action Buttons (Save/Reset) */}
                     {rolesToRender.length > 0 && (
                         <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 px-4 sm:px-0 border-t border-gray-200 dark:border-gray-700">
                             <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
@@ -805,7 +753,6 @@ const customSelectStyles = useMemo(() => ({
                             </div>
                         </div>
                     )}
-
                 </div>
             </div>
 
@@ -836,4 +783,3 @@ const customSelectStyles = useMemo(() => ({
 };
 
 export default PermissionsPage;
- 

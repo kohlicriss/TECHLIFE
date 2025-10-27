@@ -334,14 +334,14 @@ const About = () => {
       <div className="space-y-3 sm:space-y-4 mx-2 sm:mx-0">
         <h2 className={`text-base sm:text-lg md:text-xl font-semibold ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
-        }`}>About</h2>
+        }`}>Description</h2>
 
         <div className="space-y-3 sm:space-y-4">
           <div>
             <h3 className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 break-words ${
               theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
             }`}>
-              About Me
+              About
             </h3>
             {renderResponseSection("about", "About Me")}
           </div>
@@ -359,7 +359,7 @@ const About = () => {
             <h3 className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 break-words ${
               theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
             }`}>
-              My interests and hobbies
+              My hobbies
             </h3>
             {renderResponseSection("hobbies", "Hobbies")}
           </div>

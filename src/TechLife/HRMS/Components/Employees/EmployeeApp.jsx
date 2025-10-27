@@ -130,7 +130,7 @@ const InputField = ({
     accept,
     theme,
     maxLength,
-    disabled = false 
+    disabled = false
 }) => {
     const normalizedValue = value === null || value === undefined ? '' : value;
 
@@ -184,7 +184,7 @@ const InputField = ({
                         onBlur={onBlur}
                         className={selectClass}
                         required={required}
-                        disabled={disabled}  
+                        disabled={disabled}
                     >
                         <option value="">Select {label.toLowerCase()}</option>
                         {options.map((option, index) => (
@@ -212,7 +212,7 @@ const InputField = ({
                     required={required}
                     rows={4}
                     maxLength={maxLength}
-                    disabled={disabled} 
+                    disabled={disabled}
                 />
             ) : type === 'file' ? (
                 <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 ${
@@ -229,7 +229,7 @@ const InputField = ({
                         multiple={multiple}
                         onChange={onChange}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        disabled={disabled} 
+                        disabled={disabled}
                     />
                     <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
                         <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
@@ -877,6 +877,39 @@ function EmployeeApp() {
         return errors;
     };
 
+    // NEW FUNCTION: Fetches all terminated employee IDs across all pages.
+    const fetchTerminatedEmployeeIds = async () => {
+        let allIds = new Set();
+        let page = 0;
+        let hasMorePages = true;
+        const pageSize = 50; // Use a reasonable page size for this purpose
+
+        while (hasMorePages) {
+            try {
+                // Adjusting the API call to fetch a large number or iterate
+                const response = await publicinfoApi.get(`employee/${page}/${pageSize}/employeeId/asc/terminated/employees`);
+                const newEmployees = response.data.content || [];
+
+                newEmployees.forEach(emp => {
+                    if (emp.employeeId) {
+                        allIds.add(emp.employeeId);
+                    }
+                });
+
+                // Check if we reached the last page or received less than a full page
+                if (newEmployees.length < pageSize || response.data.last === true) {
+                    hasMorePages = false;
+                } else {
+                    page++;
+                }
+            } catch (error) {
+                console.error("Error fetching all terminated employee IDs:", error);
+                hasMorePages = false; // Stop on error
+            }
+        }
+        return allIds;
+    };
+
     const handleFormSubmit = async (e) => {
         e.preventDefault();
 
@@ -888,32 +921,49 @@ function EmployeeApp() {
 
         setIsUpdating(true);
         setFormErrors({});
+        setSubmissionStatus('Checking terminated employees...');
 
-        const credentialsDto = {
-            fullName: formData.fullName,
-            username: formData.username,
-            password: formData.password,
-            role: formData.role.toUpperCase(),
-        };
-
-        // Note: employeeRole is not sent in the DTO as it's derived/managed differently usually
-        const employeeDto = {
-            employeeId: formData.employeeId,
-            firstName: formData.firstName,
-            displayName: formData.displayName || formData.fullName,
-            maritalStatus: formData.maritalStatus,
-            departmentId: formData.departmentId,
-            role: formData.role.toUpperCase(),
-            // You might need to send formData.employeeRole here if your backend expects it explicitly
-        };
+        const newEmployeeId = formData.employeeId;
 
         try {
+            // STEP 1: Check if Employee ID is terminated
+            const terminatedIds = await fetchTerminatedEmployeeIds();
+
+            if (terminatedIds.has(newEmployeeId)) {
+                const errorMessage = `Employee ID ${newEmployeeId} is currently assigned to a terminated employee. Please use a unique ID.`;
+                setFormErrors({ employeeId: "ID already in use by a terminated employee." });
+                setPopup({ show: true, message: errorMessage, type: 'error' });
+                setIsUpdating(false);
+                setSubmissionStatus('');
+                return;
+            }
+
+            // STEP 2: Create User Credentials
+            const credentialsDto = {
+                fullName: formData.fullName,
+                username: formData.username,
+                password: formData.password,
+                role: formData.role.toUpperCase(),
+            };
+
             setSubmissionStatus('Creating User...');
             await authApi.post("/register", credentialsDto);
+
+            // STEP 3: Create Employee Record
+            const employeeDto = {
+                employeeId: formData.employeeId,
+                firstName: formData.firstName,
+                displayName: formData.displayName || formData.fullName,
+                maritalStatus: formData.maritalStatus,
+                departmentId: formData.departmentId,
+                role: formData.role.toUpperCase(),
+                // You might need to send formData.employeeRole here if your backend expects it explicitly
+            };
 
             setSubmissionStatus('Creating Employee...');
             await publicinfoApi.post('employee', employeeDto);
 
+            // Success
             setPopup({ show: true, message: 'Employee and user account created successfully!', type: 'success' });
             setIsAddEmployeeModalOpen(false);
             setFormData(initialFormData);
@@ -922,7 +972,19 @@ function EmployeeApp() {
         } catch (error) {
             console.error("Error creating employee:", error);
             const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please check the data and try again.';
-            setFormErrors({ general: errorMessage });
+            
+            // Attempt to parse specific error from backend if available
+            let specificError = { general: errorMessage };
+            if (error.response?.data?.details) {
+                // Assuming backend sends detailed errors
+                error.response.data.details.forEach(detail => {
+                    if (detail.field) {
+                        specificError[detail.field] = detail.message;
+                    }
+                });
+            }
+
+            setFormErrors(specificError);
             setPopup({ show: true, message: errorMessage, type: 'error' });
         } finally {
             setIsUpdating(false);
@@ -1102,9 +1164,8 @@ function EmployeeApp() {
 
 
     // ... (rest of the component code: loadTerminatedEmployees, handleTerminateEmployees, etc.) ...
-    // ... (This part remains unchanged from your original code) ...
 
-        const loadTerminatedEmployees = useCallback(async (page = 0, reset = false) => {
+    const loadTerminatedEmployees = useCallback(async (page = 0, reset = false) => {
         if (terminatedLoading || (!terminatedHasMore && !reset)) return;
 
         setTerminatedLoading(true);
@@ -1368,7 +1429,7 @@ function EmployeeApp() {
             <>
                 {renderAddEmployeeModal()}
                 {/* Optional: Render a blurred background or similar */}
-                 <div className={`min-h-screen filter blur-sm ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}></div>
+                   <div className={`min-h-screen filter blur-sm ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}></div>
             </>
         );
     }
@@ -1555,7 +1616,7 @@ function EmployeeApp() {
                                                 if (flippedCard === employee.employeeId) {
                                                      navigate(`/employees/${empID}/public/${employee.employeeId}`);
                                                 } else {
-                                                    setFlippedCard(employee.employeeId);
+                                                     setFlippedCard(employee.employeeId);
                                                 }
                                             }}
                                             style={{ transformStyle: 'preserve-3d' }}
@@ -1569,84 +1630,84 @@ function EmployeeApp() {
                                                 } hover:scale-105`}
                                                 style={{ backfaceVisibility: 'hidden' }}
                                             >
-                                               <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
-                                                    {/* Background decoration */}
-                                                    <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
-                                                        <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
-                                                    </div>
+                                                <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
+                                                     {/* Background decoration */}
+                                                     <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
+                                                         <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
+                                                     </div>
 
-                                                    {/* Profile Image Section */}
-                                                    <div className="flex flex-col items-center text-center mb-3 z-10">
-                                                        <div className="relative mb-2">
-                                                            {employee.employeeImage ? (
-                                                                <div className="relative">
-                                                                    <img
-                                                                        src={employee.employeeImage}
-                                                                        alt={`${employee.displayName}'s profile picture`}
-                                                                        className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105"
-                                                                    />
-                                                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="relative">
-                                                                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-105">
-                                                                        {generateInitials(employee.displayName)}
-                                                                    </div>
-                                                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                     {/* Profile Image Section */}
+                                                     <div className="flex flex-col items-center text-center mb-3 z-10">
+                                                         <div className="relative mb-2">
+                                                             {employee.employeeImage ? (
+                                                                 <div className="relative">
+                                                                     <img
+                                                                         src={employee.employeeImage}
+                                                                         alt={`${employee.displayName}'s profile picture`}
+                                                                         className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105"
+                                                                     />
+                                                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                                                                 </div>
+                                                             ) : (
+                                                                 <div className="relative">
+                                                                     <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-105">
+                                                                         {generateInitials(employee.displayName)}
+                                                                     </div>
+                                                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                                                                 </div>
+                                                             )}
+                                                         </div>
 
-                                                        {/* Name and Job Title */}
-                                                        <div className="w-full px-1">
-                                                            <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                                {employee.displayName}
-                                                            </h3>
-                                                            <p className={`text-xs font-semibold px-2 py-0.5 rounded-full truncate ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
-                                                                {employee.jobTitlePrimary || "Not Updated Job Title"}
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                         {/* Name and Job Title */}
+                                                         <div className="w-full px-1">
+                                                             <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                                 {employee.displayName}
+                                                             </h3>
+                                                             <p className={`text-xs font-semibold px-2 py-0.5 rounded-full truncate ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
+                                                                 {employee.jobTitlePrimary || "Not Updated Job Title"}
+                                                             </p>
+                                                         </div>
+                                                     </div>
 
-                                                    {/* Employee Details Section - Fixed height container */}
-                                                    <div className="flex-1 flex flex-col justify-end min-h-0">
-                                                        <div className="space-y-1.5 px-1">
-                                                            {/* Employee ID */}
-                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                                                                <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
-                                                            </div>
+                                                     {/* Employee Details Section - Fixed height container */}
+                                                     <div className="flex-1 flex flex-col justify-end min-h-0">
+                                                         <div className="space-y-1.5 px-1">
+                                                             {/* Employee ID */}
+                                                             <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                             }`}>
+                                                                 <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
+                                                                 <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
+                                                             </div>
 
-                                                            {/* Department */}
-                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
-                                                                <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
-                                                            </div>
+                                                             {/* Department */}
+                                                             <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                             }`}>
+                                                                 <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+                                                                 <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
+                                                             </div>
 
-                                                            {/* Location */}
-                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
-                                                                <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
-                                                            </div>
+                                                             {/* Location */}
+                                                             <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                             }`}>
+                                                                 <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
+                                                                 <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
+                                                             </div>
 
-                                                            {/* Email */}
-                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                            }`}>
-                                                                <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
-                                                                <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
-                                                                    {employee.workEmail || 'N/A'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                             {/* Email */}
+                                                             <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                             }`}>
+                                                                 <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
+                                                                 <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
+                                                                     {employee.workEmail || 'N/A'}
+                                                                 </span>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
                                             </div>
 
                                             {/* Back Card */}
@@ -1669,7 +1730,7 @@ function EmployeeApp() {
                                                     </div>
 
                                                     <div className="space-y-1 sm:space-y-2 w-full max-w-xs">
-                                                         <button
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleChatClick(employee);
@@ -1719,7 +1780,7 @@ function EmployeeApp() {
                                                             </button>
                                                         }
 
-                                                         { hasAccess.includes("DELETE_USER") && ( // Check permission
+                                                        { hasAccess.includes("DELETE_USER") && ( // Check permission
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -1797,27 +1858,27 @@ function EmployeeApp() {
                                                                 className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white shadow-md hover:shadow-lg`}
                                                                 title="View Profile"
                                                             > <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                             )}
-                                                             {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") && (
+                                                                )}
+                                                                {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") && (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleDocumentsClick(employee); }}
                                                                 className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-white shadow-md hover:shadow-lg`}
                                                                 title="Documents"
                                                             > <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                             )}
-                                                            {/* Add Delete Button with permission check if needed */}
-                                                             {hasAccess.includes("DELETE_USER") && (
+                                                                )}
+                                                                {/* Add Delete Button with permission check if needed */}
+                                                                {hasAccess.includes("DELETE_USER") && (
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleDeleteClick(employee); }}
                                                                     className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg`}
                                                                     title="Terminate Employee"
                                                                 > <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                            )}
+                                                                )}
                                                         </div>
                                                     </div>
 
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 text-xs mt-2">
-                                                         <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${ theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600' }`}>
+                                                        <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${ theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600' }`}>
                                                             <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
                                                             <span className="truncate font-mono text-xs">{employee.employeeId}</span>
                                                         </div>
@@ -1845,7 +1906,7 @@ function EmployeeApp() {
                 )}
 
                 {/* Pagination Controls */}
-                 <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
+                   <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
                     <button
                         onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
                         disabled={pageNumber === 0}
@@ -1890,12 +1951,12 @@ function EmployeeApp() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         } disabled:opacity-50 disabled:cursor-not-allowed`} // Style disabled button
                     >
-                         <span>{filteredEmployees.length < pageSize ? 'Last Page' : 'Next'}</span>
+                        <span>{filteredEmployees.length < pageSize ? 'Last Page' : 'Next'}</span>
                             {filteredEmployees.length < pageSize ? (
                                 <IoLockClosed className="w-3 h-3 sm:w-4 sm:h-4" />
                             ) : (
                                 <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
-                         )}
+                            )}
                     </button>
                 </div>
             </div>
@@ -1952,17 +2013,17 @@ function EmployeeApp() {
             )}
 
             {/* Custom styles for animations */}
-             <style jsx>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-                .animate-slideUp { animation: slideUp 0.4s ease-out; }
-                .animate-slideIn { animation: slideIn 0.3s ease-out; }
-                /* Ensure spin is defined if used */
-                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .animate-spin { animation: spin 1s linear infinite; }
-            `}</style>
+               <style jsx>{`
+                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                 @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                 .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+                 .animate-slideUp { animation: slideUp 0.4s ease-out; }
+                 .animate-slideIn { animation: slideIn 0.3s ease-out; }
+                 /* Ensure spin is defined if used */
+                   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                 .animate-spin { animation: spin 1s linear infinite; }
+             `}</style>
         </div>
     );
 }
