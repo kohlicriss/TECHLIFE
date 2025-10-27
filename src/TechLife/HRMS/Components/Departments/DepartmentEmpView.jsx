@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState,useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { publicinfoApi } from "../../../../axiosInstance";
 import { User, Mail, Briefcase, ChevronLeft } from 'lucide-react';
@@ -59,11 +59,12 @@ const DepartmentEmpView = () => {
 
   return (
     <div className={`max-w-6xl mx-auto px-4 py-8 min-h-screen ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
-      {/* Header Section */}
-      <div className="mb-8">
+      
+      {/* Sticky Back Button */}
+      <div className={`sticky top-0 z-40 bg-inherit py-4 mb-8 ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
         <button
           onClick={() => navigate(-1)}
-          className={`flex items-center mb-4 font-semibold text-sm cursor-pointer 
+          className={`flex items-center font-semibold text-sm cursor-pointer 
             ${theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
           style={{ background: 'none', border: 'none' }}
           aria-label="Back to Departments"
@@ -71,13 +72,11 @@ const DepartmentEmpView = () => {
           <ChevronLeft size={18} className="mr-2" />
           Back to Departments
         </button>
-        <h2 className={`text-3xl font-bold mb-2 ${theme === "dark" ? "text-gray-200" : "text-blue-700"}`}>
-          {departmentName}
-        </h2>
-        <p className={`${theme === "dark" ? "text-gray-400" : "text-gray-700"} text-lg`}>
-          Total Employees: <span className="font-bold">{employees.length}</span>
-        </p>
       </div>
+      
+      <h2 className={`text-3xl font-bold mb-2 ${theme === "dark" ? "text-gray-200" : "text-blue-700"}`}>
+        {departmentName}
+      </h2>
 
       {/* Employee Cards */}
       {employees.length === 0 ? (
@@ -113,11 +112,6 @@ const DepartmentEmpView = () => {
                     ${theme === "dark" ? "text-gray-200 group-hover:text-blue-400" : "text-gray-800 group-hover:text-blue-700"}`}>
                     {emp.employeeName || emp.displayName || "N/A Name"}
                   </h3>
-                  <span className={`block px-2 py-[2px] rounded text-xs font-medium mt-1 transition-colors duration-200
-                    ${theme === "dark" ? "bg-blue-900 text-blue-400" : "bg-blue-100 text-blue-700"}`}
-                  >
-                    {emp.designation || "No Designation"}
-                  </span>
                 </div>
               </div>
 
