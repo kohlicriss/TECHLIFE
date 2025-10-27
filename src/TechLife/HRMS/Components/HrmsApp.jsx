@@ -16,6 +16,7 @@ import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
 import ProjectDetails from "./Projects/ProjectDetails";
+import HomePayRoll from "./PayRoll/HomePayRoll";
 
 // Lazy imports with error handling
 const NotificationSystem = lazy(() => 
@@ -86,6 +87,17 @@ const TasksApp = lazy(() =>
 const EmployeeProfile = lazy(() => 
     import("./Employees/EmployeeProfile").catch(() => ({
         default: () => <div className="p-8 text-center text-red-600">Failed to load Employee Profile. Please refresh.</div>
+    }))
+);
+
+const PayRollPage = lazy(() => 
+    import("./PayRoll/PayRollPage").catch(() => ({
+        default: () => <div className="p-8 text-center text-red-600">Failed to load Employee PayRoll. Please refresh.</div>
+    }))
+);
+const EmployeePayRoll=lazy(()=>
+    import("./PayRoll/EmployeePayRoll").catch(()=>({
+        default : () => <div className="p-8 text-center text-red-600">Failed to load Employee PayRoll. Please refresh.</div>
     }))
 );
 const Permissions = lazy(() => 
@@ -515,7 +527,7 @@ const HrmsApp = () => {
                                             <Route 
                                                 path="/tickets/:empID/*" 
                                                 element={
-                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'TEAM_LEAD']}>
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
                                                         <RouteWrapper moduleName="Admin Tickets">
                                                             <Tickets />
                                                         </RouteWrapper>
@@ -583,7 +595,38 @@ const HrmsApp = () => {
                                                         </RouteWrapper>
                                                     </ProtectedRoute>
                                                 } 
-                                            />
+                                             />
+     {/* Payroll Routes with Role-Based Access */}
+<Route 
+  path="/payroll/home/:empId" 
+  element={
+    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+      <RouteWrapper moduleName="Home PayRoll">
+        <HomePayRoll />
+      </RouteWrapper>
+    </ProtectedRoute>
+  } 
+/>
+<Route 
+  path="/payroll/:empId" 
+  element={
+    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+      <RouteWrapper moduleName="Pay Roll">
+        <PayRollPage />
+      </RouteWrapper>
+    </ProtectedRoute>
+  } 
+/>
+<Route 
+  path="/payroll/employee/:empId" 
+  element={
+    <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN', 'HR', 'MANAGER']}>
+      <RouteWrapper moduleName="Employee PayRoll">
+        <EmployeePayRoll />
+      </RouteWrapper>
+    </ProtectedRoute>
+  } 
+/>
                                             
                                             {/* Admin/Management Routes */}
                                             <Route 

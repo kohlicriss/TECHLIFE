@@ -67,8 +67,15 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
-  ];
- 
+     { 
+      name: "Pay Roll", 
+      icon: <BadgePlus size={18}/>, 
+      path: (['ADMIN', 'HR', 'MANAGER'].includes(userRole) 
+        ? (empId ? `/payroll/home/${empId}` : "/payroll")
+        : (empId ? `/payroll/employee/${empId}` : "/payroll/employee")
+      )
+    },
+  ]
   if (userRole === 'ADMIN') {
     navItems.push({
       name: "Permissions",

@@ -21,7 +21,7 @@ const Modal = ({ children, onClose, title, type, theme }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-250">
+    <div className="fixed inset-0 /60 backdrbg-blackop-blur-md flex justify-center items-center z-250">
       <div className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md m-4 border ${
         theme === 'dark'
           ? 'bg-gray-800 border-gray-700'
