@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
 import { authApi, notificationsApi } from "../../../axiosInstance";
-import notificationSound from '../Components/assets/mixkit-correct-answer-tone-2870.wav'
+import notificationSound from '../Components/assets/mixkit-correct-answer-tone-2870.wav';
 
 export const Context = createContext();
 export const UISidebarContext = createContext();
