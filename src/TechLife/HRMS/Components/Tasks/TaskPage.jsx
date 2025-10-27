@@ -10,7 +10,7 @@ import { authApi, publicinfoApi, tasksApi } from '../../../../axiosInstance';
 
 const CalendarIcon = ({ theme }) => (
     <svg
-        xmlns="http://www.w3.org/2000/svg"
+        xmlns="http://www.w.org/2000/svg"
         className={`h-4 w-4 mr-1.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`}
         fill="none"
         viewBox="0 0 24 24"
@@ -108,6 +108,8 @@ const ConfirmDeletePopup = ({ onConfirm, onCancel, theme }) => (
     </Modal>
 );
 
+// --- MODIFIED EmployeeDropdown Component ---
+// Now filters and displays by 'displayName' with a fallback to 'fullName'
 const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -131,9 +133,10 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
         
         setLoading(true);
         try {
-            const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/public/employees`);
+            const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/employees`);
             const newEmployees = response.data.content || [];
             
+            // Filter out the current user
             const filteredNewEmployees = newEmployees.filter(emp => emp.employeeId !== userData?.employeeId);
             
             if (reset || page === 0) {
@@ -162,8 +165,9 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
         }
     };
 
+    // --- MODIFICATION: Filter by displayName or fullName ---
     const filteredEmployees = employees.filter(emp => 
-        emp.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (emp.displayName || emp.fullName)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -217,8 +221,9 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                     {selectedEmployee ? (
                         <div className="flex items-center space-x-3">
                             <div>
+                                {/* --- MODIFICATION: Display displayName or fullName --- */}
                                 <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                    {selectedEmployee.fullName}
+                                    {selectedEmployee.displayName || selectedEmployee.fullName}
                                 </div>
                                 <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                     {selectedEmployee.employeeId}
@@ -268,8 +273,9 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
                                         }`}
                                     >
                                         <div className="flex-1">
+                                            {/* --- MODIFICATION: Display displayName or fullName --- */}
                                             <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                {employee.fullName}
+                                                {employee.displayName || employee.fullName}
                                             </div>
                                             <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                                 {employee.employeeId}
@@ -334,6 +340,244 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 };
 
+// --- NEW ProjectDropdown Component ---
+// Based on EmployeeDropdown, but fetches projects with pagination
+const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [projects, setProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [allLoaded, setAllLoaded] = useState(false);
+    
+    // --- MODIFICATION: Page size set to 5 as requested ---
+    const PAGE_SIZE = 5;
+
+    useEffect(() => {
+        if (isOpen && projects.length === 0) {
+            loadProjects(0, true);
+        }
+    }, [isOpen]);
+
+    const loadProjects = async (page = 0, reset = false) => {
+        if (loading || (allLoaded && !reset && page !== 0) || (page !== 0 && !hasMore)) return;
+        
+        setLoading(true);
+        try {
+            // --- MODIFICATION: API endpoint for projects with pagination ---
+            const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/projectId/asc/projects`);
+            const newProjects = response.data.content || [];
+            
+            if (reset || page === 0) {
+                setProjects(newProjects);
+                setCurrentPage(0);
+            } else {
+                setProjects(prev => [...prev, ...newProjects]);
+            }
+            
+            setCurrentPage(page);
+            setHasMore(newProjects.length === PAGE_SIZE);
+            
+            if (newProjects.length < PAGE_SIZE) {
+                setAllLoaded(true);
+            }
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadMoreProjects = () => {
+        if (!loading && hasMore && !allLoaded) {
+            loadProjects(currentPage + 1, false);
+        }
+    };
+
+    // --- MODIFICATION: Filter by project title or projectId ---
+    const filteredProjects = projects.filter(project => 
+        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.projectId?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const selectedProject = projects.find(project => project.projectId === value);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.target;
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            loadMoreProjects();
+        }
+    };
+
+    const handleProjectSelect = (projectId) => {
+        onChange(projectId);
+        setIsOpen(false);
+        setSearchTerm('');
+    };
+
+    const handleDropdownToggle = () => {
+        if (!disabled) {
+            if (!isOpen) {
+                setProjects([]);
+                setCurrentPage(0);
+                setAllLoaded(false);
+                setHasMore(true);
+                setSearchTerm('');
+            }
+            setIsOpen(!isOpen);
+        }
+    };
+
+    return (
+        <div className="relative">
+            <div
+                onClick={handleDropdownToggle}
+                className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-between focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+                    error 
+                        ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
+                        : theme === 'dark' 
+                            ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' 
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                } ${
+                    disabled 
+                        ? theme === 'dark' 
+                            ? 'bg-gray-800 cursor-not-allowed opacity-60' 
+                            : 'bg-gray-50 cursor-not-allowed opacity-60'
+                        : ''
+                }`}
+            >
+                <div className="flex-1">
+                    {selectedProject ? (
+                        <div className="flex items-center space-x-3">
+                            <div>
+                                {/* --- MODIFICATION: Display project title --- */}
+                                <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                    {selectedProject.title}
+                                </div>
+                                <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {selectedProject.projectId}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        // --- MODIFICATION: Placeholder text for projects ---
+                        <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+                            Choose Project
+                        </span>
+                    )}
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+            </div>
+            
+            {isOpen && !disabled && (
+                <div className={`absolute top-full left-0 right-0 mt-2 border rounded-xl shadow-lg z-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+                    <div className="p-3 border-b border-gray-200 dark:border-gray-600">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                // --- MODIFICATION: Placeholder text for projects ---
+                                placeholder="Search projects..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className={`w-full pl-10 pr-4 py-2 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                                    theme === 'dark' 
+                                        ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
+                                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                                }`}
+                            />
+                        </div>
+                    </div>
+
+                    <div 
+                        className="max-h-64 overflow-y-auto" 
+                        onScroll={handleScroll}
+                    >
+                        {filteredProjects.length > 0 ? (
+                            <>
+                                {filteredProjects.map(project => (
+                                    <div
+                                        key={project.projectId}
+                                        onClick={() => handleProjectSelect(project.projectId)}
+                                        className={`p-3 cursor-pointer transition-colors duration-150 flex items-center space-x-3 hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'} ${
+                                            value === project.projectId ? (theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-50') : ''
+                                        }`}
+                                    >
+                                        <div className="flex-1">
+                                            {/* --- MODIFICATION: Display project title --- */}
+                                            <div className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                {project.title}
+                                            </div>
+                                            <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {project.projectId}
+                                            </div>
+                                        </div>
+                                        {value === project.projectId && (
+                                            <CheckCircle className="w-5 h-5 text-blue-500" />
+                                        )}
+                                    </div>
+                                ))}
+                                
+                                {loading && (
+                                    <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                            {/* --- MODIFICATION: Loading text --- */}
+                                            <span>Loading more projects...</span>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {!loading && hasMore && !allLoaded && filteredProjects.length >= PAGE_SIZE && (
+                                    <div className="p-3 border-t border-gray-200 dark:border-gray-600">
+                                        <button
+                                            onClick={loadMoreProjects}
+                                            className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${
+                                                theme === 'dark' 
+                                                    ? 'bg-gray-600 hover:bg-gray-500 text-white' 
+                                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                            }`}
+                                        >
+                                            {/* --- MODIFICATION: Button text --- */}
+                                            Load More Projects
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                {allLoaded && filteredProjects.length > 0 && (
+                                    <div className={`p-3 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        {/* --- MODIFICATION: Loaded text --- */}
+                                        All projects loaded
+                                    </div>
+                                )}
+                            </>
+                        ) : searchTerm ? (
+                            <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {/* --- MODIFICATION: No results text --- */}
+                                No projects found matching "{searchTerm}"
+                            </div>
+                        ) : loading ? (
+                            <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <div className="flex items-center justify-center space-x-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                    {/* --- MODIFICATION: Loading text --- */}
+                                    <span>Loading projects...</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className={`p-4 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {/* --- MODIFICATION: No projects text --- */}
+                                No projects found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 // --- TasksPage Component ---
 
@@ -355,7 +599,8 @@ const TasksPage = () => {
     const [sortOption, setSortOption] = useState("none");
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState("MY_TASKS"); 
-    const [projects, setProjects] = useState([]);
+    // --- MODIFICATION: Removed projects state ---
+    // const [projects, setProjects] = useState([]); 
     const [matchedArray,setMatchedArray]=useState(null); 
     
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -419,6 +664,8 @@ const TasksPage = () => {
         }
     },[userData, matchedArray])
     
+    // --- MODIFICATION: Removed fetchProjects function ---
+    /*
     const fetchProjects = async () => {
         try {
             const response = await publicinfoApi.get(`employee/0/20/projectId/asc/projects`);
@@ -427,6 +674,7 @@ const TasksPage = () => {
             console.error("Error fetching projects:", error);
         }
     };
+    */
 
     const fetchTasks = useCallback(async () => {
         if (!userData) {
@@ -490,9 +738,12 @@ const TasksPage = () => {
         }
     }, [userData, currentNumber, dropdownValue, matchedArray]); 
 
+    // --- MODIFICATION: Removed useEffect for fetchProjects ---
+    /*
     useEffect(() => {
         fetchProjects();
     }, []); 
+    */
 
     useEffect(() => {
         if (!userData || matchedArray === null) return;
@@ -645,7 +896,7 @@ const TasksPage = () => {
         resetFormData();
     };
 
-    // --- MODIFIED VALIDATION ---
+    // --- (Original) MODIFIED VALIDATION ---
     const validateForm = () => {
         const newErrors = {};
         if (!formData.title || formData.title.trim().length < 3) newErrors.title = 'Title must be at least 3 characters';
@@ -709,12 +960,12 @@ const TasksPage = () => {
     const handleFileChange = (e) => {
         setFiles(prev => [...prev, ...Array.from(e.target.files)]);
          if (formErrors.attachedFileLinks) {
-            setFormErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors.attachedFileLinks;
-                return newErrors;
-            });
-        }
+             setFormErrors(prev => {
+                 const newErrors = { ...prev };
+                 delete newErrors.attachedFileLinks;
+                 return newErrors;
+             });
+         }
     };
 
     const removeFile = (fileIndex) => {
@@ -803,6 +1054,8 @@ const TasksPage = () => {
 
     // --- Render Functions ---
 
+    // --- MODIFIED renderField Function ---
+    // Now uses ProjectDropdown for 'projectId'
     const renderField = (label, name, type = "text", required = false, options = [], isDisabled = false) => {
         const isError = formErrors[name];
         const fieldValue = formData[name] || "";
@@ -846,9 +1099,8 @@ const TasksPage = () => {
             );
         }
 
+        // --- MODIFICATION: Handle 'projectId' to use ProjectDropdown ---
         if (name === 'projectId') {
-            const projectOptions = projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId }));
-
             return (
                 <div className="group relative" key={name}>
                     <label className={`block text-sm font-semibold mb-3 flex items-center ${
@@ -864,34 +1116,13 @@ const TasksPage = () => {
                             </span>
                         )}
                     </label>
-                    <div className="relative">
-                        <select
-                            value={fieldValue}
-                            onChange={(e) => handleLocalFieldChange(e.target.value)}
-                            className={`w-full px-5 py-4 border-2 rounded-xl transition-all duration-300 appearance-none
-                                focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
-                                ${isError 
-                                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' 
-                                    : theme === 'dark'
-                                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
-                                }
-                                ${finalDisabled ? theme === 'dark' ? 'bg-gray-800 cursor-not-allowed opacity-60' : 'bg-gray-50 cursor-not-allowed opacity-60' : ''}`}
-                            disabled={finalDisabled}
-                        >
-                            <option value="">Choose Project</option>
-                            {projectOptions.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                            <svg className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
+                    <ProjectDropdown
+                        value={fieldValue}
+                        onChange={handleLocalFieldChange}
+                        theme={theme}
+                        error={isError}
+                        disabled={finalDisabled}
+                    />
                     {isError && (
                         <div className="mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
                             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -1087,7 +1318,10 @@ const TasksPage = () => {
                         <form className="p-8" onSubmit={handleFormSubmit}>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {isUpdate && renderField('Task ID', 'id', 'text', true, [], true)}
-                                {renderField('Project ID', 'projectId', 'select', true, projects.map(p => ({ label: `(${p.projectId}) ${p.title}`, value: p.projectId })))}
+                                
+                                {/* --- MODIFICATION: Updated renderField call for projectId --- */}
+                                {renderField('Project ID', 'projectId', 'text', true)} 
+                                
                                 {renderField('Task Title', 'title', 'text', true)}
                                 {renderField('Description', 'description', 'textarea')}
                                 {renderField('Assigned To', 'assignedTo', 'text', true)}
@@ -1097,7 +1331,7 @@ const TasksPage = () => {
                                 {renderField('Created Date', 'createdDate', 'date', false, [], true)}
                                 {renderField('Due Date', 'dueDate', 'date', true)}
                                 
-                                {/* --- MODIFIED LINE --- */}
+                                {/* --- (Original) MODIFIED LINE --- */}
                                 {/* Completed Date is now disabled when formMode is 'create' */}
                                 {renderField('Completed Date', 'completedDate', 'date', false, [], formMode === 'create')}
                                 {/* --- END MODIFICATION --- */}
@@ -1494,7 +1728,7 @@ const TasksPage = () => {
                             <select id="sortOption" value={sortOption} onChange={handleSortChange} className={`block w-full pl-3 pr-10 py-2 text-base focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-black'}`}>
                                 <option value="none">None</option>
                                 <option value="startDateAsc">Start Date (Ascending)</option>
-                                <option value="priorityDesc">Priority (High to Low)</option>
+                                <option valueD="priorityDesc">Priority (High to Low)</option>
                             </select>
                         </div>
                         <div className="w-full sm:w-1/3">

@@ -941,7 +941,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 subscriptions.current['sidebar'] = client.subscribe(`/user/queue/sidebar`, onSidebarUpdate);
                 subscriptions.current['private'] = client.subscribe(`/user/queue/private`, messageHandler);
                 subscriptions.current['private-ack'] = client.subscribe(`/user/queue/private-ack`, messageHandler);
-                subscriptions.current['group-ack'] = client.subscribe(`/user/queue/group-ack`, messageHandler);
+                subscriptions.current['group-ack'] = client.subscribe(`user/queue/group-ack`, messageHandler);
                 subscriptions.current['presence'] = client.subscribe('/topic/presence', presenceHandler);
                 subscriptions.current['typing'] = client.subscribe('/user/queue/typing-status', handleTypingEvent);
             },
