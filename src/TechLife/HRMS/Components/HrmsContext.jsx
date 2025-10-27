@@ -34,7 +34,7 @@ const HrmsContext = ({ children }) => {
     const [hasMoreNotifications, setHasMoreNotifications] = useState(true); // Centralized hasMore status
     // ---------------------------------------------
 
-        useEffect(() => {
+    useEffect(() => {
         const storedUser = localStorage.getItem("emppayload");
         const storedUserImage = localStorage.getItem("loggedInUserImage");
 
@@ -58,32 +58,32 @@ const HrmsContext = ({ children }) => {
 
 
 
-            const LoggedInUserRole = userData?.roles[0]?`ROLE_${userData?.roles[0]}` 
- : null;
+    const LoggedInUserRole = userData?.roles[0]?`ROLE_${userData?.roles[0]}` 
+    : null;
 
 
-     useEffect(() => {
-    const fetchPermissionArray = async () => {
-        try {
-            const response = await authApi.get(`role-access/${LoggedInUserRole}`);
-            setMatchedArray(response?.data?.permissions);
-            
-        } catch (error) {
-            console.error(error);
+    useEffect(() => {
+        const fetchPermissionArray = async () => {
+            try {
+                const response = await authApi.get(`role-access/${LoggedInUserRole}`);
+                setMatchedArray(response?.data?.permissions);
+                
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        if (LoggedInUserRole) {
+            fetchPermissionArray();
         }
-    };
-
-    if (LoggedInUserRole) {
-        fetchPermissionArray();
-    }
-}, [LoggedInUserRole]);
+    }, [LoggedInUserRole]);
 
 
-useEffect(() => {
-    if (matchedArray && matchedArray.length > 0) {
-        console.log("Context matched Array ", matchedArray);
-    }
-}, [matchedArray]);
+    useEffect(() => {
+        if (matchedArray && matchedArray.length > 0) {
+            console.log("Context matched Array ", matchedArray);
+        }
+    }, [matchedArray]);
 
 
 
@@ -194,12 +194,18 @@ useEffect(() => {
             console.error("Error fetching notifications:", err);
             // On API error, disable further scrolling until user attempts refresh
             if (notificationPageNumber > 0) {
-                 setHasMoreNotifications(false);
+                setHasMoreNotifications(false);
             }
         }
     }, [userData?.employeeId, notificationPageNumber, notificationPageSize]);
-
+    
+    // --- NEW: Persistent SSE Connection Logic ---
+    // The previous SSE useEffect was prone to re-running if dependencies changed.
+    // We isolate the connection logic here and rely only on userData?.employeeId
+    // to establish the connection once the user is known.
     useEffect(() => {
+        let eventSource;
+
         // 1. Guard clause: Ensure employeeId is available before attempting connection.
         if (!userData?.employeeId) {
             console.log("SSE: Waiting for employeeId to establish connection.");
@@ -208,8 +214,9 @@ useEffect(() => {
 
         console.log(`SSE: Setting up connection for Employee ID: ${userData.employeeId}`);
         
-        // 2. Establish connection using the now-available employeeId
-        const eventSource = new EventSource(`https://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData.employeeId}`);
+        // 2. Establish connection using the employeeId
+        // The URL is hardcoded, so the SSE connection will attempt to connect.
+        eventSource = new EventSource(`https://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData.employeeId}`);
         
         eventSource.onopen = () => { 
             console.log("SSE: Connection established successfully."); 
@@ -228,6 +235,7 @@ useEffect(() => {
                 setGdata((prev) => {
                     const isDuplicate = prev.some((n) => n.id === incoming.id);
                     if (isDuplicate) return prev;
+                    // Add new notification to the beginning of the list
                     return [incoming, ...prev];
                 });
                 
@@ -236,8 +244,10 @@ useEffect(() => {
                 
                 if (Notification.permission === "granted") {
                     const notification = new Notification(incoming.subject, {
-                        body: incoming.message, icon: logo, data: { id: incoming.id, link: incoming.link },
-                        silent: true,
+                        body: incoming.message, 
+                        icon: logo, 
+                        data: { id: incoming.id, link: incoming.link },
+                        silent: true, // Fix for duplicate sound
                     });
                     
                     notification.onclick = (e) => {
@@ -252,21 +262,27 @@ useEffect(() => {
         });
         
         eventSource.onerror = (err) => {
-            // Log the error and close the connection.
+            // Log the error and close the connection. The cleanup function will run on unmount.
             console.error("SSE connection error:", err);
-            eventSource.close();
+            // Optional: You could add logic here to attempt a reconnect after a delay.
+            // eventSource.close(); 
         };
         
-        // 3. Cleanup function: Closes the connection when component unmounts 
+        // 3. Cleanup function: Closes the connection when component unmounts or employeeId changes
         return () => {
             console.log("SSE: Closing connection.");
-            eventSource.close();
+            if (eventSource) {
+                eventSource.close();
+            }
         };
         
-    }, [userData?.employeeId, markAsRead, fetchUnreadCount]);
+    }, [userData?.employeeId, fetchUnreadCount, markAsRead]); // Dependencies are correct for connection handling
+
+    // --- END: Persistent SSE Connection Logic ---
+    
 
     useEffect(() => {
-        // This will now re-run whenever fetchNotifications changes (i.e., when page number changes)
+        // This runs for fetching the notification list
         fetchNotifications();
     }, [fetchNotifications]); 
 
