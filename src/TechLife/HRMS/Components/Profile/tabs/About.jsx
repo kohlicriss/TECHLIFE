@@ -63,13 +63,20 @@ const About = () => {
         jobLove: apiData.jobLove || "",
         hobbies: apiData.hobbies || "",
       });
-       
+        
+      // Check if any of the fields have content to determine if a record exists
       setRecordExists(!!(apiData.about || apiData.jobLove || apiData.hobbies));
 
     } catch (err) {
-      console.error("❌ Error fetching about data:", err);
-      setError("Failed to load profile data.");
-      setRecordExists(false); 
+      // NOTE: A 404 or empty response often means the record doesn't exist yet, which is expected.
+      // Only set error for critical failures.
+      if (err.response && err.response.status === 404) {
+         setRecordExists(false); 
+      } else {
+         console.error("❌ Error fetching about data:", err);
+         setError("Failed to load profile data.");
+      }
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -89,6 +96,7 @@ const About = () => {
       ...prev,
       [field]: { ...prev[field], isEditing: true },
     }));
+    // Synchronize the edit cache with the current text before editing
     setEditCache(prev => ({ ...prev, [field]: responses[field].text }));
   };
 
@@ -97,16 +105,20 @@ const About = () => {
       ...prev,
       [field]: { ...prev[field], isEditing: false },
     }));
+    // Revert editCache to the original text
     setEditCache(prev => ({ ...prev, [field]: responses[field].text }));
   };
 
   const handleDelete = async (field) => {
-    if (isSaving) return;
+    if (isSaving || isReadOnly) return;
 
+    // Snapshot the current state before optimistic update
     const allPreviousState = responses;
+    
+    // Optimistic UI update: Set the field to empty and exit editing mode
     setResponses(prev => ({
-        ...prev,
-        [field]: { text: "", isEditing: false } 
+      ...prev,
+      [field]: { text: "", isEditing: false } 
     }));
     setEditCache(prev => ({ ...prev, [field]: "" }));
 
@@ -116,22 +128,26 @@ const About = () => {
     try {
         const payload = { 
           employeeId: employeeIdToFetch,
+          // Set the target field to empty, keep others as they were
           about: field === 'about' ? "" : allPreviousState.about.text,
           jobLove: field === 'jobLove' ? "" : allPreviousState.jobLove.text,
           hobbies: field === 'hobbies' ? "" : allPreviousState.hobbies.text,
         };
 
         const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
-      
+        
         if (recordExists) {
           await publicinfoApi.put(endpoint, payload);
         } else {
-          await publicinfoApi.post(endpoint, payload);
+          // If the record didn't exist, we must use POST for the first successful modification
+          const result = await publicinfoApi.post(endpoint, payload);
+          // Crucial step: Mark as existing after the first successful POST
           setRecordExists(true); 
         }
 
     } catch (err) {
         console.error(`❌ Error deleting ${field} data:`, err);
+        // Revert to the previous state on failure
         setResponses(allPreviousState); 
         setEditCache(prev => ({ ...prev, [field]: allPreviousState[field].text }));
         setError(`Failed to delete ${field}. Please try again.`);
@@ -142,18 +158,24 @@ const About = () => {
 
 
   const handleSave = async (field) => {
+    if (isReadOnly) return;
+
     const newValue = editCache[field].trim();
     
+    // Do nothing if trying to save an empty field (user should use Delete button if available)
     if (!newValue) {
+      handleCancel(field);
       return; 
     }
     
     setIsSaving(true);
     setError(null);
 
+    // Snapshot the current state and the field's previous state
     const allPreviousState = responses; 
     const previousFieldState = responses[field];
 
+    // Optimistic UI update: Apply new value and exit editing mode
     setResponses(prev => ({
       ...prev,
       [field]: { text: newValue, isEditing: false } 
@@ -162,6 +184,7 @@ const About = () => {
     try {
       const payload = { 
         employeeId: employeeIdToFetch,
+        // Use the new value for the current field, and existing values for others
         about: field === 'about' ? newValue : allPreviousState.about.text,
         jobLove: field === 'jobLove' ? newValue : allPreviousState.jobLove.text,
         hobbies: field === 'hobbies' ? newValue : allPreviousState.hobbies.text,
@@ -170,17 +193,22 @@ const About = () => {
       const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
 
       if (recordExists) {
+        // Use PUT if a record is known to exist
         await publicinfoApi.put(endpoint, payload);
       } else {
+        // Use POST for the initial creation
         await publicinfoApi.post(endpoint, payload);
+        // Crucial step: Mark as existing after the first successful POST
         setRecordExists(true);
       }
       
     } catch (err) {
       console.error(`❌ Error saving ${field} data:`, err);
+      // Revert to the previous state on failure
       setResponses(allPreviousState); 
       setEditCache(prev => ({ ...prev, [field]: previousFieldState.text })); 
       setError(`Failed to save ${field}. Please try again.`);
+      // If the create failed, ensure the flag is reset so the next attempt uses POST
       if (!recordExists) setRecordExists(false); 
     } finally {
       setIsSaving(false);
@@ -285,7 +313,7 @@ const About = () => {
           <button
             onClick={() => handleEdit(field)}
             className={`absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-200
-              px-1.5 py-0.5 border rounded-md shadow-sm text-xs sm:text-xs ${
+             px-1.5 py-0.5 border rounded-md shadow-sm text-xs sm:text-xs ${
               theme === 'dark'
                 ? 'bg-gray-700 border-gray-600 text-gray-300 hover:text-gray-100 hover:border-gray-500'
                 : 'bg-white border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300'

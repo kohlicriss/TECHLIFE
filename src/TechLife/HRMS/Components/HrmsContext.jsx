@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
 import { authApi, notificationsApi } from "../../../axiosInstance";
+import notificationSound from '../Components/assets/mixkit-correct-answer-tone-2870.wav'
 
 export const Context = createContext();
 export const UISidebarContext = createContext();
@@ -23,6 +24,9 @@ const HrmsContext = ({ children }) => {
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
     const [matchedArray,setMatchedArray]=useState([]);
     const [chatUnreadCount,setChatUnreadCount]=useState(0);
+    const notificationAudio = new Audio(notificationSound);
+    notificationAudio.preload = 'auto'; 
+    notificationAudio.volume = 0.6; 
 
     // --- New State for Notification Pagination ---
     const [notificationPageNumber, setNotificationPageNumber] = useState(0);
@@ -215,6 +219,11 @@ useEffect(() => {
             try {
                 const incoming = JSON.parse(event.data);
                 console.log("📨 New Notification (SSE):", incoming);
+
+                notificationAudio.play().catch(error => {
+                    // This catch is necessary for browsers that block autoplay
+                    console.warn("Could not play notification sound:", error); 
+                });
                 
                 setGdata((prev) => {
                     const isDuplicate = prev.some((n) => n.id === incoming.id);
@@ -228,6 +237,7 @@ useEffect(() => {
                 if (Notification.permission === "granted") {
                     const notification = new Notification(incoming.subject, {
                         body: incoming.message, icon: logo, data: { id: incoming.id, link: incoming.link },
+                        silent: true,
                     });
                     
                     notification.onclick = (e) => {

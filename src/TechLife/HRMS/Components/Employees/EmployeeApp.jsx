@@ -882,7 +882,7 @@ function EmployeeApp() {
         let allIds = new Set();
         let page = 0;
         let hasMorePages = true;
-        const pageSize = 50; // Use a reasonable page size for this purpose
+        const pageSize = 1000; // Use a reasonable page size for this purpose
 
         while (hasMorePages) {
             try {
