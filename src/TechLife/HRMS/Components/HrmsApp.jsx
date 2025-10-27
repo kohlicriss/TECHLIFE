@@ -16,6 +16,8 @@ import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
 import ProjectDetails from "./Projects/ProjectDetails";
+import Department from "./Departments/Department";
+import Departmentspage from "./Departments/Departmentspage";
 
 // Lazy imports with error handling
 const NotificationSystem = lazy(() => 
@@ -568,6 +570,18 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
+
+                                            <Route 
+                                                path="/departments/:empID/*" 
+                                                element={
+                                                    <ProtectedRoute>
+                                                        <RouteWrapper moduleName="Teams">
+                                                            <Department />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+
                                             <Route 
                                                 path="/teams/:teamId" 
                                                 element={
