@@ -6,6 +6,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Context } from "../HrmsContext";
 import DarkModeToggle from "../Login/DarkModeToggle";
 import "./Navbar.css";
+import { publicinfoApi } from "../../../../axiosInstance";
 
 const NavbarSkeleton = ({ theme }) => (
   <header
@@ -39,12 +40,15 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  
+
   // Search suggestions states
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   
+  // 🚨 RENAMED state from 'imagee' to 'image' for clarity
+  const [image, setImage] = useState(""); 
+
   const {
     unreadCount,
     userData,
@@ -53,7 +57,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
     setUserData,
     isChatWindowVisible,
     globalSearch,
-    setGlobalSearch
+    setGlobalSearch,
   } = useContext(Context);
 
   const location = useLocation();
@@ -63,130 +67,177 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   // Enhanced search suggestions with content-based navigation and scrolling
   const searchSuggestions = [
     // Task Management
-    { 
-      label: "task", 
+    {
+      label: "task",
       path: `/tasks/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["task", "tasks", "task management", "todo", "assignments", "work items"]
+      keywords: [
+        "task",
+        "tasks",
+        "task management",
+        "todo",
+        "assignments",
+        "work items",
+      ],
     },
-    { 
-      label: "tasks", 
+    {
+      label: "tasks",
       path: `/tasks/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["task", "tasks", "task management", "todo", "assignments", "work items"]
+      keywords: [
+        "task",
+        "tasks",
+        "task management",
+        "todo",
+        "assignments",
+        "work items",
+      ],
     },
-    
+
     // Chat/Communication
-    { 
-      label: "chat", 
+    {
+      label: "chat",
       path: `/chat/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["chat", "chatting", "messages", "conversation", "communication"]
+      keywords: ["chat", "chatting", "messages", "conversation", "communication"],
     },
-    
+
     // Profile Content-Based Suggestions
-    { 
-      label: "voter card", 
+    {
+      label: "voter card",
       path: `/profile/${userData?.employeeId}/documents`,
       scrollTo: "voter-section",
-      keywords: ["voter", "voter card", "voter id", "voting", "electoral", "identity"]
+      keywords: [
+        "voter",
+        "voter card",
+        "voter id",
+        "voting",
+        "electoral",
+        "identity",
+      ],
     },
-    { 
-      label: "aadhaar card", 
+    {
+      label: "aadhaar card",
       path: `/profile/${userData?.employeeId}/documents`,
-      scrollTo: "aadhaar-section", 
-      keywords: ["aadhaar", "aadhar", "aadhaar card", "identity", "government id"]
+      scrollTo: "aadhaar-section",
+      keywords: ["aadhaar", "aadhar", "aadhaar card", "identity", "government id"],
     },
-    { 
-      label: "pan card", 
+    {
+      label: "pan card",
       path: `/profile/${userData?.employeeId}/documents`,
       scrollTo: "pan-section",
-      keywords: ["pan", "pan card", "tax", "permanent account number"]
+      keywords: ["pan", "pan card", "tax", "permanent account number"],
     },
-    { 
-      label: "passport", 
+    {
+      label: "passport",
       path: `/profile/${userData?.employeeId}/documents`,
       scrollTo: "passport-section",
-      keywords: ["passport", "travel", "international", "travel document"]
+      keywords: ["passport", "travel", "international", "travel document"],
     },
-    { 
-      label: "driving license", 
+    {
+      label: "driving license",
       path: `/profile/${userData?.employeeId}/documents`,
       scrollTo: "drivingLicense-section",
-      keywords: ["driving", "license", "driving license", "vehicle", "permit"]
+      keywords: ["driving", "license", "driving license", "vehicle", "permit"],
     },
-    
+
     // Profile Sections
-    { 
-      label: "primary details", 
+    {
+      label: "primary details",
       path: `/profile/${userData?.employeeId}/profile`,
       scrollTo: "primaryDetails-section",
-      keywords: ["primary", "personal", "basic", "details", "information"]
+      keywords: ["primary", "personal", "basic", "details", "information"],
     },
-    { 
-      label: "contact details", 
+    {
+      label: "contact details",
       path: `/profile/${userData?.employeeId}/profile`,
       scrollTo: "contactDetails-section",
-      keywords: ["contact", "phone", "email", "mobile", "communication"]
+      keywords: ["contact", "phone", "email", "mobile", "communication"],
     },
-    { 
-      label: "address", 
+    {
+      label: "address",
       path: `/profile/${userData?.employeeId}/profile`,
       scrollTo: "address-section",
-      keywords: ["address", "location", "home", "residence", "street"]
+      keywords: ["address", "location", "home", "residence", "street"],
     },
-    { 
-      label: "education", 
+    {
+      label: "education",
       path: `/profile/${userData?.employeeId}/profile`,
       scrollTo: "education-section",
-      keywords: ["education", "degree", "qualification", "university", "college", "study"]
+      keywords: [
+        "education",
+        "degree",
+        "qualification",
+        "university",
+        "college",
+        "study",
+      ],
     },
-    { 
-      label: "experience", 
+    {
+      label: "experience",
       path: `/profile/${userData?.employeeId}/profile`,
       scrollTo: "experience-section",
-      keywords: ["experience", "work", "job", "career", "employment", "history"]
+      keywords: [
+        "experience",
+        "work",
+        "job",
+        "career",
+        "employment",
+        "history",
+      ],
     },
-    
+
     // Achievements
-    { 
-      label: "achievements", 
+    {
+      label: "achievements",
       path: `/profile/${userData?.employeeId}/achievements`,
       scrollTo: null,
-      keywords: ["achievements", "certifications", "awards", "accomplishments", "certificates"]
+      keywords: [
+        "achievements",
+        "certifications",
+        "awards",
+        "accomplishments",
+        "certificates",
+      ],
     },
-    { 
-      label: "certifications", 
+    {
+      label: "certifications",
       path: `/profile/${userData?.employeeId}/achievements`,
       scrollTo: null,
-      keywords: ["certifications", "certificates", "achievements", "credentials", "qualifications"]
+      keywords: [
+        "certifications",
+        "certificates",
+        "achievements",
+        "credentials",
+        "qualifications",
+      ],
     },
-    
+
     // General Navigation
-    { 
-      label: "dashboard", 
+    {
+      label: "dashboard",
       path: `/admin-dashboard/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["dashboard", "overview", "summary", "admin", "home"]
+      keywords: ["dashboard", "overview", "summary", "admin", "home"],
     },
-    { 
-      label: "profile", 
+    {
+      label: "profile",
       path: `/profile/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["profile", "my profile", "personal", "account"]
+      keywords: ["profile", "my profile", "personal", "account"],
     },
-    { 
-      label: "notifications", 
+    {
+      label: "notifications",
       path: `/notifications/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["notifications", "alerts", "updates", "messages", "news"]
+      keywords: ["notifications", "alerts", "updates", "messages", "news"],
     },
-    { 
-      label: "employees", 
+    {
+      label: "employees",
       path: `/employees/${userData?.employeeId}`,
       scrollTo: null,
-      keywords: ["employees", "staff", "team", "colleagues", "workforce"]
-    }
+      keywords: ["employees", "staff", "team", "colleagues", "workforce"],
+    },
   ];
 
   const [loggedInUserProfile, setLoggedInUserProfile] = useState({
@@ -227,14 +278,33 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
     };
   }, []);
 
+  useEffect(() => {
+    let PrifilePicFetching = async () => {
+      let Id = localStorage.getItem("logedempid");
+      // Added a check for Id to prevent API call if not logged in
+      if (Id) {
+        try {
+          let response = await publicinfoApi.get(`employee/${Id}/image`);
+          console.log("Image address", response.data);
+          setImage(response.data);
+        } catch (error) {
+            console.error("Failed to fetch profile picture:", error);
+            // Handle error, e.g., if image is not found (404)
+            setImage(null); // Explicitly set to null on error
+        }
+      }
+    };
+    PrifilePicFetching();
+  }, [userData?.employeeId]); // Dependency array is correct
+
   // Fixed smooth scrolling function with proper element finding
   const smoothScrollToElement = (elementId, offset = 100) => {
     setTimeout(() => {
       console.log(`Searching for element: ${elementId}`);
-      
+
       // Multiple search strategies
       let element = null;
-      
+
       // Strategy 1: Direct ID
       element = document.getElementById(elementId);
       if (element) {
@@ -251,36 +321,52 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
             console.log(`Found element by class: ${elementId}`);
           } else {
             // Strategy 4: Text content search (fixed version)
-            const searchTerm = elementId.replace('-section', '').replace(/([A-Z])/g, ' $1').toLowerCase();
+            const searchTerm = elementId
+              .replace("-section", "")
+              .replace(/([A-Z])/g, " $1")
+              .toLowerCase();
             console.log(`Searching for text content: ${searchTerm}`);
-            
+
             // Search in headings
-            const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
             for (let heading of headings) {
               if (heading.textContent.toLowerCase().includes(searchTerm)) {
                 element = heading;
-                console.log(`Found element by heading text: ${heading.textContent}`);
+                console.log(
+                  `Found element by heading text: ${heading.textContent}`
+                );
                 break;
               }
             }
-            
+
             // Search in other elements if not found in headings
             if (!element) {
-              const allElements = document.querySelectorAll('div, section, article, span, p, label');
+              const allElements = document.querySelectorAll(
+                "div, section, article, span, p, label"
+              );
               for (let el of allElements) {
                 if (el.textContent.toLowerCase().includes(searchTerm)) {
                   element = el;
-                  console.log(`Found element by text content: ${el.textContent.substring(0, 50)}...`);
+                  console.log(
+                    `Found element by text content: ${el.textContent.substring(
+                      0,
+                      50
+                    )}...`
+                  );
                   break;
                 }
               }
             }
-            
+
             // Strategy 5: Search by title attribute
             if (!element) {
               element = document.querySelector(`[title*="${searchTerm}"]`);
               if (element) {
-                console.log(`Found element by title attribute: ${element.getAttribute('title')}`);
+                console.log(
+                  `Found element by title attribute: ${element.getAttribute(
+                    "title"
+                  )}`
+                );
               }
             }
           }
@@ -296,23 +382,23 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
         // Smooth scroll
         window.scrollTo({
           top: offsetPosition,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
 
         // Add highlight effect
-        element.classList.add('highlight-search');
+        element.classList.add("highlight-search");
         setTimeout(() => {
-          element.classList.remove('highlight-search');
+          element.classList.remove("highlight-search");
         }, 2000);
 
         console.log(`Successfully scrolled to: ${elementId}`);
       } else {
         console.log(`Element not found: ${elementId}`);
-        
+
         // Fallback - scroll to top of page
         window.scrollTo({
           top: 0,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
       }
     }, 200); // Increased delay to ensure page is fully loaded
@@ -326,34 +412,37 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
 
     if (searchValue.length > 0) {
       // Enhanced filtering with better matching
-      const filtered = searchSuggestions.filter(suggestion =>
-        suggestion.keywords.some(keyword =>
+      const filtered = searchSuggestions.filter((suggestion) =>
+        suggestion.keywords.some((keyword) =>
           keyword.toLowerCase().includes(searchValue.toLowerCase())
         )
       );
-      
+
       // Sort by relevance - exact matches first, then partial matches
       const sortedFiltered = filtered.sort((a, b) => {
-        const aExactMatch = a.keywords.some(keyword => 
-          keyword.toLowerCase() === searchValue.toLowerCase()
+        const aExactMatch = a.keywords.some(
+          (keyword) => keyword.toLowerCase() === searchValue.toLowerCase()
         );
-        const bExactMatch = b.keywords.some(keyword => 
-          keyword.toLowerCase() === searchValue.toLowerCase()
+        const bExactMatch = b.keywords.some(
+          (keyword) => keyword.toLowerCase() === searchValue.toLowerCase()
         );
-        
+
         if (aExactMatch && !bExactMatch) return -1;
         if (!aExactMatch && bExactMatch) return 1;
-        
+
         return a.label.length - b.label.length; // Shorter labels first
       });
-      
+
       // Remove duplicates based on path and scrollTo combination
-      const uniqueFiltered = sortedFiltered.filter((suggestion, index, self) =>
-        index === self.findIndex((s) => 
-          s.path === suggestion.path && s.scrollTo === suggestion.scrollTo
-        )
+      const uniqueFiltered = sortedFiltered.filter(
+        (suggestion, index, self) =>
+          index ===
+          self.findIndex(
+            (s) =>
+              s.path === suggestion.path && s.scrollTo === suggestion.scrollTo
+          )
       );
-      
+
       setFilteredSuggestions(uniqueFiltered);
       setShowSuggestions(uniqueFiltered.length > 0);
       setActiveSuggestion(0);
@@ -367,16 +456,16 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   const handleSuggestionClick = (suggestion) => {
     console.log("Suggestion clicked:", suggestion.label);
     console.log("Navigating to:", suggestion.path);
-    
+
     setGlobalSearch(suggestion.label);
     setShowSuggestions(false);
     setFilteredSuggestions([]);
-    
+
     if (suggestion.path && userData?.employeeId) {
       // Check if we're already on the target page
       const currentPath = location.pathname;
       const targetPath = suggestion.path;
-      
+
       if (currentPath === targetPath && suggestion.scrollTo) {
         // Same page, just scroll
         smoothScrollToElement(suggestion.scrollTo);
@@ -384,14 +473,16 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
       } else {
         // Different page, navigate then scroll
         navigate(suggestion.path);
-        
+
         if (suggestion.scrollTo) {
           // Wait for navigation to complete, then scroll
           setTimeout(() => {
             smoothScrollToElement(suggestion.scrollTo);
           }, 500); // Increased delay for navigation
-          
-          console.log(`Navigated to: ${suggestion.path}, will scroll to: ${suggestion.scrollTo}`);
+
+          console.log(
+            `Mapsd to: ${suggestion.path}, will scroll to: ${suggestion.scrollTo}`
+          );
         }
       }
     }
@@ -401,22 +492,26 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   const handleKeyDown = (e) => {
     if (!showSuggestions) return;
 
-    if (e.keyCode === 40) { // Down arrow
+    if (e.keyCode === 40) {
+      // Down arrow
       e.preventDefault();
       if (activeSuggestion < filteredSuggestions.length - 1) {
         setActiveSuggestion(activeSuggestion + 1);
       }
-    } else if (e.keyCode === 38) { // Up arrow
+    } else if (e.keyCode === 38) {
+      // Up arrow
       e.preventDefault();
       if (activeSuggestion > 0) {
         setActiveSuggestion(activeSuggestion - 1);
       }
-    } else if (e.keyCode === 13) { // Enter key
+    } else if (e.keyCode === 13) {
+      // Enter key
       e.preventDefault();
       if (filteredSuggestions.length > 0) {
         handleSuggestionClick(filteredSuggestions[activeSuggestion]);
       }
-    } else if (e.keyCode === 27) { // Escape key
+    } else if (e.keyCode === 27) {
+      // Escape key
       setShowSuggestions(false);
     }
   };
@@ -424,11 +519,11 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   const isNotificationsActive = location.pathname.startsWith(
     `/notifications/${userData?.employeeId}`
   );
-  
+
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-  
+
   const handleProfileClick = () => {
     setDropdownOpen(!dropdownOpen);
   };
@@ -436,6 +531,9 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
   if (isLoading) {
     return <NavbarSkeleton theme={theme} />;
   }
+
+  // 🚨 Determine which image source to use. Prioritize API-fetched image.
+  const displayImage = image || loggedInUserProfile.image;
 
   return (
     <>
@@ -448,7 +546,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
           border-radius: 8px !important;
           transition: all 0.3s ease !important;
         }
-        
+
         @keyframes highlightPulse {
           0% {
             transform: scale(1);
@@ -464,17 +562,17 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
           }
         }
       `}</style>
-      
+
       <header
         className={`
-                ${theme === "dark" ? "bg-gray-900" : "bg-white"}
-                px-6 py-3 shadow-md items-center justify-between w-full fixed top-0 left-0 z-50 h-16
-                ${isChatWindowVisible ? "hidden md:flex" : "flex"}
-              `}
+          ${theme === "dark" ? "bg-gray-900" : "bg-white"}
+          px-6 py-3 shadow-md items-center justify-between w-full fixed top-0 left-0 z-50 h-16
+          ${isChatWindowVisible ? "hidden md:flex" : "flex"}
+        `}
       >
         <div className="flex items-center space-x-4">
           <button
-            className={`md:hidden text-2xl ${
+            className={`lg:hidden text-2xl ${
               theme === "dark" ? "text-white" : "text-gray-700"
             }`}
             onClick={() => setSidebarOpen(true)}
@@ -527,7 +625,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
                 : "bg-white border-gray-300 text-black placeholder-gray-500"
             }`}
           />
-          
+
           {/* Enhanced Suggestions Dropdown with Content Navigation */}
           {showSuggestions && (
             <div
@@ -539,7 +637,9 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
             >
               {filteredSuggestions.map((suggestion, index) => (
                 <div
-                  key={`${suggestion.path}-${suggestion.scrollTo || 'nav'}-${index}`}
+                  key={`${suggestion.path}-${
+                    suggestion.scrollTo || "nav"
+                  }-${index}`}
                   onClick={() => handleSuggestionClick(suggestion)}
                   className={`px-4 py-3 cursor-pointer text-sm transition-all duration-150 border-l-4 ${
                     index === activeSuggestion
@@ -550,7 +650,9 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
                       ? "text-gray-300 hover:bg-gray-700 hover:text-white border-transparent hover:border-gray-600"
                       : "text-gray-700 hover:bg-gray-50 border-transparent hover:border-gray-300"
                   } ${index === 0 ? "rounded-t-md" : ""} ${
-                    index === filteredSuggestions.length - 1 ? "rounded-b-md" : ""
+                    index === filteredSuggestions.length - 1
+                      ? "rounded-b-md"
+                      : ""
                   }`}
                 >
                   <div className="flex items-center">
@@ -561,47 +663,53 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
                           {suggestion.label}
                         </span>
                         {suggestion.scrollTo && (
-                          <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
-                            index === activeSuggestion
-                              ? theme === "dark" 
-                                ? "bg-blue-500 text-blue-100" 
-                                : "bg-blue-200 text-blue-800"
-                              : theme === "dark" 
-                                ? "bg-gray-600 text-gray-300" 
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
+                              index === activeSuggestion
+                                ? theme === "dark"
+                                  ? "bg-blue-500 text-blue-100"
+                                  : "bg-blue-200 text-blue-800"
+                                : theme === "dark"
+                                ? "bg-gray-600 text-gray-300"
                                 : "bg-gray-200 text-gray-600"
-                          }`}>
+                            }`}
+                          >
                             Scroll to section
                           </span>
                         )}
                       </div>
-                      <span className={`text-xs truncate mt-1 ${
-                        index === activeSuggestion
-                          ? theme === "dark" 
-                            ? "text-blue-200" 
-                            : "text-blue-600"
-                          : theme === "dark" 
-                            ? "text-gray-400" 
+                      <span
+                        className={`text-xs truncate mt-1 ${
+                          index === activeSuggestion
+                            ? theme === "dark"
+                              ? "text-blue-200"
+                              : "text-blue-600"
+                            : theme === "dark"
+                            ? "text-gray-400"
                             : "text-gray-500"
-                      }`}>
-                        {suggestion.scrollTo 
-                          ? `Navigate and scroll to ${suggestion.label}` 
-                          : `Navigate to ${suggestion.label}`
-                        }
+                        }`}
+                      >
+                        {suggestion.scrollTo
+                          ? `Maps and scroll to ${suggestion.label}`
+                          : `Maps to ${suggestion.label}`}
                       </span>
                     </div>
                   </div>
                 </div>
               ))}
-              
+
               {/* No results message */}
-              {filteredSuggestions.length === 0 && globalSearch.length > 0 && (
-                <div className={`px-4 py-3 text-sm ${
-                  theme === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}>
-                  <FiSearch className="inline mr-2" size={14} />
-                  No content found for "{globalSearch}"
-                </div>
-              )}
+              {filteredSuggestions.length === 0 &&
+                globalSearch.length > 0 && (
+                  <div
+                    className={`px-4 py-3 text-sm ${
+                      theme === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    <FiSearch className="inline mr-2" size={14} />
+                    No content found for "{globalSearch}"
+                  </div>
+                )}
             </div>
           )}
         </div>
@@ -612,7 +720,7 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
             className="relative"
           >
             <Bell
-              size={22}
+              size={28}
               className={
                 isNotificationsActive
                   ? "text-blue-600 fill-blue-100"
@@ -622,8 +730,8 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
               }
             />
             {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
+              <span className="absolute -top-2 -right-3 flex min-w-5 h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                {unreadCount}
               </span>
             )}
           </Link>
@@ -640,9 +748,10 @@ const Navbar = ({ setSidebarOpen, onLogout }) => {
               }`}
               onClick={handleProfileClick}
             >
-              {loggedInUserProfile.image ? (
+              {/* 🚨 MODIFIED: Use displayImage which prioritizes the API-fetched image */}
+              {displayImage ? (
                 <img
-                  src={loggedInUserProfile.image}
+                  src={displayImage} // Use the prioritized image source
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />

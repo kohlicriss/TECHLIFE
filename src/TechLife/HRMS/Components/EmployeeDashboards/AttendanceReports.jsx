@@ -1,7 +1,7 @@
 import { CalendarDaysIcon, ClockIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import React, { useMemo, useState, Fragment, useContext } from "react";
+import React, { useMemo, useState, Fragment, useContext, useEffect } from "react";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { MdEditCalendar } from "react-icons/md";
 import { BiArchiveOut, BiCalendarStar, BiCodeBlock, BiError, BiLogIn, BiSolidCalendarEvent, BiSolidUser } from "react-icons/bi";
@@ -442,32 +442,53 @@ const EmployeeOvertimeChart = () => {
     </motion.div>
   );
 };
-const AttendanceTable = ({rawTableData,setRawTableData}) => {
+const AttendanceTable = () => {
     const {theme} = useContext(Context);
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [sortOption, setSortOption] = useState("Recently added");
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
-    const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
+    const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days", "This Month"];
     const rowsPerPageOptions = [10, 25, 50, 100];
     const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    //const rawTableData = [
-    //    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_02", date: "2025-06-30", login_time: null, logout_time: null },
-    //    { employee_id: "E_03", date: "2025-06-30", login_time: "10:00 AM", logout_time: "06:00 PM" },
-    //    { employee_id: "E_04", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_05", date: "2025-06-30", login_time: null, logout_time: null },
-    //    { employee_id: "E_06", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_07", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_08", date: "2025-06-30", login_time: "10:00 AM", logout_time: "07:00 PM" },
-    //    { employee_id: "E_09", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_10", date: "2025-06-30", login_time: "09:45 AM", logout_time: "08:10 PM" },
-    //    { employee_id: "E_11", date: "2025-06-30", login_time: "09:55 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_12", date: "2025-06-30", login_time: null, logout_time: null },
-    //    { employee_id: "E_13", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //    { employee_id: "E_14", date: "2025-06-30", login_time: null, logout_time: null },
-    //    { employee_id: "E_15", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-    //];
+    const [rawTableData, setRawTableData] = useState(() => {
+        // Try to load from localStorage first
+        const stored = localStorage.getItem("attendanceTableData");
+        return stored ? JSON.parse(stored) : [];
+    });
+
+    // Fetch data from API and store in localStorage
+    useEffect(() => {
+    const fetchAttendanceData = async () => {
+        const today = new Date();
+        const day = today.getDate();
+        const month = today.getMonth() + 1;
+        const year = today.getFullYear();
+
+        let apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/admin/present/${year}/${month}/${day}?page=0&size=${rowsPerPageOptions[rowsPerPageOptions.length - 1]}`;
+
+        if (sortOption === "This Month") {
+            apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/admin/month/${year}/${month}?page=0&size=${rowsPerPageOptions[rowsPerPageOptions.length - 1]}`;
+        }
+
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            // Some endpoints return { content: [...] }, some return [...]
+            let records = [];
+            if (Array.isArray(data)) {
+                records = data;
+            } else if (Array.isArray(data.content)) {
+                records = data.content;
+            }
+            setRawTableData(records);
+            localStorage.setItem("attendanceTableData", JSON.stringify(records));
+        } catch (error) {
+            console.error("Failed to fetch attendance data:", error);
+        }
+    };
+    fetchAttendanceData();
+}, [sortOption]);
     const STANDARD_WORKDAY_HOURS = 10;
     const calculateHours = (login, logout) => {
         if (!login || !logout) return 0;
@@ -523,20 +544,55 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
                                        transition={{ duration: 0.5, delay: 1 }}
                                    >
                                        <section>
-                                           <div className="flex justify-between items-center mb-2 flex-wrap gap-3">
-                                               <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-green-200 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                                                   <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-blue-600 mr-2" /> Attendance Records
-                                               </h2>
-                                               <div className="flex flex-wrap items-center gap-4">
-                                                   <FilterButtonGroup options={MONTHS} selectedOption={selectedMonth} onSelect={(month) => { setSelectedMonth(month); setCurrentPage(1); }} />
-                                                   <div className="relative">
-                                                       <label className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Sort by:</label>
-                                                       <select value={sortOption} onChange={(e) => { setSortOption(e.target.value); setCurrentPage(1); }} className={`border border-gray-300 px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
-                                                           {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                                       </select>
+                                           <div className="flex justify-between items-start sm:items-center mb-5 flex-wrap gap-4"> {/* Adjusted items-start for mobile wrapping */}
+                                                       
+                                                       {/* Table Title (Enhanced for prominence) */}
+                                                       <h2 className={`text-xl sm:text-2xl font-extrabold ${theme === 'dark' ? 'bg-gradient-to-br from-green-300 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
+                                                           <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-indigo-600 mr-2" /> Attendance Records
+                                                       </h2>
+                                                       
+                                                       {/* Filter and Sort Controls */}
+                                                       <div className="flex flex-wrap items-center gap-4">
+                                                           
+                                                           {/* 1. MONTH SELECTION DROPDOWN (NEW) */}
+                                                           <div className="relative">
+                                                              <label htmlFor="month-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Select Month:</label>
+                                                               <select 
+                                                                   id="month-select"
+                                                                   value={selectedMonth} 
+                                                                   onChange={(e) => { 
+                                                                       setSelectedMonth(e.target.value); 
+                                                                       setCurrentPage(1); 
+                                                                   }} 
+                                                                   className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
+                                                                              ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
+                                                               >
+                                                                   {/* Assuming MONTHS is an array of strings like ["All", "January", "February", ...] */}
+                                                                   {MONTHS.map((month) => (
+                                                                       <option key={month} value={month}>{month}</option>
+                                                                   ))}
+                                                               </select>
+                                                           </div>
+                                           
+                                                           {/* 2. SORT OPTION DROPDOWN (Existing, refined styling) */}
+                                                           <div className="relative">
+                                                               <label htmlFor="sort-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Sort by:</label>
+                                                               <select 
+                                                                   id="sort-select"
+                                                                   value={sortOption} 
+                                                                   onChange={(e) => { 
+                                                                       setSortOption(e.target.value); 
+                                                                       setCurrentPage(1); 
+                                                                   }} 
+                                                                   className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
+                                                                              ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
+                                                               >
+                                                                   {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                                                               </select>
+                                                           </div>
+                                                       </div>
                                                    </div>
-                                               </div>
-                                           </div>
+                                                   
                                                   <div className="overflow-x-auto rounded-lg border border-purple-400">
                                                       <table className="min-w-full divide-y divide-gray-200">
                                                           <thead className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'}`}>
@@ -604,9 +660,17 @@ const AttendanceTable = ({rawTableData,setRawTableData}) => {
     );
 };
 
-function AttendanceReports({ rawTableData, setRawTableData }) {
+function AttendanceReports({ onBack }) {
     return (
         <div className="p-2 sm:p-4 min-h-screen font-sans">
+            <div className="flex items-center justify-between mb-4">
+            <button
+                onClick={onBack}
+                className="mb-4 px-4 py-2 bg-indigo-100 text-blue-600 rounded-lg font-semibold shadow hover:bg-indigo-200 transition"
+            >
+                ← Back to Dashboard
+            </button>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2">
                 <DashboardGrid />
                 
@@ -619,7 +683,7 @@ function AttendanceReports({ rawTableData, setRawTableData }) {
             </div>
 
             <div className="w-full">
-                <AttendanceTable rawTableData={rawTableData} setRawTableData={setRawTableData} />
+                <AttendanceTable  />
             </div>
         </div>
     );

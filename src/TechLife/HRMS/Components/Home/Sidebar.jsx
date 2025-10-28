@@ -19,14 +19,15 @@ import {
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
- 
-function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
+
+function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
+  const { chatUnreadCount } = useContext(Context);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { userData, setUserData, theme } = useContext(Context);
   const empId = userData?.employeeId;
   const userRole = userData?.roles?.[0]?.toUpperCase();
- 
+
   const handleLogoutClick = async () => {
     try {
       await fetch("https://hrms.anasolConsultancyservices.com/api/auth/logout", {
@@ -56,7 +57,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
       }
     }
   };
- 
+
   const navItems = [
     { name: "Profile", icon: <UserCircle size={18} />, path: empId ? `/profile/${empId}` : "/profile" },
     { name: "Attendance",icon: <CalendarCheck size={18} />,path: empId ? `/attendance/${empId}` : "/attendance"},
@@ -83,29 +84,31 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
       path: empId ? `/permissions/${empId}` : "/permissions"
     });
     navItems.push({
-       name: "ADMIN",
-       icon: <FaUsers size={18} />,
-       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
+        name: "ADMIN",
+        icon: <FaUsers size={18} />,
+        path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
     })
   }
- 
+
   if(userRole==='HR'){
     navItems.push({
-       name: "HR",
-       icon: <FaUsers size={18} />,
-       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
+        name: "HR",
+        icon: <FaUsers size={18} />,
+        path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard"
     })
   }
- 
+
   return (
     <>
+      {/* Overlay for mobile and tablet view */}
       <div
         className={`fixed inset-0  bg-opacity-50 z-40 lg:hidden transition-opacity ${
           isSidebarOpen ? "block" : "hidden"
         }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
- 
+
+      {/* Sidebar */}
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
         className={`fixed top-0 left-0 h-full ${
@@ -115,6 +118,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
         } lg:translate-x-0 lg:static lg:shadow-none pt-3`}
       >
         <div className="flex items-center justify-between px-4 mb-2">
+          {/* Close button for mobile/tablet */}
           <div className="lg:hidden">
             <button
               className={`${theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-gray-600 hover:text-black'}`}
@@ -123,6 +127,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
               <X size={20} />
             </button>
           </div>
+          {/* Collapse button */}
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
@@ -140,7 +145,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
             </button>
           </div>
         </div>
- 
+
         <nav className="mt-4">
           {navItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -161,7 +166,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
               >
                 {item.icon}
                 {!collapsed && <span>{item.name}</span>}
- 
+
                 {!collapsed && item.notification && (
                   <span className="absolute right-4 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
                 )}
@@ -171,7 +176,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
               </Link>
             );
           })}
- 
+
           <div className="mt-10">
             <button
               onClick={handleLogoutClick}
@@ -192,6 +197,5 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
     </>
   );
 }
- 
+
 export default Sidebar;
- 

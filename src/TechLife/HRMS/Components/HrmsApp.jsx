@@ -142,13 +142,7 @@ const ModuleSpinner = () => {
                 <div className="bouncing-dot" style={{ animationDelay: '0.4s' }}></div>
             </div>
             
-            {/* Tailwind CSS కోసం `style jsx` ను ఉపయోగించడం సరికాదు.
-                ఇది Next.js లో లేదా style-loader/css-loader తో ఉపయోగించినప్పుడు మాత్రమే పని చేస్తుంది.
-                ఈ కాంపోనెంట్‌ను Tailwind/Global CSS తో అనుకూలంగా ఉంచడానికి, 
-                అనిమేషన్ CSS ను ఇక్కడ కాకుండా గ్లోబల్ CSS లో లేదా
-                ఒక ప్రత్యేక `styled-components` తరహా లైబ్రరీలో నిర్వచించాలి.
-                ప్రస్తుతానికి, కోడ్ పనిచేయడానికి CSS ను ఇక్కడ ఉంచుతున్నాను.
-            */}
+          
             <style jsx>{`
                 .bouncing-dot {
                     width: 12px;

@@ -47,7 +47,7 @@ const HomePayRoll = () => {
     setLoading(true);
 
     const response = await axios.get(
-      'https://hrms.anasolconsultancyservices.com/api/payroll/jobdetails/getall',
+      'http://localhost:8087/api/payroll/jobdetails/getall',
       {
         headers: { Authorization: `Bearer ${token}` },
       }

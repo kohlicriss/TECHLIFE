@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoPeopleOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoTrashOutline, IoCreateOutline } from "react-icons/io5";
+import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoTrashOutline, IoCreateOutline } from "react-icons/io5";
 import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
 import { useParams, useLocation } from "react-router-dom";
@@ -33,16 +33,6 @@ const Modal = ({ children, onClose, title, type, theme }) => {
     );
 };
 
-// Default Profile (Only static relations/identity)
-const defaultProfile = {
-  relations: {
-    fatherName: "Albert Smith",
-    motherName: "Marry Smith",
-    spouseName: "Jane Smith",
-    children: "2",
-    siblings: "1",
-  },
-};
 
 const sectionFields = {
   primaryDetails: [
@@ -192,38 +182,6 @@ const sectionFields = {
       hint: "Enter district name (up to 50 characters)"
     },
   ],
-  relations: [
-    { 
-      label: "Father Name", 
-      name: "fatherName", 
-      type: "text",
-      hint: "Enter your father's name"
-    },
-    { 
-      label: "Mother Name", 
-      name: "motherName", 
-      type: "text",
-      hint: "Enter your mother's name"
-    },
-    { 
-      label: "Spouse Name", 
-      name: "spouseName", 
-      type: "text",
-      hint: "Enter your spouse's name if married"
-    },
-    { 
-      label: "Children", 
-      name: "children", 
-      type: "number",
-      hint: "Enter number of children"
-    },
-    { 
-      label: "Siblings", 
-      name: "siblings", 
-      type: "number",
-      hint: "Enter number of siblings"
-    },
-  ],
   education: [
     { 
       label: "Degree Type", 
@@ -287,17 +245,11 @@ const sectionFields = {
       label: "Degree Certificate", 
       name: "addFiles", 
       type: "file",
+      required: true, 
       hint: "Upload degree certificate (JPG, PNG, PDF)"
     },
   ],
   experience: [
-    { 
-      label: "ID", 
-      name: "id", 
-      type: "text", 
-      required: true,
-      hint: "Enter unique experience ID"
-    },
     { 
       label: "Company Name", 
       name: "companyName", 
@@ -396,18 +348,6 @@ const sectionConfig = {
     title: 'Address Information',
     description: 'Current residential address'
   },
-  relations: {
-    icon: IoPeopleOutline,
-    color: 'from-purple-500 to-purple-700',
-    bgColor: 'bg-purple-50',
-    darkBgColor: 'bg-purple-900/20',
-    borderColor: 'border-purple-200',
-    darkBorderColor: 'border-purple-700',
-    textColor: 'text-purple-700',
-    darkTextColor: 'text-purple-400',
-    title: 'Family Relations',
-    description: 'Family members and relationships'
-  },
   education: {
     icon: IoSchoolOutline,
     color: 'from-yellow-500 to-amber-700',
@@ -434,6 +374,207 @@ const sectionConfig = {
   },
 };
 
+// Helper function to check if data has meaningful values
+const hasActualData = (data, sectionKey) => {
+  if (!data) return false;
+  
+  if (Array.isArray(data)) {
+    return data.length > 0;
+  }
+  
+  const fieldsToCheck = sectionFields[sectionKey];
+  if (!fieldsToCheck) return false;
+  
+  return fieldsToCheck.some(field => {
+    const value = data[field.name];
+    return value && value !== "" && value !== null && value !== undefined;
+  });
+};
+
+// Comprehensive validation function based on hints
+const validateFieldByHint = (fieldName, value, hint, fieldType) => {
+  if (!value || value.trim() === '') return null;
+  
+  const trimmedValue = value.trim();
+  
+  switch (fieldName) {
+    case 'firstName':
+    case 'middleName':
+    case 'lastName':
+      if (trimmedValue.length > 50) {
+        return `${fieldName} must not exceed 50 characters`;
+      }
+      if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        return `${fieldName} must contain only letters and spaces`;
+      }
+      break;
+      
+    case 'displayName':
+      if (trimmedValue.length > 100) {
+        return 'Display name must not exceed 100 characters';
+      }
+      break;
+      
+    case 'nationality':
+      if (trimmedValue.length > 50) {
+        return 'Nationality must not exceed 50 characters';
+      }
+      if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        return 'Nationality must contain only letters and spaces';
+      }
+      break;
+      
+    case 'dateOfBirth':
+      const birthDate = new Date(trimmedValue);
+      const today = new Date();
+      if (birthDate >= today) {
+        return 'Date of birth must be in the past';
+      }
+      break;
+      
+    case 'workEmail':
+    case 'personalEmail':
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedValue)) {
+        return 'Please enter a valid email address';
+      }
+      break;
+      
+    case 'mobileNumber':
+      const cleanMobile = trimmedValue.replace(/\D/g, '');
+      if (cleanMobile.length !== 10) {
+        return 'Mobile number must be exactly 10 digits';
+      }
+      if (!/^[6-9]/.test(cleanMobile)) {
+        return 'Indian mobile number must start with 6, 7, 8, or 9';
+      }
+      break;
+      
+    case 'workNumber':
+      const cleanWork = trimmedValue.replace(/\D/g, '');
+      if (cleanWork.length < 3 || cleanWork.length > 15) {
+        return 'Work number must be between 3-15 digits';
+      }
+      break;
+      
+    case 'street':
+      if (trimmedValue.length > 100) {
+        return 'Street address must not exceed 100 characters';
+      }
+      break;
+      
+    case 'city':
+    case 'state':
+    case 'country':
+    case 'district':
+      if (trimmedValue.length > 50) {
+        return `${fieldName} must not exceed 50 characters`;
+      }
+      if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        return `${fieldName} must contain only letters and spaces`;
+      }
+      break;
+      
+    case 'zip':
+      const cleanZip = trimmedValue.replace(/\D/g, '');
+      if (cleanZip.length !== 6) {
+        return 'ZIP code must be exactly 6 digits';
+      }
+      break;
+      
+    case 'degreeType':
+      if (trimmedValue.length > 100) {
+        return 'Degree type must not exceed 100 characters';
+      }
+      break;
+      
+    case 'universityOrCollege':
+      if (trimmedValue.length > 200) {
+        return 'Institution name must not exceed 200 characters';
+      }
+      break;
+      
+    case 'branchOrSpecialization':
+      if (trimmedValue.length > 100) {
+        return 'Specialization must not exceed 100 characters';
+      }
+      break;
+      
+    case 'startYear':
+    case 'endYear':
+      const year = parseInt(trimmedValue);
+      if (isNaN(year) || year < 1900 || year > 2099) {
+        return 'Year must be between 1900-2099';
+      }
+      break;
+      
+    case 'cgpaOrPercentage':
+      const score = parseFloat(trimmedValue);
+      if (isNaN(score) || score < 0 || score > 100) {
+        return 'CGPA/Percentage must be between 0-100';
+      }
+      break;
+      
+    case 'companyName':
+    case 'jobTitle':
+      if (trimmedValue.length < 2 || trimmedValue.length > 100) {
+        return `${fieldName} must be between 2-100 characters`;
+      }
+      break;
+      
+    case 'description':
+      if (trimmedValue.length > 1000) {
+        return 'Description must not exceed 1000 characters';
+      }
+      break;
+      
+    default:
+      break;
+  }
+  
+  return null;
+};
+
+// Network error handler
+const handleNetworkError = (error) => {
+  if (!navigator.onLine) {
+    return 'No internet connection. Please check your network and try again.';
+  }
+  
+  if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+    return 'Network error occurred. Please check your internet connection and try again.';
+  }
+  
+  if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+    return 'Request timed out. Please check your connection and try again.';
+  }
+  
+  if (error.response) {
+    switch (error.response.status) {
+      case 400:
+        return error.response.data?.message || 'Invalid data provided. Please check all fields.';
+      case 401:
+        return 'Session expired. Please log in again.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 404:
+        return 'Resource not found. Please refresh the page and try again.';
+      case 500:
+        return 'Server error occurred. Please try again later.';
+      case 502:
+      case 503:
+      case 504:
+        return 'Service temporarily unavailable. Please try again in a few moments.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
+    }
+  } else if (error.request) {
+    return 'Unable to connect to the server. Please check your internet connection.';
+  } else {
+    return 'An unexpected error occurred. Please try again.';
+  }
+};
+
 function Profile() {
   const [editingSection, setEditingSection] = useState(null);
   const [primarydata, setPrimaryData] = useState(null);
@@ -441,21 +582,28 @@ function Profile() {
   const [addressData, setAddressData] = useState(null);
   const [eduData, setEduData] = useState([]);
   const [experience, setExperience] = useState([]);
-  const { theme, userData } = useContext(Context);
+  const { theme, userData,matchedArray } = useContext(Context);
   const [editingData, setEditingData] = useState({});
   const { empID } = useParams();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [errors, setErrors] = useState({});
-  const [completionStats, setCompletionStats] = useState({ completed: 0, total: 6 });
+  const [completionStats, setCompletionStats] = useState({ completed: 0, total: 5 });
   const [selectedFile, setSelectedFile] = useState(null);
 
-  // State for popups
+  const [initialEditingData, setInitialEditingData] = useState({});
+  const [noChangesModal, setNoChangesModal] = useState({ 
+    show: false, 
+    section: null,
+    onContinue: null 
+  });
+
+  const [networkError, setNetworkError] = useState(null);
+
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
 
-  // NEW: State for individual education and experience editing
   const [deleteItemConfirmation, setDeleteItemConfirmation] = useState({ show: false, type: '', item: null, id: null });
 
   const searchParams = new URLSearchParams(location.search);
@@ -468,7 +616,31 @@ function Profile() {
 
   const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
 
-  // Save editing data to localStorage
+  const hasFormChanges = (currentData, initialData, selectedFile = null) => {
+    if (selectedFile) return true;
+
+    const normalizeValue = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    };
+
+    const currentFields = Object.keys(currentData || {});
+    const initialFields = Object.keys(initialData || {});
+    
+    if (currentFields.length !== initialFields.length) return true;
+
+    for (const key of currentFields) {
+      const currentValue = normalizeValue(currentData[key]);
+      const initialValue = normalizeValue(initialData[key]);
+      
+      if (currentValue !== initialValue) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   useEffect(() => {
     if (editingSection) {
       localStorage.setItem(`profile-editing-${editingSection.section}`, JSON.stringify(editingData));
@@ -496,9 +668,15 @@ function Profile() {
         setEduData(eduRes.data);
         setExperience(expRes.data);
 
-        const sections = [primaryRes.data, contactRes.data, addressRes.data, eduRes.data.length > 0, expRes.data.length > 0, defaultProfile.relations];
+        const sections = [
+          hasActualData(primaryRes.data, 'primaryDetails'), 
+          hasActualData(contactRes.data, 'contactDetails'), 
+          hasActualData(addressRes.data, 'address'), 
+          hasActualData(eduRes.data, 'education'), 
+          hasActualData(expRes.data, 'experience'), 
+        ];
         const completed = sections.filter(Boolean).length;
-        setCompletionStats({ completed, total: 6 });
+        setCompletionStats({ completed, total: 5 });
 
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -518,11 +696,13 @@ function Profile() {
       return;
     }
     setErrors({});
+    setNetworkError(null);
     
-    // Load from localStorage if available
     const savedData = localStorage.getItem(`profile-editing-${section}`);
     if (savedData && !itemData && !isAdd) {
-      setEditingData(JSON.parse(savedData));
+      const parsedData = JSON.parse(savedData);
+      setEditingData(parsedData);
+      setInitialEditingData(parsedData);
     } else {
       let dataToEdit = {};
       if (section === "primaryDetails") {
@@ -531,26 +711,26 @@ function Profile() {
         dataToEdit = contactdetails;
       } else if (section === "address") {
         dataToEdit = addressData;
-      } else if (section === "relations") {
-        dataToEdit = defaultProfile.relations;
       } else if (section === "education") {
         if (itemData) {
-          dataToEdit = itemData; // Edit specific education item
+          dataToEdit = itemData;
         } else if (isAdd || (eduData && eduData.length === 0)) {
-          dataToEdit = {}; // Add new education
+          dataToEdit = {};
         } else {
-          dataToEdit = eduData[0]; // Default to first education item
+          dataToEdit = eduData[0];
         }
       } else if (section === "experience") {
         if (itemData) {
-          dataToEdit = itemData; // Edit specific experience item
+          dataToEdit = itemData;
         } else if (isAdd || (experience && experience.length === 0)) {
-          dataToEdit = {}; // Add new experience
+          dataToEdit = {};
         } else {
-          dataToEdit = experience[0]; // Default to first experience item
+          dataToEdit = experience[0];
         }
       }
-      setEditingData(dataToEdit || {});
+      const finalData = dataToEdit || {};
+      setEditingData(finalData);
+      setInitialEditingData(finalData);
     }
 
     setSelectedFile(null);
@@ -561,12 +741,10 @@ function Profile() {
     setDeleteConfirmation({ show: true, sectionKey });
   };
 
-  // NEW: Handle individual item deletion
   const handleDeleteItem = (type, item, id) => {
     setDeleteItemConfirmation({ show: true, type, item, id });
   };
 
-  // NEW: Confirm individual item deletion
   const confirmDeleteItem = async () => {
     const { type, item, id } = deleteItemConfirmation;
     
@@ -613,9 +791,6 @@ function Profile() {
         case 'experience':
           setPopup({show: true, message: "Experience deletion should be done per entry. This feature needs backend support for bulk deletion.", type: 'error'});
           return;
-        case 'relations':
-          setPopup({show: true, message: "Relations cannot be deleted as they are static data.", type: 'error'});
-          return;
         default:
           throw new Error("Invalid section for deletion");
       }
@@ -638,15 +813,14 @@ function Profile() {
       }
 
       const sections = [
-        sectionKey === 'primaryDetails' ? null : primarydata,
-        sectionKey === 'contactDetails' ? null : contactdetails,
-        sectionKey === 'address' ? null : addressData,
-        eduData.length > 0,
-        experience.length > 0,
-        defaultProfile.relations
+        sectionKey === 'primaryDetails' ? false : hasActualData(primarydata, 'primaryDetails'),
+        sectionKey === 'contactDetails' ? false : hasActualData(contactdetails, 'contactDetails'),
+        sectionKey === 'address' ? false : hasActualData(addressData, 'address'),
+        hasActualData(eduData, 'education'),
+        hasActualData(experience, 'experience'),
       ];
       const completed = sections.filter(Boolean).length;
-      setCompletionStats({ completed, total: 6 });
+      setCompletionStats({ completed, total: 5 });
 
     } catch (err) {
       console.error(`Failed to delete ${sectionTitle}:`, err);
@@ -661,12 +835,26 @@ function Profile() {
       ...prev,
       [field]: value,
     }));
+    
+    setNetworkError(null);
+    
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
+    }
+    
+    const fieldConfig = sectionFields[editingSection?.section]?.find(f => f.name === field);
+    if (fieldConfig) {
+      const validationError = validateFieldByHint(field, value, fieldConfig.hint, fieldConfig.type);
+      if (validationError) {
+        setErrors((prev) => ({
+          ...prev,
+          [field]: validationError
+        }));
+      }
     }
   };
 
@@ -675,51 +863,94 @@ function Profile() {
   };
 
   const handleUpdatePrimaryDetails = async () => {
+    setNetworkError(null);
     try {
       const url = `/employee/${profileEmployeeId}/primary/details`;
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setPrimaryData(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [updatedData.data, contactdetails, addressData, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      
+      const sections = [
+        hasActualData(updatedData.data, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(experience, 'experience'), 
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Primary Details." });
+      console.error("Failed to update primary details:", error);
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
   const handleUpdateContactDetails = async () => {
+    setNetworkError(null);
     try {
       const url = `/employee/${profileEmployeeId}/contact`;
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setContactDetails(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, updatedData.data, addressData, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(updatedData.data, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(experience, 'experience'), 
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Contact Details." });
+      console.error("Failed to update contact details:", error);
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
   const handleUpdateAddress = async () => {
+    setNetworkError(null);
     try {
       const url = `/employee/${profileEmployeeId}/address`;
       await publicinfoApi.put(url, editingData);
       const updatedData = await publicinfoApi.get(url);
       setAddressData(updatedData.data);
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, updatedData.data, eduData.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(updatedData.data, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(experience, 'experience'), 
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Address." });
+      console.error("Failed to update address:", error);
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
   const handleUpdateEducation = async () => {
+    setNetworkError(null);
     try {
       const isUpdate = !!(editingData && editingData.id);
       const method = isUpdate ? 'put' : 'post';
@@ -740,17 +971,29 @@ function Profile() {
       const updatedEduRes = await publicinfoApi.get(`employee/${profileEmployeeId}/degreeDetails`);
       setEduData(updatedEduRes.data);
 
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, addressData, updatedEduRes.data.length > 0, experience.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(updatedEduRes.data, 'education'), 
+        hasActualData(experience, 'experience'), 
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update education details:", error);
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Education." });
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
   const handleUpdateExperience = async () => {
+    setNetworkError(null);
     try {
       const isUpdate = !!(editingData && editingData.id);
       const url = `/employee/${profileEmployeeId}/previousExperience/${editingData.id}`;
@@ -765,23 +1008,75 @@ function Profile() {
       const updatedExperienceRes = await publicinfoApi.get(`employee/${profileEmployeeId}/previousExperience`);
       setExperience(updatedExperienceRes.data);
 
-      setCompletionStats(prev => ({ ...prev, completed: [primarydata, contactdetails, addressData, eduData.length > 0, updatedExperienceRes.data.length > 0, defaultProfile.relations].filter(Boolean).length }));
+      const sections = [
+        hasActualData(primarydata, 'primaryDetails'), 
+        hasActualData(contactdetails, 'contactDetails'), 
+        hasActualData(addressData, 'address'), 
+        hasActualData(eduData, 'education'), 
+        hasActualData(updatedExperienceRes.data, 'experience'), 
+      ];
+      setCompletionStats({ completed: sections.filter(Boolean).length, total: 5 });
       return true;
     } catch (error) {
       console.error("Failed to update experience details:", error);
-      if (error.response && error.response.status === 400) setErrors(error.response.data);
-      else setErrors({ general: "An unexpected error occurred while updating Experience." });
+      if (error.response && error.response.status === 400) {
+        setErrors(error.response.data);
+      } else {
+        const networkErrorMessage = handleNetworkError(error);
+        setNetworkError(networkErrorMessage);
+      }
       return false;
     }
   };
 
-  const handleUpdateRelations = () => {
-    console.error("Backend endpoint for updating relations does not exist in your controller.");
-    setPopup({show: true, message: "This section cannot be updated yet. A backend API endpoint is missing.", type: 'error'});
-    setEditingSection(null);
+  const handleSubmit = async (section) => {
+    setNetworkError(null);
+    
+    const fields = sectionFields[section] || [];
+    const validationErrors = {};
+    
+    fields.forEach(field => {
+      const value = editingData[field.name];
+      if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+          if (field.type === 'file') {
+              if (!editingData[field.name] && !selectedFile) {
+                  validationErrors[field.name] = `${field.label} is required`;
+              }
+          } else {
+              validationErrors[field.name] = `${field.label} is required`;
+          }
+      } else if (value && typeof value === 'string' && value.trim() !== '') {
+          const validationError = validateFieldByHint(field.name, value, field.hint, field.type);
+          if (validationError) {
+              validationErrors[field.name] = validationError;
+          }
+      }
+    });
+
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
+    const hasChanges = hasFormChanges(editingData, initialEditingData, selectedFile);
+    
+    if (!hasChanges) {
+      setNoChangesModal({
+        show: true,
+        section: section,
+        onContinue: () => {
+          setNoChangesModal({ show: false, section: null, onContinue: null });
+          proceedWithSubmission(section);
+        }
+      });
+      return;
+    }
+
+    proceedWithSubmission(section);
   };
 
-  const handleSubmit = async (section) => {
+  const proceedWithSubmission = async (section) => {
     setIsUpdating(true);
     let success = false;
     try {
@@ -794,9 +1089,6 @@ function Profile() {
           break;
         case "address":
           success = await handleUpdateAddress();
-          break;
-        case "relations":
-          handleUpdateRelations();
           break;
         case "education":
           success = await handleUpdateEducation();
@@ -815,7 +1107,8 @@ function Profile() {
     if (success) {
       setEditingSection(null);
       setErrors({});
-      localStorage.removeItem(`profile-editing-${section}`); // Clear localStorage on successful submission
+      setNetworkError(null);
+      localStorage.removeItem(`profile-editing-${section}`);
       setPopup({ show: true, message: 'Profile section updated successfully!', type: 'success' });
     }
   };
@@ -825,6 +1118,7 @@ function Profile() {
       localStorage.removeItem(`profile-editing-${editingSection.section}`);
     }
     setEditingSection(null);
+    setNetworkError(null);
   };
   
   const renderField = (label, name, type = "text", required = false, options = [], hint = "") => {
@@ -841,7 +1135,6 @@ function Profile() {
             {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
           </label>
           
-          {/* Hint text */}
           {hint && (
             <p className={`text-xs mb-2 ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -852,17 +1145,16 @@ function Profile() {
 
           <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 
               ${isError 
-                  ? 'border-red-300 bg-red-50' 
-                  : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-                  : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                ? 'border-red-300 bg-red-50' 
+                : theme === 'dark'
+                ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
+                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
               }`}>
             <input
               type="file"
               onChange={(e) => handleFileChange(e.target.files?.[0])}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               accept=".jpg,.jpeg,.png,.pdf"
-              required={required}
             />
             <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
               <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
@@ -876,11 +1168,15 @@ function Profile() {
               <p className={`text-xs ${
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
               }`}>PNG, JPG, PDF up to 10MB</p>
+              
+              {/* --- MODIFICATION START --- */}
+              {/* Only show selected file name, do not show existing fieldValue (the URL) */}
               {selectedFile && (
                   <p className={`mt-2 text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
                       Selected: {selectedFile.name}
                   </p>
               )}
+              {/* --- END MODIFICATION --- */}
             </div>
           </div>
           
@@ -903,7 +1199,6 @@ function Profile() {
           {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
         </label>
         
-        {/* Hint text */}
         {hint && (
           <p className={`text-xs mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -999,15 +1294,6 @@ function Profile() {
     const config = sectionConfig[section];
     const IconComponent = config.icon;
     
-    // ✅ FILTER OUT ID FIELD FOR ADD OPERATIONS
-    const filteredFields = fields.filter(field => {
-        // Hide ID field for ADD operations (POST), show for EDIT operations (PUT)
-        if (field.name === 'id' && isAdd) {
-            return false;
-        }
-        return true;
-    });
-    
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4 animate-fadeIn">
         <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
@@ -1040,9 +1326,26 @@ function Profile() {
           <div className="overflow-y-auto flex-grow">
             <form className="p-4 sm:p-6 md:p-8" onSubmit={(e) => { e.preventDefault(); handleSubmit(section); }}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                {/* ✅ USE FILTERED FIELDS INSTEAD OF ORIGINAL FIELDS */}
-                {filteredFields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
+                {fields.map((f) => renderField(f.label, f.name, f.type, f.required, f.options, f.hint))}
               </div>
+              
+              {networkError && (
+                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
+                  theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                }`}>
+                  <div className="flex items-start">
+                    <IoWarning className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                        Network Error
+                      </h4>
+                      <p className={`font-medium text-sm mt-1 ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                        {networkError}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {errors.general && (
                 <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
@@ -1098,7 +1401,7 @@ function Profile() {
         </div>
       </div>
     );
-};
+  };
   
   const DetailItem = ({ label, value }) => (
     <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-300 hover:scale-105 ${
@@ -1125,7 +1428,6 @@ function Profile() {
     </div>
   );
 
-  // NEW: Individual Education/Experience Item Component
   const EducationExperienceItem = ({ type, item, index, onEdit, onDelete }) => {
     const config = sectionConfig[type];
     const IconComponent = config.icon;
@@ -1221,11 +1523,12 @@ function Profile() {
   const Section = ({ sectionKey, title, children, data }) => {
     const config = sectionConfig[sectionKey];
     const IconComponent = config.icon;
-    const hasData = Array.isArray(data) ? data.length > 0 : !!data;
+    
+    const hasData = hasActualData(data, sectionKey);
     
     return (
       <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                       overflow-hidden group hover:scale-[1.02] mb-6 sm:mb-8 ${
+                          overflow-hidden group hover:scale-[1.02] mb-6 sm:mb-8 ${
         theme === 'dark'
           ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
           : `bg-white ${config.borderColor}`
@@ -1266,7 +1569,6 @@ function Profile() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-              {/* Always show Add button for education and experience */}
               {(sectionKey === 'education' || sectionKey === 'experience') && (!isReadOnly || isAdmin) && (
                 <button
                   onClick={() => openEditSection(sectionKey, null, true)}
@@ -1278,35 +1580,21 @@ function Profile() {
                 </button>
               )}
 
-              {fromContextMenu && isAdmin && hasData && !['education', 'experience', 'relations'].includes(sectionKey) && (
-                <button
-                  onClick={() => handleDelete(sectionKey)}
-                  className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-sm ${
-                    theme === 'dark'
-                      ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
-                      : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
-                  }`}
-                >
-                  <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Delete</span>
-                </button>
-              )}
-
               {(!isReadOnly || isAdmin) && !['education', 'experience'].includes(sectionKey) && (
                 <button 
                   onClick={() => openEditSection(sectionKey)} 
                   className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 cursor-pointer rounded-lg sm:rounded-xl font-semibold transition-all duration-300 
-                              transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-sm
-                              ${hasData 
-                                ? theme === 'dark'
-                                  ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
-                                  : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
-                                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
-                              }`}
+                                transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-sm
+                                ${hasData 
+                                  ? theme === 'dark'
+                                    ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
+                                    : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
+                                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                                }`}
                 >
                   {hasData ? (
                     <>
-                      <IconComponent className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <IoCreateOutline className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Edit Details</span>
                       <span className="sm:hidden">Edit</span>
                     </>
@@ -1363,8 +1651,8 @@ function Profile() {
                 <button 
                   onClick={() => openEditSection(sectionKey, null, true)}
                   className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 
-                               text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 
-                               transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
+                                text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 
+                                transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
                 >
                   <IoAdd className="w-4 h-4" />
                   <span>Add {title}</span>
@@ -1379,11 +1667,11 @@ function Profile() {
 
   const ProgressIndicator = () => {
     const profileSections = [
-      primarydata,
-      contactdetails,
-      addressData,
-      eduData.length > 0,
-      experience.length > 0
+      hasActualData(primarydata, 'primaryDetails'),
+      hasActualData(contactdetails, 'contactDetails'),
+      hasActualData(addressData, 'address'),
+      hasActualData(eduData, 'education'),
+      hasActualData(experience, 'experience')
     ];
     const completedCount = profileSections.filter(Boolean).length;
     const totalCount = profileSections.length;
@@ -1519,13 +1807,6 @@ function Profile() {
               <DetailItem label="Country" value={addressData?.country} />
               <DetailItem label="District" value={addressData?.district} />
             </Section>
-            <Section sectionKey="relations" title="Family Relations" data={defaultProfile.relations}>
-              <DetailItem label="Father Name" value={defaultProfile.relations?.fatherName} />
-              <DetailItem label="Mother Name" value={defaultProfile.relations?.motherName} />
-              <DetailItem label="Spouse Name" value={defaultProfile.relations?.spouseName} />
-              <DetailItem label="Children" value={defaultProfile.relations?.children} />
-              <DetailItem label="Siblings" value={defaultProfile.relations?.siblings} />
-            </Section>
 
             {/* Updated Education Section */}
             <Section sectionKey="education" title="Education Details" data={eduData}>
@@ -1561,75 +1842,101 @@ function Profile() {
         
         {popup.show && (
           <Modal
-              onClose={() => setPopup({ show: false, message: '', type: '' })}
-              title={popup.type === 'success' ? 'Success' : 'Error'}
-              type={popup.type}
-              theme={theme}
+            onClose={() => setPopup({ show: false, message: '', type: '' })}
+            title={popup.type === 'success' ? 'Success' : 'Error'}
+            type={popup.type}
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
-              <div className="flex justify-end">
-                  <button
-                      onClick={() => setPopup({ show: false, message: '', type: '' })}
-                      className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
-                  >
-                      OK
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{popup.message}</p>
+            <div className="flex justify-end">
+                <button
+                    onClick={() => setPopup({ show: false, message: '', type: '' })}
+                    className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
+                >
+                    OK
+                </button>
+            </div>
           </Modal>
         )}
 
         {deleteConfirmation.show && (
           <Modal
-              onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-              title="Confirm Deletion"
-              type="confirm"
-              theme={theme}
+            onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+            title="Confirm Deletion"
+            type="confirm"
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                  <button
-                      onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-                      className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
-                  >
-                      Cancel
-                  </button>
-                  <button
-                      onClick={confirmDelete}
-                      className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-                  >
-                      Delete
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                    onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={confirmDelete}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
+                >
+                    Delete
+                </button>
+            </div>
           </Modal>
         )}
 
-        {/* NEW: Individual item deletion confirmation */}
         {deleteItemConfirmation.show && (
           <Modal
-              onClose={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
-              title="Confirm Deletion"
-              type="confirm"
-              theme={theme}
+            onClose={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
+            title="Confirm Deletion"
+            type="confirm"
+            theme={theme}
           >
-              <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Are you sure you want to delete this {deleteItemConfirmation.type} record? This action cannot be undone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                  <button
-                      onClick={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
-                      className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
-                  >
-                      Cancel
-                  </button>
-                  <button
-                      onClick={confirmDeleteItem}
-                      className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-                  >
-                      Delete
-                  </button>
-              </div>
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Are you sure you want to delete this {deleteItemConfirmation.type} record? This action cannot be undone.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                    onClick={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={confirmDeleteItem}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
+                >
+                    Delete
+                </button>
+            </div>
+          </Modal>
+        )}
+
+        {noChangesModal.show && (
+          <Modal
+            onClose={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
+            title="No Changes Detected"
+            type="confirm"
+            theme={theme}
+          >
+            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                You haven't made any changes to the form. Are you sure you want to submit without any modifications?
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <button
+                    onClick={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                >
+                    Go Back & Make Changes
+                </button>
+                <button
+                    onClick={noChangesModal.onContinue}
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 transition-colors text-sm"
+                >
+                    Continue Anyway
+                </button>
+            </div>
           </Modal>
         )}
       </div>

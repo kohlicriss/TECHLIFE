@@ -90,15 +90,10 @@ const handleCompleteTask = (taskId) => {
             const currentTaskIndex = newTasks.findIndex(task => task.id === taskId);
             
             if (currentTaskIndex !== -1) {
-                // Update the current task's status to 'Completed'
                 newTasks[currentTaskIndex] = { ...newTasks[currentTaskIndex], status: 'Completed' };
-    
-                // Find the next task that isn't already completed
                 const nextPendingTaskIndex = newTasks.findIndex((task, index) => 
                     index > currentTaskIndex && (task.status === 'Pending' || task.status === 'OnHold')
                 );
-    
-                // If a next pending task exists, update its status to 'InProgress'
                 if (nextPendingTaskIndex !== -1) {
                     newTasks[nextPendingTaskIndex] = { ...newTasks[nextPendingTaskIndex], status: 'InProgress' };
                 }
@@ -125,21 +120,19 @@ const StatusColorsMap={
   }
    const tasksWithColors = initialTasks.map(task => ({
     ...task,
-    statusColor: StatusColorsMap[task.status] || 'bg-gray-200 text-gray-800' // Default color if status not found
+    statusColor: StatusColorsMap[task.status] || 'bg-gray-200 text-gray-800' 
   }));
    const progressWithColors =intialProgress.map(progress => ({
     ...progress,
-    color: ProgressColorsMap[progress.status] || 'bg-gray-200 text-gray-800' // Default color if status not found
+    color: ProgressColorsMap[progress.status] || 'bg-gray-200 text-gray-800' 
   }));
   const getAvatarUrl = (index) => `https://i.pravatar.cc/40?img=${index + 1}`;
-  // State Management
-  const [selectedMember, setSelectedMember] = useState(projectInfo.team[0]); // Default to the first team member
+  const [selectedMember, setSelectedMember] = useState(projectInfo.team[0]); 
   const [status, setStatus] = useState("InProgress");
   const [selectedTask, setSelectedTask] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [tasks, setTasks] = useState(tasksWithColors)
   const [progress, setprogress] = useState(progressWithColors);
-
   const departmentData = {
     May: [
       { department: "Frontend", progress: 10 }, { department: "Backend", progress: 55 }, { department: "Database", progress: 50 },
@@ -164,15 +157,12 @@ const StatusColorsMap={
   };
  const COLOR=["purple"]
   const [selectedMonth, setSelectedMonth] = useState(Object.keys(departmentData)[0]); // Default to the first month
-
   if (!project) {
     return <div>No project data found.</div>;
   }
-
   const tasksDone = tasks.filter((task) => task.status === "Completed").length;
   const totalTasks = tasks.length;
   const percentageCompleted = totalTasks > 0 ? Math.round((tasksDone / totalTasks) * 100) : 0;
-
   const projectData = {
     projectDetails: {
       client: "ABC Enterprises",
@@ -193,7 +183,6 @@ const StatusColorsMap={
       percentageCompleted
     }
   };
-
   const addTask = () => {
     if (!newTaskTitle.trim()) return;
     const newTask = {
@@ -206,72 +195,27 @@ const StatusColorsMap={
     setTasks([...tasks, newTask]);
     setNewTaskTitle("");
   };
-
   const deleteTask = (id) => {
     setTasks(tasks.filter((task) => task.id !== id));
   };
-
-  // --- Mobile Layout Improvements ---
-  // Determine the dynamic top padding based on screen size (md is 768px in Tailwind)
-  // Main Header height: h-32 (p-6 + p-10) approx. ~130px. Top-16 makes it 16 + 130 = 146px.
-  // Mobile Nav Bar height: py-3 approx 40px. Positioned below header (at 210px in original code).
-  // New calculation for mobile: ~210px + ~40px + some margin = 260px.
-  // New calculation for desktop: 146px + some margin = 160px.
-  // Using a fixed padding that works for both.
   const mainContentPaddingClass = "pt-[160px] md:pt-[120px] "; 
-
-
   return (
     <div className={` ${theme==='dark'?'bg-gray-800':'bg-gray-50'}  min-h-screen relative font-sans`}>
-      
        <div>
-      
-      <div className={`fixed top-16 z-50 p-6 md:p-10 ${theme === 'dark' ? 'bg-gray-600 ' : ' bg-gradient-to-r from-indigo-50 to-indigo-100 '} w-full text-white rounded-b-2xl shadow-xl flex items-center justify-between`}>
-        <div className="flex items-center gap-6">
-          <div className={`w-16 h-16  ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl flex items-center justify-center shadow-md`}>
-            <span className="text-3xl font-bold text-indigo-600"><FaRegFolderOpen /></span>
-          </div>
-          <div className="ml-2">
-            <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>{project.project_name}</h1>
-            <p className={`text-sm ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>Project ID: {project.project_id}</p>
-          </div>
+     <div className={`fixed top-16  z-50 p-4 md:p-3 lg:p-4 ${theme === 'dark' ? 'bg-gray-700 border-b border-gray-600' : 'bg-gradient-to-r from-indigo-50 to-indigo-100 border-b border-indigo-200'} w-full rounded-b-xl shadow-xl flex items-center justify-between`}>
+    <div className="flex items-center gap-4 sm:gap-6"> 
+        <div className={`w-12 h-12 sm:w-14 sm:h-14 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg sm:rounded-2xl flex items-center justify-center shadow-md`}>
+            <span className="text-2xl sm:text-3xl font-bold text-indigo-600"><FaRegFolderOpen /></span>
         </div>
-        <div className="relative mr-52 inline-flex items-center justify-center gap-4 group">
-          {/* Back to Projects Button */}
-          <div
-            className="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
-          ></div>
-          <a
-            role="button"
-            className="group relative inline-flex items-center justify-center text-base rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white transition-all duration-200 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 hover:shadow-gray-600/30"
-            title="payment"
-            onClick={() => navigate(`/projects/${userData?.employeeId}`)}
-            href="#"
-          >Back To Projects<svg
-              aria-hidden="true"
-              viewBox="0 0 10 10"
-              height="10"
-              width="10"
-              fill="none"
-              className="mt-0.5 ml-2 -mr-1 stroke-white stroke-2"
-            >
-              <path
-                d="M0 5h7"
-                className="transition opacity-0 group-hover:opacity-100"
-              ></path>
-              <path
-                d="M1 1l4 4-4 4"
-                className="transition group-hover:translate-x-[3px]"
-              ></path>
-            </svg>
-          </a>
+        <div className="ml-0">
+            <h1 className={`text-xl sm:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{project.project_name}</h1>
+            <p className={`text-xs sm:text-sm mt-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project ID: {project.project_id}</p>
         </div>
-      </div>
+    </div>
+</div>
 
-      {/* 2. Mobile-Only Navigation Bar (Header Row Wise) */}
-      {/* 2. Mobile-Only Navigation Bar (Navbar Menu) */}
-       {/* The container is now positioned directly under the main header on small screens */}
-       <div className={`fixed top-[146px] md:hidden w-full px-4 py-3 border-b shadow-md z-40 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}`}>
+     
+       <div className={`fixed top-[146px] md:hidden w-full px-4 py-3 border-b  z-40 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gradient-to-r from-indigo-50 to-indigo-100'}`}>
          <div className="flex justify-between items-center space-x-2">
           {/* Buttons remain the same, ensuring `flex-shrink-0` keeps them visible in a scrollable container */}
           <button
@@ -305,7 +249,7 @@ const StatusColorsMap={
          </div>
        </div>
        {/* 3. Sidebar (Desktop-Only View) - Positioning is relative to the desktop header (top-16) */}
-       <div className={`fixed hidden md:block md:top-[210px] right-0 bottom-0 ${theme === 'dark' ? 'bg-gray-800 text-gray-200 ' : 'bg-stone-100 text-gray-800'} shadow-lg border-l transition-all duration-300 z-50 ${open ? "w-42" : "w-24"}`}>
+       <div className={`fixed hidden md:block md:top-[158px] right-0 bottom-0 ${theme === 'dark' ? 'bg-gray-800 text-gray-200 ' : 'bg-stone-100 text-gray-800'} shadow-lg border-l transition-all duration-300 z-50 ${open ? "w-42" : "w-24"}`}>
          <button onClick={() => setOpen(!open)} className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-blue-300 border shadow items-center justify-center hidden md:flex">
           {open ? <FiChevronRight /> : <FiChevronLeft />}
          </button>
@@ -344,20 +288,6 @@ const StatusColorsMap={
                   <p className={`text-sm mt-1 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
                     Project ID: <span className="text-red-500 font-semibold">{project.project_id}</span>
                   </p>
-                </div>
-                <div className="relative">
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className={`appearance-none px-4 py-2 pr-12 rounded-md border border-gray-300 ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-gray-800'} text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="InProgress">InProgress</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-2 flex items-center pr-2 pointer-events-none">
-                    <TbEyeDotted className="text-gray-400" />
-                  </div>
                 </div>
               </div>
 

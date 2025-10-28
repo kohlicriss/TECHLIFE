@@ -6,12 +6,11 @@ import {
     FaMicrophone, FaPaperclip, FaSmile, FaPaperPlane, FaArrowLeft, FaStop,
     FaFileAlt, FaDownload, FaPlay, FaPause, FaReply, FaEdit, FaThumbtack, FaShare, FaTrash, FaTimes, FaCheck,
     FaChevronDown, FaImage, FaFileAudio, FaAngleDoubleRight, FaUsers, FaUser,
-    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp
+    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp, FaCheckDouble, FaEye
 } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 import {
-    chatApi,
     getMessages,
     deleteMessageForMe,
     deleteMessageForEveryone,
@@ -29,6 +28,7 @@ import {
     searchChatOverview
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
+import { chatApi } from '../../../../axiosInstance';
 
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -315,6 +315,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [activeGroupInfoTab, setActiveGroupInfoTab] = useState('Overview');
     const [groupMembers, setGroupMembers] = useState([]);
     const [isGroupDataLoading, setIsGroupDataLoading] = useState(false);
+    const [groupMembersCache, setGroupMembersCache] = useState({});
     const [imageInView, setImageInView] = useState(null);
     const [isChatDataReady, setIsChatDataReady] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -336,7 +337,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [currentResultIndex, setCurrentResultIndex] = useState(-1);
-    const { setIsChatWindowVisible,setChatUnreadCount } = useContext(Context);
+    const { setIsChatWindowVisible, setChatUnreadCount } = useContext(Context);
 
     useEffect(() => {
         if (setIsChatWindowVisible) {
@@ -366,12 +367,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const subscriptions = useRef({});
 
     const chatIdFromUrl = useMemo(() => {
-        if (typeof window !== 'undefined' && window.location.pathname.includes('/with')) {
-            const params = new URLSearchParams(window.location.search);
+        if (location.pathname.includes('/with')) {
+            const params = new URLSearchParams(location.search);
             return params.get('id');
         }
         return null;
-    }, []);
+    }, [location.pathname, location.search]);
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
@@ -473,7 +474,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         }
 
-        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 400;
+        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 200;
         if (isScrolledUp !== showScrollToBottom) {
             setShowScrollToBottom(isScrolledUp);
             if (!isScrolledUp) {
@@ -590,6 +591,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         }
     }, [currentUser.id, isFetchingMoreMessages, isMessagesLoading, getMessages]);
+
     useEffect(() => {
         if (!selectedChat) return;
 
@@ -837,8 +839,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         ...chatData.groups,
     ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
-
-        useEffect(() => {
+    useEffect(() => {
         const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
         setChatUnreadCount(totalUnread);
     }, [allChats, setChatUnreadCount]);
@@ -877,6 +878,23 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         });
     }, [currentUser.id, allChats]);
 
+    const onSidebarUpdate = useCallback((payload) => {
+        const updatedChatList = JSON.parse(payload.body);
+        const { privateChatsWith: updatedPrivate, groups: updatedGroups } = transformOverviewToChatList(updatedChatList, currentUser.id);
+
+        setChatData(prev => ({
+            ...prev,
+            privateChatsWith: prev.privateChatsWith.map(pc => {
+                const update = updatedPrivate.find(upc => upc.chatId === pc.chatId);
+                return update ? { ...pc, ...update } : pc;
+            }),
+            groups: prev.groups.map(g => {
+                const update = updatedGroups.find(ug => ug.chatId === g.chatId);
+                return update ? { ...g, ...update } : g;
+            })
+        }));
+    }, [currentUser.id]);
+
     useEffect(() => {
         onMessageReceivedRef.current = onMessageReceived;
     });
@@ -894,7 +912,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             return;
         }
 
-        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}`;
+        const token = localStorage.getItem('accessToken');
+        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}&token=${token}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -920,10 +939,10 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         return { ...prev, privateChatsWith: newPrivateChats };
                     });
                 };
-
+                subscriptions.current['sidebar'] = client.subscribe(`/user/queue/sidebar`, onSidebarUpdate);
                 subscriptions.current['private'] = client.subscribe(`/user/queue/private`, messageHandler);
                 subscriptions.current['private-ack'] = client.subscribe(`/user/queue/private-ack`, messageHandler);
-                subscriptions.current['group-ack'] = client.subscribe(`/user/queue/group-ack`, messageHandler);
+                subscriptions.current['group-ack'] = client.subscribe(`user/queue/group-ack`, messageHandler);
                 subscriptions.current['presence'] = client.subscribe('/topic/presence', presenceHandler);
                 subscriptions.current['typing'] = client.subscribe('/user/queue/typing-status', handleTypingEvent);
             },
@@ -938,12 +957,19 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         stompClient.current = client;
 
         return () => {
+            if (selectedChat && stompClient.current?.active) {
+                const destination = `/app/presence/close/${selectedChat.chatId}`;
+                stompClient.current.publish({ destination, body: "{}" });
+                console.log(`Sent CLOSE presence for ${selectedChat.chatId} on component unmount.`);
+            }
+
             if (stompClient.current?.active) {
                 stompClient.current.deactivate();
                 stompClient.current = null;
+                console.log("STOMP client deactivated on component unmount.");
             }
         };
-    }, [currentUser?.id, isChatDataReady]);
+    }, [currentUser?.id, isChatDataReady, selectedChat]);
 
     const groupIds = useMemo(() => {
         return (chatData.groups || []).map(g => g.chatId).sort().join(',');
@@ -983,7 +1009,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
 
-    const openChat = useCallback((targetChat) => {
+    const openChat = useCallback(async (targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
         }
@@ -994,13 +1020,28 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         };
         stompClient.current.publish({ destination, body: JSON.stringify(payload) });
 
+        if (targetChat.type === 'group' && !groupMembersCache[targetChat.chatId]) {
+            try {
+                const teamDetailsResponse = await getGroupMembers(targetChat.chatId);
+                const members = teamDetailsResponse?.[0]?.employees || [];
+                if (members.length > 0) {
+                    setGroupMembersCache(prevCache => ({
+                        ...prevCache,
+                        [targetChat.chatId]: members
+                    }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch group members:", error);
+            }
+        }
+
         setSelectedChat(targetChat);
         setIsChatOpen(true);
 
         const newUrl = `/chat/${currentUser.id}/with?id=${targetChat.chatId}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
 
-    }, [currentUser.id]);
+    }, [currentUser.id, groupMembersCache]);
 
     const closeChat = useCallback(() => {
         isManuallyClosing.current = true;
@@ -1017,6 +1058,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
         setSelectedChat(null);
         setIsChatOpen(false);
+        setShowScrollToBottom(false);
+        setNewMessagesCount(0);
 
         const newUrl = `/chat/${currentUser.id}`;
         navigate(newUrl);
@@ -1024,30 +1067,31 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     }, [selectedChat, currentUser.id, navigate]);
 
     const handleChatSelect = useCallback((chat) => {
-        setChatData(prev => {
-            const isGroup = chat.type === 'group';
-            const list = isGroup ? prev.groups : prev.privateChatsWith;
-            const exists = list.some(c => c.chatId === chat.chatId);
+        if (selectedChat && selectedChat.chatId !== chat.chatId && stompClient.current?.active) {
+            const destination = `/app/presence/close/${selectedChat.chatId}`;
+            stompClient.current.publish({ destination, body: "{}" });
+            console.log(`Sent CLOSE presence for previous chat: ${selectedChat.chatId}`);
+        }
 
-            if (exists) {
+        if (chat.unreadMessageCount > 0) {
+            setChatData(prev => {
+                const isGroup = chat.type === 'group';
+                const list = isGroup ? prev.groups : prev.privateChatsWith;
                 const updatedList = list.map(c =>
                     c.chatId === chat.chatId ? { ...c, unreadMessageCount: 0 } : c
                 );
                 return isGroup
                     ? { ...prev, groups: updatedList }
                     : { ...prev, privateChatsWith: updatedList };
-            }
-            else {
-                const newChat = { ...chat, unreadMessageCount: 0 };
-                return isGroup
-                    ? { ...prev, groups: [newChat, ...prev.groups] }
-                    : { ...prev, privateChatsWith: [newChat, ...prev.privateChatsWith] };
-            }
-        });
+            });
+        }
+
         openChat(chat);
         setSearchTerm('');
 
-    }, [openChat]);
+    }, [openChat, selectedChat]);
+
+
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -1414,8 +1458,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
-
-
     const handleDelete = async (forEveryone) => {
         const chatId = selectedChat.chatId;
         const currentMessages = [...(messages[chatId] || [])];
@@ -1536,16 +1578,17 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const chatsToDisplay = searchChatResults !== null ? searchChatResults : allChats;
 
     useEffect(() => {
-        if (isManuallyClosing.current) {
-            isManuallyClosing.current = false;
-            return;
-        }
-
         if (chatIdFromUrl && allChats.length > 0 && isConnected && !selectedChat) {
+            if (isManuallyClosing.current) {
+                return;
+            }
+
             const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
             if (chatToSelect) {
                 handleChatSelect(chatToSelect);
             }
+        } else if (!chatIdFromUrl) {
+            isManuallyClosing.current = false;
         }
     }, [allChats, chatIdFromUrl, selectedChat, handleChatSelect, isConnected]);
 
@@ -1610,29 +1653,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return `last seen on ${date.toLocaleDateString()}`;
     };
 
-    const getStatusRingColor = (status) => {
-        switch (status) {
-            case 'sending': return 'ring-yellow-400';
-            case 'sent': return 'ring-gray-400';
-            case 'delivered': return 'ring-blue-500';
-            case 'seen': return 'ring-green-500';
-            case 'failed': return 'ring-red-500';
-            default: return 'ring-transparent';
-        }
-    };
-
     let lastMessageDate = null;
 
     const currentChatInfo = selectedChat ? allChats.find(c => c.chatId === selectedChat.chatId) : null;
     const chatMessages = currentChatInfo ? messages[currentChatInfo.chatId] || [] : [];
 
     const getSenderInfo = (senderId) => {
-        if (!currentUser) return { name: 'Unknown', profile: null };
+        if (!currentUser) return { name: 'Unknown User', profile: null };
         if (senderId === currentUser.id) return { name: 'You', profile: currentUser.profile };
-        const allUsers = [...chatData.privateChatsWith, ...(currentChatInfo?.members || [])];
-        const member = allUsers.find(m => m.chatId === senderId || m.employeeId === senderId);
+
+        let member = chatData.privateChatsWith.find(m => m.chatId === senderId || m.employeeId === senderId);
+        if (member) {
+            return { name: member.name || member.displayName, profile: member.profile || member.employeeImage || null };
+        }
+        if (selectedChat?.type === 'group' && groupMembersCache[selectedChat.chatId]) {
+            member = groupMembersCache[selectedChat.chatId].find(m => m.employeeId === senderId);
+        }
+
         return member
-            ? { name: member.name || member.employeeName, profile: member.profile || null }
+            ? { name: member.name || member.displayName, profile: member.profile || member.employeeImage || null }
             : { name: 'Unknown User', profile: null };
     };
 
@@ -1709,7 +1748,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                     </div>
                 </div>
 
-                <div className={`w-full md:w-[70%] h-full flex flex-col shadow-xl md:rounded-lg relative ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div className={`flex-col shadow-xl fixed inset-0 z-[100] overflow-hidden md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
@@ -1720,7 +1759,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         </div>
                     ) : (
                         <>
-                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b z-10 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
                                 <div className="flex items-center space-x-3 flex-grow min-w-0">
                                     <button onClick={closeChat} className={`md:hidden p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100'}`}><FaArrowLeft /></button>
                                     <button onClick={() => currentChatInfo.type !== 'group' && currentChatInfo.profile && setIsProfileModalOpen(true)} className="flex-shrink-0">
@@ -1762,7 +1801,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                             </div>
 
                             {isSearchVisible && (
-                                <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                                <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b sticky top-0 z-10 ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
                                     <input
                                         type="text"
                                         placeholder="Search messages..."
@@ -1814,7 +1853,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                 </div>
                             )}
 
-                            <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+                            <div ref={chatContainerRef} onScroll={handleChatScroll} className={`flex-grow p-4 overflow-y-auto min-h-0 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
                                 {isSearchVisible ? (
                                     <div className="space-y-2">
                                         {searchResults.length > 0 ? (
@@ -1931,11 +1970,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                                         </>
                                                                     )}
                                                                 </div>
-                                                                <span className={`text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
+                                                                <span className={`flex items-center justify-end gap-1 text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                    <span className="leading-none">
+                                                                        {msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)}
+                                                                    </span>
+
+                                                                    {msg.isEdited ? <span className="leading-none">(edited)</span> : ''}
+
+                                                                    {isMyMessage && msg.status !== 'sending' && msg.status !== 'failed' && (
+                                                                        <span className="flex-shrink-0">
+                                                                            {msg.status === 'sent' && <FaCheck size={14} className={`${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />}
+                                                                            {msg.status === 'delivered' && <FaCheckDouble size={14} className="text-blue-500" />}
+                                                                            {msg.status === 'seen' && <FaEye size={14} className="text-blue-500" />}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
                                                             </div>
                                                             {isMyMessage && (
                                                                 <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
-                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className={`w-full h-full rounded-full object-cover ring-2 ${getStatusRingColor(msg.status)}`} />
+                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className="w-full h-full rounded-full object-cover" />
                                                                 </div>
                                                             )}
                                                         </div>
@@ -2011,7 +2064,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 {showScrollToBottom && (
                     <button
                         onClick={() => scrollToBottom()}
-                        className="absolute bottom-24 right-8 z-10 bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
+                        className="absolute bottom-24 right-8 z-[110] bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
                         aria-label="Scroll to bottom"
                     >
                         {newMessagesCount > 0 && (
@@ -2033,7 +2086,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             )}
 
             {contextMenu.visible && (
-                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-50 text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-[110] text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     <ul className="py-1">
                         {contextMenu.message.type === 'deleted' ? (
                             <li onClick={() => handleDelete(false)} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'text-red-400 hover:bg-gray-700' : ''}`}><FaTrash /> Delete for me</li>

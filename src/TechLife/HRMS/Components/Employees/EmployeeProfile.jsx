@@ -85,7 +85,7 @@ const EmployeeProfile = () => {
             theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
           }`}>Data unavailable for this employee ID.</p>
           <button
-            onClick={() => navigate(`/employees/${empID}`)}
+            onClick={() => navigate(-1)}
             className={`w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 border-2 text-sm sm:text-base font-bold font-mono transition-colors rounded-lg ${
               theme === 'dark'
                 ? 'border-white text-white hover:bg-white hover:text-gray-900'
@@ -111,7 +111,7 @@ const EmployeeProfile = () => {
     >
       <div className="max-w-7xl mx-auto">
         <motion.button
-          onClick={() => navigate(`/employees/${empID}`)}
+         onClick={() => navigate(-1)}
           className={`mb-6 sm:mb-8 inline-flex items-center cursor-pointer transition-colors px-4 sm:px-0 text-sm sm:text-base ${
             theme === 'dark' 
               ? 'text-gray-300 hover:text-white' 
