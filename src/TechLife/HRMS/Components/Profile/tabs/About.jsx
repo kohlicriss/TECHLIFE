@@ -4,7 +4,6 @@ import { useLocation, useParams } from "react-router-dom";
 import { IoEye } from "react-icons/io5";
 import { publicinfoApi } from "../../../../../axiosInstance";
 
-
 const initialFieldState = { text: "", isEditing: false };
 
 const About = () => {
@@ -32,12 +31,30 @@ const About = () => {
     hobbies: '' 
   });
     
+  // రికార్డు ఉందో లేదో తెలుసుకోవడానికి మెయిన్ ఫ్లాగ్
   const [recordExists, setRecordExists] = useState(false);
-
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // ఫెయిల్ అయినప్పుడు స్టేట్ ని వెనక్కి తీసుకురావడానికి హెల్పర్ ఫంక్షన్
+  const revertState = useCallback((allPrevState, field, errorMessage) => {
+    setResponses(allPrevState); 
+    if (field) {
+        // field specific revert
+        setEditCache(prev => ({ ...prev, [field]: allPrevState[field].text }));
+    } else {
+        // మొత్తం cache ని వెనక్కి తీసుకురావడం (ఇది handleDelete లో మాత్రమే అవసరం)
+        setEditCache({
+            about: allPrevState.about.text,
+            jobLove: allPrevState.jobLove.text,
+            hobbies: allPrevState.hobbies.text,
+        });
+    }
+    setError(errorMessage);
+    // Note: setIsSaving is set to false in the caller's finally block
+  }, []);
 
   const fetchAbout = useCallback(async () => {
     if (!employeeIdToFetch) {
@@ -64,19 +81,16 @@ const About = () => {
         hobbies: apiData.hobbies || "",
       });
         
-      // Check if any of the fields have content to determine if a record exists
+      // కనీసం ఒక ఫీల్డ్‌లో కంటెంట్ ఉంటే recordExists true అవుతుంది
       setRecordExists(!!(apiData.about || apiData.jobLove || apiData.hobbies));
 
     } catch (err) {
-      // NOTE: A 404 or empty response often means the record doesn't exist yet, which is expected.
-      // Only set error for critical failures.
       if (err.response && err.response.status === 404) {
          setRecordExists(false); 
       } else {
          console.error("❌ Error fetching about data:", err);
          setError("Failed to load profile data.");
       }
-      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +110,6 @@ const About = () => {
       ...prev,
       [field]: { ...prev[field], isEditing: true },
     }));
-    // Synchronize the edit cache with the current text before editing
     setEditCache(prev => ({ ...prev, [field]: responses[field].text }));
   };
 
@@ -105,17 +118,15 @@ const About = () => {
       ...prev,
       [field]: { ...prev[field], isEditing: false },
     }));
-    // Revert editCache to the original text
     setEditCache(prev => ({ ...prev, [field]: responses[field].text }));
   };
 
   const handleDelete = async (field) => {
     if (isSaving || isReadOnly) return;
 
-    // Snapshot the current state before optimistic update
     const allPreviousState = responses;
     
-    // Optimistic UI update: Set the field to empty and exit editing mode
+    // Optimistic UI update
     setResponses(prev => ({
       ...prev,
       [field]: { text: "", isEditing: false } 
@@ -128,29 +139,29 @@ const About = () => {
     try {
         const payload = { 
           employeeId: employeeIdToFetch,
-          // Set the target field to empty, keep others as they were
           about: field === 'about' ? "" : allPreviousState.about.text,
           jobLove: field === 'jobLove' ? "" : allPreviousState.jobLove.text,
           hobbies: field === 'hobbies' ? "" : allPreviousState.hobbies.text,
         };
+        
+        const isAllEmpty = !payload.about.trim() && !payload.jobLove.trim() && !payload.hobbies.trim();
 
         const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
         
-        if (recordExists) {
-          await publicinfoApi.put(endpoint, payload);
-        } else {
-          // If the record didn't exist, we must use POST for the first successful modification
-          const result = await publicinfoApi.post(endpoint, payload);
-          // Crucial step: Mark as existing after the first successful POST
-          setRecordExists(true); 
+        await publicinfoApi[recordExists ? 'put' : 'post'](endpoint, payload);
+        
+        // **ముఖ్యమైన మార్పు:** అన్ని ఫీల్డ్‌లు ఖాళీగా ఉంటే, recordExists ని false చేయండి
+        if (isAllEmpty) {
+            setRecordExists(false);
+        } else if (!recordExists) {
+            // మొదటిసారి POST ద్వారా డిలీట్ చేయకపోయి, మిగతావి ఉన్నా recordExists ని true చేయాలి
+            setRecordExists(true); 
         }
 
     } catch (err) {
         console.error(`❌ Error deleting ${field} data:`, err);
-        // Revert to the previous state on failure
-        setResponses(allPreviousState); 
-        setEditCache(prev => ({ ...prev, [field]: allPreviousState[field].text }));
-        setError(`Failed to delete ${field}. Please try again.`);
+        // ఫెయిల్ అయితే, స్టేట్‌ను వెనక్కి తీసుకురావడం
+        revertState(allPreviousState, field, `Failed to delete ${field}. Please try again.`);
     } finally {
         setIsSaving(false);
     }
@@ -162,7 +173,6 @@ const About = () => {
 
     const newValue = editCache[field].trim();
     
-    // Do nothing if trying to save an empty field (user should use Delete button if available)
     if (!newValue) {
       handleCancel(field);
       return; 
@@ -171,45 +181,59 @@ const About = () => {
     setIsSaving(true);
     setError(null);
 
-    // Snapshot the current state and the field's previous state
     const allPreviousState = responses; 
-    const previousFieldState = responses[field];
-
-    // Optimistic UI update: Apply new value and exit editing mode
+    
+    // Optimistic UI update
     setResponses(prev => ({
       ...prev,
       [field]: { text: newValue, isEditing: false } 
     }));
     
+    // **payload ఇక్కడే define చేయబడింది**
+    const payload = { 
+      employeeId: employeeIdToFetch,
+      // Use the new value for the current field, and existing values for others
+      about: field === 'about' ? newValue : allPreviousState.about.text,
+      jobLove: field === 'jobLove' ? newValue : allPreviousState.jobLove.text,
+      hobbies: field === 'hobbies' ? newValue : allPreviousState.hobbies.text,
+    };
+
     try {
-      const payload = { 
-        employeeId: employeeIdToFetch,
-        // Use the new value for the current field, and existing values for others
-        about: field === 'about' ? newValue : allPreviousState.about.text,
-        jobLove: field === 'jobLove' ? newValue : allPreviousState.jobLove.text,
-        hobbies: field === 'hobbies' ? newValue : allPreviousState.hobbies.text,
-      };
-      
       const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
 
       if (recordExists) {
-        // Use PUT if a record is known to exist
+        // 1. రికార్డు ఉంది అనుకుంటే PUT
         await publicinfoApi.put(endpoint, payload);
       } else {
-        // Use POST for the initial creation
+        // 2. రికార్డు లేదు అనుకుంటే POST ప్రయత్నం
         await publicinfoApi.post(endpoint, payload);
-        // Crucial step: Mark as existing after the first successful POST
-        setRecordExists(true);
+        setRecordExists(true); // POST సక్సెస్
       }
       
     } catch (err) {
       console.error(`❌ Error saving ${field} data:`, err);
-      // Revert to the previous state on failure
-      setResponses(allPreviousState); 
-      setEditCache(prev => ({ ...prev, [field]: previousFieldState.text })); 
-      setError(`Failed to save ${field}. Please try again.`);
-      // If the create failed, ensure the flag is reset so the next attempt uses POST
-      if (!recordExists) setRecordExists(false); 
+
+      // **ముఖ్యమైన లాజిక్:** POST ఫెయిల్ అయినప్పుడు PUT కి ఫాల్‌బ్యాక్
+      const isAlreadyRecordedError = err.response && 
+                                   (err.response.status === 409 || 
+                                   (err.response.status === 400 && JSON.stringify(err.response.data).toLowerCase().includes("already recorded")));
+                                   
+      if (isAlreadyRecordedError && !recordExists) {
+          console.warn("⚠️ POST failed (Record exists on server), attempting PUT...");
+          try {
+              // recordExists ని true చేసి, PUT కి ప్రయత్నిస్తుంది.
+              await publicinfoApi.put(`employee/${employeeIdToFetch}/updateAbout`, payload); // **payload ని వాడుతున్నాం**
+              setRecordExists(true); 
+          } catch (putErr) {
+              // PUT కూడా ఫెయిల్ అయితే, అసలు ఎర్రర్‌ను చూపుతుంది.
+              console.error("❌ PUT attempt also failed:", putErr);
+              revertState(allPreviousState, field, `Failed to save ${field}. Try again.`);
+              return; 
+          }
+      } else {
+          // ఇతర ఎర్రర్లను హ్యాండిల్ చేయడం
+          revertState(allPreviousState, field, `Failed to save ${field}. Please try again.`);
+      }
     } finally {
       setIsSaving(false);
     }

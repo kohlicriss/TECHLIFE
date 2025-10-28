@@ -2,26 +2,26 @@ import React, { useEffect, useContext, useState, useCallback, memo } from "react
 import { useNavigate } from "react-router-dom";
 import { publicinfoApi } from "../../../../axiosInstance";
 import { Context } from "../HrmsContext";
-import { PlusCircle, X, Loader2, Trash2, Pencil } from 'lucide-react';
+import { PlusCircle, X, Loader2, Trash2, Pencil, Users, Building2 } from 'lucide-react';
 
 const initialNewDepartment = { departmentName: '', departmentDescription: '' };
 
 const NotificationPopup = memo(({ open, onClose, message, type, theme }) => {
   if (!open) return null;
-  const baseClasses = "px-5 py-3 rounded-xl shadow font-medium border-2 flex items-center justify-between";
+  const baseClasses = "px-5 py-3 shadow font-medium border-2 flex items-center justify-between";
   const themeClasses = theme === "dark"
     ? (type === "success" ? "bg-green-700 border-green-400 text-green-100"
-        : type === "error" ? "bg-red-700 border-red-400 text-red-100"
-        : "bg-blue-700 border-blue-400 text-blue-100")
+      : type === "error" ? "bg-red-700 border-red-400 text-red-100"
+      : "bg-blue-700 border-blue-400 text-blue-100")
     : (type === "success" ? "bg-green-600 border-green-400 text-white"
-        : type === "error" ? "bg-red-600 border-red-400 text-white"
-        : "bg-blue-600 border-blue-400 text-white");
+      : type === "error" ? "bg-red-600 border-red-400 text-white"
+      : "bg-blue-600 border-blue-400 text-white");
   return (
     <div className="fixed top-0 left-1/2 transform -translate-x-1/2 mt-8 z-[9999] max-w-lg w-full px-4">
       <div className={`${baseClasses} ${themeClasses}`}>
         <span>{message}</span>
         <button 
-          className={`ml-4 px-3 py-1 rounded hover:opacity-80 focus:outline-none ${theme === "dark" ? "bg-white/30 text-white" : "bg-white text-blue-700"}`}
+          className={`ml-4 px-3 py-1 hover:opacity-80 focus:outline-none ${theme === "dark" ? "bg-white/30 text-white" : "bg-white text-blue-700"}`}
           onClick={onClose}
         >Close</button>
       </div>
@@ -38,7 +38,7 @@ const DepartmentModal = memo(({
   const inputBg = theme === "dark" ? "bg-gray-800 border-gray-600 placeholder-gray-500 text-gray-300" : "bg-white border-gray-300 text-gray-900 placeholder-gray-400";
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-2">
-      <div className={`rounded-2xl shadow-2xl w-full max-w-lg p-8 border ${modalBg}`}>
+      <div className={`shadow-2xl w-full max-w-lg p-8 border ${modalBg}`}>
         <div className="flex justify-between items-center mb-6 border-b pb-4 border-gray-500">
           <h3 className="text-2xl font-bold text-blue-500 flex items-center">
             {editMode ? (
@@ -70,7 +70,7 @@ const DepartmentModal = memo(({
               value={department.departmentName}
               onChange={onInputChange}
               placeholder="e.g., Marketing, R&D"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${inputBg}`}
+              className={`w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500 ${inputBg}`}
               required
               disabled={isSubmitting}
               maxLength={100}
@@ -89,7 +89,7 @@ const DepartmentModal = memo(({
               onChange={onInputChange}
               placeholder="Briefly describe the department's function."
               rows={3}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none ${inputBg}`}
+              className={`w-full px-4 py-2 border focus:ring-2 focus:ring-blue-500 resize-none ${inputBg}`}
               required
               disabled={isSubmitting}
               maxLength={300}
@@ -97,16 +97,16 @@ const DepartmentModal = memo(({
             />
           </div>
           {formError && (
-            <div className="bg-red-50 px-3 py-2 rounded border border-red-400 text-sm text-red-600">
+            <div className="bg-red-50 px-3 py-2 border border-red-400 text-sm text-red-600">
               {formError}
             </div>
           )}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose}
-              className={`px-5 py-2 rounded-lg text-sm ${theme === "dark" ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              className={`px-5 py-2 text-sm ${theme === "dark" ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
               disabled={isSubmitting}>Cancel</button>
             <button type="submit"
-              className={`px-5 py-2 rounded-lg text-sm font-semibold flex items-center 
+              className={`px-5 py-2 text-sm font-semibold flex items-center 
                 ${editMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
               disabled={isSubmitting}>
               {isSubmitting && <Loader2 size={18} className="animate-spin mr-2" />}
@@ -140,8 +140,9 @@ const Departmentspage = () => {
   const [notifType, setNotifType] = useState('success');
   const [notifOpen, setNotifOpen] = useState(false);
   const [mobile, setMobile] = useState(isMobile());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteDept, setDeleteDept] = useState({});
 
-  // Responsive listener for mobile detection
   useEffect(() => {
     const onResize = () => setMobile(isMobile());
     window.addEventListener('resize', onResize);
@@ -232,13 +233,12 @@ const Departmentspage = () => {
     }
   };
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteDept, setDeleteDept] = useState({});
   const handleDeleteDepartment = (e, dept) => {
     e.stopPropagation();
     setDeleteDept(dept);
     setConfirmOpen(true);
   };
+
   const confirmDeleteDept = async () => {
     setLoading(true);
     setConfirmOpen(false);
@@ -257,6 +257,7 @@ const Departmentspage = () => {
       <Loader2 size={28} className="animate-spin mr-3" /> Loading departments...
     </div>
   );
+
   if (error) return (
     <div className={`flex justify-center items-center h-[50vh] text-lg ${theme === "dark" ? "text-red-500" : "text-red-600"}`}>
       {error}
@@ -266,21 +267,26 @@ const Departmentspage = () => {
   return (
     <div className={`${theme === "dark" ? "bg-gray-900" : "bg-gray-50"} min-h-screen`}>
       {/* Sticky Header */}
-      <div className={`sticky top-0 z-30 px-2 ${theme === "dark" ? "bg-gray-900 border-b border-gray-800" : "bg-gray-50 border-b border-gray-200"}`}>
+      <div className={`sticky top-0 z-30 px-2 ${theme === "dark" ? "bg-gray-900 border-b border-gray-800" : "bg-white border-b border-gray-200"}`}>
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 py-4 max-w-7xl mx-auto">
-          <h2 className={`${theme === "dark" ? "text-gray-100" : "text-blue-700"} text-3xl font-extrabold tracking-tight`}>
-            Departments
-          </h2>
+          <div className="flex items-center gap-3">
+            <div className={`p-3 ${theme === "dark" ? "bg-blue-900/50" : "bg-blue-100"}`}>
+              <Building2 size={32} className={theme === "dark" ? "text-blue-400" : "text-blue-600"} />
+            </div>
+            <div>
+              <h2 className={`${theme === "dark" ? "text-gray-100" : "text-gray-800"} text-3xl font-extrabold tracking-tight`}>Departments</h2>
+              <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>Manage your organization's departments</p>
+            </div>
+          </div>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="px-5 py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:bg-green-600 transition flex items-center"
+            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center"
           >
             <PlusCircle size={24} className="mr-2" />
             Create Department
           </button>
         </div>
       </div>
-      {/* Add top padding to content to avoid being hidden under sticky header */}
       <div className="max-w-7xl mx-auto px-3 pb-8 pt-8 sm:pt-16">
         <DepartmentModal
           open={isCreateOpen}
@@ -307,67 +313,62 @@ const Departmentspage = () => {
         <NotificationPopup open={notifOpen} onClose={hideNotif} message={notifMsg} type={notifType} theme={theme} />
         {confirmOpen && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-            <div className={`${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-200 text-gray-900"} rounded-xl shadow-2xl border max-w-md w-full p-6`}>
+            <div className={`${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-200 text-gray-900"} shadow-2xl border max-w-md w-full p-6`}>
               <div className="flex items-center mb-4">
-                <Trash2 size={26} className="text-red-500 mr-3" />
+                <div className="p-2 bg-red-100 mr-3">
+                  <Trash2 size={26} className="text-red-500" />
+                </div>
                 <span className="text-xl font-bold text-red-600">Delete Department</span>
               </div>
               <p className="mb-6">
                 Are you sure you want to delete <b>{deleteDept.departmentName}</b>? This cannot be undone.
               </p>
               <div className="flex justify-end gap-3">
-                <button className={`px-5 py-2 rounded-lg text-sm hover:bg-gray-200 ${theme === "dark" ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"}`}
-                  onClick={() => setConfirmOpen(false)}>Cancel</button>
-                <button
-                  className="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 flex items-center"
-                  onClick={confirmDeleteDept}
-                >Delete</button>
+                <button className={`px-5 py-2 text-sm hover:bg-gray-200 ${theme === "dark" ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"}`} onClick={() => setConfirmOpen(false)}>Cancel</button>
+                <button className="px-5 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold hover:shadow-lg flex items-center" onClick={confirmDeleteDept}>Delete</button>
               </div>
             </div>
           </div>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {departments.map((dept) => (
             <div
               key={dept.departmentId}
               onMouseEnter={() => setHoveredDeptId(dept.departmentId)}
               onMouseLeave={() => setHoveredDeptId(null)}
               onClick={() => navigate(`departmentview/${dept.departmentId}`)}
-              className={`
-                ${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-200 text-gray-900"}
-                rounded-2xl shadow-xl p-8 cursor-pointer relative hover:scale-105 hover:shadow-2xl transition duration-200 group
-              `}
-              style={{ boxShadow: theme === "dark" ? "0 6px 24px rgba(31,41,55,0.8)" : "0 6px 24px rgba(63,131,248,0.08)" }}
+              className={`${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-200 text-gray-900"} p-6 cursor-pointer relative border-2 shadow-lg hover:shadow-2xl transition`}
             >
-              {/* Show icons always on mobile; hover on desktop */}
-              <div
-                className={`
-                  absolute top-3 right-3 flex gap-2
-                  ${mobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-                  transition-opacity duration-200
-                `}
-              >
-                <button
-                  onClick={e => { e.stopPropagation(); handleOpenEdit(dept); }}
-                  className={`${theme === "dark" ? "bg-blue-700 text-blue-300 hover:bg-blue-600" : "bg-blue-100 text-blue-700 hover:bg-blue-200"} p-2 rounded-full transition`}
-                  aria-label="Edit department"
-                  title="Edit department"
-                ><Pencil size={20} /></button>
-                <button
-                  onClick={e => handleDeleteDepartment(e, dept)}
-                  className={`${theme === "dark" ? "bg-red-700 text-red-400 hover:bg-red-600" : "bg-red-100 text-red-600 hover:bg-red-200"} p-2 rounded-full transition`}
-                  aria-label="Delete department"
-                  title="Delete department"
-                ><Trash2 size={20} /></button>
+              <div className={`absolute -top-3 -left-3 p-3 shadow-lg ${theme === "dark" ? "bg-blue-900/50" : "bg-blue-100"}`}>
+                <Users size={20} className="text-white" />
               </div>
-              <h3 className="mb-3 text-2xl font-bold group-hover:text-blue-400 transition">{dept.departmentName}</h3>
-              <p className="text-base">{dept.departmentDescription}</p>
+              <div className={`absolute top-3 right-3 flex gap-2 z-10 ${mobile ? "opacity-100" : hoveredDeptId === dept.departmentId ? "opacity-100" : "opacity-0"}`}>
+                <button onClick={e => { e.stopPropagation(); handleOpenEdit(dept); }}
+                  className={`p-2 border ${theme === "dark" ? "bg-blue-800/80 border-blue-600 text-blue-300 hover:bg-blue-700" : "bg-blue-100/80 border-blue-300 text-blue-700 hover:bg-blue-200"} transition`} aria-label="Edit department" title="Edit department"><Pencil size={18} /></button>
+                <button onClick={e => handleDeleteDepartment(e, dept)}
+                  className={`p-2 border ${theme === "dark" ? "bg-red-800/80 border-red-600 text-red-300 hover:bg-red-700" : "bg-red-100/80 border-red-300 text-red-600 hover:bg-red-200"} transition`} aria-label="Delete department" title="Delete department"><Trash2 size={18} /></button>
+              </div>
+              <div className="relative z-1">
+                <h3 className="mb-3 text-xl font-bold group-hover:text-blue-400 transition-colors duration-300">{dept.departmentName}</h3>
+                <p className={`text-sm leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>{dept.departmentDescription}</p>
+              </div>
             </div>
           ))}
         </div>
-        <p className={`${theme === "dark" ? "text-gray-400" : "text-gray-500"} text-center mt-12 font-medium`}>
-          Total Departments: {departments.length}
-        </p>
+        {departments.length === 0 && !loading && (
+          <div className="text-center py-16">
+            <div className={`p-8 max-w-md mx-auto ${theme === "dark" ? "bg-gray-800/50 border border-gray-700" : "bg-white/70 border border-gray-200"}`}>
+              <Building2 size={64} className={`mx-auto mb-4 ${theme === "dark" ? "text-gray-600" : "text-gray-400"}`} />
+              <h3 className={`text-xl font-bold mb-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>No Departments Found</h3>
+              <p className={`mb-6 ${theme === "dark" ? "text-gray-500" : "text-gray-600"}`}>Get started by creating your first department</p>
+              <button onClick={() => setIsCreateOpen(true)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold hover:shadow-xl transition-all flex items-center mx-auto">
+                <PlusCircle size={20} className="mr-2" />
+                Create First Department
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
