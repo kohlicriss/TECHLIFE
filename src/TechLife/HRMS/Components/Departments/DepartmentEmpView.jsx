@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { publicinfoApi } from "../../../../axiosInstance";
-import { User, Mail, Briefcase, ChevronLeft } from 'lucide-react';
+import { User, Mail, Briefcase, ChevronLeft, Users, ArrowRight } from 'lucide-react';
 import { Context } from "../HrmsContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 const DepartmentEmpView = () => {
   const BASE_API_URL = "https://hrms.anasolconsultancyservices.com/api"; 
@@ -51,103 +52,338 @@ const DepartmentEmpView = () => {
     return `${BASE_API_URL}/${imagePath.replace(/^\//, "")}`;
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 25
+      }
+    },
+    hover: {
+      y: -8,
+      scale: 1.02,
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 25
+      }
+    }
+  };
+
   if (loading) return (
-    <div className={`flex items-center justify-center h-[60vh] ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
-      <span className="text-lg">Loading employees...</span>
-    </div>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`flex items-center justify-center h-[60vh] ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
+    >
+      <div className="text-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className={`w-12 h-12 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full mx-auto mb-4 ${
+            theme === "dark" ? "border-t-blue-400" : "border-t-blue-600"
+          }`}
+        />
+        <span className="text-lg">Loading employees...</span>
+      </div>
+    </motion.div>
   );
 
   if (error) return (
-    <div className={`flex items-center justify-center h-[60vh] ${theme === "dark" ? "text-red-500" : "text-red-600"}`}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`flex items-center justify-center h-[60vh] ${theme === "dark" ? "text-red-500" : "text-red-600"}`}
+    >
       <span className="text-lg">{error}</span>
-    </div>
+    </motion.div>
   );
 
   return (
-    <div className={`max-w-6xl mx-auto px-4 py-8 min-h-screen ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className={`max-w-7xl mx-auto px-4 py-8 min-h-screen ${theme === "dark" ? "bg-gradient-to-br from-gray-900 to-gray-800" : "bg-gradient-to-br from-blue-50 to-indigo-50"}`}
+    >
       
-      <div className={`sticky top-0 z-40 bg-inherit py-4 mb-8 ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
-        <button
-          onClick={() => navigate(-1)}
-          className={`flex items-center font-semibold text-sm cursor-pointer 
-            ${theme === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-700"}`}
-          style={{ background: "none", border: "none" }}
-          aria-label="Back to Departments"
-        >
-          <ChevronLeft size={18} className="mr-2" />
-          Back to Departments
-        </button>
-      </div>
+      {/* Sticky Header */}
+      <motion.div 
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className={`sticky top-0 z-40 py-4 mb-8 backdrop-blur-md ${theme === "dark" ? "bg-gray-900/95" : "bg-gradient-to-br from-blue-50/95 to-indigo-50/95"}`}
+      >
+        <div className="flex items-center justify-between">
+          <motion.button
+            whileHover={{ scale: 1.05, x: -5 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate(-1)}
+            className={`flex items-center font-semibold text-sm cursor-pointer px-4 py-3 rounded-xl transition-all ${
+              theme === "dark" 
+                ? "bg-gray-800 text-blue-400 hover:bg-gray-700 hover:text-blue-300" 
+                : "bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 shadow-md"
+            }`}
+            style={{ background: "none", border: "none" }}
+            aria-label="Back to Departments"
+          >
+            <ChevronLeft size={20} className="mr-2" />
+            Back to Departments
+          </motion.button>
 
-      <h2 className={`text-3xl font-bold mb-2 ${theme === "dark" ? "text-gray-200" : "text-blue-700"}`}>
-        {departmentName}
-      </h2>
-
-      {employees.length === 0 ? (
-        <div className={`text-center py-16 rounded-xl border shadow text-lg ${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-400" : "bg-white border-gray-200 text-gray-600"}`}>
-          No active employees found in the <span className="font-bold">{departmentName}</span> department.
+          {/* Employee Count Badge */}
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+              theme === "dark" 
+                ? "bg-blue-900/50 text-blue-300 border border-blue-700" 
+                : "bg-blue-100 text-blue-700 border border-blue-300"
+            }`}
+          >
+            <Users size={18} />
+            <span className="font-semibold">{employees.length} Employee{employees.length !== 1 ? 's' : ''}</span>
+          </motion.div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {employees.map((emp) => {
-            const imageUrl = getImageUrl(emp.employeeImage);
-            return (
-              <div
-                key={emp.employeeId}
-                className={`rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-200 p-7 flex flex-col gap-3 cursor-pointer group border
-                  ${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-100 text-gray-900"}`}
-                onClick={() => navigate(`/employees/${emp.employeeId}/public/${emp.employeeId}`)}
-                role="button"
-                tabIndex={0}
-                aria-label={`View profile of ${emp.employeeName || emp.displayName || "employee"}`}
-                onKeyPress={(e) => { if (e.key === "Enter") navigate(`/employees/${emp.employeeId}/public/${emp.employeeId}`); }}
-              >
-                <div className={`flex items-center gap-4 mb-2 pb-2 border-b transition-colors duration-200 ${theme === "dark" ? "border-gray-700 group-hover:border-blue-500" : "border-gray-100 group-hover:border-blue-300"}`}>
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={emp.employeeName || emp.displayName || "Employee"}
-                      className="w-14 h-14 rounded-full object-cover shadow-md transition-shadow duration-150"
-                      onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
-                    />
-                  ) : null}
+      </motion.div>
 
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl shadow-md transition-colors duration-150 
-                    ${theme === "dark" ? "bg-blue-700 text-blue-300 group-hover:bg-blue-600" : "bg-blue-600 text-white group-hover:bg-blue-700"}
-                    ${imageUrl ? "hidden" : "flex"}`}>
-                    {generateInitials(emp.employeeName || emp.displayName)}
-                  </div>
-
-                  <div>
-                    <h3 className={`text-lg font-semibold transition-colors duration-200 ${theme === "dark" ? "text-gray-200 group-hover:text-blue-400" : "text-gray-800 group-hover:text-blue-700"}`}>
-                      {emp.employeeName || emp.displayName || "N/A Name"}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className={`flex flex-col gap-2 text-sm pt-2 transition-colors duration-200 ${theme === "dark" ? "text-gray-400" : "text-gray-700"}`}>
-                  <div className="flex items-center gap-2">
-                    <User size={16} className={`${theme === "dark" ? "text-blue-400" : "text-blue-500"}`} />
-                    <span className="font-medium">Employee ID:</span>
-                    <span>{emp.employeeId}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail size={16} className={`${theme === "dark" ? "text-blue-400" : "text-blue-500"}`} />
-                    <span className="font-medium">Email:</span>
-                    <span>{emp.email || "N/A"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Briefcase size={16} className={`${theme === "dark" ? "text-blue-400" : "text-blue-500"}`} />
-                    <span className="font-medium">Department:</span>
-                    <span>{departmentName}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      {/* Department Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center mb-12"
+      >
+        <div className={`inline-flex items-center gap-4 px-8 py-6 rounded-3xl ${
+          theme === "dark" 
+            ? "bg-gradient-to-r from-gray-800 to-gray-700 border border-gray-600" 
+            : "bg-gradient-to-r from-white to-blue-100 border border-blue-200"
+        } shadow-xl backdrop-blur-sm`}>
+          <div className={`p-4 rounded-2xl ${
+            theme === "dark" ? "bg-blue-900/50" : "bg-blue-100"
+          }`}>
+            <Users size={32} className={theme === "dark" ? "text-blue-400" : "text-blue-600"} />
+          </div>
+          <div className="text-left">
+            <h2 className={`text-4xl font-bold mb-2 bg-gradient-to-r ${
+              theme === "dark" 
+                ? "from-blue-400 to-purple-400" 
+                : "from-blue-600 to-indigo-600"
+            } bg-clip-text text-transparent`}>
+              {departmentName}
+            </h2>
+            <p className={`text-sm ${
+              theme === "dark" ? "text-gray-400" : "text-gray-600"
+            }`}>
+              Meet the team members of this department
+            </p>
+          </div>
         </div>
-      )}
-    </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {employees.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className={`text-center py-20 rounded-3xl border-2 shadow-lg text-lg max-w-2xl mx-auto ${
+              theme === "dark" 
+                ? "bg-gray-800/50 border-gray-700 text-gray-400 backdrop-blur-sm" 
+                : "bg-white/70 border-gray-200 text-gray-600 backdrop-blur-sm"
+            }`}
+          >
+            <Users size={64} className={`mx-auto mb-4 ${
+              theme === "dark" ? "text-gray-600" : "text-gray-400"
+            }`} />
+            <h3 className="text-2xl font-bold mb-4">No Active Employees</h3>
+            <p className="mb-6">
+              No active employees found in the <span className="font-bold text-blue-500">{departmentName}</span> department.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate(-1)}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                theme === "dark" 
+                  ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              } shadow-lg`}
+            >
+              Back to Departments
+            </motion.button>
+          </motion.div>
+        ) : (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {employees.map((emp, index) => {
+              const imageUrl = getImageUrl(emp.employeeImage);
+              return (
+                <motion.div
+                  key={emp.employeeId}
+                  variants={cardVariants}
+                  whileHover="hover"
+                  className={`rounded-3xl p-6 flex flex-col gap-4 cursor-pointer group relative overflow-hidden border-2 backdrop-blur-sm
+                    ${theme === "dark" 
+                      ? "bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 text-gray-200" 
+                      : "bg-gradient-to-br from-white to-blue-50/70 border-gray-200/80 text-gray-900"
+                    }`}
+                  style={{ 
+                    boxShadow: theme === "dark" 
+                      ? "0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(255,255,255,0.05)" 
+                      : "0 8px 32px rgba(63,131,248,0.12), 0 2px 8px rgba(63,131,248,0.08)"
+                  }}
+                  onClick={() => navigate(`/employees/${emp.employeeId}/public/${emp.employeeId}`)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View profile of ${emp.employeeName || emp.displayName || "employee"}`}
+                  onKeyPress={(e) => { if (e.key === "Enter") navigate(`/employees/${emp.employeeId}/public/${emp.employeeId}`); }}
+                >
+                  {/* Gradient overlay on hover */}
+                  <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                    theme === "dark" 
+                      ? "bg-gradient-to-br from-blue-900/20 to-purple-900/20" 
+                      : "bg-gradient-to-br from-blue-100/50 to-indigo-100/50"
+                  }`} />
+
+                  {/* View Profile Arrow */}
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    whileHover={{ opacity: 1, x: 0 }}
+                    className={`absolute top-4 right-4 p-2 rounded-full ${
+                      theme === "dark" 
+                        ? "bg-blue-700/80 text-blue-300" 
+                        : "bg-blue-500/80 text-white"
+                    } backdrop-blur-sm`}
+                  >
+                    <ArrowRight size={16} />
+                  </motion.div>
+
+                  {/* Employee Avatar Section */}
+                  <div className={`flex items-center gap-4 mb-4 pb-4 border-b transition-colors duration-300 relative z-10 ${
+                    theme === "dark" ? "border-gray-700 group-hover:border-blue-500" : "border-gray-200 group-hover:border-blue-300"
+                  }`}>
+                    {imageUrl ? (
+                      <div className="relative">
+                        <img
+                          src={imageUrl}
+                          alt={emp.employeeName || emp.displayName || "Employee"}
+                          className="w-16 h-16 rounded-2xl object-cover shadow-lg transition-all duration-300 group-hover:shadow-xl"
+                          onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
+                        />
+                        <motion.div 
+                          whileHover={{ scale: 1.1 }}
+                          className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg absolute inset-0 transition-colors duration-300 ${
+                            theme === "dark" 
+                              ? "bg-blue-700 text-blue-300 group-hover:bg-blue-600" 
+                              : "bg-blue-600 text-white group-hover:bg-blue-700"
+                          } ${imageUrl ? "hidden" : "flex"}`}
+                        >
+                          {generateInitials(emp.employeeName || emp.displayName)}
+                        </motion.div>
+                      </div>
+                    ) : (
+                      <motion.div 
+                        whileHover={{ scale: 1.1 }}
+                        className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg transition-colors duration-300 ${
+                          theme === "dark" 
+                            ? "bg-gradient-to-br from-blue-700 to-purple-700 text-blue-300 group-hover:from-blue-600 group-hover:to-purple-600" 
+                            : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white group-hover:from-blue-700 group-hover:to-indigo-700"
+                        }`}
+                      >
+                        {generateInitials(emp.employeeName || emp.displayName)}
+                      </motion.div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`text-lg font-bold transition-colors duration-300 line-clamp-2 ${
+                        theme === "dark" 
+                          ? "text-gray-200 group-hover:text-blue-400" 
+                          : "text-gray-800 group-hover:text-blue-700"
+                      }`}>
+                        {emp.employeeName || emp.displayName || "N/A Name"}
+                      </h3>
+                      <p className={`text-sm mt-1 ${
+                        theme === "dark" ? "text-gray-500" : "text-gray-600"
+                      }`}>
+                        Employee ID: {emp.employeeId}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Employee Details */}
+                  <div className={`flex flex-col gap-3 text-sm relative z-10 ${
+                    theme === "dark" ? "text-gray-400" : "text-gray-700"
+                  }`}>
+                    <motion.div 
+                      whileHover={{ x: 5 }}
+                      className="flex items-center gap-3 transition-all duration-200"
+                    >
+                      <div className={`p-2 rounded-lg ${
+                        theme === "dark" ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-600"
+                      }`}>
+                        <Mail size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold">Email:</span>
+                        <p className="truncate">{emp.email || "N/A"}</p>
+                      </div>
+                    </motion.div>
+
+                    <motion.div 
+                      whileHover={{ x: 5 }}
+                      className="flex items-center gap-3 transition-all duration-200"
+                    >
+                      <div className={`p-2 rounded-lg ${
+                        theme === "dark" ? "bg-purple-900/50 text-purple-400" : "bg-purple-100 text-purple-600"
+                      }`}>
+                        <Briefcase size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold">Department:</span>
+                        <p className="truncate">{departmentName}</p>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Bottom gradient border effect */}
+                  <motion.div 
+                    className={`absolute bottom-0 left-0 right-0 h-1 rounded-b-3xl ${
+                      theme === "dark" 
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500" 
+                        : "bg-gradient-to-r from-blue-400 to-indigo-500"
+                    }`}
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

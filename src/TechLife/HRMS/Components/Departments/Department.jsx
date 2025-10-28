@@ -7,7 +7,7 @@ import { Context } from "../HrmsContext";
 const Department = () => {
   const { theme } = useContext(Context);
   return (
-    <div className={`min-h-screen w-full ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"} transition-colors duration-200`}>
+    <div className={`min-h-screen w-full ${theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-indigo-50"} transition-colors duration-200`}>
       <Routes>
         <Route path="/" element={<Departmentspage />} />
         <Route path="departmentview/:departmentId" element={<DepartmentEmpView />} />
