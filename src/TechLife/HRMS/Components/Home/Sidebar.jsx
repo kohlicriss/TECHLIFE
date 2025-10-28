@@ -44,10 +44,17 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "My Tasks", icon: <ListChecks size={18} />, path: empId ? `/tasks/${empId}` : "/tasks" },
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
-    { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}` : "/tickets" },
-    { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" }
-  ];
-
+    { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
+    { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" },
+     { 
+      name: "Pay Roll", 
+      icon: <BadgePlus size={18}/>, 
+      path: (['ADMIN', 'HR', 'MANAGER'].includes(userRole) 
+        ? (empId ? `/payroll/home/${empId}` : "/payroll")
+        : (empId ? `/payroll/employee/${empId}` : "/payroll/employee")
+      )
+    },
+  ]
   if (userRole === 'ADMIN') {
     navItems.push({ name: "Permissions", icon: <UserRoundCog size={18} />, path: empId ? `/permissions/${empId}` : "/permissions" });
     navItems.push({ name: "ADMIN", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
