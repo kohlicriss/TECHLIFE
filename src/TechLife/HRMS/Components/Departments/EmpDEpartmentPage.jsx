@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { publicinfoApi } from "../../../../axiosInstance";
 import { Context } from "../HrmsContext";
-import { Users, Building2, Mail, Briefcase, User,ArrowRight } from "lucide-react";
+import { Users, Building2, Mail, Briefcase, User, ArrowRight } from "lucide-react";
 
 const EmpDepartmentPage = () => {
   const { theme } = useContext(Context);
@@ -79,9 +79,7 @@ const EmpDepartmentPage = () => {
     );
 
   return (
-    <div
-      className={`${theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-indigo-50"} min-h-screen py-8 px-4`}
-    >
+    <div className={`${theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-indigo-50"} min-h-screen py-8 px-4`}>
       <div className="max-w-7xl mx-auto">
         {department ? (
           <div className="text-center mb-12">
@@ -111,18 +109,13 @@ const EmpDepartmentPage = () => {
             </div>
           </div>
         ) : (
-          <div
-            className={`text-center py-20 border-2 max-w-2xl mx-auto ${
-              theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-400" : "bg-white border-gray-200 text-gray-600"
-            }`}
-          >
+          <div className={`text-center py-20 border-2 max-w-2xl mx-auto ${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-400" : "bg-white border-gray-200 text-gray-600"}`}>
             <Building2 size={64} className={`mx-auto mb-4 ${theme === "dark" ? "text-gray-700" : "text-gray-400"}`} />
             <h3 className={`text-2xl font-bold mb-4 ${theme === "dark" ? "text-gray-100" : "text-gray-700"}`}>No Department Found</h3>
             <p>No department found for this employee.</p>
           </div>
         )}
 
-        {/* Popup for own profile */}
         {showOwnProfilePopup && (
           <div className="fixed bottom-12 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50 text-sm">
             This is your own Profile
@@ -130,11 +123,7 @@ const EmpDepartmentPage = () => {
         )}
 
         {employees.length === 0 ? (
-          <div
-            className={`text-center py-20 border-2 max-w-2xl mx-auto ${
-              theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-400" : "bg-white border-gray-200 text-gray-600"
-            }`}
-          >
+          <div className={`text-center py-20 border-2 max-w-2xl mx-auto ${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-400" : "bg-white border-gray-200 text-gray-600"}`}>
             <Users size={64} className={`mx-auto mb-4 ${theme === "dark" ? "text-gray-700" : "text-gray-400"}`} />
             <h3 className={`text-2xl font-bold mb-4 ${theme === "dark" ? "text-gray-100" : "text-gray-700"}`}>No Employees Found</h3>
             <p>No employees found in this department.</p>
@@ -147,9 +136,7 @@ const EmpDepartmentPage = () => {
               return (
                 <div
                   key={emp.employeeId}
-                  className={`p-6 flex flex-col gap-4 cursor-pointer group relative overflow-hidden border-2 ${
-                    theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-gradient-to-br from-white to-blue-50/70 border-gray-200/80 text-gray-900"
-                  }`}
+                  className={`p-6 flex flex-col gap-4 cursor-pointer group relative overflow-hidden border-2 ${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-gradient-to-br from-white to-blue-50/70 border-gray-200/80 text-gray-900"}`}
                   style={{
                     boxShadow:
                       theme === "dark"
@@ -164,8 +151,9 @@ const EmpDepartmentPage = () => {
                     if (e.key === "Enter") onCardClick(emp.employeeId);
                   }}
                 >
+                  {/* You tag with higher z-index */}
                   {isCurrentUser && (
-                    <div className="absolute top-3 left-3 px-2 py-0.5 bg-blue-600 text-white font-semibold text-xs rounded">
+                    <div className="absolute top-3 left-3 px-2 py-0.5 bg-blue-600 text-white font-semibold text-xs rounded z-50 pointer-events-none">
                       You
                     </div>
                   )}
@@ -181,9 +169,7 @@ const EmpDepartmentPage = () => {
 
                   {/* View Profile Arrow */}
                   <div
-                    className={`absolute top-4 right-4 p-2 ${
-                      theme === "dark" ? "bg-blue-700/80 text-blue-300" : "bg-blue-500/80 text-white"
-                    } backdrop-blur-sm rounded-full`}
+                    className={`absolute top-4 right-4 p-2 ${theme === "dark" ? "bg-blue-700/80 text-blue-300" : "bg-blue-500/80 text-white"} backdrop-blur-sm rounded-full`}
                   >
                     <ArrowRight size={16} />
                   </div>
@@ -240,11 +226,7 @@ const EmpDepartmentPage = () => {
                   </div>
 
                   {/* Employee Details */}
-                  <div
-                    className={`flex flex-col gap-3 text-sm relative z-10 ${
-                      theme === "dark" ? "text-gray-400" : "text-gray-700"
-                    }`}
-                  >
+                  <div className={`flex flex-col gap-3 text-sm relative z-10 ${theme === "dark" ? "text-gray-400" : "text-gray-700"}`}>
                     <div className="flex items-center gap-3 transition-all duration-200">
                       <div className={`p-2 ${theme === "dark" ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-600"}`}>
                         <Mail size={14} />

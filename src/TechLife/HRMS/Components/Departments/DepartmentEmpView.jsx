@@ -210,7 +210,7 @@ const DepartmentEmpView = () => {
                 }}
               >
                 {isCurrentUser && (
-                  <div className="absolute top-3 left-3 px-2 py-0.5 bg-blue-600 text-white font-semibold text-xs rounded">
+                  <div className="absolute top-3 left-3 px-2 py-0.5 bg-blue-600 text-white font-semibold text-xs rounded z-50 pointer-events-none">
                     You
                   </div>
                 )}

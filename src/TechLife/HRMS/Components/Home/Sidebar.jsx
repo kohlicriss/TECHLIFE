@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, CalendarCheck, FileText, Users, Database, ListChecks,
   MessageCircle, LogOut, X, ChevronLeft, ChevronRight, UserCircle, BadgePlus,
-  TicketCheck, UserRoundCog
+  TicketCheck, UserRoundCog,FolderCog
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
@@ -44,7 +44,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout, chatUnreadCount }) {
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}` : "/tickets" },
-    { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" }
+    { name: "Departments", icon: <FolderCog size={18} />, path: empId ? `/departments/${empId}` : "/departments" }
   ];
 
   if (userRole === 'ADMIN') {

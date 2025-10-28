@@ -39,306 +39,306 @@ const Modal = ({ children, onClose, title, type, theme }) => {
 
 const identityFields = {
   aadhaar: [
-    { 
-      label: "Aadhaar Number", 
-      name: "aadhaarNumber", 
-      type: "text", 
-      required: true, 
-      hint: "Must be 12 digits starting with 2-9 (e.g., 234567891012)" 
+    {
+      label: "Aadhaar Number",
+      name: "aadhaarNumber",
+      type: "text",
+      required: true,
+      hint: "Must be 12 digits starting with 2-9 (e.g., 234567891012)"
     },
-    { 
-      label: "Enrollment Number", 
-      name: "enrollmentNumber", 
-      type: "text", 
-      required: true, 
-      hint: "Format: 1234/12345/1234567" 
+    {
+      label: "Enrollment Number",
+      name: "enrollmentNumber",
+      type: "text",
+      required: true,
+      hint: "Format: 1234/12345/1234567"
     },
-    { 
-      label: "Date of Birth", 
-      name: "dateOfBirth", 
-      type: "date", 
+    {
+      label: "Date of Birth",
+      name: "dateOfBirth",
+      type: "date",
       required: true,
       hint: "Select your birth date"
     },
-    { 
-      label: "Name", 
-      name: "aadhaarName", 
-      type: "text", 
+    {
+      label: "Name",
+      name: "aadhaarName",
+      type: "text",
       required: true,
-      hint: "Name as per Aadhaar card (3-50 characters)" 
+      hint: "Name as per Aadhaar card (3-50 characters)"
     },
-    { 
-      label: "Address", 
-      name: "address", 
-      type: "textarea", 
+    {
+      label: "Address",
+      name: "address",
+      type: "textarea",
       required: true,
-      hint: "Complete address as per Aadhaar (10-200 characters)" 
+      hint: "Complete address as per Aadhaar (10-200 characters)"
     },
-    { 
-      label: "Gender", 
-      name: "gender", 
-      type: "select", 
-      options: ["Male", "Female", "Other"], 
+    {
+      label: "Gender",
+      name: "gender",
+      type: "select",
+      options: ["Male", "Female", "Other"],
       required: true,
-      hint: "Select your gender" 
+      hint: "Select your gender"
     },
-    { 
-      label: "Aadhaar Image", 
-      name: "aadhaarImage", 
+    {
+      label: "Aadhaar Image",
+      name: "aadhaarImage",
       type: "file",
       required: true, // Required on Add
-      hint: "Upload clear image of your Aadhaar card" 
+      hint: "Upload clear image of your Aadhaar card"
     },
   ],
   pan: [
-    { 
-      label: "PAN Number", 
-      name: "panNumber", 
-      type: "text", 
-      required: true, 
-      hint: "10-character format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)" 
-    },
-    { 
-      label: "PAN Name", 
-      name: "panName", 
-      type: "text", 
+    {
+      label: "PAN Number",
+      name: "panNumber",
+      type: "text",
       required: true,
-      hint: "Name as per PAN card (3-100 characters)" 
+      hint: "10-character format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)"
     },
-    { 
-      label: "Date of Birth", 
-      name: "dateOfBirth", 
-      type: "text", 
+    {
+      label: "PAN Name",
+      name: "panName",
+      type: "text",
       required: true,
-      hint: "Format: YYYY-MM-DD (e.g., 1990-01-15)" 
+      hint: "Name as per PAN card (3-100 characters)"
     },
-    { 
-      label: "Parent's Name", 
-      name: "parentsName", 
-      type: "text", 
+    {
+      label: "Date of Birth",
+      name: "dateOfBirth",
+      type: "date",
       required: true,
-      hint: "Father's or mother's name as per PAN" 
+      hint: "Select your birth date"
     },
-    { 
-      label: "PAN Image", 
-      name: "panImage", 
+    {
+      label: "Parent's Name",
+      name: "parentsName",
+      type: "text",
+      required: true,
+      hint: "Father's or mother's name as per PAN"
+    },
+    {
+      label: "PAN Image",
+      name: "panImage",
       type: "file",
       required: true, // Required on Add
-      hint: "Upload clear image of your PAN card" 
+      hint: "Upload clear image of your PAN card"
     },
   ],
   drivingLicense: [
-    { 
-      label: "License Number", 
-      name: "licenseNumber", 
-      type: "text", 
+    {
+      label: "License Number",
+      name: "licenseNumber",
+      type: "text",
       required: true,
-      hint: "Your driving license number (up to 20 characters)" 
+      hint: "Your driving license number (up to 20 characters)"
     },
-    { 
-      label: "Name", 
-      name: "name", 
-      type: "text", 
+    {
+      label: "Name",
+      name: "name",
+      type: "text",
       required: true,
-      hint: "Name as per driving license (up to 100 characters)" 
+      hint: "Name as per driving license (up to 100 characters)"
     },
-    { 
-      label: "Date of Birth", 
-      name: "dateOfBirth", 
-      type: "date", 
+    {
+      label: "Date of Birth",
+      name: "dateOfBirth",
+      type: "date",
       required: true,
       hint: "Select your birth date as per license"
     },
-    { 
-      label: "Blood Group", 
-      name: "bloodGroup", 
-      type: "select", 
-      options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], 
+    {
+      label: "Blood Group",
+      name: "bloodGroup",
+      type: "select",
+      options: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       required: true,
-      hint: "Select your blood group" 
+      hint: "Select your blood group"
     },
-    { 
-      label: "Father's Name", 
-      name: "fatherName", 
-      type: "text", 
+    {
+      label: "Father's Name",
+      name: "fatherName",
+      type: "text",
       required: true,
-      hint: "Father's name as per license (up to 100 characters)" 
+      hint: "Father's name as per license (up to 100 characters)"
     },
-    { 
-      label: "Issue Date", 
-      name: "issueDate", 
-      type: "date", 
+    {
+      label: "Issue Date",
+      name: "issueDate",
+      type: "date",
       required: true,
       hint: "Date when license was issued"
     },
-    { 
-      label: "Expiry Date", 
-      name: "expiresOn", 
-      type: "date", 
+    {
+      label: "Expiry Date",
+      name: "expiresOn",
+      type: "date",
       required: true,
       hint: "License expiration date"
     },
-    { 
-      label: "Address", 
-      name: "address", 
-      type: "textarea", 
+    {
+      label: "Address",
+      name: "address",
+      type: "textarea",
       required: true,
-      hint: "Address as per driving license (up to 255 characters)" 
+      hint: "Address as per driving license (up to 255 characters)"
     },
-    { 
-      label: "License Image", 
-      name: "licenseImage", 
+    {
+      label: "License Image",
+      name: "licenseImage",
       type: "file",
       required: true, // Required on Add
-      hint: "Upload clear image of your driving license" 
+      hint: "Upload clear image of your driving license"
     },
   ],
   passport: [
-    { 
-      label: "Passport Number", 
-      name: "passportNumber", 
-      type: "text", 
-      required: true, 
-      hint: "6-9 characters starting with letter (e.g., A1234567)" 
+    {
+      label: "Passport Number",
+      name: "passportNumber",
+      type: "text",
+      required: true,
+      hint: "6-9 characters starting with letter (e.g., A1234567)"
     },
-    { 
-      label: "Country Code", 
-      name: "countryCode", 
+    {
+      label: "Country Code",
+      name: "countryCode",
       type: "select",
       options: ["IND", "USA", "PAK", "CAN", "GBR", "AUS", "JPN", "DEU", "CHN", "RUS", "BRA", "ZAF"],
       required: true,
       hint: "Select the 3-character country code"
     },
-    { 
-      label: "Passport Type", 
-      name: "passportType", 
+    {
+      label: "Passport Type",
+      name: "passportType",
       type: "select",
       options: ["Regular", "Official", "Diplomatic"],
       required: true,
       hint: "Select the type of your passport"
     },
-    { 
-      label: "Date of Birth", 
-      name: "dateOfBirth", 
-      type: "date", 
+    {
+      label: "Date of Birth",
+      name: "dateOfBirth",
+      type: "date",
       required: true,
       hint: "Select your birth date as per passport"
     },
-    { 
-      label: "Name", 
-      name: "name", 
-      type: "text", 
+    {
+      label: "Name",
+      name: "name",
+      type: "text",
       required: true,
-      hint: "Name as per passport (3-100 characters)" 
+      hint: "Name as per passport (3-100 characters)"
     },
-    { 
-      label: "Gender", 
-      name: "gender", 
-      type: "select", 
-      options: ["Male", "Female", "Other"], 
+    {
+      label: "Gender",
+      name: "gender",
+      type: "select",
+      options: ["Male", "Female", "Other"],
       required: true,
-      hint: "Select your gender as per passport" 
+      hint: "Select your gender as per passport"
     },
-    { 
-      label: "Date of Issue", 
-      name: "dateOfIssue", 
-      type: "date", 
+    {
+      label: "Date of Issue",
+      name: "dateOfIssue",
+      type: "date",
       required: true,
       hint: "Passport issue date"
     },
-    { 
-      label: "Place of Issue", 
-      name: "placeOfIssue", 
-      type: "text", 
+    {
+      label: "Place of Issue",
+      name: "placeOfIssue",
+      type: "text",
       required: true,
-      hint: "City/location where passport was issued" 
+      hint: "City/location where passport was issued"
     },
-    { 
-      label: "Place of Birth", 
-      name: "placeOfBirth", 
-      type: "text", 
+    {
+      label: "Place of Birth",
+      name: "placeOfBirth",
+      type: "text",
       required: true,
-      hint: "Your birth place as per passport" 
+      hint: "Your birth place as per passport"
     },
-    { 
-      label: "Date of Expiration", 
-      name: "dateOfExpiration", 
-      type: "date", 
+    {
+      label: "Date of Expiration",
+      name: "dateOfExpiration",
+      type: "date",
       required: true,
       hint: "Passport expiry date"
     },
-    { 
-      label: "Address", 
-      name: "address", 
-      type: "textarea", 
+    {
+      label: "Address",
+      name: "address",
+      type: "textarea",
       required: true,
-      hint: "Current address as per passport" 
+      hint: "Current address as per passport"
     },
-    { 
-      label: "Passport Image", 
-      name: "passportImage", 
+    {
+      label: "Passport Image",
+      name: "passportImage",
       type: "file",
       required: true, // Required on Add
-      hint: "Upload clear image of your passport" 
+      hint: "Upload clear image of your passport"
     },
   ],
   voter: [
-    { 
-      label: "Voter ID Number", 
-      name: "voterIdNumber", 
-      type: "text", 
-      required: true, 
-      hint: "Format: 3 letters + 7 digits (e.g., ABC1234567)" 
-    },
-    { 
-      label: "Full Name", 
-      name: "fullName", 
-      type: "text", 
+    {
+      label: "Voter ID Number",
+      name: "voterIdNumber",
+      type: "text",
       required: true,
-      hint: "Name as per voter ID (3-100 characters)" 
+      hint: "Format: 3 letters + 7 digits (e.g., ABC1234567)"
     },
-    { 
-      label: "Relation Name", 
-      name: "relationName", 
-      type: "text", 
+    {
+      label: "Full Name",
+      name: "fullName",
+      type: "text",
       required: true,
-      hint: "Father's/Husband's name (3-100 characters)" 
+      hint: "Name as per voter ID (3-100 characters)"
     },
-    { 
-      label: "Gender", 
-      name: "gender", 
-      type: "select", 
-      options: ["Male", "Female", "Other"], 
+    {
+      label: "Relation Name",
+      name: "relationName",
+      type: "text",
       required: true,
-      hint: "Select your gender as per voter ID" 
+      hint: "Father's/Husband's name (3-100 characters)"
     },
-    { 
-      label: "Date of Birth", 
-      name: "dateOfBirth", 
-      type: "date", 
+    {
+      label: "Gender",
+      name: "gender",
+      type: "select",
+      options: ["Male", "Female", "Other"],
+      required: true,
+      hint: "Select your gender as per voter ID"
+    },
+    {
+      label: "Date of Birth",
+      name: "dateOfBirth",
+      type: "date",
       required: true,
       hint: "Select your birth date"
     },
-    { 
-      label: "Address", 
-      name: "address", 
-      type: "textarea", 
+    {
+      label: "Address",
+      name: "address",
+      type: "textarea",
       required: true,
-      hint: "Address as per voter ID card" 
+      hint: "Address as per voter ID card"
     },
-    { 
-      label: "Issued Date", 
-      name: "issuedDate", 
-      type: "date", 
+    {
+      label: "Issued Date",
+      name: "issuedDate",
+      type: "date",
       required: true,
       hint: "Date when voter ID was issued"
     },
-    { 
-      label: "Voter Image", 
-      name: "uploadVoter", 
+    {
+      label: "Voter Image",
+      name: "uploadVoter",
       type: "file",
       required: true, // Required on Add
-      hint: "Upload clear image of your voter ID" 
+      hint: "Upload clear image of your voter ID"
     },
   ],
 };
@@ -406,6 +406,44 @@ const documentConfig = {
   },
 };
 
+// ------------------------------------------
+// 🚨 NEW VALIDATION HELPER FUNCTIONS
+// ------------------------------------------
+
+/**
+ * Calculates the maximum allowed date for a person to be 18+ years old.
+ * @returns {string} Date string in YYYY-MM-DD format (e.g., '2007-10-28').
+ */
+const getMaxDate = () => {
+  const today = new Date();
+  // Calculate the year 18 years ago
+  const maxYear = today.getFullYear() - 18;
+  // Set the max date to 18 years ago, ensuring month and day remain today's values
+  const maxDate = new Date(maxYear, today.getMonth(), today.getDate());
+
+  // Return in YYYY-MM-DD format
+  return maxDate.toISOString().split('T')[0];
+};
+
+/**
+ * Checks if the selected date ensures the user is at least 18 years old.
+ * @param {string} dateString Date string from the input (YYYY-MM-DD).
+ * @returns {boolean} True if 18 or older, false otherwise.
+ */
+const isAtLeast18YearsOld = (dateString) => {
+  if (!dateString) return true;
+
+  const selectedDate = new Date(dateString);
+  const today = new Date();
+
+  // Calculate the date 18 years ago (The latest allowed birth date)
+  const minDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+
+  // Check if the selected date is EARLIER THAN OR EQUAL TO the minimum allowed date.
+  return selectedDate <= minDate;
+};
+
+
 const Document = () => {
   const [editingSection, setEditingSection] = useState(null);
   const [identityData, setIdentityData] = useState({});
@@ -413,7 +451,7 @@ const Document = () => {
   const { empID } = useParams();
   const location = useLocation();
   const fileInputRef = useRef(null);
-  const { theme, userData,matchedArray } = useContext(Context);
+  const { theme, userData, matchedArray } = useContext(Context);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [searchFilter, setSearchFilter] = useState('');
@@ -431,6 +469,10 @@ const Document = () => {
   const isReadOnly = false;
   const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
 
+// ------------------------------------------
+// 🚨 MODIFIED VALIDATION FUNCTIONS (Added 18+ check)
+// ------------------------------------------
+
   const validatePanData = (data) => {
     const errors = {};
     if (!data.panNumber) {
@@ -447,6 +489,8 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
+    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
+      errors.dateOfBirth = 'You must be at least 18 years old.';
     } else if (!/^\d{4}-\d{2}-\d{2}$/.test(data.dateOfBirth)) {
       errors.dateOfBirth = 'Date of birth must be in YYYY-MM-DD format';
     }
@@ -474,6 +518,8 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
+    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
+      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.aadhaarName) {
@@ -503,6 +549,8 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
+    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
+      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.bloodGroup) {
@@ -546,6 +594,8 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
+    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
+      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.name) {
@@ -601,6 +651,8 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
+    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
+      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.address) {
@@ -613,6 +665,10 @@ const Document = () => {
 
     return errors;
   };
+
+// ------------------------------------------
+// END OF MODIFIED VALIDATION FUNCTIONS
+// ------------------------------------------
 
   const validateFormData = (subSection, data) => {
     switch (subSection) {
@@ -697,9 +753,9 @@ const Document = () => {
   };
 
   const handleFileChange = (field, file) => {
-    setEditingData(prev => ({...prev, [field]: file }));
+    setEditingData(prev => ({ ...prev, [field]: file }));
   };
-  
+
 
   const handleUpdate = async (subSection) => {
     setIsUpdating(true);
@@ -760,7 +816,7 @@ const Document = () => {
       }
 
       const dto = { ...editingData };
-      delete dto[fileInputField]; 
+      delete dto[fileInputField];
       formData.append(backendDtoPartName, new Blob([JSON.stringify(dto)], { type: 'application/json' }));
 
       const updateEmployeeId = documentEmployeeId;
@@ -897,15 +953,16 @@ const Document = () => {
       </div>
     </div>
   );
-  
+
   const renderField = (label, name, type = 'text', required = false, options = [], isDisabled = false, hint = '') => {
     const isError = errors[name];
     const fieldValue = editingData[name] || '';
-    
-  
+
+
     const handleLocalFieldChange = (value) => {
       handleEditFieldChange(name, value);
-  
+
+      // Specific format validation logic
       if (name === 'panNumber' && value) {
         if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) {
           setErrors(prev => ({ ...prev, [name]: 'PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)' }));
@@ -918,11 +975,20 @@ const Document = () => {
         if (!/^[A-Z]{3}[0-9]{7}$/.test(value)) {
           setErrors(prev => ({ ...prev, [name]: 'Voter ID format: 3 letters + 7 digits (e.g., ABC1234567)' }));
         }
+      } else if (name === 'dateOfBirth' || name === 'expiresOn' || name === 'issueDate' || name === 'dateOfIssue' || name === 'dateOfExpiration' || name === 'issuedDate') {
+        // Clear specific validation error if user changes the date
+        if (errors[name] && errors[name] === 'You must be at least 18 years old.') {
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[name];
+            return newErrors;
+          });
+        }
       }
     };
-  
+
     const newlySelectedFile = editingData[name] instanceof File ? editingData[name] : null;
-  
+
     return (
       <div className="group relative" key={name}>
         <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
@@ -938,7 +1004,7 @@ const Document = () => {
             </span>
           )}
         </label>
-  
+
         {hint && (
           <p className={`text-xs mb-2 ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -946,7 +1012,7 @@ const Document = () => {
             {hint}
           </p>
         )}
-  
+
         {type === 'select' ? (
           <div className="relative">
             <select
@@ -956,8 +1022,8 @@ const Document = () => {
                 isError
                   ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                   : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
               } ${
                 isDisabled
                   ? theme === 'dark'
@@ -987,12 +1053,14 @@ const Document = () => {
             type="date"
             value={fieldValue}
             onChange={(e) => handleLocalFieldChange(e.target.value)}
+            // 🚨 ADDED MAX ATTRIBUTE FOR UX: Only for DOB fields
+            max={name === 'dateOfBirth' ? getMaxDate() : undefined}
             className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
               isError
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                 : theme === 'dark'
-                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
             } ${
               isDisabled
                 ? theme === 'dark'
@@ -1007,8 +1075,8 @@ const Document = () => {
             isError
               ? 'border-red-300 bg-red-50'
               : theme === 'dark'
-              ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-              : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
+                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
           } ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
             <input
               type="file"
@@ -1033,8 +1101,8 @@ const Document = () => {
                   onClick={(e) => {
                     e.stopPropagation(); // Prevent the file dialog from opening
                     handleFileChange(name, null);
-                    if(fileInputRef.current) {
-                        fileInputRef.current.value = "";
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
                     }
                   }}
                   className={`inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
@@ -1055,7 +1123,7 @@ const Document = () => {
                 <p className={`text-xs sm:text-sm font-medium mb-1 ${
                   theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                 }`}>
-                  {editingData[name] && typeof editingData[name] === 'string' ? "Replace current file or " : "Drop your file here, or "} 
+                  {editingData[name] && typeof editingData[name] === 'string' ? "Replace current file or " : "Drop your file here, or "}
                   <span className="text-blue-600">browse</span>
                 </p>
                 <p className={`text-xs ${
@@ -1074,8 +1142,8 @@ const Document = () => {
               isError
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                 : theme === 'dark'
-                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
             } ${
               isDisabled
                 ? theme === 'dark'
@@ -1096,8 +1164,8 @@ const Document = () => {
               isError
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                 : theme === 'dark'
-                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
+                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
             } ${
               isDisabled
                 ? theme === 'dark'
@@ -1110,7 +1178,7 @@ const Document = () => {
             disabled={isDisabled}
           />
         )}
-  
+
         {isError && (
           <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
             <IoWarning className="w-4 h-4 flex-shrink-0" />
@@ -1137,7 +1205,7 @@ const Document = () => {
           <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex items-center justify-between">
-              <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
                 <div className="text-2xl sm:text-3xl md:text-4xl">
                   <config.icon />
                 </div>
@@ -1164,11 +1232,11 @@ const Document = () => {
                 {fields.map((f) => {
                   const isIdField = ['aadhaarNumber', 'panNumber', 'licenseNumber', 'passportNumber', 'voterIdNumber'].includes(f.name);
                   const isDisabled = isUpdate && isIdField;
-                  
+
                   // --- UPDATED LOGIC FOR CONDITIONAL REQUIRED STAR ---
                   let isRequired = f.required;
                   // Now includes licenseImage and passportImage
-                  const fileFieldsOptionalOnUpdate = ['aadhaarImage', 'panImage', 'uploadVoter', 'licenseImage', 'passportImage']; 
+                  const fileFieldsOptionalOnUpdate = ['aadhaarImage', 'panImage', 'uploadVoter', 'licenseImage', 'passportImage'];
                   if (f.type === 'file' && isUpdate && fileFieldsOptionalOnUpdate.includes(f.name)) {
                     isRequired = false;
                   }
@@ -1312,7 +1380,7 @@ const Document = () => {
 
     return (
       <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500
-                          overflow-hidden group hover:scale-[1.02] ${
+                         overflow-hidden group hover:scale-[1.02] ${
         theme === 'dark'
           ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
           : `bg-white ${config.borderColor}`
@@ -1350,21 +1418,21 @@ const Document = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-             {((fromContextMenu && isAdmin && hasData) || 
-   (matchedArray?.includes("PROFILES_DOCUMENTS_DELETE") && hasData) 
-   ) && (
-    <button
-      onClick={() => onDelete(subSectionKey)}
-      className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
-        theme === 'dark'
-          ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
-          : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
-      }`}
-    >
-      <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-      <span className="hidden sm:inline">Delete</span>
-    </button>
-  )}
+              {((fromContextMenu && isAdmin && hasData) ||
+                (matchedArray?.includes("PROFILES_DOCUMENTS_DELETE") && hasData)
+              ) && (
+                  <button
+                    onClick={() => onDelete(subSectionKey)}
+                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
+                      theme === 'dark'
+                        ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
+                        : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
+                    }`}
+                  >
+                    <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </button>
+                )}
 
               {!isReadOnly && (
                 <button
@@ -1558,6 +1626,7 @@ const Document = () => {
                     {isReadOnly && ' • Read-only access'}
                   </p>
                 </div>
+
               </div>
             </div>
           )}
