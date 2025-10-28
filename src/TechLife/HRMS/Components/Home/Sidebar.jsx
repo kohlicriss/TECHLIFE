@@ -1,21 +1,9 @@
 import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
-  CalendarCheck,
-  FileText,
-  Users,
-  Database,
-  ListChecks,
-  MessageCircle,
-  LogOut,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  UserCircle,
-  BadgePlus,
-  TicketCheck,
-  UserRoundCog,
+  LayoutDashboard, CalendarCheck, FileText, Users, Database, ListChecks,
+  MessageCircle, LogOut, X, ChevronLeft, ChevronRight, UserCircle, BadgePlus,
+  TicketCheck, UserRoundCog
 } from "lucide-react";
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
@@ -34,16 +22,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         method: "POST",
         credentials: "include",
       });
-    } catch (error) {
-      console.error("Backend logout failed, proceeding with client-side cleanup.", error);
+    } catch {
+      // Fallback/no action needed for failed logout
     } finally {
       [
         "accessToken","emppayload","logedempid","logedemprole",
         "loggedInUserImage","employeeFormData","aboutResponses",
         "loggedUserImage","permissionsData"
-      ].forEach(key => {
-        localStorage.removeItem(key);
-      });
+      ].forEach(key => localStorage.removeItem(key));
       setUserData(null);
       if (onLogout) onLogout();
     }
@@ -59,6 +45,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
+    { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" },
      { 
       name: "Pay Roll", 
       icon: <BadgePlus size={18}/>, 
@@ -69,7 +56,6 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     },
   ]
   if (userRole === 'ADMIN') {
-    navItems.push({ name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" });
     navItems.push({ name: "Permissions", icon: <UserRoundCog size={18} />, path: empId ? `/permissions/${empId}` : "/permissions" });
     navItems.push({ name: "ADMIN", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
   }
@@ -85,7 +71,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       />
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
-        className={`fixed top-0 left-0 h-full ${collapsed ? "w-20" : "w-60"} ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-lg z-[150] transform transition-all duration-200 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:shadow-none pt-3 flex flex-col`}
+        className={`fixed top-0 left-0 h-full ${
+          collapsed ? "w-20" : "w-60"
+        } ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-lg z-[150] transform transition-all duration-200 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 lg:static lg:shadow-none pt-3 flex flex-col`}
       >
         <div className="flex items-center justify-between px-4 mb-2 flex-shrink-0">
           <div className="lg:hidden">
@@ -99,10 +89,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
           <div className="ml-auto">
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className={`border rounded-full p-1 transition ${theme === 'dark'
-                ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white'
-                : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
-                }`}
+              className={`border rounded-full p-1 transition ${
+                theme === 'dark'
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white'
+                  : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
+              }`}
             >
               {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
@@ -117,12 +108,13 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                   key={item.name}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center cursor-pointer ${collapsed ? "justify-center" : "justify-start"} gap-3 px-4 py-1.5 transition rounded-md mx-2 relative ${isActive
-                    ? "bg-blue-500 text-white font-semibold"
-                    : theme === 'dark'
-                      ? "text-white hover:bg-gray-800"
-                      : "text-gray-700 hover:bg-blue-100"
-                    }`}
+                  className={`flex items-center cursor-pointer ${collapsed ? "justify-center" : "justify-start"} gap-3 px-4 py-1.5 transition rounded-md mx-2 relative ${
+                    isActive
+                      ? "bg-blue-500 text-white font-semibold"
+                      : theme === 'dark'
+                          ? "text-white hover:bg-gray-800"
+                          : "text-gray-700 hover:bg-blue-100"
+                  }`}
                 >
                   {item.icon}
                   {!collapsed && <span>{item.name}</span>}
@@ -140,7 +132,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         <div className="mt-4 mb-4 px-2 flex-shrink-0">
           <button
             onClick={handleLogoutClick}
-            className={`flex items-center cursor-pointer ${collapsed ? "justify-center" : "justify-start"} gap-3 px-4 py-2 rounded-md w-full text-left ${theme === 'dark' ? 'text-red-400 hover:bg-gray-800' : 'text-red-600 hover:bg-red-50'}`}
+            className={`flex items-center cursor-pointer ${collapsed ? "justify-center" : "justify-start"} gap-3 px-4 py-2 rounded-md w-full text-left ${
+              theme === 'dark'
+                ? 'text-red-400 hover:bg-gray-800'
+                : 'text-red-600 hover:bg-red-50'
+            }`}
           >
             <LogOut size={18} />
             {!collapsed && <span>Log Out</span>}
