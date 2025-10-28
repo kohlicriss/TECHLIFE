@@ -30,6 +30,7 @@ import {
 import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
 import { chatApi } from '../../../../axiosInstance';
 
+// Utility function to convert file size from bytes to a human-readable string (KB, MB, GB, etc.)
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -38,6 +39,7 @@ const formatFileSize = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+// Component to display the correct icon based on the file extension (PDF, Word, Image, etc.)
 const FileIcon = ({ fileName, className = "text-3xl" }) => {
     const extension = fileName?.split('.').pop()?.toLowerCase();
     if (['pdf'].includes(extension)) return <FaFilePdf className={`text-red-500 ${className}`} />;
@@ -50,6 +52,7 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
     return <FaFileAlt className={`text-gray-500 ${className}`} />;
 };
 
+// Component to render a non-image file message (document, zip, etc.) with a download button
 const FileMessage = ({ msg, isMyMessage, theme }) => {
     const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
     
@@ -97,6 +100,7 @@ const FileMessage = ({ msg, isMyMessage, theme }) => {
     return !isMyMessage ? <div onClick={() => window.open(downloadUrl, '_blank')} className="cursor-pointer">{content}</div> : content;
 };
 
+// Component to handle playback, progress, and download of audio/voice messages. It fetches the audio blob on demand if a local source isn't present.
 const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0, theme }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -205,6 +209,7 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
         </div>
     );
 };
+// Component for displaying animated loading states (skeletons) for messages while content is fetched.
 const MessageSkeleton = ({ theme }) => (
     <div className="space-y-4 p-4">
         <div className="flex items-end gap-2 justify-start">
@@ -262,6 +267,7 @@ const MessageSkeleton = ({ theme }) => (
     </div>
 );
 
+// Utility function using Web Audio API to calculate the duration of an audio Blob before upload.
 const getAudioDuration = (audioBlob) =>
     new Promise((resolve) => {
         const reader = new FileReader();
@@ -290,6 +296,7 @@ const getAudioDuration = (audioBlob) =>
         reader.readAsArrayBuffer(audioBlob);
     });
 
+// Modal component for displaying a contact's profile picture in full view on mobile devices.
 const ContactProfileModal = ({ chat, onClose, theme }) => {
     const [isZoomed, setIsZoomed] = useState(false);
 
@@ -430,6 +437,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setSearchQuery(e.target.value);
     };
 
+// Debounced effect to trigger message search in the currently selected chat on search query change
     useEffect(() => {
         if (searchQuery.trim() === '') {
             setSearchResults([]);
@@ -449,6 +457,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return () => clearTimeout(timerId);
     }, [searchQuery, selectedChat, currentUser.id]);
 
+// Handlers to navigate between search results within the chat view
     const handleNextResult = () => {
         if (currentResultIndex < searchResults.length - 1) {
             setCurrentResultIndex(prev => prev + 1);
@@ -461,6 +470,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+// Effect to scroll the chat container to the highlighted search result
     useEffect(() => {
         if (currentResultIndex !== -1 && searchResults[currentResultIndex]) {
             const messageId = searchResults[currentResultIndex].messageId;
@@ -471,6 +481,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [currentResultIndex, searchResults]);
 
+// Fetches a block of messages around a specific search result and scrolls to it, highlighting the message.
     const handleJumpToMessage = async (message) => {
         setIsSearchVisible(false);
         setSearchQuery('');
@@ -498,6 +509,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Logic for infinite scrolling in the chat sidebar to load more chat previews/overviews.
     const handleSidebarScroll = () => {
         const container = sidebarScrollRef.current;
         if (container) {
@@ -511,6 +523,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Logic for infinite scrolling in the chat container to load older messages when scrolled to the top.
     const handleChatScroll = () => {
         const container = chatContainerRef.current;
         if (!container) return;
@@ -535,6 +548,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Function to smoothly scroll the message container to the most recent message and reset the new message count.
     const scrollToBottom = (behavior = 'smooth') => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTo({
@@ -545,6 +559,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setNewMessagesCount(0);
     };
 
+    // Debounced effect to search through all chat overviews (sidebar chat list).
     useEffect(() => {
         if (searchTerm.trim() === '') {
             setSearchChatResults(null);
@@ -586,6 +601,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [initialChats, chatIdFromUrl]);
 
+    // Core function to fetch historical messages for a specific chat, handling pagination (page load = 0, scroll load > 0).
     const loadMoreMessages = useCallback(async (chatId, pageNum) => {
         if ((pageNum > 0 && isFetchingMoreMessages) || (pageNum === 0 && isMessagesLoading)) {
             return;
@@ -697,6 +713,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         });
     }, [currentUser.id, selectedChat]);
 
+    // Central handler for all incoming WebSocket messages (new message, status updates, pin/unpin, delete, edit).
     const onMessageReceived = useCallback((payload) => {
         const container = chatContainerRef.current;
         const shouldScrollOnReceive = container
@@ -957,6 +974,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [isMessagesLoading, selectedChat]);
 
+    // Initializes and manages the STOMP WebSocket client connection, subscribes to global and private queues, and handles lifecycle.
     useEffect(() => {
         if (!currentUser?.id || !isChatDataReady) return;
 
@@ -1027,6 +1045,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return (chatData.groups || []).map(g => g.chatId).sort().join(',');
     }, [chatData.groups]);
 
+    // Dynamically subscribes/unsubscribes to group message topics as the user's group list changes.
     useEffect(() => {
         if (!isConnected || !stompClient.current?.active) return;
 
@@ -1061,6 +1080,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
 
+    // Opens a selected chat, sends a 'presence/open' status to the server, and fetches initial group data (members).
     const openChat = useCallback(async (targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
@@ -1095,6 +1115,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [currentUser.id, groupMembersCache]);
 
+    // Closes the current chat view, sends a 'presence/close' status, and navigates the URL
     const closeChat = useCallback(() => {
         isManuallyClosing.current = true;
 
@@ -1118,6 +1139,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [selectedChat, currentUser.id, navigate]);
 
+    // Handles click on a chat in the sidebar: clears unread count and calls openChat.
     const handleChatSelect = useCallback((chat) => {
         if (selectedChat && selectedChat.chatId !== chat.chatId && stompClient.current?.active) {
             const destination = `/app/presence/close/${selectedChat.chatId}`;
@@ -1202,6 +1224,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showEmojiPicker, showChatMenu, contextMenu.visible, showPinnedMenu]);
 
+    // Publishes a STOMP message to inform other chat participants of the current user's typing status.
     const sendTypingStatus = (isTyping) => {
         if (!stompClient.current?.active || !selectedChat) return;
 
@@ -1219,6 +1242,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         });
     };
 
+    // Sends a new text or reply message via STOMP, creating an optimistic message view first.
     const handleSendMessage = () => {
         if (!message.trim() || !selectedChat) return;
 
@@ -1286,6 +1310,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const onEmojiClick = (emojiObject) => setMessage(prev => prev + emojiObject.emoji);
     const handleFileButtonClick = () => fileInputRef.current.click();
 
+    // Handles file selection, uploads the file via API, and creates an optimistic 'sending' file message in the chat.
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedChat) return;
@@ -1349,7 +1374,9 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Toggles the voice recording state and captures the microphone input.
     const handleMicButtonClick = () => { if (isRecording) stopRecording(); else startRecording(); };
+    // Detailed logic for starting, capturing data, stopping, and uploading a voice message as an audio blob/file.
     const startRecording = () => {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
@@ -1437,6 +1464,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setIsRecording(false);
     };
 
+    // Clears all messages in the current chat and updates the last message display.
     const handleConfirmClearChat = async () => {
         if (!selectedChat) return;
         try {
@@ -1475,10 +1503,12 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, []);
 
+    // Displays the right-click context menu (reply, edit, delete, pin) at the click coordinates.
     const handleContextMenu = (event, message, index) => { event.preventDefault(); event.stopPropagation(); const menuWidth = 180; const menuHeight = 250; let x = event.pageX; let y = event.pageY; if (x + menuWidth > window.innerWidth) x -= menuWidth; if (y + menuHeight > window.innerHeight) y -= menuHeight; setContextMenu({ visible: true, x, y, message, index }); };
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
 
+    // Updates the message content optimistically, publishes the edit event to STOMP, and cleans up the editing state.
     const handleSaveEdit = () => {
         const updatedContent = message.trim();
 
@@ -1534,6 +1564,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
+    // Deletes a message for the current user or for everyone based on the context menu selection.
     const handleDelete = async (forEveryone) => {
         const chatId = selectedChat.chatId;
         const currentMessages = [...(messages[chatId] || [])];
@@ -1564,6 +1595,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     const handleUndoDelete = () => { if (!lastDeleted) return; const currentMessages = [...messages[selectedChat.chatId]]; currentMessages[lastDeleted.index] = lastDeleted.message; setMessages(prev => ({ ...prev, [selectedChat.chatId]: currentMessages })); setLastDeleted(null); };
+    // Handlers to pin or unpin a message, communicating with the server API.   
     const handlePin = async () => {
         if (!contextMenu.message?.messageId) return;
 
@@ -1612,6 +1644,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
     };
 
+    // Sends the selected message to multiple recipients via API and updates the local last message for each recipient.
     const handleConfirmForward = async () => {
         const originalMsg = forwardingInfo.message;
         if (!originalMsg || forwardRecipients.length === 0) {
@@ -1653,6 +1686,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const chatsToDisplay = searchChatResults !== null ? searchChatResults : allChats;
 
+    // Syncs the currently selected chat with the URL parameter on load or chat list change.
     useEffect(() => {
         if (chatIdFromUrl && allChats.length > 0 && isConnected && !selectedChat) {
             if (isManuallyClosing.current) {
@@ -1773,10 +1807,15 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     return (
+        // Main Chat Application Container
         <div className={`w-full h-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} font-sans`}>
+            {/* Content Area: Sidebar (30%) and Chat Window (70%) */}
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
+                {/* Sidebar / Chat List Container */}
                 <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                    {/* Chat List Search Input */}
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className={`w-full p-3 rounded-lg border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 border-gray-300'}`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                    {/* Chat List Scrollable Area */}
                     <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
                         {isSearching ? (
                             <div className="text-center p-4 text-gray-500">Searching...</div>
@@ -1823,7 +1862,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         )}
                     </div>
                 </div>
-
+                 {/* Chat Window Container (Messages, Header, Input) */}
                 <div className={`flex-col shadow-xl fixed inset-0 z-[100] overflow-hidden md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
@@ -2097,7 +2136,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                     )
                                 )}
                             </div>
-
+                            {/* Message Input Area Container */}
                             <div className={`flex-shrink-0 flex flex-col p-4 border-t ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                 {replyingTo && (
                                     <div className={`p-2 rounded-t-lg flex justify-between items-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
