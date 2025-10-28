@@ -202,36 +202,30 @@ const About = () => {
       const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
 
       if (recordExists) {
-        // 1. రికార్డు ఉంది అనుకుంటే PUT
         await publicinfoApi.put(endpoint, payload);
       } else {
-        // 2. రికార్డు లేదు అనుకుంటే POST ప్రయత్నం
         await publicinfoApi.post(endpoint, payload);
-        setRecordExists(true); // POST సక్సెస్
+        setRecordExists(true); 
       }
       
     } catch (err) {
       console.error(`❌ Error saving ${field} data:`, err);
 
-      // **ముఖ్యమైన లాజిక్:** POST ఫెయిల్ అయినప్పుడు PUT కి ఫాల్‌బ్యాక్
       const isAlreadyRecordedError = err.response && 
-                                   (err.response.status === 409 || 
+                                   (   err.response.status === 500|| err.response.status === 409 || 
                                    (err.response.status === 400 && JSON.stringify(err.response.data).toLowerCase().includes("already recorded")));
                                    
       if (isAlreadyRecordedError && !recordExists) {
           console.warn("⚠️ POST failed (Record exists on server), attempting PUT...");
           try {
-              // recordExists ని true చేసి, PUT కి ప్రయత్నిస్తుంది.
-              await publicinfoApi.put(`employee/${employeeIdToFetch}/updateAbout`, payload); // **payload ని వాడుతున్నాం**
+              await publicinfoApi.put(`employee/${employeeIdToFetch}/updateAbout`, payload);
               setRecordExists(true); 
           } catch (putErr) {
-              // PUT కూడా ఫెయిల్ అయితే, అసలు ఎర్రర్‌ను చూపుతుంది.
               console.error("❌ PUT attempt also failed:", putErr);
               revertState(allPreviousState, field, `Failed to save ${field}. Try again.`);
               return; 
           }
       } else {
-          // ఇతర ఎర్రర్లను హ్యాండిల్ చేయడం
           revertState(allPreviousState, field, `Failed to save ${field}. Please try again.`);
       }
     } finally {
