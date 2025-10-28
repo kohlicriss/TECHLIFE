@@ -365,9 +365,7 @@ const Departmentspage = () => {
             </div>
           ))}
         </div>
-        <p className={`${theme === "dark" ? "text-gray-400" : "text-gray-500"} text-center mt-12 font-medium`}>
-          Total Departments: {departments.length}
-        </p>
+      
       </div>
     </div>
   );
