@@ -4,23 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Context } from '../HrmsContext';
 import { notificationsApi } from '../../../../axiosInstance';
 import {
-    FaBars,
-    FaTimes,
-    FaSearch,
-    FaEnvelope,
-    FaStar,
-    FaInbox,
-    FaFilter,
-    FaCalendar,
-    FaExclamationTriangle,
-    FaInfoCircle,
-    FaTimesCircle,
-    FaCheckCircle,
-    FaEraser,
-    FaTrashAlt,
-    FaSync,
+    FaBars, FaTimes, FaSearch, FaEnvelope, FaStar, FaInbox, FaFilter, FaCalendar,
+    FaExclamationTriangle, FaInfoCircle, FaTimesCircle, FaCheckCircle, FaEraser,
+    FaTrashAlt, FaSync
 } from "react-icons/fa";
-import { parseISO, formatDistanceToNow, format } from "date-fns";
+import { parseISO, formatDistanceToNow, format, add } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 
 const NotificationSystem = () => {
@@ -31,58 +19,46 @@ const NotificationSystem = () => {
     const [selectedNotifications, setSelectedNotifications] = useState([]);
     const [fromDate, setFromDate] = useState(null);
     const [toDate, setToDate] = useState(null);
-    
+
     const navigate = useNavigate();
-    const { gdata, setGdata, markAsRead, decrementUnreadCount, theme,notificationPageNumber,
-             setNotificationPageNumber,
-             notificationPageSize,
-             hasMoreNotifications // <-- IMPORTED: Centralized status for infinite scroll
-             } = useContext(Context);
+    const { gdata, setGdata, markAsRead, decrementUnreadCount, theme,
+            notificationPageNumber, setNotificationPageNumber,
+            notificationPageSize, hasMoreNotifications } = useContext(Context);
 
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const listRef = useRef(null);
-
     const fromDateRef = useRef(null);
     const toDateRef = useRef(null);
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
     const loadMore = useCallback(() => {
-        // Now using the centralized hasMoreNotifications status
         if (isLoadingMore || !hasMoreNotifications) return;
-        
         setIsLoadingMore(true);
         setNotificationPageNumber(prevPage => prevPage + 1);
-    }, [isLoadingMore, hasMoreNotifications, setNotificationPageNumber]); // <-- Dependency updated
+    }, [isLoadingMore, hasMoreNotifications, setNotificationPageNumber]);
 
     useEffect(() => {
         const listEl = listRef.current;
         if (!listEl) return;
-
         const handleScroll = () => {
             const { scrollTop, scrollHeight, clientHeight } = listEl;
-            // Trigger loadMore when near the bottom
             if (scrollTop + clientHeight >= scrollHeight - 150) {
                 loadMore();
             }
         };
-
         listEl.addEventListener('scroll', handleScroll);
         return () => listEl.removeEventListener('scroll', handleScroll);
     }, [loadMore]);
 
-    // FIX: Add useEffect to turn off isLoadingMore after a fetch completes.
     useEffect(() => {
         if (isLoadingMore) {
-            // A change in gdata or hasMoreNotifications signals the fetch has completed.
             const timer = setTimeout(() => {
                 setIsLoadingMore(false);
-            }, 100); 
-
+            }, 100);
             return () => clearTimeout(timer);
         }
     }, [gdata, hasMoreNotifications, isLoadingMore]);
-
 
     const handleTabClick = (tabName) => {
         setActiveTab(tabName);
@@ -100,14 +76,14 @@ const NotificationSystem = () => {
         setIsEditMode(false);
         setSelectedNotifications([]);
     };
-    
+
     const clearFilters = () => {
         setFromDate(null);
         setToDate(null);
         setSearchQuery("");
         setActiveTab("All");
     };
-    
+
     const getKindIcon = (kind) => {
         const icons = {
             alert: <FaTimesCircle size={18} className="text-red-500" />,
@@ -132,7 +108,7 @@ const NotificationSystem = () => {
             } else {
                 await notificationsApi.put(`/stared/${id}`);
             }
-        } catch (error) {
+        } catch {
             setGdata(originalGdata);
         }
     };
@@ -150,8 +126,8 @@ const NotificationSystem = () => {
         }
         try {
             await notificationsApi.delete(`/delete/${id}`);
-        } catch (error) {
-            setGdata(originalGdata); 
+        } catch {
+            setGdata(originalGdata);
         }
     };
 
@@ -182,19 +158,40 @@ const NotificationSystem = () => {
         }
         try {
             await Promise.all(idsToDelete.map(id => notificationsApi.delete(`/delete/${id}`)));
-        } catch (error) {
-            setGdata(originalGdata); 
+        } catch {
+            setGdata(originalGdata);
+        }
+    };
+
+    // ONLY CHANGE: add 5h30m before formatting
+    const addOffset = (isoString) => {
+        try {
+            const dt = parseISO(isoString);
+            if (isNaN(dt)) return null;
+            return add(dt, { hours: 5, minutes: 30 });
+        } catch {
+            return null;
         }
     };
 
     const getTimeAgo = (date) => {
-        try { return formatDistanceToNow(parseISO(date), { addSuffix: true }); } 
-        catch (error) { return ""; }
+        try {
+            const shifted = addOffset(date);
+            if (!shifted) return "";
+            return formatDistanceToNow(shifted, { addSuffix: true });
+        } catch {
+            return "";
+        }
     };
 
     const getTimestamp = (dateString) => {
-        try { return formatInTimeZone(dateString, "Asia/Kolkata", "MMM d, h:mm a"); } 
-        catch (error) { return ""; }
+        try {
+            const shifted = addOffset(dateString);
+            if (!shifted) return "";
+            return formatInTimeZone(shifted, "Asia/Kolkata", "MMM d, h:mm a");
+        } catch {
+            return "";
+        }
     };
 
     const filteredNotifications = useMemo(() => {
@@ -203,7 +200,7 @@ const NotificationSystem = () => {
 
         if (activeTab === "Unread") filtered = filtered.filter((msg) => !msg.read);
         else if (activeTab === "Starred") filtered = filtered.filter((msg) => msg.stared);
-        
+
         if (searchQuery) {
             filtered = filtered.filter( (msg) =>
                 msg.message?.toLowerCase().includes(lowerCaseQuery) ||
@@ -227,7 +224,6 @@ const NotificationSystem = () => {
         return filtered;
     }, [gdata, activeTab, searchQuery, fromDate, toDate]);
 
-    // NEW: Check if any filters are active
     const hasActiveFilters = useMemo(() => {
         return (
             searchQuery !== "" || 
@@ -243,14 +239,11 @@ const NotificationSystem = () => {
     };
 
     const buttonVariants = { hover: { scale: 1.05 }, tap: { scale: 0.95 } };
-    
+
     return (
         <div className={`w-full h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-            
             <motion.div
-                className={`flex-shrink-0 shadow-sm border-b z-20 w-full ${
-                    theme === 'dark' ? 'bg-black border-gray-700' : 'bg-white border-gray-200'
-                }`}
+                className={`flex-shrink-0 shadow-sm border-b z-20 w-full ${theme === 'dark' ? 'bg-black border-gray-700' : 'bg-white border-gray-200'}`}
                 initial="hidden"
                 animate="visible"
                 variants={topBarVariants}
@@ -313,22 +306,13 @@ const NotificationSystem = () => {
                 </div>
             </motion.div>
 
-
-            <div
-                ref={listRef}
-                // FIX: Apply centering classes when the list is empty and not loading
-                className={`flex-1 overflow-y-auto ${!isLoadingMore && filteredNotifications?.length === 0 ? 'flex items-center justify-center' : ''}`}
-            >
+            <div ref={listRef} className={`flex-1 overflow-y-auto ${!isLoadingMore && filteredNotifications?.length === 0 ? 'flex items-center justify-center' : ''}`}>
                 {filteredNotifications?.length > 0 ? (
-                    <div className="p-2 notifications-list"> 
+                    <div className="p-2 notifications-list">
                         {filteredNotifications.map((message) => (
                             <motion.div
                                 key={message.id}
-                                className={`rounded-lg shadow-sm border mb-1.5 cursor-pointer overflow-hidden relative ${
-                                    selectedNotifications.includes(message.id) ? "border-indigo-400 ring-2 ring-indigo-200" : theme === 'dark' ? "border-gray-700" : "border-gray-200"
-                                } ${
-                                    !message.read ? (theme === 'dark' ? "bg-gradient-to-r from-gray-800 to-gray-700" : "bg-gradient-to-r from-indigo-50 to-purple-50") : (theme === 'dark' ? "bg-gray-800" : "bg-white")
-                                }`}
+                                className={`rounded-lg shadow-sm border mb-1.5 cursor-pointer overflow-hidden relative ${selectedNotifications.includes(message.id) ? "border-indigo-400 ring-2 ring-indigo-200" : theme === 'dark' ? "border-gray-700" : "border-gray-200"} ${!message.read ? (theme === 'dark' ? "bg-gradient-to-r from-gray-800 to-gray-700" : "bg-gradient-to-r from-indigo-50 to-purple-50") : (theme === 'dark' ? "bg-gray-800" : "bg-white")}`}
                                 onClick={() => handleNotificationClick(message)}
                                 whileHover={{ y: -2, boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}
                                 transition={{ duration: 0.15 }}
@@ -381,30 +365,25 @@ const NotificationSystem = () => {
                                 </div>
                             </motion.div>
                         ))}
-                        {/* UPDATED: Loading spinner */}
-                        {isLoadingMore && ( 
+                        {isLoadingMore && (
                             <div className={`text-center py-4 flex justify-center items-center space-x-2 ${ theme === 'dark' ? 'text-gray-400' : 'text-gray-600' }`}>
                                 <FaSync size={16} className="text-blue-500 animate-spin" style={{ animation: 'spin 1s linear infinite' }}/>
                                 <span>Loading more...</span>
-                            </div> 
+                            </div>
                         )}
-                        {!hasMoreNotifications && ( <div className={`text-center py-4 ${ theme === 'dark' ? 'text-gray-500' : 'text-gray-500' }`}>No more notifications.</div> )}
+                        {!hasMoreNotifications && (<div className={`text-center py-4 ${ theme === 'dark' ? 'text-gray-500' : 'text-gray-500' }`}>No more notifications.</div>)}
                     </div>
                 ) : (
-                    // Empty state block
                     !isLoadingMore && (
-                        // Removed justify-center h-full, as the parent listRef now handles centering.
-                        <div className="p-2 notifications-list w-full"> 
+                        <div className="p-2 notifications-list w-full">
                             <div className="flex flex-col items-center text-center p-4">
                                 {hasActiveFilters ? (
-                                    // Case 1: Filters are active but no results found
                                     <>
                                         <FaSearch size={48} className={`mb-4 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`} />
                                         <h3 className={`text-xl font-semibold ${ theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>No Matches Found</h3>
                                         <p className={`mt-1 text-sm ${ theme === 'dark' ? 'text-gray-400' : 'text-gray-500' }`}>Try adjusting your filters or clearing the search query.</p>
                                     </>
                                 ) : (
-                                    // Case 2: No filters are active (default view) and list is empty
                                     <>
                                         <FaCheckCircle size={48} className="mb-4 text-green-500" />
                                         <h3 className={`text-xl font-semibold ${ theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>You're All Caught Up!</h3>
