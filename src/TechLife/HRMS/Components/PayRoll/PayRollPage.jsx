@@ -8,7 +8,7 @@ import { useNavigate} from 'react-router-dom';
 // API Service Functions - Updated with correct endpoints
 const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/payroll';
 
-const token=localStorage.getItem("access token");
+const token=localStorage.getItem("accessToken");
 
 const payrollApi = {
   // Add new employee
@@ -66,94 +66,107 @@ const payrollApi = {
         headers : {Authorization : `Bearer ${token}`}
       }
     );
-    return response.data.data; // or response.data depending on your structure
+    return response.data.data; 
   },
 
   updatePayrollComponents: async (payrollId, updateData) => {
-    const response = await axios.put(`${API_BASE_URL}/admin/payroll/${payrollId}/update`, updateData);
-    return response.data;
-  },
-
-  // Keep the recalculate method for when you need just recalculation
-  recalculateSalary: async (payrollId) => {
-    const response = await axios.post(`${API_BASE_URL}/payroll/recalculate/${payrollId}`);
-    return response.data;
-  },
-  
-
-
-  // Add this missing function that's being called in handleDownloadPayslip
-  getEmployeeSalaryByMonth: async (employeeId, month, year) => {
-    const response = await fetch(
-      `${API_BASE_URL}/employees/${employeeId}/salary/${month}/${year}`
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch salary data');
-    }
-    const result = await response.json();
-    return result.data || result;
-  },
-
-  // Add this missing function that's being called in handleView
-  getEmployeeFullData: async (employeeId) => {
-    const response = await fetch(`${API_BASE_URL}/employees/fulldata/${employeeId}`);
-    if (!response.ok) throw new Error('Failed to fetch employee full data');
-    const result = await response.json();
-    return result.data || result;
-  },
-
-  getAllEmployees: async () => {
-    const response = await fetch(`${API_BASE_URL}/employee`);
-    if (!response.ok) throw new Error('Failed to fetch employees');
-    
-    const result = await response.json();
-    return result.data || []; 
-  },
-
-  // Update employee data
-  updateEmployee: async (employeeId, employeeData) => {
-    const response = await fetch(`${API_BASE_URL}/employee/${employeeId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(employeeData),
-    });
-    if (!response.ok) throw new Error('Failed to update employee');
-    return response.json();
-  },
-
-  updatePayrollWithBonus: async (payrollId, bonusData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/payroll/${payrollId}/update`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bonusData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update payroll');
+    const response = await axios.put(
+      `${API_BASE_URL}/admin/payroll/${payrollId}/update`,
+      updateData,
+      {
+        headers: { Authorization: `Bearer ${token}` },
       }
-
-      const result = await response.json();
-      return result.data;
-    } catch (error) {
-      console.error('Error updating payroll:', error);
-      throw error;
-    }
+    );
+    return response.data;
   },
+
+  
+  recalculateSalary: async (payrollId) => {
+    const response = await axios.post(
+      `${API_BASE_URL}/payroll/recalculate/${payrollId}`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  },
+
+
+  getEmployeeSalaryByMonth: async (employeeId, month, year) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/employees/${employeeId}/salary/${month}/${year}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const data = response.data?.data;
+    if (Array.isArray(data)) return data;
+    if (data) return [data];
+    return [];
+  },
+
+  
+  getEmployeeFullData: async (employeeId) => {
+    const response = await axios.get(
+      `${API_BASE_URL}/employees/fulldata/${employeeId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data?.data || {};
+  },
+
+  
+  getAllEmployees: async () => {
+    const response = await axios.get(`${API_BASE_URL}/employee`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = response.data?.data;
+    return Array.isArray(data) ? data : [];
+  },
+
+  
+  updateEmployee: async (employeeId, employeeData) => {
+    const response = await axios.put(
+      `${API_BASE_URL}/employee/${employeeId}`,
+      employeeData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  
+  updatePayrollWithBonus: async (payrollId, bonusData) => {
+    const response = await axios.put(
+      `${API_BASE_URL}/admin/payroll/${payrollId}/update`,
+      bonusData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data?.data || response.data;
+  },
+
   
   deleteEmployee: async (employeeId) => {
-    const response = await fetch(`${API_BASE_URL}/employee/${employeeId}`, {
-      method: 'DELETE',
+    const response = await axios.delete(`${API_BASE_URL}/employee/${employeeId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error('Failed to delete employee');
-    return response.json();
-  }
+    return response.data;
+  },
 };
+
 
 // Helper function to convert month name to number
 const getMonthNumber = (monthName) => {
@@ -1236,39 +1249,39 @@ const handleDownloadPayslip = async (employee) => {
                 <thead>
                   <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
                     <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (¥)</th>
+                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Basic Salary</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(basicSalary)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(basicSalary)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">HRA</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(hraAmount)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(hraAmount)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Conveyance Allowance</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(conveyanceAllowance)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(conveyanceAllowance)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Medical Allowance</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(medicalAllowance)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(medicalAllowance)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Special Allowance</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(specialAllowance)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(specialAllowance)}</td>
                   </tr>
                   ${bonusAmount > 0 ? `
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Bonus</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(bonusAmount)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(bonusAmount)}</td>
                   </tr>
                   ` : ''}
                   <tr style="background: #dbeafe; font-weight: bold;">
                     <td style="padding: 12px;"><strong>GROSS EARNINGS</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>¥${formatCurrency(grossEarnings)}</strong></td>
+                    <td style="padding: 12px; text-align: right;"><strong>₹${formatCurrency(grossEarnings)}</strong></td>
                   </tr>
                 </tbody>
               </table>
@@ -1281,29 +1294,29 @@ const handleDownloadPayslip = async (employee) => {
                 <thead>
                   <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
                     <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (¥)</th>
+                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Provident Fund</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(providentFund)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(providentFund)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Professional Tax</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(professionalTax)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(professionalTax)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">Income Tax</td>
-                    <td style="padding: 12px; text-align: right;">¥${formatCurrency(incomeTax)}</td>
+                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(incomeTax)}</td>
                   </tr>
                   <tr style="background: #dbeafe; font-weight: bold;">
                     <td style="padding: 12px;"><strong>TOTAL DEDUCTIONS</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>¥${formatCurrency(totalDeductions)}</strong></td>
+                    <td style="padding: 12px; text-align: right;"><strong>₹${formatCurrency(totalDeductions)}</strong></td>
                   </tr>
                   <tr style="background: #dcfce7; font-weight: bold; color: #166534; font-size: 18px;">
                     <td style="padding: 12px;"><strong>NET SALARY</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>¥${formatCurrency(netSalary)}</strong></td>
+                    <td style="padding: 12px; text-align: right;"><strong>₹${formatCurrency(netSalary)}</strong></td>
                   </tr>
                 </tbody>
               </table>

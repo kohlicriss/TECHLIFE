@@ -52,6 +52,30 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
 
 const FileMessage = ({ msg, isMyMessage, theme }) => {
     const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
+    
+    const handleDownloadClick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            const response = await fetch(downloadUrl);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', msg.fileName || 'download'); 
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl); 
+        } catch (error) {
+            console.error('Download failed:', error);
+            window.open(downloadUrl, '_blank');
+        }
+    };
 
     const content = (
         <div className={`flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')}`}>
@@ -63,11 +87,7 @@ const FileMessage = ({ msg, isMyMessage, theme }) => {
                 <p className={`text-sm ${isMyMessage ? 'text-blue-200' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}`}>{formatFileSize(msg.fileSize)}</p>
             </div>
             <div
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.open(downloadUrl, '_blank');
-                }}
+                onClick={handleDownloadClick} 
                 className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors cursor-pointer"
             >
                 <FaDownload size={18} />
@@ -206,6 +226,38 @@ const MessageSkeleton = ({ theme }) => (
         <div className="flex items-end gap-2 justify-start">
             <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
             <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-32`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-48`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className={`h-12 rounded-lg ${theme === 'dark' ? 'bg-blue-700' : 'bg-blue-200'} animate-pulse w-32`}></div>
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-16 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-64`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-blue-700' : 'bg-blue-200'} animate-pulse w-40`}></div>
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-32`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-48`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className={`h-12 rounded-lg ${theme === 'dark' ? 'bg-blue-700' : 'bg-blue-200'} animate-pulse w-32`}></div>
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-16 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-64`}></div>
         </div>
     </div>
 );
@@ -1398,7 +1450,31 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
-    const handleMediaDownload = (src, fileName) => { const link = document.createElement('a'); link.href = src; link.setAttribute('download', fileName || 'download'); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+    const handleMediaDownload = useCallback(async (src, fileName, event) => {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        try {
+            const response = await fetch(src);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', fileName || 'download');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed:', error);
+            window.open(src, '_blank');
+        }
+    }, []);
+
     const handleContextMenu = (event, message, index) => { event.preventDefault(); event.stopPropagation(); const menuWidth = 180; const menuHeight = 250; let x = event.pageX; let y = event.pageY; if (x + menuWidth > window.innerWidth) x -= menuWidth; if (y + menuHeight > window.innerHeight) y -= menuHeight; setContextMenu({ visible: true, x, y, message, index }); };
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
@@ -1949,11 +2025,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
                                                                             {msg.type === 'image' ? (
                                                                                 <div className="relative">
-                                                                                    <button onClick={() => setImageInView(fileUrl)}>
+                                                                                    <button onClick={() => setImageInView(fileUrl)} className="cursor-pointer">
                                                                                         <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{ maxHeight: '300px' }} />
                                                                                     </button>
                                                                                     {!isMyMessage && (
-                                                                                        <a href={fileUrl} download={msg.fileName} onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                        <a
+                                                                                            href={fileUrl}
+                                                                                            download={msg.fileName}
+                                                                                            onClick={(e) => handleMediaDownload(fileUrl, msg.fileName, e)}
+                                                                                            className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                        >
                                                                                             <FaDownload />
                                                                                         </a>
                                                                                     )}

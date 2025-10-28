@@ -293,7 +293,7 @@ const EmployeeCard = ({ employee, onDelete, onViewPayroll }) => {
 
     return (
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4 p-4 bg-gradient-to-r from-gray-600 to-gray-400 text-white rounded-lg">
+        <div className="flex justify-between items-center mb-4 p-4 bg-gradient-to-r from-blue-600 to-blue-600 text-white rounded-lg">
           <div>
             <h2 className="text-2xl font-bold">{department} Department</h2>
             <p className="text-blue-100">

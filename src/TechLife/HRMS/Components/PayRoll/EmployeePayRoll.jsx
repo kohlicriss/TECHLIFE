@@ -1,14 +1,97 @@
-import React, { useState, useEffect, useContext } from 'react';
+
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Context } from '../HrmsContext';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
- import jsPDF from 'jspdf';
+import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+const DetailField = React.memo(
+  ({
+    label,
+    name,
+    value,
+    isEditing,
+    onChange,
+    type = "text",
+    placeholder = "",
+    showLPA = false
+  }) => {
+    const [localValue, setLocalValue] = useState(value || "");
+    const timeoutRef = useRef(null);
+
+    
+    useEffect(() => {
+      if (value !== localValue) {
+        setLocalValue(value || "");
+      }
+    }, [value]); 
+
+    const handleChange = (e) => {
+      const newValue = e.target.value;
+      setLocalValue(newValue);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        if (onChange) {
+          const syntheticEvent = {
+            target: {
+              name: name,
+              value: newValue,
+              type: type,
+            },
+          };
+          onChange(syntheticEvent);
+        }
+      }, 2000);
+    };
+
+    useEffect(() => {
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }, []);
+
+    return (
+      <div className="flex flex-col">
+        <label className="text-sm font-medium text-gray-600 mb-1">
+          {label}
+        </label>
+        {isEditing ? (
+          <input
+            type={type}
+            name={name}
+            value={localValue}
+            onChange={handleChange}
+            placeholder={placeholder}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          />
+        ) : (
+          <div className="relative">
+            <span className="px-3 py-2 bg-gray-50 rounded-md text-gray-800 block min-h-[42px] flex items-center">
+              {value || "N/A"}
+            </span>
+            {showLPA && (
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">
+                LPA
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+
 
 const EmployeePayRoll = () => {
   const { empId } = useParams();
-  
-  // Use 'empId' to match your route parameter
   
   console.log('Employee ID from URL (empId):', empId);
 
@@ -27,7 +110,10 @@ const EmployeePayRoll = () => {
   const [editFormData, setEditFormData] = useState({});
   const [saveLoading, setSaveLoading] = useState(false);
 
-  const token=localStorage.getItem("accessToken");
+  // Remove this line: const [activeField, setActiveField] = useState(null);
+  const [activeField, setActiveField] = useState(null);
+
+  const token = localStorage.getItem("accessToken");
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -37,10 +123,10 @@ const EmployeePayRoll = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  // Fetch payroll data from backend
+  // Separate endpoints for payroll and employee details
   useEffect(() => {
     const fetchPayrollData = async () => {
-      if (!token ||!empId) {
+      if (!token || !empId) {
         console.error('No empId found in URL');
         setError('Employee ID not found in URL.');
         setLoading(false);
@@ -51,56 +137,59 @@ const EmployeePayRoll = () => {
         setLoading(true);
         console.log('Fetching data for employee ID:', empId);
         
-        // Fetch payroll data for the specific employee from URL
-        const payrollResponse = await axios.get(`https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}`,
+        const payrollResponse = await axios.get(
+          `https://hrms.anasolconsultancyservices.com/api/payroll/payroll/employee/${empId}`,
           {
-            headers :  { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
         
+        console.log('Payroll API Response:', payrollResponse.data);
         
-        if (payrollResponse.data && payrollResponse.data.success) {
-          setPayrollData(payrollResponse.data.data || []);
+        if (payrollResponse.data) {
+          const payrollData = payrollResponse.data.data || 
+                            payrollResponse.data.payroll || 
+                            payrollResponse.data;
+          
+          setPayrollData(Array.isArray(payrollData) ? payrollData : []);
         } else {
           setPayrollData([]);
         }
 
-        // Fetch employee details for the specific employee from URL
         await fetchEmployeeDetails();
 
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError(`Failed to fetch data: ${err.response?.data?.message || err.message}`);
+        console.error('Error fetching payroll data:', err);
+        setError(`Failed to fetch payroll data: ${err.response?.data?.message || err.message}`);
+        setPayrollData([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPayrollData();
-  }, [empId]); // Use empId as dependency
+  }, [empId]);
 
-  // Fetch employee details for the specific employee
   const fetchEmployeeDetails = async () => {
     try {
-     
-      const employeeResponse = await axios.get(`https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}`,
+      const employeeResponse = await axios.get(
+        `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}`,
         {
-           headers :  { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
-      console.log('Employee details for', empId, ':', employeeResponse.data);
       
-      if (employeeResponse.data && employeeResponse.data.success) {
-        console.log('Setting employee data for:', employeeResponse.data.data.empName);
-        setEmployee(employeeResponse.data.data);
-        setEditFormData(employeeResponse.data.data);
+      console.log('Employee details response:', employeeResponse.data);
+      
+      if (employeeResponse.data) {
+        const employeeData = employeeResponse.data.data || employeeResponse.data;
+        setEmployee(employeeData);
+        setEditFormData(employeeData);
       } else {
-        console.log('No employee data found for ID:', empId);
         setEmployee(null);
       }
     } catch (err) {
       console.error('Error fetching employee details:', err);
-      setError(`Failed to fetch employee details: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -113,233 +202,219 @@ const EmployeePayRoll = () => {
     setIsModalOpen(true);
   };
 
+  const handleDownloadPayslip = async (payslip) => {
+    try {
+      if (!employee) {
+        alert('Employee data not available');
+        return;
+      }
 
+      const payslipElement = document.createElement('div');
+      payslipElement.style.position = 'absolute';
+      payslipElement.style.left = '-9999px';
+      payslipElement.style.width = '800px';
+      payslipElement.style.padding = '10px'; 
+      payslipElement.style.backgroundColor = 'white';
+      
+      const grossEarnings = (payslip.basicSalary || 0) + 
+                           (payslip.hraAmount || 0) + 
+                           (payslip.conveyanceAllowance || 0) +
+                           (payslip.medicalAllowance || 0) +
+                           (payslip.specialAllowance || 0) +
+                           (payslip.bonusAmount || 0);
 
-const handleDownloadPayslip = async (payslip) => {
-  try {
-    if (!employee) {
-      alert('Employee data not available');
-      return;
+      const totalDeductions = (payslip.providentFund || 0) + 
+                             (payslip.professionalTax || 0) +
+                             (payslip.incomeTax || 0);
+
+      const netSalary = payslip.netSalary || (grossEarnings - totalDeductions);
+
+      payslipElement.innerHTML = `
+        <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
+          <!-- Company Header -->
+          <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
+            <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
+            <div style="background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold;">
+              ${formatPayPeriod(payslip)}
+            </div>
+          </div>
+
+          <!-- Employee Information -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">Employee Name:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.empName}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">Employee ID:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.employeeId}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">Designation:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.designation || 'N/A'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">Department:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.department || 'N/A'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="font-weight: 600; color: #4b5563;">Phone No:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.phoneNumber || 'N/A'}</span>
+              </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">Bank A/C Name:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.empName}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">PAN No:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.panNumber || 'N/A'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">PF No:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.pfnum || 'N/A'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #4b5563;">IFSC Code:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.ifsccode || 'N/A'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="font-weight: 600; color: #4b5563;">Email:</span>
+                <span style="font-weight: 500; color: #1f2937;">${employee.email || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Salary Details -->
+          <div style="margin: 20px 0;">
+            <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">SALARY DETAILS</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- Earnings -->
+              <div>
+                <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">EARNINGS</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                  <thead>
+                    <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
+                      <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
+                      <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Basic Salary</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.basicSalary || 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">HRA</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.hraAmount || 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Conveyance Allowance</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.conveyanceAllowance || 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Medical Allowance</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.medicalAllowance || 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Special Allowance</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.specialAllowance || 0)}</td>
+                    </tr>
+                    ${payslip.bonusAmount > 0 ? `
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Bonus</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.bonusAmount || 0)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr style="background: #dbeafe; font-weight: bold;">
+                      <td style="padding: 12px;"><strong>GROSS EARNINGS</strong></td>
+                      <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(grossEarnings)}</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Deductions -->
+              <div>
+                <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">DEDUCTIONS</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                  <thead>
+                    <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
+                      <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
+                      <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Provident Fund</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.providentFund || 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Professional Tax</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.professionalTax || 0)}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 12px;">Income Tax</td>
+                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.incomeTax || 0)}</td>
+                    </tr>
+                    <tr style="background: #dbeafe; font-weight: bold;">
+                      <td style="padding: 12px;"><strong>TOTAL DEDUCTIONS</strong></td>
+                      <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(totalDeductions)}</strong></td>
+                    </tr>
+                    <tr style="background: #dcfce7; font-weight: bold; color: #166534; font-size: 18px;">
+                      <td style="padding: 12px;"><strong>NET SALARY</strong></td>
+                      <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(netSalary)}</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px;">
+            <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039</p>
+            <p>Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com</p>
+            <p style="margin-top: 8px; color: #9ca3af; font-style: italic;">
+              This is a computer-generated document and does not require a signature
+            </p>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(payslipElement);
+
+      const canvas = await html2canvas(payslipElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+
+      document.body.removeChild(payslipElement);
+
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210; 
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+      const monthName = months[payslip.month - 1];
+      const fileName = `Payslip_${employee.empName}_${monthName}_${payslip.year}.pdf`;
+      
+      pdf.save(fileName);
+      
+    } catch (err) {
+      alert(`Failed to generate PDF payslip: ${err.message}`);
     }
+  };
 
-    
-    const payslipElement = document.createElement('div');
-    payslipElement.style.position = 'absolute';
-    payslipElement.style.left = '-9999px';
-    payslipElement.style.width = '800px';
-    payslipElement.style.padding = '10px'; 
-    payslipElement.style.backgroundColor = 'white';
-    
-    
-    const grossEarnings = (payslip.basicSalary || 0) + 
-                         (payslip.hraAmount || 0) + 
-                         (payslip.conveyanceAllowance || 0) +
-                         (payslip.medicalAllowance || 0) +
-                         (payslip.specialAllowance || 0) +
-                         (payslip.bonusAmount || 0);
-
-    const totalDeductions = (payslip.providentFund || 0) + 
-                           (payslip.professionalTax || 0) +
-                           (payslip.incomeTax || 0);
-
-    const netSalary = payslip.netSalary || (grossEarnings - totalDeductions);
-
-  
-    payslipElement.innerHTML = `
-      <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
-        <!-- Company Header - Reduced top padding -->
-        <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-          <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
-          <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
-          <div style="background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold;">
-            ${formatPayPeriod(payslip)}
-          </div>
-        </div>
-
-        <!-- Employee Information - Reduced margin bottom -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Employee Name:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.empName}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Employee ID:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.employeeId}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Designation:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.designation || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Department:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.department || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-              <span style="font-weight: 600; color: #4b5563;">Phone No:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.phoneNumber || 'N/A'}</span>
-            </div>
-          </div>
-
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Bank A/C Name:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.empName}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">PAN No:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.panNumber || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">PF No:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.pfnum || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">IFSC Code:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.ifsccode || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-              <span style="font-weight: 600; color: #4b5563;">Email:</span>
-              <span style="font-weight: 500; color: #1f2937;">${employee.email || 'N/A'}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Salary Details - Reduced margin -->
-        <div style="margin: 20px 0;">
-          <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">SALARY DETAILS</div>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <!-- Earnings -->
-            <div>
-              <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">EARNINGS</div>
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                <thead>
-                  <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                    <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Basic Salary</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.basicSalary || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">HRA</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.hraAmount || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Conveyance Allowance</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.conveyanceAllowance || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Medical Allowance</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.medicalAllowance || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Special Allowance</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.specialAllowance || 0)}</td>
-                  </tr>
-                  ${payslip.bonusAmount > 0 ? `
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Bonus</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.bonusAmount || 0)}</td>
-                  </tr>
-                  ` : ''}
-                  <tr style="background: #dbeafe; font-weight: bold;">
-                    <td style="padding: 12px;"><strong>GROSS EARNINGS</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(grossEarnings)}</strong></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Deductions -->
-            <div>
-              <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">DEDUCTIONS</div>
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                <thead>
-                  <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                    <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Provident Fund</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.providentFund || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Professional Tax</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.professionalTax || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Income Tax</td>
-                    <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.incomeTax || 0)}</td>
-                  </tr>
-                  <tr style="background: #dbeafe; font-weight: bold;">
-                    <td style="padding: 12px;"><strong>TOTAL DEDUCTIONS</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(totalDeductions)}</strong></td>
-                  </tr>
-                  <tr style="background: #dcfce7; font-weight: bold; color: #166534; font-size: 18px;">
-                    <td style="padding: 12px;"><strong>NET SALARY</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(netSalary)}</strong></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Footer - Reduced top margin -->
-        <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px;">
-          <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039</p>
-          <p>Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com</p>
-          <p style="margin-top: 8px; color: #9ca3af; font-style: italic;">
-            This is a computer-generated document and does not require a signature
-          </p>
-        </div>
-      </div>
-    `;
-
-    // Add to document
-    document.body.appendChild(payslipElement);
-
-    // Convert to PDF
-    const canvas = await html2canvas(payslipElement, {
-      scale: 2, // Higher quality
-      useCORS: true,
-      logging: false
-    });
-
-    // Remove temporary element
-    document.body.removeChild(payslipElement);
-
-    const imgData = canvas.toDataURL('image/png');
-    
-   
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 210; 
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-
-    
-    const monthName = months[payslip.month - 1];
-    const fileName = `Payslip_${employee.empName}_${monthName}_${payslip.year}.pdf`;
-    
-    pdf.save(fileName);
-    
- 
-    
-  } catch (err) {
-    
-    alert(`Failed to generate PDF payslip: ${err.message}`);
-  }
-};
- 
   const handleViewDetails = async () => {
     setShowDetails(true);
     if (!employee) {
@@ -347,26 +422,22 @@ const handleDownloadPayslip = async (payslip) => {
     }
   };
 
-
   const handleEdit = () => {
     setIsEditing(true);
+    setActiveField(null); // Reset active field when starting edit
   };
-
-  // Handle form input changes
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
- 
   const handleSave = async () => {
     try {
       setSaveLoading(true);
       
-     
       const updateData = {
         empName: editFormData.empName,
         email: editFormData.email,
@@ -388,14 +459,11 @@ const handleDownloadPayslip = async (payslip) => {
         `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}/update`,
         updateData,
         {
-          
-             headers :  { Authorization: `Bearer ${token}` }
-          
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
       if (response.data && response.data.success) {
-        // Update local employee state
         setEmployee(editFormData);
         setIsEditing(false);
         alert('Employee details updated successfully!');
@@ -410,10 +478,9 @@ const handleDownloadPayslip = async (payslip) => {
     }
   };
 
-   const handleCancel = () => {
+  const handleCancel = () => {
     setIsEditing(false);
     setEditFormData(employee); 
-    //setSaveMessage('');
   };
 
   const formatCurrency = (amount) => {
@@ -443,16 +510,24 @@ const handleDownloadPayslip = async (payslip) => {
     return payrollItem.year.toString();
   };
 
-  const filteredData = payrollData.filter(item => {
-    const itemMonth = getMonthFromPayroll(item);
-    const itemYear = getYearFromPayroll(item);
+  const filteredData = Array.isArray(payrollData)
+    ? payrollData.filter(item => {
+        if (!item) return false;
+        
+        const itemMonth = item.month ? item.month.toString() : '';
+        const itemYear = item.year ? item.year.toString() : '';
 
-    if (filters.month && itemMonth !== months[parseInt(filters.month) - 1]) return false;
-    if (filters.year && itemYear !== filters.year) return false;
-    return true;
-  });
+        console.log('Filtering item:', { itemMonth, itemYear, filters });
 
-  // Employee Details Component
+        if (filters.month && itemMonth !== filters.month) return false;
+        if (filters.year && itemYear !== filters.year) return false;
+        
+        return true;
+      })
+    : [];
+
+  console.log('Final filtered data count:', filteredData.length);
+
   const EmployeeDetails = () => {
     if (!employee) {
       return (
@@ -508,11 +583,13 @@ const handleDownloadPayslip = async (payslip) => {
             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Personal Information</h3>
             <div className="space-y-3">
               <DetailField 
+                key="employeeId"
                 label="Employee ID" 
                 value={employee.employeeId} 
                 isEditing={false}
               />
               <DetailField 
+                key="empName"
                 label="Full Name" 
                 name="empName"
                 value={isEditing ? editFormData.empName : employee.empName} 
@@ -520,6 +597,7 @@ const handleDownloadPayslip = async (payslip) => {
                 onChange={handleInputChange}
               />
               <DetailField 
+                key="email"
                 label="Email" 
                 name="email"
                 value={isEditing ? editFormData.email : employee.email} 
@@ -528,6 +606,7 @@ const handleDownloadPayslip = async (payslip) => {
                 type="email"
               />
               <DetailField 
+                key="phoneNumber"
                 label="Phone Number" 
                 name="phoneNumber"
                 value={isEditing ? editFormData.phoneNumber : employee.phoneNumber} 
@@ -536,6 +615,7 @@ const handleDownloadPayslip = async (payslip) => {
                 type="tel"
               />
               <DetailField 
+                key="aadharNumber"
                 label="Aadhar Number" 
                 name="aadharNumber"
                 value={isEditing ? editFormData.aadharNumber : employee.aadharNumber} 
@@ -544,6 +624,7 @@ const handleDownloadPayslip = async (payslip) => {
                 type="number"
               />
               <DetailField 
+                key="panNumber"
                 label="PAN Number" 
                 name="panNumber"
                 value={isEditing ? editFormData.panNumber : employee.panNumber} 
@@ -558,6 +639,7 @@ const handleDownloadPayslip = async (payslip) => {
             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Employment Details</h3>
             <div className="space-y-3">
               <DetailField 
+                key="department"
                 label="Department" 
                 name="department"
                 value={isEditing ? editFormData.department : employee.department} 
@@ -565,6 +647,7 @@ const handleDownloadPayslip = async (payslip) => {
                 onChange={handleInputChange}
               />
               <DetailField 
+                key="designation"
                 label="Designation" 
                 name="designation"
                 value={isEditing ? editFormData.designation : employee.designation} 
@@ -573,16 +656,19 @@ const handleDownloadPayslip = async (payslip) => {
                 placeholder="Enter designation"
               />
               <DetailField 
+                key="jobType"
                 label="Job Type" 
                 value={employee.jobType} 
                 isEditing={false}
               />
               <DetailField 
+                key="level"
                 label="Level" 
                 value={employee.level} 
                 isEditing={false}
               />
               <DetailField 
+                key="startDate"
                 label="Start Date" 
                 value={employee.startDate ? new Date(employee.startDate).toLocaleDateString('en-IN') : 'N/A'} 
                 isEditing={false}
@@ -595,6 +681,7 @@ const handleDownloadPayslip = async (payslip) => {
             <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Bank & Salary Information</h3>
             <div className="space-y-3">
               <DetailField 
+                key="bankName"
                 label="Bank Name" 
                 name="bankName"
                 value={isEditing ? editFormData.bankName : employee.bankName} 
@@ -602,6 +689,7 @@ const handleDownloadPayslip = async (payslip) => {
                 onChange={handleInputChange}
               />
               <DetailField 
+                key="accountNumber"
                 label="Account Number" 
                 name="accountNumber"
                 value={isEditing ? editFormData.accountNumber : employee.accountNumber} 
@@ -610,6 +698,7 @@ const handleDownloadPayslip = async (payslip) => {
                 type="number"
               />
               <DetailField 
+                key="ifsccode"
                 label="IFSC Code" 
                 name="ifsccode"
                 value={isEditing ? editFormData.ifsccode : employee.ifsccode} 
@@ -617,6 +706,7 @@ const handleDownloadPayslip = async (payslip) => {
                 onChange={handleInputChange}
               />
               <DetailField 
+                key="pfnum"
                 label="PF Number" 
                 name="pfnum"
                 value={isEditing ? editFormData.pfnum : employee.pfnum} 
@@ -624,6 +714,7 @@ const handleDownloadPayslip = async (payslip) => {
                 onChange={handleInputChange}
               />
               <DetailField 
+                key="uanNumber"
                 label="UAN Number" 
                 name="uanNumber"
                 value={isEditing ? editFormData.uanNumber : employee.uanNumber} 
@@ -631,45 +722,24 @@ const handleDownloadPayslip = async (payslip) => {
                 onChange={handleInputChange}
               />
               <DetailField 
+                key="monthlySalary"
                 label="Monthly Salary" 
                 value={formatCurrency(employee.monthlySalary)} 
                 isEditing={false}
               />
               <DetailField 
+                key="annualSalary"
                 label="Annual Salary" 
                 value={formatCurrency(employee.annualSalary)} 
                 isEditing={false}
-              />LPA
+                showLPA={true}
+              />
             </div>
           </div>
         </div>
       </div>
     );
   };
-
-
-  const DetailField = ({ label, name, value, isEditing, onChange, type = "text", placeholder = "" }) => {
-    return (
-      <div className="flex flex-col">
-        <label className="text-sm font-medium text-gray-600 mb-1">{label}</label>
-        {isEditing ? (
-          <input
-            type={type}
-            name={name}
-            value={value || ''}
-            onChange={onChange}
-            placeholder={placeholder}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        ) : (
-          <span className="px-3 py-2 bg-gray-50 rounded-md text-gray-800">
-            {value || 'N/A'}
-          </span>
-        )}
-      </div>
-    );
-  };
-
   // Filter Section Component
   const FilterSection = () => {
     const handleMonthChange = (e) => {
@@ -737,7 +807,6 @@ const handleDownloadPayslip = async (payslip) => {
       </div>
     );
   };
-
 
   const PayrollTable = () => {
     if (loading) {
@@ -834,12 +903,10 @@ const handleDownloadPayslip = async (payslip) => {
     );
   };
 
-
   // Payslip Modal Component
   const PayslipModal = () => {
     if (!selectedPayslip || !employee) return null;
 
-    
     const grossEarnings = (selectedPayslip.basicSalary || 0) + 
                          (selectedPayslip.hraAmount || 0) + 
                          (selectedPayslip.conveyanceAllowance || 0) +
@@ -1057,15 +1124,13 @@ const handleDownloadPayslip = async (payslip) => {
     );
   };
 
- 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-         <header className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-t-2xl mb-8">
+        <header className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-t-2xl mb-8">
           <div className="px-6 py-4 flex justify-between items-center">
             <div>
-              {/* <h1 className="text-2xl font-bold">ANASOL CONSULTANCY SERVICES PVT LTD</h1> */}
               {employee ? (
                 <div className="mt-2">
                   <p className="text-blue-200 text-sm">

@@ -28,6 +28,11 @@ const ChatAppSkeleton = ({ theme }) => (
                 <ChatListItemSkeleton />
                 <ChatListItemSkeleton />
                 <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
+                <ChatListItemSkeleton />
             </div>
         </div>
 
