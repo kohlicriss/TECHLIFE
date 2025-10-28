@@ -305,7 +305,7 @@ const Profiles = () => {
     };
 
     // 🚨 NEW: Function to check if form has changes
-    const hasFormChanges = () => {
+    const hasFormChanges_ProfileOriginal = () => {
         const currentData = {
             ...editingHeaderData,
             department: selectedDepartmentValue || editingHeaderData.department
@@ -483,8 +483,6 @@ const Profiles = () => {
 };
 
 
-
-
     const handleDeleteImage = () => {
         showConfirmModal(
             'Confirm Delete',
@@ -560,7 +558,7 @@ const Profiles = () => {
         }
         
         // Check if there are any changes
-        if (!hasFormChanges()) {
+        if (!hasFormChanges_ProfileOriginal()) {
             showConfirmModal(
                 'No Changes Detected',
                 'You haven\'t made any changes to the form. Please make some changes before submitting.',
@@ -850,7 +848,8 @@ const Profiles = () => {
             <div className="max-w-md mx-auto p-3">
                 <Routes>
                     <Route index element={<Navigate to="profile" replace />} />
-                    {/* <Route path="about" element={<About />} /> */}
+                    {/* ❌ FIX APPLIED HERE */}
+                    <Route path="about" element={<About />} /> 
                     <Route path="profile" element={<Profile />} />
                     <Route path="job" element={<Job />} />
                     <Route path="documents" element={<Document />} />
@@ -864,15 +863,13 @@ const Profiles = () => {
         <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
             <div className={`hidden md:block h-auto md:h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
                 {matchedArray.includes("UPDATE_HEADER") && (
-                    <div className="absolute top-4 right-8">
-                        <button
-                            onClick={handleHeaderEditClick}
-                            className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
-                            title="Edit Header Information"
-                        >
-                            <MdEdit className="w-5 h-5" />
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleHeaderEditClick}
+                        className={`absolute top-4 right-8 p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
+                        title="Edit Header Information"
+                    >
+                        <MdEdit className="w-5 h-5" />
+                    </button>
                 )}
                 <div className="flex items-start pt-4 px-8">
                     <div className="relative group cursor-pointer" onClick={() => canEditHeader && setIsImageModalOpen(true)}>
@@ -1325,10 +1322,10 @@ const Profiles = () => {
                     type="button"
                     onClick={() => {
                         setIsEditingHeader(false);
-                        setSelectedDepartmentDisplay('');
-                        setSelectedDepartmentValue('');
                         setFormError(null);
                         setMobileError(null);
+                        setSelectedDepartmentDisplay('');
+                        setSelectedDepartmentValue('');
                     }}
                     disabled={isSubmitting}
                     className={`w-full sm:w-auto px-8 py-3 border-2 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${

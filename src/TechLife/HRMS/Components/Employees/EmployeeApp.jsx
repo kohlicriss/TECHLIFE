@@ -1708,7 +1708,7 @@ function EmployeeApp() {
                                                 >
                                                     <div className="flex flex-col items-center justify-center h-full space-y-2 sm:space-y-3 p-4 sm:p-5">
                                                         {isOwnProfile ? (
-                                                            // --- Content for Own Profile (Remove Options) ---
+                                                            // --- Content for Own Profile (Remove Options, Show Message) ---
                                                             <div className="text-center space-y-4">
                                                                 <IoPersonOutline className={`w-10 h-10 mx-auto ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
                                                                 <h3 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>
@@ -1819,13 +1819,13 @@ function EmployeeApp() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            // ----------------------- List View Item -----------------------
+                                            // ----------------------- List View Item (Horizontal View) -----------------------
                                             <motion.div
                                                 whileHover={{ scale: 1.02, x: isOwnProfile ? 0 : 10 }}
                                                 whileTap={{ scale: 0.98 }}
-                                                className={`rounded-xl p-3 sm:p-4 shadow-lg border cursor-pointer group transition-all duration-300 hover:shadow-xl ${
+                                                className={`rounded-xl p-3 sm:p-4 shadow-lg border cursor-pointer group transition-all duration-300 ${
                                                     isOwnProfile
-                                                        ? 'border-green-500 ring-2 ring-green-500/50 hover:scale-100'
+                                                        ? 'border-green-500 ring-2 ring-green-500/50 hover:scale-100' // Highlight and prevent scaling for self
                                                         : (theme === 'dark'
                                                             ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700 hover:border-blue-500/50'
                                                             : 'bg-gradient-to-r from-white to-gray-50 border-gray-200 hover:border-blue-400/50'
@@ -1863,43 +1863,49 @@ function EmployeeApp() {
                                                             <div className="min-w-0 flex-1 mb-2 sm:mb-0">
                                                                 <h3 className={`text-sm sm:text-lg font-bold truncate mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                                                     {employee.displayName}
+                                                                    {/* NEW: Add "Your Profile" text next to the name */}
+                                                                    {isOwnProfile && (
+                                                                        <span className={`ml-2 text-xs font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>(Your Profile)</span>
+                                                                    )}
                                                                 </h3>
                                                                 <p className={`text-xs font-semibold px-2 py-1 rounded-full w-fit ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
                                                                     {employee.jobTitlePrimary || "Not Updated"}
                                                                 </p>
                                                             </div>
 
-                                                            {/* Quick Action Buttons for List View */}
-                                                            <div className="flex items-center space-x-1 sm:space-x-2">
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleChatClick(employee); }}
-                                                                    className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white shadow-md hover:shadow-lg`}
-                                                                    title="Start Chat"
-                                                                > <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-
-                                                                {matchedArray && matchedArray.includes("GET_PUBLIC") && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleViewProfileClick(employee); }}
-                                                                    className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white shadow-md hover:shadow-lg`}
-                                                                    title="View Profile"
-                                                                > <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                                    )}
-                                                                    {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDocumentsClick(employee); }}
-                                                                    className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-white shadow-md hover:shadow-lg`}
-                                                                    title="Documents"
-                                                                > <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                                    )}
-                                                                    {hasAccess.includes("DELETE_USER") && (
+                                                            {/* Quick Action Buttons for List View (Hide if isOwnProfile is true) */}
+                                                            {!isOwnProfile && (
+                                                                <div className="flex items-center space-x-1 sm:space-x-2">
                                                                     <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(employee); }}
-                                                                        disabled={isOwnProfile}
-                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform ${isOwnProfile ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 bg-red-600 hover:bg-red-700'} text-white shadow-md hover:shadow-lg`}
-                                                                        title={isOwnProfile ? "Cannot terminate your own profile" : "Terminate Employee"}
-                                                                    > <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                                    )}
-                                                            </div>
+                                                                        onClick={(e) => { e.stopPropagation(); handleChatClick(employee); }}
+                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white shadow-md hover:shadow-lg`}
+                                                                        title="Start Chat"
+                                                                    > <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
+
+                                                                    {matchedArray && matchedArray.includes("GET_PUBLIC") && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleViewProfileClick(employee); }}
+                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white shadow-md hover:shadow-lg`}
+                                                                        title="View Profile"
+                                                                    > <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
+                                                                        )}
+                                                                        {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDocumentsClick(employee); }}
+                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-white shadow-md hover:shadow-lg`}
+                                                                        title="Documents"
+                                                                    > <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
+                                                                        )}
+                                                                        {hasAccess.includes("DELETE_USER") && (
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(employee); }}
+                                                                            disabled={isOwnProfile}
+                                                                            className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform ${isOwnProfile ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 bg-red-600 hover:bg-red-700'} text-white shadow-md hover:shadow-lg`}
+                                                                            title={isOwnProfile ? "Cannot terminate your own profile" : "Terminate Employee"}
+                                                                        > <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
+                                                                        )}
+                                                                </div>
+                                                            )}
                                                         </div>
 
                                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 text-xs mt-2">
