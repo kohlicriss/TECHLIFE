@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useContext, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect , useContext} from 'react';
 import { Context } from '../HrmsContext';
 import axios from 'axios';
  import jsPDF from 'jspdf';
@@ -6,9 +6,12 @@ import html2canvas from 'html2canvas';
 import { useNavigate} from 'react-router-dom';
 
 // API Service Functions - Updated with correct endpoints
-const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/payroll';
+
+const API_BASE_URL = 'http://localhost:8087/api/payroll';
 
 const token=localStorage.getItem("accessToken");
+
+
 
 const payrollApi = {
   // Add new employee
@@ -177,6 +180,8 @@ const getMonthNumber = (monthName) => {
   return months[monthName];
 };
 
+  
+
 // Helper function to transform frontend employee data to backend format
 const transformEmployeeToBackend = (frontendData) => {
   return {
@@ -196,6 +201,7 @@ const transformEmployeeToBackend = (frontendData) => {
     designation: frontendData.designation
   };
 };
+
 
 // Helper function to transform backend employee data to frontend format
 const transformEmployeeToFrontend = (backendData) => {
@@ -220,7 +226,8 @@ const transformEmployeeToFrontend = (backendData) => {
   const netSalary = payrollData?.netSalary || (grossEarnings - totalDeductions);
   const bonusAmount = payrollData?.bonusAmount || 0;
   const hikePercentage = payrollData?.hikePercentage || 0;
-  
+
+   
 
   // console.log('Calculated values:', {
   //   annualSalary,
@@ -230,6 +237,7 @@ const transformEmployeeToFrontend = (backendData) => {
   //   netSalary,
   //   isPayrollData: !!payrollData
   // });
+  
 
   return {
     id: employeeData.id || employeeData.employeeId,
@@ -254,13 +262,26 @@ const transformEmployeeToFrontend = (backendData) => {
     panNo: employeeData.panNumber || '',
    // pfnum: employeeData.PFnum || employeeData.pfnum || '',
     
-    // Attendance data
-    standardDays: payrollData?.totalWorkingDays || 26,
-    payableDays: payrollData?.paidDays || 26,
-    lossOfPayDays: payrollData?.lossOfPayDays || 0,
-    lopReversalDays: 0,
-    arrearDays: 0,
-    
+
+standardDays: Number(payrollData?.standardDays) || 
+              Number(payrollData?.totalWorkingDays) || 
+              Number(payrollData?.workingDays) ||
+              Number(payrollData?.attendance?.standardDays) || 
+              26,
+payableDays: Number(payrollData?.payableDays) || 
+             Number(payrollData?.paidDays) || 
+             Number(payrollData?.attendance?.payableDays) || 
+             26,
+lossOfPayDays: Number(payrollData?.lossOfPayDays) || 
+               Number(payrollData?.lopDays) ||
+               Number(payrollData?.attendance?.lossOfPayDays) || 
+               0,
+lopReversalDays: Number(payrollData?.lopReversalDays) || 
+                 Number(payrollData?.attendance?.lopReversalDays) || 
+                 0,
+arrearDays: Number(payrollData?.arrearDays) || 
+            Number(payrollData?.attendance?.arrearDays) || 
+            0,
     // Bonus and hike
     bonus: bonusAmount,
     hike: hikePercentage,
@@ -414,34 +435,42 @@ const getDefaultEarnings = (annualSalary) => {
 // Helper function for default deductions calculation
 const getDefaultDeductions = (annualSalary) => {
   const monthlySalary = annualSalary ? (annualSalary * 100000 / 12) : 0;
+   
   return [
     { name: 'PROVIDENT FUND', amount: Math.round(monthlySalary * 0.12) },
     { name: 'PROFESSIONAL TAX', amount: 200 }
   ];
 };
 // Access Denied Component
-const AccessDenied = () => (
-  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-6">
-    <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
+const AccessDenied = () => {
+  const { theme } = useContext(Context); // ✅ Move this INSIDE the component
+  const isDark = theme === "dark";
+
+  return (
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-6 ${
+      isDark ? 'bg-gray-800' : 'bg-white'
+    }`}>
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
+        <p className="text-gray-600 mb-6">
+          You don't have permission to access the payroll management system. 
+          This page is restricted to ADMIN users only.
+        </p>
+        <button 
+          onClick={() => window.history.back()}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          Go Back
+        </button>
       </div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
-      <p className="text-gray-600 mb-6">
-        You don't have permission to access the payroll management system. 
-        This page is restricted to ADMIN users only.
-      </p>
-      <button 
-        onClick={() => window.history.back()}
-        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-      >
-        Go Back
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 // Loading Component
 const LoadingSpinner = () => (
@@ -454,11 +483,16 @@ const LoadingSpinner = () => (
 );
 
 const AddEmployeeForm = ({ isAdding, newEmployee, onEmployeeChange, onSave, onCancel, loading }) => { 
+  const { theme } = useContext(Context);
+  const isDark = theme === "dark";
+
   if (!isAdding) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className={`rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
+        isDark ? 'bg-gray-800' : 'bg-white'
+      }`}>
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
           <h2 className="text-2xl font-bold">Add New Employee</h2>
           <p className="opacity-90">Fill in the employee details below</p>
@@ -468,87 +502,133 @@ const AddEmployeeForm = ({ isAdding, newEmployee, onEmployeeChange, onSave, onCa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Information */}
             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800 border-l-4 border-green-500 pl-3">Personal Information</h3>
+              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Personal Information</h3>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Employee ID *</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Employee ID *</label>
               <input
                 type="text"
                 value={newEmployee.employeeId}
                 onChange={(e) => onEmployeeChange('employeeId', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="e.g., ACS00000001"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Employee Name *</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Employee Name *</label>
               <input
                 type="text"
                 value={newEmployee.employeeName}
                 onChange={(e) => onEmployeeChange('employeeName', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="Full name"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Email *</label>
               <input
                 type="email"
                 value={newEmployee.email}
                 onChange={(e) => onEmployeeChange('email', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="email@company.com"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Phone Number</label>
               <input
                 type="tel"
                 value={newEmployee.phoneNumber}
                 onChange={(e) => onEmployeeChange('phoneNumber', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="9876543210"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Designation</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Designation</label>
               <input
                 type="text"
                 value={newEmployee.designation}
                 onChange={(e) => onEmployeeChange('designation', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="e.g., Software Engineer"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Department</label>
               <input
                 type="text"
                 value={newEmployee.department}
                 onChange={(e) => onEmployeeChange('department', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="e.g., Engineering"
               />
             </div>
 
             {/* Salary Information */}
             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800 border-l-4 border-green-500 pl-3">Salary Information</h3>
+              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Salary Information</h3>
             </div>
             
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Annual Salary (LPA)</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Annual Salary (LPA)</label>
               <input
                 type="number"
                 value={newEmployee.annualSalary}
                 onChange={(e) => onEmployeeChange('annualSalary', e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="6.0"
                 step="0.1"
                 min="0"
@@ -557,98 +637,150 @@ const AddEmployeeForm = ({ isAdding, newEmployee, onEmployeeChange, onSave, onCa
 
             {/* Bank Details */}
             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800 border-l-4 border-green-500 pl-3">Bank Details</h3>
+              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Bank Details</h3>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Account Number</label>
               <input
                 type="text"
                 value={newEmployee.accountNumber}
                 onChange={(e) => onEmployeeChange('accountNumber', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="9861376290"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">IFSC Code</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>IFSC Code</label>
               <input
                 type="text"
                 value={newEmployee.ifsccode}
                 onChange={(e) => onEmployeeChange('ifsccode', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="SBIN0001234"
               />
             </div>
             
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Bank Name</label>
               <input
                 type="text"
                 value={newEmployee.bankName}
                 onChange={(e) => onEmployeeChange('bankName', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="State Bank of India"
               />
             </div>
 
             {/* Government Identifiers */}
             <div className="md:col-span-2">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800 border-l-4 border-green-500 pl-3">Government Identifiers</h3>
+              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Government Identifiers</h3>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">PF Number</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>PF Number</label>
               <input
                 type="text"
                 value={newEmployee.pfnum}
                 onChange={(e) => onEmployeeChange('pfnum', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="PF123456"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">PAN Number</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>PAN Number</label>
               <input
                 type="text"
                 value={newEmployee.panNumber}
                 onChange={(e) => onEmployeeChange('panNumber', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="ABCDE1234F"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Number</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>Aadhar Number</label>
               <input
                 type="text"
                 value={newEmployee.aadharNumber}
                 onChange={(e) => onEmployeeChange('aadharNumber', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="123412341234"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">UAN Number</label>
+              <label className={`block text-sm font-medium mb-2 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>UAN Number</label>
               <input
                 type="text"
                 value={newEmployee.uanNumber}
                 onChange={(e) => onEmployeeChange('uanNumber', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
                 placeholder="UAN123456789"
               />
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 justify-end pt-6 mt-6 border-t">
+          <div className={`flex gap-4 justify-end pt-6 mt-6 border-t ${
+            isDark ? 'border-gray-700' : 'border-gray-200'
+          }`}>
             <button
               onClick={onCancel}
               disabled={loading}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+              className={`px-6 py-2 border rounded-lg transition-colors font-medium disabled:opacity-50 ${
+                isDark 
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Cancel
             </button>
@@ -675,11 +807,16 @@ const AddEmployeeForm = ({ isAdding, newEmployee, onEmployeeChange, onSave, onCa
 
 // Edit Form Component
 const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancelEdit, loading }) => {
+  const { theme } = useContext(Context);
+  const isDark = theme === "dark";
+
   if (!editingEmployee) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className={`rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
+        isDark ? 'bg-gray-800' : 'bg-white'
+      }`}>
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
           <h2 className="text-2xl font-bold">Edit Employee - {editingEmployee.employeeName}</h2>
           <p className="opacity-90">Update employee details, bonus, and hike information</p>
@@ -688,42 +825,68 @@ const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancel
         <div className="p-6">
           {/* Personal Information */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Personal Information</h3>
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Employee Name</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Employee Name</label>
                 <input
                   type="text"
                   value={editingEmployee.employeeName}
                   onChange={(e) => onInputChange('employeeName', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Employee ID</label>
                 <input
                   type="text"
                   value={editingEmployee.employeeId}
                   readOnly
-                  className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-2 text-gray-600"
+                  className={`w-full border rounded-lg px-4 py-2 ${
+                    isDark 
+                      ? 'bg-gray-600 border-gray-600 text-gray-400' 
+                      : 'bg-gray-100 border-gray-300 text-gray-600'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Email</label>
                 <input
                   type="email"
                   value={editingEmployee.email}
                   onChange={(e) => onInputChange('email', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Phone Number</label>
                 <input
                   type="tel"
                   value={editingEmployee.phoneNo}
                   onChange={(e) => onInputChange('phoneNo', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
             </div>
@@ -731,36 +894,56 @@ const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancel
 
           {/* Financial Information */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Financial Information</h3>
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Financial Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Annual Salary (LPA)</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Annual Salary (LPA)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={editingEmployee.annualSalary}
                   onChange={(e) => onInputChange('annualSalary', parseFloat(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bonus Amount (₹)</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Bonus Amount (₹)</label>
                 <input
                   type="number"
                   value={editingEmployee.bonus || 0}
                   onChange={(e) => onInputChange('bonus', Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                   placeholder="Enter bonus amount"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Hike Percentage (%)</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Hike Percentage (%)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={editingEmployee.hike || 0}
                   onChange={(e) => onInputChange('hike', Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                   placeholder="Enter hike percentage"
                 />
               </div>
@@ -769,33 +952,53 @@ const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancel
 
           {/* Bank Details */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Bank Details</h3>
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Bank Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Account Number</label>
                 <input
                   type="text"
                   value={editingEmployee.accountNumber}
                   onChange={(e) => onInputChange('accountNumber', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">IFSC Code</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>IFSC Code</label>
                 <input
                   type="text"
                   value={editingEmployee.ifsccode} 
-        onChange={(e) => onInputChange('ifsccode', e.target.value)} 
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  onChange={(e) => onInputChange('ifsccode', e.target.value)} 
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Bank Name</label>
                 <input
                   type="text"
                   value={editingEmployee.bankName}
                   onChange={(e) => onInputChange('bankName', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
             </div>
@@ -803,52 +1006,84 @@ const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancel
 
           {/* Government Identifiers */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Government Identifiers</h3>
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Government Identifiers</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">PF Number</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>PF Number</label>
                 <input
                   type="text"
                   value={editingEmployee.pfnum} 
-        onChange={(e) => onInputChange('pfnum', e.target.value)} 
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  onChange={(e) => onInputChange('pfnum', e.target.value)} 
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">PAN Number</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>PAN Number</label>
                 <input
                   type="text"
                   value={editingEmployee.panNumber}
                   onChange={(e) => onInputChange('panNumber', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Number</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Aadhar Number</label>
                 <input
                   type="text"
                   value={editingEmployee.aadharNumber}
                   onChange={(e) => onInputChange('aadharNumber', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">UAN Number</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>UAN Number</label>
                 <input
                   type="text"
                   value={editingEmployee.uanNumber}
                   onChange={(e) => onInputChange('uanNumber', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-800'
+                  }`}
                 />
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 justify-end pt-4 border-t">
+          <div className={`flex gap-4 justify-end pt-4 border-t ${
+            isDark ? 'border-gray-700' : 'border-gray-200'
+          }`}>
             <button
               onClick={onCancelEdit}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className={`px-6 py-2 border rounded-lg transition-colors font-medium ${
+                isDark 
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Cancel
             </button>
@@ -886,6 +1121,8 @@ const PayRollPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
      const [employees, setEmployees] = useState([]);
      const navigate=useNavigate();
+     const { theme } = useContext(Context);
+  const isDark = theme === "dark";
 
     
 const [newEmployee, setNewEmployee] = useState({
@@ -912,12 +1149,19 @@ const [newEmployee, setNewEmployee] = useState({
                   'July', 'August', 'September', 'October', 'November', 'December'];
   const years = ['2023', '2024', '2025'];
 
-    const filteredEmployees = employees.filter(
-    (emp) => 
-      emp.empName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase())
- );
+const filteredEmployees = employees.filter(emp => {
+  if (!emp) return false;
+
+
+  const searchLower = searchTerm.toLowerCase().trim();
+  
+  const matchesSearch = 
+    (emp.empName?.toLowerCase().includes(searchLower) || false) ||
+    (emp.designation?.toLowerCase().includes(searchLower) || false) ||
+    (emp.employeeId?.toLowerCase().includes(searchLower) || false) ||
+    (emp.email?.toLowerCase().includes(searchLower) || false);
+;
+});
 
 
 
@@ -993,19 +1237,19 @@ const [newEmployee, setNewEmployee] = useState({
             };
             
             // Transform the combined data
-            const combinedData = transformEmployeeToFrontend(payrollWithEmployee);
+            const attendanceData = transformEmployeeToFrontend(payrollWithEmployee);
             
-            console.log(`Combined data for ${employee.employeeId}:`, combinedData);
-            return combinedData;
+            console.log(`Combined data for ${employee.employeeId}:`, attendanceData);
+            return attendanceData;
           } else {
-            // No payroll data found, return just employee data
+           
             console.log(`No payroll data for ${employee.employeeId}, using employee data only`);
             return transformEmployeeToFrontend(employee);
           }
           
         } catch (error) {
           console.warn(`No payroll data found for ${employee.employeeId}:`, error.message);
-          // Return just employee data without payroll
+          
           const employeeData = transformEmployeeToFrontend(employee);
           console.log(`Employee data without payroll for ${employee.employeeId}:`, employeeData);
           return employeeData;
@@ -1024,12 +1268,12 @@ const [newEmployee, setNewEmployee] = useState({
   }
 };
 
-  // Show loading while checking authentication
+  
   if (!userData) {
     return <LoadingSpinner />;
   }
 
-  // Show access denied if user doesn't have ADMIN role
+  
   if (!hasAdminAccess()) {
     return <AccessDenied />;
   }
@@ -1120,7 +1364,7 @@ const [newEmployee, setNewEmployee] = useState({
     }
   };
 
-const handleDownloadPayslip = async (employee) => {
+const handleDownloadPayslip = async (employee, data = {}) => {
   try {
     console.log('Starting payslip download for:', employee.employeeId);
     
@@ -1142,13 +1386,83 @@ const handleDownloadPayslip = async (employee) => {
     }
 
     // Create a combined data object for transformation
-    const combinedData = {
-      ...(payrollData || {}),
-      employee: employeeData
-    };
+  // Extract attendance data from different possible locations
+let attendanceData = {};
+
+if (payrollData) {
+  console.log('=== PAYROLL DATA DEBUG ===');
+  console.log('Full payroll data:', payrollData);
+  console.log('Available keys:', Object.keys(payrollData));
+  
+  // Check for attendance data in different structures
+  if (payrollData.attendance) {
+    console.log('Attendance object found:', payrollData.attendance);
+    console.log('Attendance keys:', Object.keys(payrollData.attendance));
+  }
+  
+  if (payrollData.attendanceDetails) {
+    console.log('AttendanceDetails object found:', payrollData.attendanceDetails);
+    console.log('AttendanceDetails keys:', Object.keys(payrollData.attendanceDetails));
+  }
+  
+  // Log all numeric fields that might contain attendance data
+  const numericFields = {};
+  Object.keys(payrollData).forEach(key => {
+    const value = payrollData[key];
+    if (typeof value === 'number') {
+      numericFields[key] = value;
+    }
+  });
+  console.log('All numeric fields:', numericFields);
+  
+  // Try multiple possible locations for attendance data
+  attendanceData = {
+    standardDays: Number(payrollData.standardDays) || 
+                  Number(payrollData.totalWorkingDays) || 
+                  Number(payrollData.workingDays) ||
+                  Number(payrollData.attendance?.standardDays) ||
+                  Number(payrollData.attendanceDetails?.standardDays) || 
+                  26,
+    payableDays: Number(payrollData.payableDays) || 
+                 Number(payrollData.paidDays) || 
+                 Number(payrollData.attendance?.payableDays) ||
+                 Number(payrollData.attendanceDetails?.payableDays) || 
+                 26,
+    lossOfPayDays: Number(payrollData.lossOfPayDays) || 
+                   Number(payrollData.lopDays) ||
+                   Number(payrollData.attendance?.lossOfPayDays) ||
+                   Number(payrollData.attendanceDetails?.lossOfPayDays) || 
+                   0,
+    lopReversalDays: Number(payrollData.lopReversalDays) || 
+                     Number(payrollData.attendance?.lopReversalDays) ||
+                     Number(payrollData.attendanceDetails?.lopReversalDays) || 
+                     0,
+    arrearDays: Number(payrollData.arrearDays) || 
+                Number(payrollData.attendance?.arrearDays) ||
+                Number(payrollData.attendanceDetails?.arrearDays) || 
+                0,
+    hike: Number(payrollData.hike) || Number(payrollData.hikePercentage) || 0
+  };
+  
+  console.log('=== EXTRACTED ATTENDANCE DATA ===');
+  console.log('Final attendance data:', attendanceData);
+  console.log('Standard Days (raw):', payrollData.standardDays);
+  console.log('Payable Days (raw):', payrollData.payableDays);
+  console.log('Loss of Pay Days (raw):', payrollData.lossOfPayDays);
+} else {
+  console.log('No payroll data found, using defaults');
+  attendanceData = {
+    standardDays: 26,
+    payableDays: 26,
+    lossOfPayDays: 0,
+    lopReversalDays: 0,
+    arrearDays: 0,
+    hike: 0
+  };
+}
 
     // Transform the data to ensure we have proper structure
-    const transformedData = transformEmployeeToFrontend(combinedData);
+    const transformedData = transformEmployeeToFrontend(attendanceData);
 
     // Use the transformed data for generating payslip
     const grossEarnings = transformedData.grossEarnings || 0;
@@ -1176,10 +1490,10 @@ const handleDownloadPayslip = async (employee) => {
     payslipElement.style.backgroundColor = 'white';
     payslipElement.style.fontFamily = 'Arial, sans-serif';
 
-    // Set the HTML content - EXACT SAME as your reference code but with Yen symbol
+    // Set the HTML content - Use the actual data from attendanceData
     payslipElement.innerHTML = `
       <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
-        <!-- Company Header - Same as reference -->
+        <!-- Company Header -->
         <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
           <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
           <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
@@ -1188,7 +1502,7 @@ const handleDownloadPayslip = async (employee) => {
           </div>
         </div>
 
-        <!-- Employee Information - Same as reference -->
+        <!-- Employee Information -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
@@ -1237,7 +1551,54 @@ const handleDownloadPayslip = async (employee) => {
           </div>
         </div>
 
-        <!-- Salary Details - Same as reference -->
+        <!-- Attendance Information - Use attendanceData instead of data -->
+        // Attendance Information - Use attendanceData instead of data
+<div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ATTENDANCE INFORMATION</div>
+<div style="padding: 0 30px;">
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <thead>
+      <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
+        <th style="padding: 12px; text-align: center; font-weight: 600;">Standard Days</th>
+        <th style="padding: 12px; text-align: center; font-weight: 600;">Payable Days</th>
+        <th style="padding: 12px; text-align: center; font-weight: 600;">Loss of Pay Days</th>
+        <th style="padding: 12px; text-align: center; font-weight: 600;">LOP Reversal Days</th>
+        <th style="padding: 12px; text-align: center; font-weight: 600;">Arrear Days</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.standardDays)}</td>
+        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.payableDays)}</td>
+        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.lossOfPayDays)}</td>
+        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.lopReversalDays)}</td>
+        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.arrearDays)}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+        <!-- Bonus Information -->
+        ${bonusAmount > 0 ? `
+        <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ADDITIONAL COMPENSATION</div>
+        <div style="padding: 0 30px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
+                <th style="padding: 12px; text-align: center; font-weight: 600;">Bonus Amount</th>
+                <th style="padding: 12px; text-align: center; font-weight: 600;">Hike Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 12px; text-align: center; background: white;">₹${bonusAmount.toLocaleString()}</td>
+                <td style="padding: 12px; text-align: center; background: white;">${attendanceData.hike}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        <!-- Salary Details -->
         <div style="margin: 20px 0;">
           <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">SALARY DETAILS</div>
           
@@ -1324,7 +1685,7 @@ const handleDownloadPayslip = async (employee) => {
           </div>
         </div>
 
-        <!-- Footer - Same as reference -->
+        <!-- Footer -->
         <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px;">
           <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039</p>
           <p>Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com</p>
@@ -1338,7 +1699,7 @@ const handleDownloadPayslip = async (employee) => {
     // Add to document
     document.body.appendChild(payslipElement);
 
-    // Convert to PDF - Same as reference
+    // Convert to PDF
     const canvas = await html2canvas(payslipElement, {
       scale: 2, // Higher quality
       useCORS: true,
@@ -1350,12 +1711,12 @@ const handleDownloadPayslip = async (employee) => {
 
     const imgData = canvas.toDataURL('image/png');
     
-    // Create PDF - Same as reference
+    // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
     const imgWidth = 210; 
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
-    // Fit to single page - Same as reference
+    // Fit to single page
     pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
 
     // Save PDF
@@ -1370,6 +1731,14 @@ const handleDownloadPayslip = async (employee) => {
     alert('Failed to download payslip: ' + error.message);
   }
 };
+
+// Helper function to format numbers with optional decimals
+const formatNumber = (value, decimals = 1) => {
+  const num = Number(value);
+  return isNaN(num) ? '0.0' : num.toFixed(decimals);
+};
+
+
 
 // Currency formatting function with Yen symbol and 2 decimal places
 const formatCurrency = (amount) => {
@@ -2037,8 +2406,12 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
     
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-blue-100">
+        <div className={`min-h-screen p-6 ${
+        isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 to-purple-50'
+      }`}>
+        <div className={`max-w-4xl mx-auto rounded-2xl shadow-2xl overflow-hidden border ${
+          isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-blue-100'
+        }`}>
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-800 to-purple-800 text-white p-8">
             <div className="flex items-center justify-between">
@@ -2060,7 +2433,9 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
           </div>
 
           {/* Action buttons */}
-          <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+          <div className={`p-4 border-b flex justify-between items-center ${
+            isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+          }`}>
             <button 
               onClick={handleBackToList}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
@@ -2079,196 +2454,373 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
           <div ref={paySlipRef} className="p-8">
             {/* Employee Information */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 border-l-4 border-blue-500 pl-3">Personal Information</h3>
+              <div className={`p-6 rounded-xl shadow-sm border ${
+                isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-blue-100'
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 border-l-4 border-blue-500 pl-3 ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>Personal Information</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">Employee Name:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.employeeName}</span>
+                    <span className={`font-medium ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Employee Name:</span>
+                    <span className={`font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>{paySlipData.employeeName}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">Employee ID:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.employeeId}</span>
+                    <span className={`font-medium ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Employee ID:</span>
+                    <span className={`font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>{paySlipData.employeeId}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">Designation:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.designation}</span>
+                    <span className={`font-medium ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Designation:</span>
+                    <span className={`font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>{paySlipData.designation}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">Department:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.department}</span>
+                    <span className={`font-medium ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Department:</span>
+                    <span className={`font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>{paySlipData.department}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-600">Phone No:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.phoneNo}</span>
+                    <span className={`font-medium ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Phone No:</span>
+                    <span className={`font-semibold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>{paySlipData.phoneNo}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 border-l-4 border-blue-500 pl-3">Bank & Tax Information</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">Bank A/C Name:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.bankAccountName}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">PAN No:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.panNo}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">PF No:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.pfNo}</span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-medium text-gray-600">IFSC Code:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.ifsccode}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-gray-600">Email:</span>
-                    <span className="font-semibold text-gray-800">{paySlipData.email}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+             <div className={`p-6 rounded-xl shadow-sm border ${
+  isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-blue-100'
+}`}>
+  <h3 className={`text-lg font-semibold mb-4 border-l-4 border-blue-500 pl-3 ${
+    isDark ? 'text-gray-200' : 'text-gray-800'
+  }`}>Bank & Tax Information</h3>
+  <div className="space-y-3">
+    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+      <span className={`font-medium ${
+        isDark ? 'text-gray-300' : 'text-gray-600'
+      }`}>Bank A/C Name:</span>
+      <span className={`font-semibold ${
+        isDark ? 'text-white' : 'text-gray-800'
+      }`}>{paySlipData.bankAccountName}</span>
+    </div>
+    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+      <span className={`font-medium ${
+        isDark ? 'text-gray-300' : 'text-gray-600'
+      }`}>PAN No:</span>
+      <span className={`font-semibold ${
+        isDark ? 'text-white' : 'text-gray-800'
+      }`}>{paySlipData.panNo}</span>
+    </div>
+    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+      <span className={`font-medium ${
+        isDark ? 'text-gray-300' : 'text-gray-600'
+      }`}>PF No:</span>
+      <span className={`font-semibold ${
+        isDark ? 'text-white' : 'text-gray-800'
+      }`}>{paySlipData.pfNo}</span>
+    </div>
+    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+      <span className={`font-medium ${
+        isDark ? 'text-gray-300' : 'text-gray-600'
+      }`}>IFSC Code:</span>
+      <span className={`font-semibold ${
+        isDark ? 'text-white' : 'text-gray-800'
+      }`}>{paySlipData.ifsccode}</span>
+    </div>
+    <div className="flex justify-between items-center">
+      <span className={`font-medium ${
+        isDark ? 'text-gray-300' : 'text-gray-600'
+      }`}>Email:</span>
+      <span className={`font-semibold ${
+        isDark ? 'text-white' : 'text-gray-800'
+      }`}>{paySlipData.email}</span>
+    </div>
+  </div>
+</div>
+</div>
 
             {/* Attendance Information */}
             <div className="mb-8">
-              <h3 className="text-xl font-bold mb-4 text-gray-800 border-l-4 border-blue-500 pl-3">Attendance Information</h3>
-              <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-                <table className="min-w-full bg-white">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-blue-50">
-                      <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">Standard Days</th>
-                      <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">Payable Days</th>
-                      <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">Loss of Pay Days</th>
-                      <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">LOP Reversal Days</th>
-                      <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">Arrear Days</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="border-b border-gray-100 px-6 py-4 text-center font-medium text-gray-900">{paySlipData.standardDays}</td>
-                      <td className="border-b border-gray-100 px-6 py-4 text-center font-medium text-gray-900">{paySlipData.payableDays}</td>
-                      <td className="border-b border-gray-100 px-6 py-4 text-center font-medium text-gray-900">{paySlipData.lossOfPayDays}</td>
-                      <td className="border-b border-gray-100 px-6 py-4 text-center font-medium text-gray-900">{paySlipData.lopReversalDays}</td>
-                      <td className="border-b border-gray-100 px-6 py-4 text-center font-medium text-gray-900">{paySlipData.arrearDays}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+  <h3 className={`text-xl font-bold mb-4 border-l-4 border-blue-500 pl-3 ${
+    isDark ? 'text-gray-200' : 'text-gray-800'
+  }`}>Attendance Information</h3>
+  <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+    isDark ? 'border-gray-600' : 'border-gray-200'
+  }`}>
+    <table className={`min-w-full ${
+      isDark ? 'bg-gray-800' : 'bg-white'
+    }`}>
+      <thead>
+        <tr className={`${
+          isDark 
+            ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+            : 'bg-gradient-to-r from-gray-50 to-blue-50'
+        }`}>
+          <th className={`border-b px-6 py-4 font-semibold ${
+            isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+          }`}>Standard Days</th>
+          <th className={`border-b px-6 py-4 font-semibold ${
+            isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+          }`}>Payable Days</th>
+          <th className={`border-b px-6 py-4 font-semibold ${
+            isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+          }`}>Loss of Pay Days</th>
+          <th className={`border-b px-6 py-4 font-semibold ${
+            isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+          }`}>LOP Reversal Days</th>
+          <th className={`border-b px-6 py-4 font-semibold ${
+            isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+          }`}>Arrear Days</th>
+        </tr>
+      </thead>
+     
+<tbody>
+  <tr>
+    <td className={`border-b px-6 py-4 text-center font-medium ${
+      isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+    }`}>{formatNumber(paySlipData.standardDays)}</td>
+    <td className={`border-b px-6 py-4 text-center font-medium ${
+      isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+    }`}>{formatNumber(paySlipData.payableDays)}</td>
+    <td className={`border-b px-6 py-4 text-center font-medium ${
+      isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+    }`}>{formatNumber(paySlipData.lossOfPayDays)}</td>
+    <td className={`border-b px-6 py-4 text-center font-medium ${
+      isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+    }`}>{formatNumber(paySlipData.lopReversalDays)}</td>
+    <td className={`border-b px-6 py-4 text-center font-medium ${
+      isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+    }`}>{formatNumber(paySlipData.arrearDays)}</td>
+  </tr>
+</tbody>
+    </table>
+  </div>
+</div>
+
 
             {/* Bonus Information */}
             {bonusAmount > 0 && (
-              <div className="mb-8">
-                <h3 className="text-xl font-bold mb-4 text-gray-800 border-l-4 border-blue-500 pl-3">Additional Compensation</h3>
-                <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-                  <table className="min-w-full bg-white">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-yellow-50 to-orange-50">
-                        <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">Bonus Amount</th>
-                        <th className="border-b border-gray-200 px-6 py-4 font-semibold text-gray-700">Hike Percentage</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="border-b border-gray-100 px-6 py-4 text-center font-bold text-yellow-700">₹{bonusAmount.toLocaleString()}</td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-center font-medium text-gray-900">{paySlipData.hike || 0}%</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+  <div className="mb-8">
+    <h3 className={`text-xl font-bold mb-4 border-l-4 border-blue-500 pl-3 ${
+      isDark ? 'text-gray-200' : 'text-gray-800'
+    }`}>Additional Compensation</h3>
+    <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+      isDark ? 'border-gray-600' : 'border-gray-200'
+    }`}>
+      <table className={`min-w-full ${
+        isDark ? 'bg-gray-800' : 'bg-white'
+      }`}>
+        <thead>
+          <tr className={`${
+            isDark 
+              ? 'bg-gradient-to-r from-yellow-900 to-orange-900' 
+              : 'bg-gradient-to-r from-yellow-50 to-orange-50'
+          }`}>
+            <th className={`border-b px-6 py-4 font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Bonus Amount</th>
+            <th className={`border-b px-6 py-4 font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Hike Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className={`border-b px-6 py-4 text-center font-bold ${
+              isDark ? 'border-gray-700 text-yellow-400' : 'border-gray-100 text-yellow-700'
+            }`}>₹{bonusAmount.toLocaleString()}</td>
+            <td className={`border-b px-6 py-4 text-center font-medium ${
+              isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+            }`}>{paySlipData.hike || 0}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
 
             {/* Salary Details */}
-            <div className="mb-8">
-              <h3 className="text-xl font-bold mb-4 text-gray-800 border-l-4 border-blue-500 pl-3">Salary Details</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Earnings */}
-                <div className="lg:col-span-2">
-                  <h4 className="font-semibold mb-3 text-gray-700">EARNINGS</h4>
-                  <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-                    <table className="min-w-full bg-white">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-gray-50 to-blue-50">
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700">Description</th>
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 text-right">Monthly Rate</th>
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 text-right">Current Month</th>
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 text-right">Arrear (+/-)</th>
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 text-right">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(paySlipData.earnings || []).map((earning, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="border-b border-gray-100 px-4 py-3 text-gray-700">{earning.name}</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-gray-900">₹{(earning.monthlyRate || 0).toLocaleString()}</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-gray-900">₹{(earning.currentMonth || 0).toLocaleString()}</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-gray-900">{earning.arrear || 0}</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-gray-900">₹{(earning.total || 0).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                        {bonusAmount > 0 && (
-                          <tr className="bg-yellow-50 hover:bg-yellow-100">
-                            <td className="border-b border-gray-100 px-4 py-3 font-semibold text-yellow-800">BONUS</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-yellow-800">-</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-yellow-800">-</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-yellow-800">-</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-bold text-yellow-800">₹{bonusAmount.toLocaleString()}</td>
-                          </tr>
-                        )}
-                        <tr className="bg-blue-50 font-semibold">
-                          <td className="border-b border-gray-200 px-4 py-3" colSpan="4">GROSS EARNINGS</td>
-                          <td className="border-b border-gray-200 px-4 py-3 text-right text-blue-800">₹{grossEarnings.toLocaleString()}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+          <div className="mb-8">
+  <h3 className={`text-xl font-bold mb-4 border-l-4 border-blue-500 pl-3 ${
+    isDark ? 'text-gray-200' : 'text-gray-800'
+  }`}>Salary Details</h3>
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* Earnings */}
+    <div className="lg:col-span-2">
+      <h4 className={`font-semibold mb-3 ${
+        isDark ? 'text-gray-300' : 'text-gray-700'
+      }`}>EARNINGS</h4>
+      <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+        isDark ? 'border-gray-600' : 'border-gray-200'
+      }`}>
+        <table className={`min-w-full ${
+          isDark ? 'bg-gray-800' : 'bg-white'
+        }`}>
+          <thead>
+            <tr className={`${
+              isDark 
+                ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+                : 'bg-gradient-to-r from-gray-50 to-blue-50'
+            }`}>
+              <th className={`border-b px-4 py-3 font-semibold ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Description</th>
+              <th className={`border-b px-4 py-3 font-semibold text-right ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Monthly Rate</th>
+              <th className={`border-b px-4 py-3 font-semibold text-right ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Current Month</th>
+              <th className={`border-b px-4 py-3 font-semibold text-right ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Arrear (+/-)</th>
+              <th className={`border-b px-4 py-3 font-semibold text-right ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(paySlipData.earnings || []).map((earning, index) => (
+              <tr key={index} className={isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                <td className={`border-b px-4 py-3 ${
+                  isDark ? 'border-gray-700 text-gray-300' : 'border-gray-100 text-gray-700'
+                }`}>{earning.name}</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                }`}>₹{(earning.monthlyRate || 0).toLocaleString()}</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                }`}>₹{(earning.currentMonth || 0).toLocaleString()}</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                }`}>{earning.arrear || 0}</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                }`}>₹{(earning.total || 0).toLocaleString()}</td>
+              </tr>
+            ))}
+            {bonusAmount > 0 && (
+              <tr className={isDark ? 'bg-yellow-900 hover:bg-yellow-800' : 'bg-yellow-50 hover:bg-yellow-100'}>
+                <td className={`border-b px-4 py-3 font-semibold ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                }`}>BONUS</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                }`}>-</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                }`}>-</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                }`}>-</td>
+                <td className={`border-b px-4 py-3 text-right font-bold ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                }`}>₹{bonusAmount.toLocaleString()}</td>
+              </tr>
+            )}
+            <tr className={isDark ? 'bg-blue-900' : 'bg-blue-50'}>
+              <td className={`border-b px-4 py-3 font-semibold ${
+                isDark ? 'border-gray-600 text-gray-200' : 'border-gray-200 text-gray-800'
+              }`} colSpan="4">GROSS EARNINGS</td>
+              <td className={`border-b px-4 py-3 text-right font-semibold ${
+                isDark ? 'border-gray-600 text-blue-300' : 'border-gray-200 text-blue-800'
+              }`}>₹{grossEarnings.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
                 {/* Deductions */}
                 <div>
-                  <h4 className="font-semibold mb-3 text-gray-700">DEDUCTIONS</h4>
-                  <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-                    <table className="min-w-full bg-white">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-gray-50 to-blue-50">
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700">Description</th>
-                          <th className="border-b border-gray-200 px-4 py-3 font-semibold text-gray-700 text-right">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(paySlipData.deductions || []).map((deduction, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="border-b border-gray-100 px-4 py-3 text-gray-700">{deduction.name}</td>
-                            <td className="border-b border-gray-100 px-4 py-3 text-right font-medium text-red-600">₹{(deduction.amount || 0).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                        <tr className="bg-blue-50 font-semibold">
-                          <td className="border-b border-gray-200 px-4 py-3">TOTAL DEDUCTIONS</td>
-                          <td className="border-b border-gray-200 px-4 py-3 text-right text-red-700">₹{totalDeductions.toLocaleString()}</td>
-                        </tr>
-                        {bonusAmount > 0 && (
-                          <tr className="bg-yellow-50 font-semibold">
-                            <td className="border-b border-gray-200 px-4 py-3 text-yellow-800">BONUS ADDED</td>
-                            <td className="border-b border-gray-200 px-4 py-3 text-right text-yellow-800">+ ₹{bonusAmount.toLocaleString()}</td>
-                          </tr>
-                        )}
-                        <tr className="bg-green-50 font-bold">
-                          <td className="border-b border-gray-200 px-4 py-3 text-green-800">NET SALARY</td>
-                          <td className="border-b border-gray-200 px-4 py-3 text-right text-green-800">₹{netSalary.toLocaleString()}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <h4 className={`font-semibold mb-3 ${
+        isDark ? 'text-gray-300' : 'text-gray-700'
+      }`}>DEDUCTIONS</h4>
+      <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+        isDark ? 'border-gray-600' : 'border-gray-200'
+      }`}>
+        <table className={`min-w-full ${
+          isDark ? 'bg-gray-800' : 'bg-white'
+        }`}>
+          <thead>
+            <tr className={`${
+              isDark 
+                ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+                : 'bg-gradient-to-r from-gray-50 to-blue-50'
+            }`}>
+              <th className={`border-b px-4 py-3 font-semibold ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Description</th>
+              <th className={`border-b px-4 py-3 font-semibold text-right ${
+                isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+              }`}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(paySlipData.deductions || []).map((deduction, index) => (
+              <tr key={index} className={isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                <td className={`border-b px-4 py-3 ${
+                  isDark ? 'border-gray-700 text-gray-300' : 'border-gray-100 text-gray-700'
+                }`}>{deduction.name}</td>
+                <td className={`border-b px-4 py-3 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-red-400' : 'border-gray-100 text-red-600'
+                }`}>₹{(deduction.amount || 0).toLocaleString()}</td>
+              </tr>
+            ))}
+            <tr className={isDark ? 'bg-blue-900' : 'bg-blue-50'}>
+              <td className={`border-b px-4 py-3 font-semibold ${
+                isDark ? 'border-gray-600 text-gray-200' : 'border-gray-200 text-gray-800'
+              }`}>TOTAL DEDUCTIONS</td>
+              <td className={`border-b px-4 py-3 text-right font-semibold ${
+                isDark ? 'border-gray-600 text-red-400' : 'border-gray-200 text-red-700'
+              }`}>₹{totalDeductions.toLocaleString()}</td>
+            </tr>
+            {bonusAmount > 0 && (
+              <tr className={isDark ? 'bg-yellow-900' : 'bg-yellow-50'}>
+                <td className={`border-b px-4 py-3 font-semibold ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-200 text-yellow-800'
+                }`}>BONUS ADDED</td>
+                <td className={`border-b px-4 py-3 text-right font-semibold ${
+                  isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-200 text-yellow-800'
+                }`}>+ ₹{bonusAmount.toLocaleString()}</td>
+              </tr>
+            )}
+            <tr className={isDark ? 'bg-green-900' : 'bg-green-50'}>
+              <td className={`border-b px-4 py-3 font-bold ${
+                isDark ? 'border-gray-600 text-green-300' : 'border-gray-200 text-green-800'
+              }`}>NET SALARY</td>
+              <td className={`border-b px-4 py-3 text-right font-bold ${
+                isDark ? 'border-gray-600 text-green-300' : 'border-gray-200 text-green-800'
+              }`}>₹{netSalary.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-gray-300 text-center text-sm text-gray-600">
+           <div className={`mt-8 pt-6 border-t text-center text-sm ${
+  isDark ? 'border-gray-600 text-gray-400' : 'border-gray-300 text-gray-600'
+}`}>
               <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039 | Ph: 9632091726</p>
             </div>
           </div>
@@ -2299,7 +2851,25 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
           loading={loading}
         />
       )}
-      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-blue-100">
+      <div className={`max-w-7xl mx-auto rounded-2xl shadow-xl overflow-hidden border ${
+  isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-blue-100'
+}`}>
+  <div className="container mx-auto px-4 pt-6">
+      <button
+        onClick={() => window.history.back()}
+        className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+          isDark 
+            ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Back</span>
+      </button>
+    </div>
+
         {/* <div className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white p-8">
           <div className="flex items-center justify-between">
             <div>
@@ -2317,149 +2887,220 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
         </div> */}
 
         {/* Filters and Action Buttons */}
-        <div className="p-6 bg-white border-b border-gray-200">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
-                <select 
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {months.map(month => (
-                    <option key={month} value={month}>{month}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
-                <select 
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
+      <div className={`p-6 border-b ${
+  isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+}`}>
+  <div className="flex flex-wrap gap-4 items-center justify-between">
+    <div className="flex flex-wrap gap-4">
+      <div>
+        <label className={`block text-sm font-medium mb-2 ${
+          isDark ? 'text-gray-300' : 'text-gray-700'
+        }`}>Month</label>
+        <select 
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          className={`border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            isDark 
+              ? 'bg-gray-700 border-gray-600 text-white' 
+              : 'border-gray-300 text-gray-900'
+          }`}
+        >
+          {months.map(month => (
+            <option key={month} value={month}>{month}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className={`block text-sm font-medium mb-2 ${
+          isDark ? 'text-gray-300' : 'text-gray-700'
+        }`}>Year</label>
+        <select 
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          className={`border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            isDark 
+              ? 'bg-gray-700 border-gray-600 text-white' 
+              : 'border-gray-300 text-gray-900'
+          }`}
+        >
+          {years.map(year => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+      </div>
 
-              
-            <div className="flex-1">
-            <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 mb-2">
-              Search Employees
-            </label>
-            <input
-              id="search-input"
-              type="text"
-              placeholder="Search by name, role, or employee ID"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-              
-            </div>
-            <div className="flex gap-4">
-              <button 
-                onClick={handleAddEmployee}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg font-medium flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Employee
-              </button>
-              <button 
-                onClick={handleDownloadExcel}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg font-medium"
-              >
-                Download Excel Sheet
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex-1">
+        <label htmlFor="search-input" className={`block text-sm font-medium mb-2 ${
+          isDark ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Search Employees
+        </label>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search by name, role, or employee ID"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            isDark 
+              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+              : 'border-gray-300 text-gray-900'
+          }`}
+        />
+      </div>
+    </div>
+    <div className="flex gap-4">
+      <button 
+        onClick={handleAddEmployee}
+        className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg font-medium flex items-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        Add Employee
+      </button>
+      <button 
+        onClick={handleDownloadExcel}
+        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg font-medium"
+      >
+        Download Excel Sheet
+      </button>
+    </div>
+  </div>
+</div>
+
 
         {/* Employee Salary Table */}
-        <div className="p-6">
-          <h3 className="text-2xl font-bold mb-6 text-gray-800">Employee Salary Summary - {selectedMonth} {selectedYear}</h3>
-          
-          {apiLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <span className="ml-4 text-gray-600">Loading employee data...</span>
-            </div>
+       <div className={`p-6 ${
+  isDark ? 'bg-gray-800' : 'bg-white'
+}`}>
+  <h3 className={`text-2xl font-bold mb-6 ${
+    isDark ? 'text-gray-200' : 'text-gray-800'
+  }`}>Employee Salary Summary - {selectedMonth} {selectedYear}</h3>
+  
+  {apiLoading ? (
+    <div className="flex justify-center items-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <span className={`ml-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Loading employee data...</span>
+    </div>
+  ) : (
+    <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+      isDark ? 'border-gray-600' : 'border-gray-200'
+    }`}>
+      <table className={`min-w-full ${
+        isDark ? 'bg-gray-800' : 'bg-white'
+      }`}>
+        <thead>
+          <tr className={`${
+            isDark 
+              ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+              : 'bg-gradient-to-r from-gray-50 to-blue-50'
+          }`}>
+            <th className={`border-b px-6 py-4 text-left font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Employee ID</th>
+            <th className={`border-b px-6 py-4 text-left font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Employee Name</th>
+            <th className={`border-b px-6 py-4 text-left font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Designation</th>
+            <th className={`border-b px-6 py-4 text-left font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Department</th>
+            <th className={`border-b px-6 py-4 text-right font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Gross Earnings</th>
+            <th className={`border-b px-6 py-4 text-right font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Bonus</th>
+            <th className={`border-b px-6 py-4 text-right font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Deductions</th>
+            <th className={`border-b px-6 py-4 text-right font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Net Salary</th>
+            <th className={`border-b px-6 py-4 text-center font-semibold ${
+              isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+            }`}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {employeesWithSalary.length > 0 ? (
+            employeesWithSalary.map(employee => (
+              <tr key={employee.id} className={`transition-colors ${
+                isDark ? 'hover:bg-gray-700' : 'hover:bg-blue-50'
+              }`}>
+                <td className={`border-b px-6 py-4 font-medium ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                }`}>{employee.employeeId}</td>
+                <td className={`border-b px-6 py-4 font-semibold ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-800'
+                }`}>{employee.employeeName}</td>
+                <td className={`border-b px-6 py-4 ${
+                  isDark ? 'border-gray-700 text-gray-300' : 'border-gray-100 text-gray-700'
+                }`}>{employee.designation}</td>
+                <td className={`border-b px-6 py-4 ${
+                  isDark ? 'border-gray-700 text-gray-300' : 'border-gray-100 text-gray-700'
+                }`}>{employee.department}</td>
+                <td className={`border-b px-6 py-4 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                }`}>
+                  ₹{employee.grossEarnings.toLocaleString()}
+                </td>
+                <td className={`border-b px-6 py-4 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-yellow-400' : 'border-gray-100 text-yellow-600'
+                }`}>
+                  {employee.bonusAmount > 0 ? `₹${employee.bonusAmount.toLocaleString()}` : '-'}
+                </td>
+                <td className={`border-b px-6 py-4 text-right font-medium ${
+                  isDark ? 'border-gray-700 text-red-400' : 'border-gray-100 text-red-600'
+                }`}>
+                  ₹{employee.totalDeductions.toLocaleString()}
+                </td>
+                <td className={`border-b px-6 py-4 text-right font-bold ${
+                  isDark ? 'border-gray-700 text-green-400' : 'border-gray-100 text-green-700'
+                }`}>
+                  ₹{employee.netSalary.toLocaleString()}
+                </td>
+                <td className={`border-b px-6 py-4 ${
+                  isDark ? 'border-gray-700' : 'border-gray-100'
+                }`}>
+                  <div className="flex gap-2 justify-center">
+                    <button 
+                      onClick={() => handleView(employee)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                    >
+                      View
+                    </button>
+                    <button 
+                      onClick={() => handleEdit(employee)}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => handleDownloadPayslip(employee)}
+                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors font-medium text-sm"
+                    >
+                      Download
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
           ) : (
-            <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-              <table className="min-w-full bg-white">
-                <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-blue-50">
-                    <th className="border-b border-gray-200 px-6 py-4 text-left font-semibold text-gray-700">Employee ID</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-left font-semibold text-gray-700">Employee Name</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-left font-semibold text-gray-700">Designation</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-left font-semibold text-gray-700">Department</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-right font-semibold text-gray-700">Gross Earnings</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-right font-semibold text-gray-700">Bonus</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-right font-semibold text-gray-700">Deductions</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-right font-semibold text-gray-700">Net Salary</th>
-                    <th className="border-b border-gray-200 px-6 py-4 text-center font-semibold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employeesWithSalary.length > 0 ? (
-                    employeesWithSalary.map(employee => (
-                      <tr key={employee.id} className="hover:bg-blue-50 transition-colors">
-                        <td className="border-b border-gray-100 px-6 py-4 font-medium text-gray-900">{employee.employeeId}</td>
-                        <td className="border-b border-gray-100 px-6 py-4 font-semibold text-gray-800">{employee.employeeName}</td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-gray-700">{employee.designation}</td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-gray-700">{employee.department}</td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-right font-medium text-gray-900">
-                          ₹{employee.grossEarnings.toLocaleString()}
-                        </td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-right font-medium text-yellow-600">
-                          {employee.bonusAmount > 0 ? `₹${employee.bonusAmount.toLocaleString()}` : '-'}
-                        </td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-right text-red-600 font-medium">
-                          ₹{employee.totalDeductions.toLocaleString()}
-                        </td>
-                        <td className="border-b border-gray-100 px-6 py-4 text-right font-bold text-green-700">
-                          ₹{employee.netSalary.toLocaleString()}
-                        </td>
-                        <td className="border-b border-gray-100 px-6 py-4">
-                          <div className="flex gap-2 justify-center">
-                            <button 
-                              onClick={() => handleView(employee)}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                            >
-                              View
-                            </button>
-                            <button 
-                              onClick={() => handleEdit(employee)}
-                              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium text-sm"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDownloadPayslip(employee)}
-                              className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors font-medium text-sm"
-                            >
-                              Download
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                        {apiLoading ? 'Loading employees...' : 'No employees found. Add some employees to get started.'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <tr>
+              <td colSpan="9" className={`px-6 py-8 text-center ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                {apiLoading ? 'Loading employees...' : 'No employees found. Add some employees to get started.'}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
           )}
         </div>
       </div>

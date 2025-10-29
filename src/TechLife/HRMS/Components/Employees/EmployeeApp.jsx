@@ -652,6 +652,14 @@ function EmployeeApp() {
             setFlippedCard(null);
         }
     };
+   const handlePayRollClick = (employee) => {
+    if (employee) {
+    
+        navigate(`/payroll/employee/${employee.employeeId}`);
+        setContextMenu({ ...contextMenu, visible: false });
+        setFlippedCard(null);
+    }
+};
 
     const handleAboutClick = (employee) => {
         if (employee) {
@@ -1770,6 +1778,16 @@ function EmployeeApp() {
                                                                             <span className="font-medium">Documents</span>
                                                                         </button>
                                                                     }
+                                                                    <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handlePayRollClick(employee);
+                                                                            }}
+                                                                            className={`px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-teal-500/30 text-xs sm:text-sm w-full flex items-center justify-center space-x-2`}
+                                                                        >
+                                                                            <IoPeopleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                            <span className="font-medium">View Payroll</span>
+                                                                        </button>
 
                                                                     {/* Option 4: View Teams (Permission Check) */}
                                                                     { matchedArray && matchedArray.includes("VIEW_TEAM") &&
@@ -1784,6 +1802,7 @@ function EmployeeApp() {
                                                                             <span className="font-medium">View Teams</span>
                                                                         </button>
                                                                     }
+                                                                    
 
                                                                     {/* Option 5: Terminate Employee (Permission Check) */}
                                                                     { hasAccess.includes("DELETE_USER") && (

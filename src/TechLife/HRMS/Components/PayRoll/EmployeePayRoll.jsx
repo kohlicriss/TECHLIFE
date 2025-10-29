@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Context } from '../HrmsContext';
 import axios from 'axios';
@@ -19,6 +18,9 @@ const DetailField = React.memo(
   }) => {
     const [localValue, setLocalValue] = useState(value || "");
     const timeoutRef = useRef(null);
+
+    const { theme } = useContext(Context);
+    const isDark = theme === "dark";
 
     
     useEffect(() => {
@@ -59,7 +61,7 @@ const DetailField = React.memo(
 
     return (
       <div className="flex flex-col">
-        <label className="text-sm font-medium text-gray-600 mb-1">
+        <label className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
           {label}
         </label>
         {isEditing ? (
@@ -69,15 +71,23 @@ const DetailField = React.memo(
             value={localValue}
             onChange={handleChange}
             placeholder={placeholder}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+              isDark 
+                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
           />
         ) : (
           <div className="relative">
-            <span className="px-3 py-2 bg-gray-50 rounded-md text-gray-800 block min-h-[42px] flex items-center">
+            <span className={`px-3 py-2 rounded-md block min-h-[42px] flex items-center ${
+              isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-50 text-gray-800'
+            }`}>
               {value || "N/A"}
             </span>
             {showLPA && (
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">
+              <span className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 LPA
               </span>
             )}
@@ -114,6 +124,8 @@ const EmployeePayRoll = () => {
   const [activeField, setActiveField] = useState(null);
 
   const token = localStorage.getItem("accessToken");
+  const { theme } = useContext(Context);
+  const isDark = theme === "dark";
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -229,16 +241,29 @@ const EmployeePayRoll = () => {
 
       const netSalary = payslip.netSalary || (grossEarnings - totalDeductions);
 
-      payslipElement.innerHTML = `
-        <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
-          <!-- Company Header -->
-          <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-            <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
-            <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
-            <div style="background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold;">
-              ${formatPayPeriod(payslip)}
-            </div>
-          </div>
+      // Helper function to format numbers - remove .0 when not needed
+const formatNumber = (value, decimals = 1) => {
+  const num = Number(value);
+  if (isNaN(num)) return '0';
+  
+  // If it's a whole number, don't show decimals
+  if (num % 1 === 0) {
+    return num.toString();
+  }
+  
+  // Otherwise show specified decimals
+  return num.toFixed(decimals);
+};
+payslipElement.innerHTML = `
+  <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
+    <!-- Company Header -->
+    <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+      <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
+      <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
+      <div style="background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold;">
+        ${formatPayPeriod(payslip)}
+      </div>
+    </div>
 
           <!-- Employee Information -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -288,6 +313,54 @@ const EmployeePayRoll = () => {
               </div>
             </div>
           </div>
+             <!-- Attendance Information -->
+    <div style="margin: 20px 0;">
+      <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ATTENDANCE INFORMATION</div>
+      <div style="padding: 0 30px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Total Working Days</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Days Present</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Paid Days</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Loss of Pay Days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.totalWorkingDays || 0)}</td>
+              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.daysPresent || 0)}</td>
+              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.paidDays || 0)}</td>
+              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.lossOfPayDays || 0)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bonus Information - Only show if bonus exists -->
+    ${payslip.bonusAmount > 0 ? `
+    <div style="margin: 20px 0;">
+      <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ADDITIONAL COMPENSATION</div>
+      <div style="padding: 0 30px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Bonus Amount</th>
+              <th style="padding: 12px; text-align: center; font-weight: 600;">Hike Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 12px; text-align: center; background: white; font-weight: bold; color: #059669;">₹${(payslip.bonusAmount || 0).toLocaleString()}</td>
+              <td style="padding: 12px; text-align: center; background: white; font-weight: bold; color: #059669;">${payslip.hikePercentage || 0}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    ` : ''}
+  
 
           <!-- Salary Details -->
           <div style="margin: 20px 0;">
@@ -386,6 +459,7 @@ const EmployeePayRoll = () => {
           </div>
         </div>
       `;
+                    
 
       document.body.appendChild(payslipElement);
 
@@ -532,7 +606,7 @@ const EmployeePayRoll = () => {
     if (!employee) {
       return (
         <div className="p-6">
-          <div className="text-center py-8 text-gray-500">
+          <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             No employee details found.
           </div>
         </div>
@@ -542,7 +616,7 @@ const EmployeePayRoll = () => {
     return (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">My Details</h2>
+          <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>My Details</h2>
           <div className="flex space-x-3">
             {!isEditing ? (
               <button
@@ -579,8 +653,12 @@ const EmployeePayRoll = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Personal Information */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Personal Information</h3>
+          <div className={`p-6 rounded-lg border shadow-sm ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 border-b pb-2 ${
+              isDark ? 'text-white border-gray-700' : 'text-gray-800 border-gray-200'
+            }`}>Personal Information</h3>
             <div className="space-y-3">
               <DetailField 
                 key="employeeId"
@@ -635,8 +713,12 @@ const EmployeePayRoll = () => {
           </div>
 
           {/* Employment Details */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Employment Details</h3>
+          <div className={`p-6 rounded-lg border shadow-sm ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 border-b pb-2 ${
+              isDark ? 'text-white border-gray-700' : 'text-gray-800 border-gray-200'
+            }`}>Employment Details</h3>
             <div className="space-y-3">
               <DetailField 
                 key="department"
@@ -677,8 +759,12 @@ const EmployeePayRoll = () => {
           </div>
 
           {/* Bank & Salary Information */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Bank & Salary Information</h3>
+          <div className={`p-6 rounded-lg border shadow-sm ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 border-b pb-2 ${
+              isDark ? 'text-white border-gray-700' : 'text-gray-800 border-gray-200'
+            }`}>Bank & Salary Information</h3>
             <div className="space-y-3">
               <DetailField 
                 key="bankName"
@@ -751,14 +837,38 @@ const EmployeePayRoll = () => {
     };
 
     return (
-      <div className="p-6 border-b border-gray-200">
+      <div className={`p-6 border-b ${
+        isDark ? 'border-gray-700' : 'border-gray-200'
+      }`}>
+        <div className="container mx-auto px-4 pt-6">
+      <button
+        onClick={() => window.history.back()}
+        className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+          isDark 
+            ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Back</span>
+      </button>
+    </div>
         <div className="flex flex-wrap gap-4 items-center">
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={`block text-sm font-medium mb-1 ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               Month
             </label>
             <select 
-              className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-40 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-800'
+              }`}
               onChange={handleMonthChange}
               value={filters.month}
             >
@@ -772,11 +882,17 @@ const EmployeePayRoll = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={`block text-sm font-medium mb-1 ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               Year
             </label>
             <select 
-              className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-32 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-800'
+              }`}
               onChange={handleYearChange}
               value={filters.year}
             >
@@ -812,9 +928,10 @@ const EmployeePayRoll = () => {
     if (loading) {
       return (
         <div className="p-6">
+          
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span className="ml-4 text-gray-600">Loading payroll data...</span>
+            <span className={`ml-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading payroll data...</span>
           </div>
         </div>
       );
@@ -823,7 +940,7 @@ const EmployeePayRoll = () => {
     if (error) {
       return (
         <div className="p-6">
-          <div className="text-center py-8 text-red-600">
+          <div className={`text-center py-8 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
             {error}
           </div>
         </div>
@@ -833,69 +950,91 @@ const EmployeePayRoll = () => {
     if (!empId) {
       return (
         <div className="p-6">
-          <div className="text-center py-8 text-red-600">
+          <div className={`text-center py-8 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
             Employee ID not available. Please check your login.
           </div>
         </div>
       );
     }
+   
+const formatNumber = (value, decimals = 1) => {
+  const num = Number(value);
+  if (isNaN(num)) return '0';
+ 
+  if (num % 1 === 0) {
+    return num.toString();
+  }
+ 
+  return num.toFixed(decimals);
+};
 
     return (
-      <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">
-          Payroll History {employee && `- ${employee.empName}`}
-        </h2>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
-                <th className="px-4 py-3 text-left font-semibold">Month</th>
-                <th className="px-4 py-3 text-left font-semibold">Year</th>
-                <th className="px-4 py-3 text-right font-semibold">Net Salary</th>
-                <th className="px-4 py-3 text-right font-semibold">Bonus</th>
-                <th className="px-4 py-3 text-center font-semibold">Actions</th>
+    <div className="p-6">
+      
+      <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+        Payroll History {employee && `- ${employee.empName}`}
+      </h2>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
+              <th className="px-4 py-3 text-left font-semibold">Month</th>
+              <th className="px-4 py-3 text-left font-semibold">Year</th>
+              <th className="px-4 py-3 text-right font-semibold">Net Salary</th>
+              <th className="px-4 py-3 text-right font-semibold">Bonus</th>
+              
+              <th className="px-4 py-3 text-center font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((item) => (
+              <tr key={item.payrollId} className={`border-b ${
+                isDark 
+                  ? 'border-gray-700 hover:bg-gray-800' 
+                  : 'border-gray-200 hover:bg-gray-50'
+              }`}>
+                <td className={`px-4 py-3 font-medium ${
+                  isDark ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  {getMonthFromPayroll(item)}
+                </td>
+                <td className={`px-4 py-3 ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  {getYearFromPayroll(item)}
+                </td>
+                <td className="px-4 py-3 text-right font-semibold text-green-600">
+                  {formatCurrency(item.netSalary)}
+                </td>
+                <td className="px-4 py-3 text-right font-medium text-orange-600">
+                  {formatCurrency(item.bonusAmount || 0)}
+                </td>
+               
+                <td className="px-4 py-3">
+                  <div className="flex justify-center space-x-2">
+                    <button
+                      onClick={() => handleViewPayslip(item)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleDownloadPayslip(item)}
+                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
+                    >
+                      Download
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((item) => (
-                <tr key={item.payrollId} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-700">
-                    {getMonthFromPayroll(item)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {getYearFromPayroll(item)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-green-600">
-                    {formatCurrency(item.netSalary)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-orange-600">
-                    {formatCurrency(item.bonusAmount || 0)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => handleViewPayslip(item)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleDownloadPayslip(item)}
-                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
-                      >
-                        Download
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
         {filteredData.length === 0 && !loading && (
-          <div className="text-center py-8 text-gray-500">
+          <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             No payroll records found for the selected filters.
           </div>
         )}
@@ -907,11 +1046,12 @@ const EmployeePayRoll = () => {
   const PayslipModal = () => {
     if (!selectedPayslip || !employee) return null;
 
-    const grossEarnings = (selectedPayslip.basicSalary || 0) + 
-                         (selectedPayslip.hraAmount || 0) + 
-                         (selectedPayslip.conveyanceAllowance || 0) +
-                         (selectedPayslip.medicalAllowance || 0) +
-                         (selectedPayslip.specialAllowance || 0);
+   const grossEarnings = (selectedPayslip.basicSalary || 0) + 
+                     (selectedPayslip.hraAmount || 0) + 
+                     (selectedPayslip.conveyanceAllowance || 0) +
+                     (selectedPayslip.medicalAllowance || 0) +
+                     (selectedPayslip.specialAllowance || 0) +
+                     (selectedPayslip.bonusAmount || 0); 
 
     const totalDeductions = (selectedPayslip.providentFund || 0) + 
                            (selectedPayslip.professionalTax || 0) +
@@ -940,192 +1080,435 @@ const EmployeePayRoll = () => {
         total: formatCurrency(selectedPayslip.bonusAmount)
       });
     }
+   
+const formatNumber = (value, decimals = 1) => {
+  const num = Number(value);
+  if (isNaN(num)) return '0';
+  
+  
+  if (num % 1 === 0) {
+    return num.toString();
+  }
 
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800">
-              Payslip - {formatPayPeriod(selectedPayslip)}
-            </h2>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              &times;
-            </button>
-          </div>
+  return num.toFixed(decimals);
+};
 
-          <div className="p-6">
-            {/* Company Header */}
-            <div className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-xl p-6 mb-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-2xl font-bold">ANASOL CONSULTANCY SERVICES PVT LTD</div>
-                  <div className="text-xl font-semibold opacity-90 mt-1">SALARY SLIP</div>
-                  <div className="bg-white/20 px-4 py-1 rounded-full text-sm font-medium mt-2 inline-block">
-                    {formatPayPeriod(selectedPayslip)}
-                  </div>
-                </div>
-                <div className="w-20 h-20 bg-white/20 rounded-lg flex items-center justify-center text-white font-bold">
-                  <img 
-                    src="/assets/anasol-logo.png" 
-                    alt="Anasol Logo" 
-                    className="w-20 h-20 object-contain"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Employee Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">Employee Name:</span>
-                  <span className="font-medium">{employee.empName}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">Employee ID:</span>
-                  <span className="font-medium">{employee.employeeId}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">Designation:</span>
-                  <span className="font-medium">{employee.designation || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">Department:</span>
-                  <span className="font-medium">{employee.department || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="font-semibold text-gray-600">Phone No:</span>
-                  <span className="font-medium">{employee.phoneNumber || 'N/A'}</span>
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">Bank A/C Name:</span>
-                  <span className="font-medium">{employee.empName}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">PAN No:</span>
-                  <span className="font-medium">{employee.panNumber || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">PF No:</span>
-                  <span className="font-medium">{employee.pfnum || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="font-semibold text-gray-600">IFSC Code:</span>
-                  <span className="font-medium">{employee.ifsccode || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="font-semibold text-gray-600">Email:</span>
-                  <span className="font-medium">{employee.email || 'N/A'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Salary Details */}
-            <h3 className="text-lg font-bold text-gray-800 mb-3">Salary Details</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Earnings */}
-              <div>
-                <h4 className="font-bold text-gray-700 mb-2 border-l-4 border-blue-600 pl-2">EARNINGS</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
-                        <th className="px-3 py-2 font-semibold text-sm">Description</th>
-                        <th className="px-3 py-2 font-semibold text-sm">Monthly Rate</th>
-                        <th className="px-3 py-2 font-semibold text-sm">Current Month</th>
-                        <th className="px-3 py-2 font-semibold text-sm">Arrear (+/-)</th>
-                        <th className="px-3 py-2 font-semibold text-sm">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {earnings.map((earning, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="px-3 py-2 text-sm">{earning.description}</td>
-                          <td className="px-3 py-2 text-sm text-right">{earning.monthlyRate}</td>
-                          <td className="px-3 py-2 text-sm text-right">{earning.currentMonth}</td>
-                          <td className="px-3 py-2 text-sm text-right">{earning.arrear}</td>
-                          <td className="px-3 py-2 text-sm text-right font-medium">{earning.total}</td>
-                        </tr>
-                      ))}
-                      <tr className="bg-blue-50 font-semibold">
-                        <td colSpan="4" className="px-3 py-2 text-sm">GROSS EARNINGS</td>
-                        <td className="px-3 py-2 text-sm text-right">{formatCurrency(grossEarnings + (selectedPayslip.bonusAmount || 0))}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Deductions */}
-              <div>
-                <h4 className="font-bold text-gray-700 mb-2 border-l-4 border-blue-600 pl-2">DEDUCTIONS</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
-                        <th className="px-3 py-2 font-semibold text-sm">Description</th>
-                        <th className="px-3 py-2 font-semibold text-sm">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {deductions.map((deduction, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="px-3 py-2 text-sm">{deduction.description}</td>
-                          <td className="px-3 py-2 text-sm text-right">{deduction.amount}</td>
-                        </tr>
-                      ))}
-                      <tr className="bg-blue-50 font-semibold">
-                        <td className="px-3 py-2 text-sm">TOTAL DEDUCTIONS</td>
-                        <td className="px-3 py-2 text-sm text-right">{formatCurrency(totalDeductions)}</td>
-                      </tr>
-                      <tr className="bg-green-50 font-bold text-green-700">
-                        <td className="px-3 py-2">NET SALARY</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(selectedPayslip.netSalary)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-gray-200 text-center text-gray-600 text-sm">
-              <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039</p>
-              <p>Ph: 9632091726 | Email: info@anasol.com | www.anasol.com</p>
-              <p className="mt-2 text-gray-400">
-                This is a computer-generated document and does not require a signature
-              </p>
+ return (
+ <div className="fixed inset-0 bg-black/50 bg-opacity-50 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div className={`max-w-4xl w-full rounded-2xl shadow-2xl overflow-hidden border ${
+      isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-blue-100'
+    }`}>
+      
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-800 to-purple-800 text-white p-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">ANASOL CONSULTANCY SERVICES PVT LTD</h1>
+            <h2 className="text-xl mt-2 opacity-90">SALARY SLIP</h2>
+            <div className="mt-3 bg-white/20 px-4 py-1 rounded-full inline-block text-sm">
+              {formatPayPeriod(selectedPayslip)}
             </div>
           </div>
-
-          {/* Modal Footer */}
-          <div className="p-4 border-t border-gray-200 flex justify-end space-x-3">
-            <button
-              onClick={() => handleDownloadPayslip(selectedPayslip)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-            >
-              Download PDF
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Close
-            </button>
+          <div className="w-24 h-24 bg-white/20 rounded-xl flex items-center justify-center">
+            <img 
+              src="/assets/anasol-logo.png" 
+              alt="Anasol Logo" 
+              className="w-20 h-20 object-contain"
+            />
           </div>
         </div>
       </div>
-    );
+
+      {/* Action buttons */}
+      <div className={`p-4 border-b flex justify-between items-center ${
+        isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+      }`}>
+        <button 
+          onClick={() => setIsModalOpen(false)}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+        >
+          ← Back to Employee List
+        </button>
+        <button 
+          onClick={() => handleDownloadPayslip(selectedPayslip)}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+        >
+          Download PDF
+        </button>
+      </div>
+
+      {/* Pay Slip Content */}
+      <div className="p-8 max-h-[70vh] overflow-y-auto">
+        {/* Employee Information */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className={`p-6 rounded-xl shadow-sm border ${
+            isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-blue-100'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 border-l-4 border-blue-500 pl-3 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Personal Information</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Employee Name:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.empName}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Employee ID:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.employeeId}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Designation:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.designation || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Department:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.department || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Phone No:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.phoneNumber || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={`p-6 rounded-xl shadow-sm border ${
+            isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-blue-100'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 border-l-4 border-blue-500 pl-3 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Bank & Tax Information</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Bank A/C Name:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.empName}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>PAN No:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.panNumber || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>PF No:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.pfnum || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>IFSC Code:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.ifsccode || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={`font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>Email:</span>
+                <span className={`font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>{employee.email || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Attendance Information */}
+        <div className="mb-8">
+          <h3 className={`text-xl font-bold mb-4 border-l-4 border-blue-500 pl-3 ${
+            isDark ? 'text-gray-200' : 'text-gray-800'
+          }`}>Attendance Information</h3>
+          <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+            isDark ? 'border-gray-600' : 'border-gray-200'
+          }`}>
+            <table className={`min-w-full ${
+              isDark ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <thead>
+                <tr className={`${
+                  isDark 
+                    ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+                    : 'bg-gradient-to-r from-gray-50 to-blue-50'
+                }`}>
+                  <th className={`border-b px-6 py-4 font-semibold ${
+                    isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                  }`}>Total Working Days</th>
+                  <th className={`border-b px-6 py-4 font-semibold ${
+                    isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                  }`}>Days Present</th>
+                  <th className={`border-b px-6 py-4 font-semibold ${
+                    isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                  }`}>Paid Days</th>
+                  <th className={`border-b px-6 py-4 font-semibold ${
+                    isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                  }`}>Loss of Pay Days</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className={`border-b px-6 py-4 text-center font-medium ${
+                    isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                  }`}>{formatNumber(selectedPayslip.totalWorkingDays || 0)}</td>
+                  <td className={`border-b px-6 py-4 text-center font-medium ${
+                    isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                  }`}>{formatNumber(selectedPayslip.daysPresent || 0)}</td>
+                  <td className={`border-b px-6 py-4 text-center font-medium ${
+                    isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                  }`}>{formatNumber(selectedPayslip.paidDays || 0)}</td>
+                  <td className={`border-b px-6 py-4 text-center font-medium ${
+                    isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                  }`}>{formatNumber(selectedPayslip.lossOfPayDays || 0)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Bonus Information */}
+        {selectedPayslip.bonusAmount > 0 && (
+          <div className="mb-8">
+            <h3 className={`text-xl font-bold mb-4 border-l-4 border-blue-500 pl-3 ${
+              isDark ? 'text-gray-200' : 'text-gray-800'
+            }`}>Additional Compensation</h3>
+            <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+              isDark ? 'border-gray-600' : 'border-gray-200'
+            }`}>
+              <table className={`min-w-full ${
+                isDark ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <thead>
+                  <tr className={`${
+                    isDark 
+                      ? 'bg-gradient-to-r from-yellow-900 to-orange-900' 
+                      : 'bg-gradient-to-r from-yellow-50 to-orange-50'
+                  }`}>
+                    <th className={`border-b px-6 py-4 font-semibold ${
+                      isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                    }`}>Bonus Amount</th>
+                    <th className={`border-b px-6 py-4 font-semibold ${
+                      isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                    }`}>Hike Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className={`border-b px-6 py-4 text-center font-bold ${
+                      isDark ? 'border-gray-700 text-yellow-400' : 'border-gray-100 text-yellow-700'
+                    }`}>{formatCurrency(selectedPayslip.bonusAmount || 0)}</td>
+                    <td className={`border-b px-6 py-4 text-center font-medium ${
+                      isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                    }`}>{selectedPayslip.hikePercentage || 0}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Salary Details */}
+        <div className="mb-8">
+          <h3 className={`text-xl font-bold mb-4 border-l-4 border-blue-500 pl-3 ${
+            isDark ? 'text-gray-200' : 'text-gray-800'
+          }`}>Salary Details</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Earnings */}
+            <div className="lg:col-span-2">
+              <h4 className={`font-semibold mb-3 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>EARNINGS</h4>
+              <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+                isDark ? 'border-gray-600' : 'border-gray-200'
+              }`}>
+                <table className={`min-w-full ${
+                  isDark ? 'bg-gray-800' : 'bg-white'
+                }`}>
+                  <thead>
+                    <tr className={`${
+                      isDark 
+                        ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+                        : 'bg-gradient-to-r from-gray-50 to-blue-50'
+                    }`}>
+                      <th className={`border-b px-4 py-3 font-semibold ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Description</th>
+                      <th className={`border-b px-4 py-3 font-semibold text-right ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Monthly Rate</th>
+                      <th className={`border-b px-4 py-3 font-semibold text-right ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Current Month</th>
+                      <th className={`border-b px-4 py-3 font-semibold text-right ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Arrear (+/-)</th>
+                      <th className={`border-b px-4 py-3 font-semibold text-right ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {earnings.map((earning, index) => (
+                      <tr key={index} className={isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                        <td className={`border-b px-4 py-3 ${
+                          isDark ? 'border-gray-700 text-gray-300' : 'border-gray-100 text-gray-700'
+                        }`}>{earning.description}</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                        }`}>{earning.monthlyRate}</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                        }`}>{earning.currentMonth}</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                        }`}>{earning.arrear}</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-700 text-gray-200' : 'border-gray-100 text-gray-900'
+                        }`}>{earning.total}</td>
+                      </tr>
+                    ))}
+                    {selectedPayslip.bonusAmount > 0 && (
+                      <tr className={isDark ? 'bg-yellow-900 hover:bg-yellow-800' : 'bg-yellow-50 hover:bg-yellow-100'}>
+                        <td className={`border-b px-4 py-3 font-semibold ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                        }`}>BONUS</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                        }`}>-</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                        }`}>-</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                        }`}>-</td>
+                        <td className={`border-b px-4 py-3 text-right font-bold ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-100 text-yellow-800'
+                        }`}>{formatCurrency(selectedPayslip.bonusAmount || 0)}</td>
+                      </tr>
+                    )}
+                    <tr className={isDark ? 'bg-blue-900' : 'bg-blue-50'}>
+                      <td className={`border-b px-4 py-3 font-semibold ${
+                        isDark ? 'border-gray-600 text-gray-200' : 'border-gray-200 text-gray-800'
+                      }`} colSpan="4">GROSS EARNINGS</td>
+                      <td className={`border-b px-4 py-3 text-right font-semibold ${
+                        isDark ? 'border-gray-600 text-blue-300' : 'border-gray-200 text-blue-800'
+                      }`}>{formatCurrency(grossEarnings + (selectedPayslip.bonusAmount || 0))}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Deductions */}
+            <div>
+              <h4 className={`font-semibold mb-3 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>DEDUCTIONS</h4>
+              <div className={`overflow-x-auto rounded-xl shadow-sm border ${
+                isDark ? 'border-gray-600' : 'border-gray-200'
+              }`}>
+                <table className={`min-w-full ${
+                  isDark ? 'bg-gray-800' : 'bg-white'
+                }`}>
+                  <thead>
+                    <tr className={`${
+                      isDark 
+                        ? 'bg-gradient-to-r from-gray-700 to-gray-600' 
+                        : 'bg-gradient-to-r from-gray-50 to-blue-50'
+                    }`}>
+                      <th className={`border-b px-4 py-3 font-semibold ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Description</th>
+                      <th className={`border-b px-4 py-3 font-semibold text-right ${
+                        isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-700'
+                      }`}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deductions.map((deduction, index) => (
+                      <tr key={index} className={isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                        <td className={`border-b px-4 py-3 ${
+                          isDark ? 'border-gray-700 text-gray-300' : 'border-gray-100 text-gray-700'
+                        }`}>{deduction.description}</td>
+                        <td className={`border-b px-4 py-3 text-right font-medium ${
+                          isDark ? 'border-gray-700 text-red-400' : 'border-gray-100 text-red-600'
+                        }`}>{deduction.amount}</td>
+                      </tr>
+                    ))}
+                    <tr className={isDark ? 'bg-blue-900' : 'bg-blue-50'}>
+                      <td className={`border-b px-4 py-3 font-semibold ${
+                        isDark ? 'border-gray-600 text-gray-200' : 'border-gray-200 text-gray-800'
+                      }`}>TOTAL DEDUCTIONS</td>
+                      <td className={`border-b px-4 py-3 text-right font-semibold ${
+                        isDark ? 'border-gray-600 text-red-400' : 'border-gray-200 text-red-700'
+                      }`}>{formatCurrency(totalDeductions)}</td>
+                    </tr>
+                    {selectedPayslip.bonusAmount > 0 && (
+                      <tr className={isDark ? 'bg-yellow-900' : 'bg-yellow-50'}>
+                        <td className={`border-b px-4 py-3 font-semibold ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-200 text-yellow-800'
+                        }`}>BONUS ADDED</td>
+                        <td className={`border-b px-4 py-3 text-right font-semibold ${
+                          isDark ? 'border-gray-600 text-yellow-300' : 'border-gray-200 text-yellow-800'
+                        }`}>+ {formatCurrency(selectedPayslip.bonusAmount || 0)}</td>
+                      </tr>
+                    )}
+                    <tr className={isDark ? 'bg-green-900' : 'bg-green-50'}>
+                      <td className={`border-b px-4 py-3 font-bold ${
+                        isDark ? 'border-gray-600 text-green-300' : 'border-gray-200 text-green-800'
+                      }`}>NET SALARY</td>
+                      <td className={`border-b px-4 py-3 text-right font-bold ${
+                        isDark ? 'border-gray-600 text-green-300' : 'border-gray-200 text-green-800'
+                      }`}>{formatCurrency(selectedPayslip.netSalary)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className={`mt-8 pt-6 border-t text-center text-sm ${
+          isDark ? 'border-gray-600 text-gray-400' : 'border-gray-300 text-gray-600'
+        }`}>
+          <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039 | Ph: 9632091726</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-t-2xl mb-8">
@@ -1156,7 +1539,9 @@ const EmployeePayRoll = () => {
           </div>
         </header>
         {/* Main Content */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className={`rounded-2xl shadow-lg overflow-hidden ${
+          isDark ? 'bg-gray-800' : 'bg-white'
+        }`}>
           {showDetails ? <EmployeeDetails /> : (
             <>
               <FilterSection />
