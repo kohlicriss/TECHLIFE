@@ -1653,8 +1653,8 @@ const TasksPage = () => {
     };
 
     const isMyTasksActive = displayMode === "MY_TASKS";
-    const isTeamLead = matchedArray?.includes("TASK_TEAMLEAD_SIDEBAR"); 
-    const canCreateTask = matchedArray?.includes("CREATE_TASK");
+    const isTeamLead = matchedArray?.includes("MY_TASKS_TEAM_LEAD_SIDEBAR"); 
+    const canCreateTask = matchedArray?.includes("MY_TASKS_CREATE_TASK");
 
     if (loading && matchedArray === null) {
         return <div className={`flex justify-center items-center min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>Loading permissions and tasks...</div>;

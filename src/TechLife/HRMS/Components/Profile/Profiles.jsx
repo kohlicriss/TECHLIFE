@@ -757,7 +757,7 @@ const Profiles = () => {
     const renderMobile = () => (
         <div className="md:hidden">
             <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'}`}>
-                {matchedArray.includes("UPDATE_HEADER") && (
+                {matchedArray.includes("PROFILE_EDIT_HEADER") && (
                     <button
                         onClick={handleHeaderEditClick}
                         className={`absolute top-2 right-2 p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
@@ -862,7 +862,7 @@ const Profiles = () => {
     return (
         <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
             <div className={`hidden md:block h-auto md:h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
-                {matchedArray.includes("UPDATE_HEADER") && (
+                {matchedArray.includes("PROFILE_EDIT_HEADER") && (
                     <button
                         onClick={handleHeaderEditClick}
                         className={`absolute top-4 right-8 p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
@@ -1436,7 +1436,7 @@ const Profiles = () => {
                                     )}
                                 </div>
                                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                                    {matchedArray.includes("CREATE_IMAGE") && <button
+                                    {matchedArray.includes("PROFILE_ADD_IMAGE") && <button
                                         onClick={() => fileInputRef.current.click()}
                                         className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                                     >

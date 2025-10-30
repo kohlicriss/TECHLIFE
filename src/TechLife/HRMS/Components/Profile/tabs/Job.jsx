@@ -100,10 +100,10 @@ const sectionConfig = {
 };
 
 const DetailItem = ({ label, value, note, status, theme }) => (
-  <div className={`group p-3 sm:p-4 rounded-none sm:rounded-lg md:rounded-xl border transition-all duration-300 hover:scale-105 ${
+  <div className={`p-3 sm:p-4 rounded-none sm:rounded-lg md:rounded-xl border ${
     theme === 'dark'
-      ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
-      : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+      ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600'
+      : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100'
   }`}>
     <div className="flex items-start justify-between">
       <div className="flex-1 min-w-0">
@@ -115,7 +115,7 @@ const DetailItem = ({ label, value, note, status, theme }) => (
         {status === "active" ? (
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className={`text-sm font-semibold break-words ${
                 theme === 'dark' ? 'text-white' : 'text-gray-900'
               }`}>{value}</span>
@@ -157,10 +157,9 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
   const hasData = data && data.length > 0;
   
   return (
-    <div className={`border-2 rounded-none sm:rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 
-                   overflow-hidden group hover:scale-[1.02] mb-4 sm:mb-6 md:mb-8 ${
+    <div className={`border-2 rounded-none sm:rounded-xl md:rounded-2xl shadow-lg overflow-hidden mb-4 sm:mb-6 md:mb-8 ${
       theme === 'dark'
-        ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
+        ? `bg-gray-800 ${config.darkBorderColor}`
         : `bg-white ${config.borderColor}`
     }`}>
       <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b-2 relative overflow-hidden ${
@@ -171,7 +170,7 @@ const Section = ({ sectionKey, title, data, children, theme }) => {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
         <div className="relative flex items-center justify-between">
           <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-            <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 ${
+            <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-md ${
               theme === 'dark' ? 'bg-gray-700' : 'bg-white'
             }`}>
               <IconComponent className={`w-6 h-6 sm:w-8 sm:h-8 ${
@@ -262,7 +261,7 @@ const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
         theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
       }`}>
         <div 
-          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full transition-all duration-700 ease-out"
+          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full"
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
@@ -280,7 +279,7 @@ const ProgressIndicator = ({ completedSections, totalSections, theme }) => {
 };
 
 const SkeletonCard = ({ theme }) => (
-  <div className={`border rounded-none sm:rounded-xl md:rounded-2xl shadow-sm overflow-hidden animate-pulse ${
+  <div className={`border rounded-none sm:rounded-xl md:rounded-2xl shadow-sm overflow-hidden ${
     theme === 'dark' 
       ? 'bg-gray-800 border-gray-700' 
       : 'bg-white border-gray-200'
@@ -341,20 +340,19 @@ const AttendanceToggle = ({ theme }) => {
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>Control automated attendance monitoring</p>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer group flex-shrink-0">
+        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
           <input 
             type="checkbox" 
             className="sr-only peer" 
             checked={isDisabled}
             onChange={(e) => setIsDisabled(e.target.checked)}
           />
-          <div className={`w-12 h-7 sm:w-14 sm:h-8 rounded-full peer transition-all duration-300 
+          <div className={`w-12 h-7 sm:w-14 sm:h-8 rounded-full peer 
                          peer-checked:after:translate-x-5 sm:peer-checked:after:translate-x-6 peer-checked:after:border-white 
                          after:content-[''] after:absolute after:top-1 after:left-1 
                          after:bg-white after:border after:rounded-full 
-                         after:h-5 after:w-5 sm:after:h-6 sm:after:w-6 after:transition-all after:shadow-md
-                         peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-indigo-600
-                         group-hover:shadow-lg ${
+                         after:h-5 after:w-5 sm:after:h-6 sm:after:w-6 after:shadow-md
+                         peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-indigo-600 ${
             theme === 'dark' 
               ? 'bg-gray-600 after:border-gray-500' 
               : 'bg-gray-200 after:border-gray-300'
@@ -458,7 +456,7 @@ const Job = () => {
         <div className="min-h-screen flex items-center justify-center px-4">
           <div className="text-center">
             <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
+              <div className="rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <IoBriefcaseOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
               </div>
