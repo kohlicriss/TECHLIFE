@@ -1436,14 +1436,14 @@ const Profiles = () => {
                                     )}
                                 </div>
                                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                                    {matchedArray.includes("PROFILE_ADD_IMAGE") && <button
+                                    {matchedArray?.includes("PROFILE_HEADER_ADD_IMAGE") && <button
                                         onClick={() => fileInputRef.current.click()}
                                         className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                                     >
                                         <FaCamera className="w-3 h-3 sm:w-4 sm:h-4" />
                                         <span>Change</span>
                                     </button>}
-                                    {displayHeader?.employeeImage && (
+                                    {displayHeader?.employeeImage &&  matchedArray?.includes("PROFILE_HEADER_DELETE_IMAGE") (
                                         <button
                                             onClick={handleDeleteImage}
                                             className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
