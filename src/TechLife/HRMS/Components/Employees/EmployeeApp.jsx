@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Context } from '../HrmsContext';
 import { authApi, publicinfoApi } from '../../../../axiosInstance';
 import {
@@ -36,33 +35,6 @@ import {
     IoKeyOutline,
 } from 'react-icons/io5';
 
-const styles = `
-  .preserve-3d {
-    transform-style: preserve-3d;
-  }
-  .backface-hidden {
-    backface-visibility: hidden;
-  }
-  .rotate-y-180 {
-    transform: rotateY(180deg);
-  }
-  .hover\\:scale-105:hover {
-    transform: scale(1.05);
-  }
-`;
-
-try {
-    if (!document.getElementById('custom-employee-styles')) {
-        const styleSheet = document.createElement("style");
-        styleSheet.id = 'custom-employee-styles';
-        styleSheet.innerText = styles;
-        document.head.appendChild(styleSheet);
-    }
-} catch (e) {
-    console.warn("Could not inject custom styles:", e);
-}
-
-
 // --- Reusable Modal Component ---
 const Modal = ({ children, onClose, title, type, theme }) => {
     let titleClass = "";
@@ -83,8 +55,8 @@ const Modal = ({ children, onClose, title, type, theme }) => {
     }
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-[1000] animate-fadeIn">
-            <div className={`w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl animate-slideUp transform-gpu ${
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-[1000]">
+            <div className={`w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl ${
                 theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
             }`}>
                 <div className="p-4 sm:p-6">
@@ -98,7 +70,7 @@ const Modal = ({ children, onClose, title, type, theme }) => {
                         {onClose && (
                             <button
                                 onClick={onClose}
-                                className={`ml-auto p-1 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'} transition-all`}
+                                className={`ml-auto p-1 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}`}
                             >
                                 <IoClose className="w-5 h-5" />
                             </button>
@@ -134,28 +106,28 @@ const InputField = ({
 }) => {
     const normalizedValue = value === null || value === undefined ? '' : value;
 
-    const baseInputClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+    const baseInputClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
         isError
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
             : theme === 'dark'
-            ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-            : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            ? 'border-gray-600 bg-gray-700 text-white'
+            : 'border-gray-200 bg-white'
     } disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400 disabled:cursor-not-allowed`;
 
-    const textareaClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+    const textareaClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
         isError
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
             : theme === 'dark'
-            ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-            : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            ? 'border-gray-600 bg-gray-700 text-white'
+            : 'border-gray-200 bg-white'
     } disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400 disabled:cursor-not-allowed`;
 
-    const selectClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+    const selectClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl appearance-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
         isError
             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
             : theme === 'dark'
-            ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-            : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+            ? 'border-gray-600 bg-gray-700 text-white'
+            : 'border-gray-200 bg-white'
     } disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400 disabled:cursor-not-allowed`;
 
     return (
@@ -215,12 +187,12 @@ const InputField = ({
                     disabled={disabled}
                 />
             ) : type === 'file' ? (
-                <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 ${
+                <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl ${
                     isError
                         ? 'border-red-300 bg-red-50'
                         : theme === 'dark'
-                        ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-                        : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                        ? 'border-gray-600 bg-gray-800'
+                        : 'border-gray-300 bg-gray-50'
                 } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                     <input
                         type="file"
@@ -263,7 +235,7 @@ const InputField = ({
             )}
 
             {isError && (
-                <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600">
                     <IoWarning className="w-4 h-4 flex-shrink-0" />
                     <p className="text-xs sm:text-sm font-medium">{isError}</p>
                 </div>
@@ -272,8 +244,7 @@ const InputField = ({
     );
 };
 
-
-// --- Field Definitions for the Combined Form ---
+// --- Field Definitions ---
 const credentialsFormFields = [
     { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
     { label: "Username", name: "username", type: "text", required: true, hint: "Must start with 'ACS' and match Employee ID (8-30 chars).", maxLength: 30 },
@@ -297,7 +268,6 @@ const employeeFormFields = [
     },
 ];
 
-
 const generateInitials = (name) => {
     if (!name) return "";
     const nameParts = name.split(" ");
@@ -306,7 +276,6 @@ const generateInitials = (name) => {
     }
     return nameParts[0][0].toUpperCase();
 };
-
 
 const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -395,13 +364,12 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-left
-                        focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
+                    className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl text-left focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                         ${isError
                             ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                             : theme === 'dark'
-                            ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                            : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                            ? 'border-gray-600 bg-gray-700 text-white'
+                            : 'border-gray-200 bg-white'
                         }`}
                 >
                     <span className={value ? '' : 'text-gray-500'}>
@@ -410,7 +378,7 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                 </button>
 
                 <div className="absolute right-4 sm:right-5 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <IoChevronDownOutline className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${
+                    <IoChevronDownOutline className={`w-4 h-4 sm:w-5 sm:h-5 ${
                         isOpen ? 'rotate-180' : ''
                     } ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
                 </div>
@@ -453,7 +421,7 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                                             onChange(dept.departmentId);
                                             setIsOpen(false);
                                         }}
-                                        className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 ${
+                                        className={`w-full px-4 py-3 text-left text-sm ${
                                             value === dept.departmentId
                                                 ? theme === 'dark'
                                                     ? 'bg-blue-700 text-white'
@@ -503,7 +471,7 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
             </div>
 
             {isError && (
-                <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+                <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600">
                     <IoWarning className="w-4 h-4 flex-shrink-0" />
                     <p className="text-xs sm:text-sm font-medium">{isError}</p>
                 </div>
@@ -532,7 +500,7 @@ function EmployeeApp() {
     const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [submissionStatus, setSubmissionStatus] = useState('');
-    
+
     const initialFormData = {
         fullName: '',
         username: '',
@@ -673,19 +641,15 @@ function EmployeeApp() {
         setDeleteConfirmation({ show: true, employee });
     };
 
-   const confirmDelete = async () => {
+    const confirmDelete = async () => {
         const { employee } = deleteConfirmation;
         if (!employee) return;
         const employeeIdToDelete = employee.employeeId.toLowerCase();
 
         try {
-            // 1. Delete employee record from publicinfo service
             await publicinfoApi.delete(`employee/${employee.employeeId}`);
-
-            // 2. Delete user credentials from auth service (New API call)
             await authApi.delete(`delete/${employeeIdToDelete}`);
 
-            // Update local state and show success notification
             setEmployeeData(prevData => prevData.filter(emp => emp.employeeId !== employee.employeeId));
             setPopup({
                 show: true,
@@ -721,7 +685,6 @@ function EmployeeApp() {
             setLoading(false);
         }
     }, [pageNumber, pageSize, sortBy, sortOrder]);
-
 
     useEffect(() => {
         fetchAllEmployees();
@@ -777,8 +740,6 @@ function EmployeeApp() {
         setSelectedFilters(clearedFilters);
     };
 
-    // --- UNIFIED FORM LOGIC ---
-
     const handleFormChange = (e) => {
         const { name, value } = e.target;
 
@@ -790,7 +751,6 @@ function EmployeeApp() {
                 updatedData.displayName = value;
             }
 
-            // Syncs the role field to employeeRole
             if (name === 'role') {
                 updatedData.employeeRole = value;
             }
@@ -806,7 +766,6 @@ function EmployeeApp() {
             });
         }
     };
-
 
     const handleDepartmentChange = (value) => {
         setFormData({ ...formData, departmentId: value });
@@ -865,7 +824,6 @@ function EmployeeApp() {
         else if (data.employeeId.length < 8 || data.employeeId.length > 30) errors.employeeId = "Employee ID must be 8-30 characters.";
         else if (!data.employeeId.startsWith('ACS')) errors.employeeId = "Employee ID must start with 'ACS'.";
 
-        // NEW: Check if username and employeeId match
         if (data.username && data.employeeId && data.username !== data.employeeId) {
             errors.username = "Username and Employee ID must match.";
             errors.employeeId = "Username and Employee ID must match.";
@@ -878,7 +836,6 @@ function EmployeeApp() {
         return errors;
     };
 
-    // NEW FUNCTION: Fetches all terminated employee IDs across all pages.
     const fetchTerminatedEmployeeIds = async () => {
         let allIds = new Set();
         let page = 0;
@@ -896,7 +853,6 @@ function EmployeeApp() {
                     }
                 });
 
-                // Check if we reached the last page or received less than a full page
                 if (newEmployees.length < pageSize || response.data.last === true) {
                     hasMorePages = false;
                 } else {
@@ -904,7 +860,7 @@ function EmployeeApp() {
                 }
             } catch (error) {
                 console.error("Error fetching all terminated employee IDs:", error);
-                hasMorePages = false; // Stop on error
+                hasMorePages = false;
             }
         }
         return allIds;
@@ -926,7 +882,6 @@ function EmployeeApp() {
         const newEmployeeId = formData.employeeId;
 
         try {
-            // STEP 1: Check if Employee ID is terminated
             const terminatedIds = await fetchTerminatedEmployeeIds();
 
             if (terminatedIds.has(newEmployeeId)) {
@@ -938,7 +893,6 @@ function EmployeeApp() {
                 return;
             }
 
-            // STEP 2: Create User Credentials
             const credentialsDto = {
                 fullName: formData.fullName,
                 username: formData.username,
@@ -949,7 +903,6 @@ function EmployeeApp() {
             setSubmissionStatus('Creating User...');
             await authApi.post("/register", credentialsDto);
 
-            // STEP 3: Create Employee Record
             const employeeDto = {
                 employeeId: formData.employeeId,
                 firstName: formData.firstName,
@@ -962,20 +915,17 @@ function EmployeeApp() {
             setSubmissionStatus('Creating Employee...');
             await publicinfoApi.post('employee', employeeDto);
 
-            // Success
             setPopup({ show: true, message: 'Employee and user account created successfully!', type: 'success' });
             setIsAddEmployeeModalOpen(false);
             setFormData(initialFormData);
-            fetchAllEmployees(); // Refresh employee list
+            fetchAllEmployees();
 
         } catch (error) {
             console.error("Error creating employee:", error);
             const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please check the data and try again.';
-            
-            // Attempt to parse specific error from backend if available
+
             let specificError = { general: errorMessage };
             if (error.response?.data?.details) {
-                // Assuming backend sends detailed errors
                 error.response.data.details.forEach(detail => {
                     if (detail.field) {
                         specificError[detail.field] = detail.message;
@@ -1014,7 +964,7 @@ function EmployeeApp() {
             );
         }
 
-       return (
+        return (
             <InputField
                 key={name}
                 name={name}
@@ -1039,127 +989,117 @@ function EmployeeApp() {
         if (!isAddEmployeeModalOpen) return null;
 
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
-            <motion.div
-                initial={{ y: -50, opacity: 0, scale: 0.9 }}
-                animate={{ y: 0, opacity: 1, scale: 1 }}
-                exit={{ y: -50, opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
-                    theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                }`}
-            >
-                {/* Fixed Header */}
-                <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white flex-shrink-0`}>
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                            <div className="text-xl sm:text-2xl">
-                                <IoAddCircleOutline />
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
+                <div
+                    className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col ${
+                        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                    }`}
+                >
+                    <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white flex-shrink-0`}>
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                <div className="text-xl sm:text-2xl">
+                                    <IoAddCircleOutline />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Add New Employee</h2>
+                                    <p className="text-xs sm:text-sm opacity-90 mt-1">Provide user credentials and basic employee details.</p>
+                                </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Add New Employee</h2>
-                                <p className="text-xs sm:text-sm opacity-90 mt-1">Provide user credentials and basic employee details.</p>
-                            </div>
+                            <button onClick={handleFormClose} className="p-2 hover:bg-white/20 rounded-lg">
+                                <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
                         </div>
-                        <button onClick={handleFormClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                            <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                        <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 md:p-8">
+                            <div className="mb-6 sm:mb-8">
+                                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                                }`}>
+                                    <IoKeyOutline className="w-5 h-5 mr-2" />
+                                    User Credentials
+                                </h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                                    {credentialsFormFields.map(field => (
+                                        <div key={field.name}>
+                                            {renderField(field, formErrors, handleFormChange, formData[field.name])}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mb-6 sm:mb-8">
+                                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                                    theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                                }`}>
+                                    <IoPersonOutline className="w-5 h-5 mr-2" />
+                                    Employee Information
+                                </h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                                    {employeeFormFields.map(field => (
+                                        <div key={field.name}>
+                                            {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {formErrors.general && (
+                                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
+                                    theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                                }`}>
+                                    <div className="flex items-center">
+                                        <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
+                                        <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                                            {formErrors.general}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                    </div>
+
+                    <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex-shrink-0 ${
+                        theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
+                    } flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4`}>
+                        <button
+                            type="button"
+                            onClick={handleFormClose}
+                            className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base ${
+                                theme === 'dark'
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                            }`}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            onClick={handleFormSubmit}
+                            disabled={isUpdating}
+                            className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base flex items-center justify-center space-x-2 ${
+                                isUpdating ? 'cursor-not-allowed opacity-75' : ''
+                            }`}
+                        >
+                            {isUpdating ? (
+                                <>
+                                    <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span>{submissionStatus || 'Saving...'}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <IoCheckmarkCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <span>Create Employee</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
-
-                {/* Scrollable Form Content */}
-                <div className="flex-1 overflow-y-auto">
-                    <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 md:p-8">
-                        {/* Credentials Section */}
-                        <div className="mb-6 sm:mb-8">
-                            <h3 className={`text-lg font-semibold mb-4 flex items-center ${
-                                theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                            }`}>
-                                <IoKeyOutline className="w-5 h-5 mr-2" />
-                                User Credentials
-                            </h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                                {credentialsFormFields.map(field => (
-                                    <div key={field.name}>
-                                        {renderField(field, formErrors, handleFormChange, formData[field.name])}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Employee Information Section */}
-                        <div className="mb-6 sm:mb-8">
-                            <h3 className={`text-lg font-semibold mb-4 flex items-center ${
-                                theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
-                            }`}>
-                                <IoPersonOutline className="w-5 h-5 mr-2" />
-                                Employee Information
-                            </h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                                {employeeFormFields.map(field => (
-                                    <div key={field.name}>
-                                        {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {formErrors.general && (
-                            <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
-                                theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
-                            }`}>
-                                <div className="flex items-center">
-                                    <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
-                                    <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
-                                        {formErrors.general}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </form>
-                </div>
-
-                {/* Fixed Footer */}
-                <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex-shrink-0 ${
-                    theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
-                } flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4`}>
-                    <button
-                        type="button"
-                        onClick={handleFormClose}
-                        className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
-                            theme === 'dark'
-                                ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                                : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                        }`}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        onClick={handleFormSubmit}
-                        disabled={isUpdating}
-                        className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-purple-500/30 text-sm sm:text-base flex items-center justify-center space-x-2 ${
-                            isUpdating ? 'cursor-not-allowed opacity-75' : ''
-                        }`}
-                    >
-                        {isUpdating ? (
-                            <>
-                                <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>{submissionStatus || 'Saving...'}</span>
-                            </>
-                        ) : (
-                            <>
-                                <IoCheckmarkCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span>Create Employee</span>
-                            </>
-                        )}
-                    </button>
-                </div>
-            </motion.div>
-        </div>
+            </div>
         );
     };
-
 
     const loadTerminatedEmployees = useCallback(async (page = 0, reset = false) => {
         if (terminatedLoading || (!terminatedHasMore && !reset)) return;
@@ -1242,11 +1182,7 @@ function EmployeeApp() {
 
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] p-2 sm:p-4">
-                <motion.div
-                    initial={{ y: -50, opacity: 0, scale: 0.9 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: -50, opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
+                <div
                     className={`relative w-full max-w-sm sm:max-w-md lg:max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl rounded-xl sm:rounded-2xl ${
                         theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
                     }`}
@@ -1267,9 +1203,9 @@ function EmployeeApp() {
                             </div>
                             <button
                                 onClick={() => setIsTerminatedEmployeesModalOpen(false)}
-                                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
+                                className="p-2 hover:bg-white/20 rounded-full flex-shrink-0"
                             >
-                                <IoClose className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-200" />
+                                <IoClose className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                         </div>
                     </div>
@@ -1301,14 +1237,11 @@ function EmployeeApp() {
                         {filteredTerminatedEmployees.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {filteredTerminatedEmployees.map((employee, index) => (
-                                    <motion.div
+                                    <div
                                         key={`${employee.employeeId}-${index}`}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.3, delay: (index % TERMINATED_PAGE_SIZE) * 0.05 }}
                                         className={`p-4 rounded-lg border ${
                                             theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'
-                                        } hover:shadow-lg transition-all duration-300`}
+                                        } shadow-md`}
                                     >
                                         <div className="flex items-center space-x-3 mb-3">
                                             <div className="flex-shrink-0">
@@ -1340,7 +1273,7 @@ function EmployeeApp() {
                                             </div>
                                         </div>
 
-                                        <div className="space-y-1">
+                                        <div className="space-y-1 max-h-40 overflow-y-auto">
                                             {renderDataField("Work Email", employee.workEmail)}
                                             {renderDataField("Work Number", employee.workNumber)}
                                             {renderDataField("Gender", employee.gender)}
@@ -1349,24 +1282,8 @@ function EmployeeApp() {
                                             {renderDataField("Department", employee.departmentId)}
                                             {renderDataField("Projects", employee.projectId)}
                                             {renderDataField("Teams", employee.teamId)}
-                                            {renderDataField("Aadhaar Number", employee.aadharNumber)}
-                                            {renderDataField("PAN Number", employee.panNumber)}
-                                            {renderDataField("Passport Number", employee.passportNumber)}
-
-                                            {employee.degreeDocuments && Array.isArray(employee.degreeDocuments) && employee.degreeDocuments.map((doc, docIndex) => (
-                                                <div key={docIndex}>
-                                                    {renderLink(`Click for Degree Image ${docIndex + 1}`, doc)}
-                                                </div>
-                                            ))}
-
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {renderLink("Employee Image", employee.employeeImage)}
-                                                {renderLink("Aadhaar Image", employee.aadharImage)}
-                                                {renderLink("PAN Image", employee.panImage)}
-                                                {renderLink("Passport Image", employee.passportImage)}
-                                            </div>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </div>
                         ) : terminatedLoading ? (
@@ -1395,7 +1312,7 @@ function EmployeeApp() {
                             </div>
                         )}
                     </div>
-                </motion.div>
+                </div>
             </div>
         );
     };
@@ -1431,124 +1348,121 @@ function EmployeeApp() {
     return (
         <div className={`min-h-screen px-0 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
             <div className="max-w-7xl mx-auto">
-               <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
+                <div
                     className={`rounded-none sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg border mb-4 sm:mb-6 mx-2 sm:mx-0 ${
                         theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                     }`}
                 >
-                <div className="mb-3">
-                    <div className="relative group max-w-full sm:max-w-sm md:max-w-md">
-                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                            <IoSearchOutline className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                        </div>
-                        <input
-                            type="text"
-                            className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 pl-7 sm:pl-8 border rounded-md sm:rounded-lg transition-all duration-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none placeholder-gray-500 text-xs sm:text-sm ${
-                                theme === 'dark'
-                                    ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
-                                    : 'bg-gray-50 border-gray-200 text-gray-800 hover:border-gray-300 group-hover:border-blue-300'
-                            }`}
-                            placeholder="Search..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        {dynamicFilters.map(filter => {
-                            const IconComponent = filter.icon;
-                            return (
-                                <div key={filter.name} className="relative group min-w-0 flex-1 sm:flex-initial">
-                                    <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 flex items-center pointer-events-none">
-                                        <IconComponent className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                                    </div>
-                                    <select
-                                        className={`px-3 sm:px-4 py-2 sm:py-2.5 pl-6 sm:pl-7 pr-4 sm:pr-5 border rounded-md sm:rounded-lg transition-all duration-300 appearance-none cursor-pointer min-w-[100px] sm:min-w-[120px] text-xs truncate focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
-                                            theme === 'dark'
-                                                ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500 group-hover:border-blue-400'
-                                                : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 group-hover:border-blue-300'
-                                        }`}
-                                        value={selectedFilters[filter.name] || filter.options[0]}
-                                        onChange={(e) => setSelectedFilters({
-                                            ...selectedFilters,
-                                            [filter.name]: e.target.value,
-                                        })}
-                                    >
-                                        {filter.options.map(option => (
-                                            <option key={option} value={option}>{option}</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center pointer-events-none">
-                                        <IoChevronDownOutline className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
-                        <button
-                            onClick={clearFilters}
-                            className={`px-4 sm:px-5 py-1.5 sm:py-2 border rounded-md sm:rounded-lg font-medium transition-all duration-200 focus:ring-2 focus:ring-gray-500/20 text-xs flex items-center justify-center space-x-1.5 ${
-                                theme === 'dark'
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                            }`}
-                        >
-                            <IoRefreshOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            <span>Clear</span>
-                        </button>
-
-                        {matchedArray && matchedArray.includes("CREAT_USER") && (
-                            <button
-                                onClick={() => setIsAddEmployeeModalOpen(true)}
-                                className="px-4 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-md sm:rounded-lg hover:shadow-md transform hover:scale-105 transition-all duration-200 focus:ring-2 focus:ring-blue-500/30 text-xs flex items-center justify-center space-x-1.5"
-                            >
-                                <IoAddCircleOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                <span>Add</span>
-                            </button>
-                        )}
-
-                        {matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
-                            <button
-                                onClick={handleTerminateEmployees}
-                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors duration-200 text-xs flex items-center justify-center space-x-1.5"
-                            >
-                                <IoTrashOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                <span>Terminate</span>
-                            </button>
-                        )}
-
-                        <div className={`flex rounded-md p-0.5 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
-                                    viewMode === 'grid'
-                                        ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                                        : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+                    <div className="mb-3">
+                        <div className="relative group max-w-full sm:max-w-sm md:max-w-md">
+                            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                <IoSearchOutline className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                            </div>
+                            <input
+                                type="text"
+                                className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 pl-7 sm:pl-8 border rounded-md sm:rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none placeholder-gray-500 text-xs sm:text-sm ${
+                                    theme === 'dark'
+                                        ? 'bg-gray-700 border-gray-600 text-white'
+                                        : 'bg-gray-50 border-gray-200 text-gray-800'
                                 }`}
-                            >
-                                <IoGridOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`p-1 sm:p-1.5 rounded-sm transition-all duration-200 ${
-                                    viewMode === 'list'
-                                        ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
-                                        : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
-                                }`}
-                            >
-                                <IoListOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            </button>
+                                placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
                     </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                            {dynamicFilters.map(filter => {
+                                const IconComponent = filter.icon;
+                                return (
+                                    <div key={filter.name} className="relative group min-w-0 flex-1 sm:flex-initial">
+                                        <div className="absolute inset-y-0 left-0 pl-1.5 sm:pl-2 flex items-center pointer-events-none">
+                                            <IconComponent className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                                        </div>
+                                        <select
+                                            className={`px-3 sm:px-4 py-2 sm:py-2.5 pl-6 sm:pl-7 pr-4 sm:pr-5 border rounded-md sm:rounded-lg appearance-none cursor-pointer min-w-[100px] sm:min-w-[120px] text-xs truncate focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+                                                theme === 'dark'
+                                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                                    : 'bg-gray-50 border-gray-200 text-gray-700'
+                                            }`}
+                                            value={selectedFilters[filter.name] || filter.options[0]}
+                                            onChange={(e) => setSelectedFilters({
+                                                ...selectedFilters,
+                                                [filter.name]: e.target.value,
+                                            })}
+                                        >
+                                            {filter.options.map(option => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center pointer-events-none">
+                                            <IoChevronDownOutline className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
+                            <button
+                                onClick={clearFilters}
+                                className={`px-4 sm:px-5 py-1.5 sm:py-2 border rounded-md sm:rounded-lg font-medium text-xs flex items-center justify-center space-x-1.5 ${
+                                    theme === 'dark'
+                                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                                }`}
+                            >
+                                <IoRefreshOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                <span>Clear</span>
+                            </button>
+
+                            {matchedArray && matchedArray.includes("CREAT_USER") && (
+                                <button
+                                    onClick={() => setIsAddEmployeeModalOpen(true)}
+                                    className="px-4 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-md sm:rounded-lg shadow-md text-xs flex items-center justify-center space-x-1.5"
+                                >
+                                    <IoAddCircleOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                    <span>Add</span>
+                                </button>
+                            )}
+
+                            {matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
+                                <button
+                                    onClick={handleTerminateEmployees}
+                                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md text-xs flex items-center justify-center space-x-1.5"
+                                >
+                                    <IoTrashOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                    <span>Terminate</span>
+                                </button>
+                            )}
+
+                            <div className={`flex rounded-md p-0.5 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-1 sm:p-1.5 rounded-sm ${
+                                        viewMode === 'grid'
+                                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+                                    }`}
+                                >
+                                    <IoGridOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-1 sm:p-1.5 rounded-sm ${
+                                        viewMode === 'list'
+                                            ? (theme === 'dark' ? 'bg-gray-600 text-blue-400 shadow-sm' : 'bg-white text-blue-600 shadow-sm')
+                                            : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')
+                                    }`}
+                                >
+                                    <IoListOutline className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                </motion.div>
 
                 <div className="flex items-center justify-between mb-4 sm:mb-3 mx-4 sm:mx-0">
                     <h3 className={`text-base sm:text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -1557,12 +1471,7 @@ function EmployeeApp() {
                 </div>
 
                 {filteredEmployees.length === 0 ? (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                        className="text-center py-12 sm:py-16 px-4"
-                    >
+                    <div className="text-center py-12 sm:py-16 px-4">
                         <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
                             theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
                         }`}>
@@ -1574,196 +1483,83 @@ function EmployeeApp() {
                         </p>
                         <button
                             onClick={clearFilters}
-                            className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base"
+                            className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base"
                         >
                             Clear All Filters
                         </button>
-                    </motion.div>
+                    </div>
                 ) : (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
+                    <div
                         className={viewMode === 'grid'
                             ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mx-4 sm:mx-0'
                             : 'space-y-3 sm:space-y-4 mx-4 sm:mx-0'
                         }
                     >
-                        <AnimatePresence>
-                            {filteredEmployees.map((employee, index) => {
-                                // Check if the current card belongs to the logged-in user
-                                const isOwnProfile = employee.employeeId === empID;
+                        {filteredEmployees.map((employee, index) => {
+                            const isOwnProfile = employee.employeeId === empID;
 
-                                return (
-                                    <motion.div
-                                        key={employee.employeeId}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        transition={{ duration: 0.5, delay: index * 0.05 }}
-                                        className="relative"
-                                        style={viewMode === 'grid' ? { perspective: '1000px' } : {}}
-                                    >
-                                        {viewMode === 'grid' ? (
-                                            <div
-                                                className={`relative w-full h-72 sm:h-80 cursor-pointer transition-transform duration-700 preserve-3d ${
-                                                    flippedCard === employee.employeeId ? 'rotate-y-180' : ''
-                                                }`}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    // Flip the card on the main click
-                                                    setFlippedCard(prev => prev === employee.employeeId ? null : employee.employeeId);
-                                                }}
-                                                style={{ transformStyle: 'preserve-3d' }}
-                                            >
-                                                {/* ----------------------- Front Card ----------------------- */}
-                                                <div
-                                                    className={`absolute inset-0 w-full h-full rounded-xl shadow-lg border cursor-pointer group backface-hidden transform-gpu transition-all duration-300 hover:shadow-xl ${
-                                                        theme === 'dark'
-                                                            ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 hover:border-blue-500/50'
-                                                            : 'bg-gradient-to-br from-white to-gray-50 border-gray-200 hover:border-blue-400/50'
-                                                        } hover:scale-105`}
-                                                    style={{ backfaceVisibility: 'hidden' }}
-                                                >
-                                                    <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
-                                                        {/* Background decoration */}
-                                                        <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
-                                                            <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
+                            return (
+                                <div key={employee.employeeId} className="relative">
+                                    {viewMode === 'grid' ? (
+                                        <div
+                                            className={`w-full h-auto rounded-xl shadow-lg border cursor-pointer ${
+                                                theme === 'dark'
+                                                    ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'
+                                                    : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
+                                            }`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setFlippedCard(prev => prev === employee.employeeId ? null : employee.employeeId);
+                                            }}
+                                        >
+                                            {flippedCard === employee.employeeId ? (
+                                                // Back Card - Scrollable Options
+                                                <div className="flex flex-col h-72 p-4 sm:p-5">
+                                                    {isOwnProfile ? (
+                                                        <div className="text-center space-y-4 w-full flex-1 flex flex-col items-center justify-center">
+                                                            <IoPersonOutline className={`w-10 h-10 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                                                            <h3 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>
+                                                                This is Your Profile
+                                                            </h3>
+                                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                                Use the main navigation links to manage your information.
+                                                            </p>
                                                         </div>
-
-                                                        {/* Profile Image Section */}
-                                                        <div className="flex flex-col items-center text-center mb-3 z-10">
-                                                            <div className="relative mb-2">
-                                                                {employee.employeeImage ? (
-                                                                    <div className="relative">
-                                                                        <img
-                                                                            src={employee.employeeImage}
-                                                                            alt={`${employee.displayName}'s profile picture`}
-                                                                            className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105"
-                                                                        />
-                                                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="relative">
-                                                                        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-105">
-                                                                            {generateInitials(employee.displayName)}
-                                                                        </div>
-                                                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Name and Job Title */}
-                                                            <div className="w-full px-1">
-                                                                <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                                    {employee.displayName}
+                                                    ) : (
+                                                        <>
+                                                            <div className="text-center mb-3 sm:mb-4 pb-3 border-b border-gray-500/30">
+                                                                <h3 className={`text-base sm:text-lg font-bold mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                                    Card Options
                                                                 </h3>
-                                                                <p className={`text-xs font-semibold px-2 py-0.5 rounded-full truncate ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
-                                                                    {employee.jobTitlePrimary || "Not Updated Job Title"}
+                                                                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                                    Actions for {employee.displayName}
                                                                 </p>
                                                             </div>
-                                                        </div>
 
-                                                        {/* Employee Details Section - Fixed height container */}
-                                                        <div className="flex-1 flex flex-col justify-end min-h-0">
-                                                            <div className="space-y-1.5 px-1">
-                                                                {/* Employee ID */}
-                                                                <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                    theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                                }`}>
-                                                                    <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                                                                    <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
-                                                                </div>
+                                                            <div className="overflow-y-auto flex-1 space-y-1 sm:space-y-2 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-700">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleChatClick(employee);
+                                                                    }}
+                                                                    className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg text-xs sm:text-sm w-full flex items-center justify-center space-x-2`}
+                                                                >
+                                                                    <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                    <span>Start Chat</span>
+                                                                </button>
 
-                                                                {/* Department */}
-                                                                <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                    theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                                }`}>
-                                                                    <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
-                                                                    <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
-                                                                </div>
-
-                                                                {/* Location */}
-                                                                <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                    theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                                }`}>
-                                                                    <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
-                                                                    <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
-                                                                </div>
-
-                                                                {/* Email */}
-                                                                <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
-                                                                    theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
-                                                                }`}>
-                                                                    <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
-                                                                    <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
-                                                                        {employee.workEmail || 'N/A'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* ----------------------- Back Card (Card Options / Your Profile) ----------------------- */}
-                                                <div
-                                                    className={`absolute inset-0 w-full h-full rounded-xl shadow-lg border backface-hidden rotate-y-180 ${
-                                                        theme === 'dark'
-                                                            ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'
-                                                            : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
-                                                    }`}
-                                                    style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                                                >
-                                                    <div className="flex flex-col items-center justify-center h-full space-y-2 sm:space-y-3 p-4 sm:p-5">
-                                                        {isOwnProfile ? (
-                                                            // --- Content for Own Profile (Remove Options, Show Message) ---
-                                                            <div className="text-center space-y-4">
-                                                                <IoPersonOutline className={`w-10 h-10 mx-auto ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
-                                                                <h3 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>
-                                                                    This is Your Profile
-                                                                </h3>
-                                                                <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                                    Use the main navigation links (e.g., *Profile* or *Documents*) to manage your information.
-                                                                </p>
-                                                            </div>
-                                                        ) : (
-                                                            // --- Content for Other Employees (Card Options) ---
-                                                            <>
-                                                                <div className="text-center mb-3 sm:mb-4">
-                                                                    <h3 className={`text-base sm:text-lg font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                                        Card Options
-                                                                    </h3>
-                                                                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                                        Actions for {employee.displayName}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="space-y-1 sm:space-y-2 w-full max-w-xs">
-                                                                    {/* Option 1: Start Chat */}
+                                                                {matchedArray && matchedArray.includes("GET_PUBLIC") && (
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            handleChatClick(employee);
+                                                                            handleViewProfileClick(employee);
                                                                         }}
-                                                                        className={`px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-xs sm:text-sm w-full flex items-center justify-center space-x-2`}
+                                                                        className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg text-xs sm:text-sm w-full flex items-center justify-center space-x-2`}
                                                                     >
-                                                                        <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                                        <span className="font-medium">Start Chat</span>
+                                                                        <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                        <span>View Profile</span>
                                                                     </button>
-
-                                                                    {/* Option 2: View Profile (Permission Check) */}
-                                                                    {matchedArray && matchedArray.includes("GET_PUBLIC") && (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleViewProfileClick(employee);
-                                                                            }}
-                                                                            className={`px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-green-500/30 text-xs sm:text-sm w-full flex items-center justify-center space-x-2`}
-                                                                        >
-                                                                            <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                                            <span className="font-medium">View Profile</span>
-                                                                        </button>
-                                                                    )}
+                                                                )}
 
                                                                     {/* Option 3: Documents (Permission Check) */}
                                                                     {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") &&
@@ -1804,164 +1600,229 @@ function EmployeeApp() {
                                                                     }
                                                                     
 
-                                                                    {/* Option 5: Terminate Employee (Permission Check) */}
-                                                                    { hasAccess.includes("DELETE_USER") && (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleDeleteClick(employee);
-                                                                            }}
-                                                                            className="px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200 text-xs sm:text-sm w-full flex items-center justify-center space-x-2"
-                                                                        >
-                                                                            <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                                            <span className="font-medium">Terminate Employee</span>
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </>
-                                                        )}
-
-                                                        {/* Back button/Flip back (Always present) */}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setFlippedCard(null);
-                                                            }}
-                                                            className={`mt-4 px-4 py-2 rounded-lg font-semibold transition-colors text-xs sm:text-sm ${
-                                                                theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                                                            } flex items-center space-x-1`}
-                                                        >
-                                                            <IoArrowBack className="w-3 h-3" />
-                                                            <span>Flip Back</span>
-                                                        </button>
-                                                    </div>
+                                                                {hasAccess.includes("DELETE_USER") && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDeleteClick(employee);
+                                                                        }}
+                                                                        className="px-4 sm:px-6 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-xs sm:text-sm w-full flex items-center justify-center space-x-2"
+                                                                    >
+                                                                        <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                        <span>Terminate</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            // ----------------------- List View Item (Horizontal View) -----------------------
-                                            <motion.div
-                                                whileHover={{ scale: 1.02, x: isOwnProfile ? 0 : 10 }}
-                                                whileTap={{ scale: 0.98 }}
-                                                className={`rounded-xl p-3 sm:p-4 shadow-lg border cursor-pointer group transition-all duration-300 ${
-                                                    isOwnProfile
-                                                        ? 'border-green-500 ring-2 ring-green-500/50 hover:scale-100' // Highlight and prevent scaling for self
-                                                        : (theme === 'dark'
-                                                            ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700 hover:border-blue-500/50'
-                                                            : 'bg-gradient-to-r from-white to-gray-50 border-gray-200 hover:border-blue-400/50'
-                                                        )
-                                                }`}
-                                                onClick={() => navigate(`/employees/${empID}/public/${employee.employeeId}`)}
-                                            >
-                                                <div className="flex items-center space-x-3 sm:space-x-4 relative overflow-hidden">
-                                                    <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 opacity-10 pointer-events-none">
-                                                        <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 sm:translate-x-10 -translate-y-8 sm:-translate-y-10`}></div>
+                                            ) : (
+                                                // Front Card
+                                                <div className="flex flex-col h-full p-3 sm:p-4 relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 w-16 h-16 opacity-10 pointer-events-none">
+                                                        <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 -translate-y-8`}></div>
                                                     </div>
 
-                                                    <div className="flex-shrink-0 relative z-10">
-                                                        {employee.employeeImage ? (
-                                                            <div className="relative">
-                                                                <img
-                                                                    src={employee.employeeImage}
-                                                                    alt={`${employee.displayName}'s profile picture`}
-                                                                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover border-4 border-blue-200 shadow-lg group-hover:border-blue-400 transition-all duration-300 transform group-hover:scale-110"
-                                                                />
-                                                                <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="relative">
-                                                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-purple-700 transition-all duration-300 transform group-hover:scale-110">
-                                                                    {generateInitials(employee.displayName)}
+                                                    <div className="flex flex-col items-center text-center mb-3 z-10">
+                                                        <div className="relative mb-2">
+                                                            {employee.employeeImage ? (
+                                                                <div className="relative">
+                                                                    <img
+                                                                        src={employee.employeeImage}
+                                                                        alt={`${employee.displayName}'s profile picture`}
+                                                                        className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-3 border-blue-400 shadow-lg"
+                                                                    />
+                                                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
                                                                 </div>
-                                                                <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex-1 min-w-0 z-10">
-                                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                                                            <div className="min-w-0 flex-1 mb-2 sm:mb-0">
-                                                                <h3 className={`text-sm sm:text-lg font-bold truncate mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                                                    {employee.displayName}
-                                                                    {/* NEW: Add "Your Profile" text next to the name */}
-                                                                    {isOwnProfile && (
-                                                                        <span className={`ml-2 text-xs font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>(Your Profile)</span>
-                                                                    )}
-                                                                </h3>
-                                                                <p className={`text-xs font-semibold px-2 py-1 rounded-full w-fit ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
-                                                                    {employee.jobTitlePrimary || "Not Updated"}
-                                                                </p>
-                                                            </div>
-
-                                                            {/* Quick Action Buttons for List View (Hide if isOwnProfile is true) */}
-                                                            {!isOwnProfile && (
-                                                                <div className="flex items-center space-x-1 sm:space-x-2">
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleChatClick(employee); }}
-                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white shadow-md hover:shadow-lg`}
-                                                                        title="Start Chat"
-                                                                    > <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-
-                                                                    {matchedArray && matchedArray.includes("GET_PUBLIC") && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleViewProfileClick(employee); }}
-                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white shadow-md hover:shadow-lg`}
-                                                                        title="View Profile"
-                                                                    > <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                                        )}
-                                                                        {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleDocumentsClick(employee); }}
-                                                                        className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${theme === 'dark' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-white shadow-md hover:shadow-lg`}
-                                                                        title="Documents"
-                                                                    > <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                                        )}
-                                                                        {hasAccess.includes("DELETE_USER") && (
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(employee); }}
-                                                                            disabled={isOwnProfile}
-                                                                            className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 transform ${isOwnProfile ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110 bg-red-600 hover:bg-red-700'} text-white shadow-md hover:shadow-lg`}
-                                                                            title={isOwnProfile ? "Cannot terminate your own profile" : "Terminate Employee"}
-                                                                        > <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" /> </button>
-                                                                        )}
+                                                            ) : (
+                                                                <div className="relative">
+                                                                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm sm:text-lg font-bold shadow-lg">
+                                                                        {generateInitials(employee.displayName)}
+                                                                    </div>
+                                                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
                                                                 </div>
                                                             )}
                                                         </div>
 
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 text-xs mt-2">
-                                                            <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${ theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600' }`}>
+                                                        <div className="w-full px-1">
+                                                            <h3 className={`text-sm sm:text-base font-bold mb-1 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                                {employee.displayName}
+                                                            </h3>
+                                                            <p className={`text-xs font-semibold px-2 py-0.5 rounded-full truncate ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
+                                                                {employee.jobTitlePrimary || "Not Updated Job Title"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex-1 flex flex-col justify-end min-h-0">
+                                                        <div className="space-y-1 px-1">
+                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                            }`}>
                                                                 <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
-                                                                <span className="truncate font-mono text-xs">{employee.employeeId}</span>
+                                                                <span className="truncate font-mono text-xs min-w-0">{employee.employeeId}</span>
                                                             </div>
-                                                            <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${ theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600' }`}>
+
+                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                            }`}>
                                                                 <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
-                                                                <span className="truncate">{employee.departmentId || 'N/A'}</span>
+                                                                <span className="truncate text-xs min-w-0">{employee.departmentId || 'N/A'}</span>
                                                             </div>
-                                                            <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${ theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600' }`}>
+
+                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                            }`}>
                                                                 <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
-                                                                <span className="truncate">{employee.location || 'N/A'}</span>
+                                                                <span className="truncate text-xs min-w-0">{employee.location || 'N/A'}</span>
                                                             </div>
-                                                            <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${ theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600' }`}>
+
+                                                            <div className={`flex items-center space-x-2 p-1.5 rounded-lg overflow-hidden ${
+                                                                theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
+                                                            }`}>
                                                                 <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
-                                                                <span className="truncate text-xs" title={employee.workEmail || 'N/A'}>{employee.workEmail || 'N/A'}</span>
+                                                                <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
+                                                                    {employee.workEmail || 'N/A'}
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </motion.div>
-                                        )}
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
-                    </motion.div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        // List View Item
+                                        <div
+                                            className={`rounded-xl p-3 sm:p-4 shadow-lg border cursor-pointer ${
+                                                isOwnProfile
+                                                    ? 'border-green-500 ring-2 ring-green-500/50'
+                                                    : (theme === 'dark'
+                                                        ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700'
+                                                        : 'bg-gradient-to-r from-white to-gray-50 border-gray-200'
+                                                    )
+                                            }`}
+                                            onClick={() => navigate(`/employees/${empID}/public/${employee.employeeId}`)}
+                                        >
+                                            <div className="flex items-center space-x-3 sm:space-x-4 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 opacity-10 pointer-events-none">
+                                                    <div className={`w-full h-full rounded-full ${theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500'} transform translate-x-8 sm:translate-x-10 -translate-y-8 sm:-translate-y-10`}></div>
+                                                </div>
+
+                                                <div className="flex-shrink-0 relative z-10">
+                                                    {employee.employeeImage ? (
+                                                        <div className="relative">
+                                                            <img
+                                                                src={employee.employeeImage}
+                                                                alt={`${employee.displayName}'s profile picture`}
+                                                                className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover border-4 border-blue-200 shadow-lg"
+                                                            />
+                                                            <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="relative">
+                                                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg">
+                                                                {generateInitials(employee.displayName)}
+                                                            </div>
+                                                            <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex-1 min-w-0 z-10">
+                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                                                        <div className="min-w-0 flex-1 mb-2 sm:mb-0">
+                                                            <h3 className={`text-sm sm:text-lg font-bold truncate mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                                                {employee.displayName}
+                                                                {isOwnProfile && (
+                                                                    <span className={`ml-2 text-xs font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>(Your Profile)</span>
+                                                                )}
+                                                            </h3>
+                                                            <p className={`text-xs font-semibold px-2 py-1 rounded-full w-fit ${theme === 'dark' ? 'text-blue-300 bg-blue-900/40' : 'text-blue-700 bg-blue-100'}`}>
+                                                                {employee.jobTitlePrimary || "Not Updated"}
+                                                            </p>
+                                                        </div>
+
+                                                        {!isOwnProfile && (
+                                                            <div className="flex items-center space-x-1 sm:space-x-2">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleChatClick(employee); }}
+                                                                    className={`p-1.5 sm:p-2 rounded-lg ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white shadow-md`}
+                                                                >
+                                                                    <IoChatbubbleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                </button>
+
+                                                                {matchedArray && matchedArray.includes("GET_PUBLIC") && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleViewProfileClick(employee); }}
+                                                                        className={`p-1.5 sm:p-2 rounded-lg ${theme === 'dark' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white shadow-md`}
+                                                                    >
+                                                                        <IoPersonOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                    </button>
+                                                                )}
+
+                                                                {matchedArray && matchedArray.includes("EMPLOYEE_VIEW_DOCS") && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDocumentsClick(employee); }}
+                                                                        className={`p-1.5 sm:p-2 rounded-lg ${theme === 'dark' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-white shadow-md`}
+                                                                    >
+                                                                        <IoDocumentsOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                    </button>
+                                                                )}
+
+                                                                {hasAccess.includes("DELETE_USER") && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(employee); }}
+                                                                        disabled={isOwnProfile}
+                                                                        className={`p-1.5 sm:p-2 rounded-lg text-white shadow-md ${isOwnProfile ? 'opacity-50 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+                                                                    >
+                                                                        <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 text-xs mt-2">
+                                                        <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${
+                                                            theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            <IoIdCardOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`} />
+                                                            <span className="truncate font-mono text-xs">{employee.employeeId}</span>
+                                                        </div>
+                                                        <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${
+                                                            theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            <IoBriefcaseOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+                                                            <span className="truncate">{employee.departmentId || 'N/A'}</span>
+                                                        </div>
+                                                        <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${
+                                                            theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            <IoLocationOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
+                                                            <span className="truncate">{employee.location || 'N/A'}</span>
+                                                        </div>
+                                                        <div className={`flex items-center space-x-1 p-1 sm:p-1.5 rounded-md overflow-hidden ${
+                                                            theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
+                                                            <span className="truncate text-xs" title={employee.workEmail || 'N/A'}>{employee.workEmail || 'N/A'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
 
-                {/* Pagination Controls */}
-                   <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 gap-4 mx-4 sm:mx-0">
                     <button
                         onClick={() => setPageNumber(prev => Math.max(0, prev - 1))}
                         disabled={pageNumber === 0}
-                        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
+                        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm ${
                             theme === 'dark'
                                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1979,7 +1840,7 @@ function EmployeeApp() {
                             value={pageSize}
                             onChange={(e) => {
                                 setPageSize(parseInt(e.target.value));
-                                setPageNumber(0); // Reset to first page on size change
+                                setPageNumber(0);
                             }}
                             className={`px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg text-xs sm:text-sm ${
                                 theme === 'dark'
@@ -1996,18 +1857,18 @@ function EmployeeApp() {
                     <button
                         onClick={() => setPageNumber(prev => prev + 1)}
                         disabled={filteredEmployees.length < pageSize}
-                        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm transition-all duration-200 ${
+                        className={`flex items-center space-x-2 px-6 sm:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm ${
                             theme === 'dark'
                                 ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         <span>{filteredEmployees.length < pageSize ? 'Last Page' : 'Next'}</span>
-                            {filteredEmployees.length < pageSize ? (
-                                <IoLockClosed className="w-3 h-3 sm:w-4 sm:h-4" />
-                            ) : (
-                                <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
-                            )}
+                        {filteredEmployees.length < pageSize ? (
+                            <IoLockClosed className="w-3 h-3 sm:w-4 sm:h-4" />
+                        ) : (
+                            <IoArrowForward className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
                     </button>
                 </div>
             </div>
@@ -2026,7 +1887,7 @@ function EmployeeApp() {
                     <div className="flex justify-end">
                         <button
                             onClick={() => setPopup({ show: false, message: '', type: '' })}
-                            className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg transition-colors text-sm`}
+                            className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg text-sm`}
                         >
                             OK
                         </button>
@@ -2042,12 +1903,12 @@ function EmployeeApp() {
                     theme={theme}
                 >
                     <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Are you sure you want to Terminate employee <strong>{deleteConfirmation.employee?.displayName}</strong>? This action cannot be undone and will delete the user's credentials.
+                        Are you sure you want to Terminate employee <strong>{deleteConfirmation.employee?.displayName}</strong>? This action cannot be undone.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                         <button
                             onClick={() => setDeleteConfirmation({ show: false, employee: null })}
-                            className={`w-full sm:w-auto px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${
+                            className={`w-full sm:w-auto px-6 py-2 rounded-lg font-semibold text-sm ${
                                 theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                             }`}
                         >
@@ -2055,25 +1916,13 @@ function EmployeeApp() {
                         </button>
                         <button
                             onClick={confirmDelete}
-                            className="w-full sm:w-auto px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
+                            className="w-full sm:w-auto px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 text-sm"
                         >
                             Terminate
                         </button>
                     </div>
                 </Modal>
             )}
-
-            {/* Custom styles for animations */}
-               <style jsx>{`
-                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                 @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                 .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-                 .animate-slideUp { animation: slideUp 0.4s ease-out; }
-                 .animate-slideIn { animation: slideIn 0.3s ease-out; }
-                 .animate-spin { animation: spin 1s linear infinite; }
-             `}</style>
         </div>
     );
 }

@@ -9,7 +9,6 @@ import {
 } from "react-router-dom";
 import logo from "./assets/anasol-logo.png";
 
-// FIX: UISidebarContext మరియు HrmsContext నుండి Context, UISidebarContext రెండింటినీ ఇంపోర్ట్ చేయండి
 import HrmsContext, { Context, UISidebarContext } from "./HrmsContext"; 
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
@@ -128,8 +127,10 @@ const FullPageSpinner = () => {
 
 // --- Module Spinner with Bouncing Animation ---
 const ModuleSpinner = () => {
+    const { theme } = useContext(Context);
+    
     return (
-        <div className="flex flex-col items-center justify-center min-h-full h-full w-full bg-gray-50">
+        <div className={`flex flex-col items-center justify-center min-h-full h-full w-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
             <div className="mb-8">
                 <img 
                     src={logo} 
@@ -144,12 +145,11 @@ const ModuleSpinner = () => {
                 <div className="bouncing-dot" style={{ animationDelay: '0.4s' }}></div>
             </div>
             
-          
             <style jsx>{`
                 .bouncing-dot {
                     width: 12px;
                     height: 12px;
-                    background-color: #3b82f6;
+                    background-color: ${theme === 'dark' ? '#60a5fa' : '#3b82f6'};
                     border-radius: 50%;
                     animation: bouncing-loader 1.4s infinite ease-in-out;
                 }
@@ -162,13 +162,14 @@ const ModuleSpinner = () => {
                     40% {
                         transform: scale(1.2) translateY(-15px);
                         opacity: 1;
-                        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+                        box-shadow: 0 8px 20px ${theme === 'dark' ? 'rgba(96, 165, 250, 0.3)' : 'rgba(59, 130, 246, 0.3)'};
                     }
                 }
             `}</style>
         </div>
     );
 };
+
 
 // --- Error fallback component for individual modules ---
 const ModuleErrorFallback = ({ moduleName, error, resetError }) => (

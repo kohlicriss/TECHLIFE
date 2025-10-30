@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, CalendarCheck, FileText, Users, Database, ListChecks,
   MessageCircle, LogOut, X, ChevronLeft, ChevronRight, UserCircle, BadgePlus,
-  TicketCheck, UserRoundCog
+  TicketCheck, UserRoundCog,FolderCog
 } from "lucide-react";
 import { TfiMoney } from "react-icons/tfi";
 import { Context } from "../HrmsContext";

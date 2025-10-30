@@ -1,21 +1,25 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { Context } from "../../HrmsContext";
 import { useLocation, useParams } from "react-router-dom";
-import { IoEye } from "react-icons/io5";
+import { IoEye, IoWarning, IoClose } from "react-icons/io5";
 import { publicinfoApi } from "../../../../../axiosInstance";
 
 const initialFieldState = { text: "", isEditing: false };
 
 const About = () => {
-  const { theme, userData } = useContext(Context);
+  const { theme, userData, matchedArray } = useContext(Context); 
   const { empID } = useParams();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
   const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
-  const isCurrentUser = userData?.employeeId === employeeIdToFetch;
+  const isCurrentUser = String(userData?.employeeId) === String(employeeIdToFetch);
+  
   const isReadOnly = fromContextMenu || !isCurrentUser;
+
+  const hasEditPermission = matchedArray?.includes("EDIT_PER");
+  const canEdit = isCurrentUser || (fromContextMenu && hasEditPermission);
 
   const [responses, setResponses] = useState({
     about: initialFieldState,
@@ -82,7 +86,8 @@ const About = () => {
   const updateEditCache = (field, value) => setEditCache(prev => ({ ...prev, [field]: value }));
 
   const handleEdit = (field) => {
-    if (isReadOnly) return;
+    // 🔑 isReadOnly స్థానంలో canEdit చెక్
+    if (!canEdit) return; 
     setResponses((prev) => ({ ...prev, [field]: { ...prev[field], isEditing: true } }));
     setEditCache(prev => ({ ...prev, [field]: responses[field].text }));
   };
@@ -93,7 +98,8 @@ const About = () => {
   };
 
   const handleDelete = async (field) => {
-    if (isSaving || isReadOnly) return;
+    // 🔑 isReadOnly స్థానంలో canEdit చెక్
+    if (isSaving || !canEdit) return;
     const allPreviousState = responses;
     setResponses(prev => ({ ...prev, [field]: { text: "", isEditing: false } }));
     setEditCache(prev => ({ ...prev, [field]: "" }));
@@ -105,11 +111,15 @@ const About = () => {
         jobLove: field === 'jobLove' ? "" : allPreviousState.jobLove.text,
         hobbies: field === 'hobbies' ? "" : allPreviousState.hobbies.text,
       };
+      
       const isAllEmpty = !payload.about.trim() && !payload.jobLove.trim() && !payload.hobbies.trim();
       const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
+      
       await publicinfoApi[recordExists ? 'put' : 'post'](endpoint, payload);
+      
       if (isAllEmpty) setRecordExists(false);
       else if (!recordExists) setRecordExists(true);
+
     } catch (err) {
       revertState(allPreviousState, field, `Failed to delete ${field}. Please try again.`);
     } finally {
@@ -118,25 +128,33 @@ const About = () => {
   };
 
   const handleSave = async (field) => {
-    if (isReadOnly) return;
+    // 🔑 isReadOnly స్థానంలో canEdit చెక్
+    if (!canEdit) return;
     const newValue = editCache[field].trim();
     if (!newValue) {
-      handleCancel(field);
+      handleDelete(field); 
       return;
     }
+
     setIsSaving(true); setError(null);
     const allPreviousState = responses;
+    
+    // Optimistic Update
     setResponses(prev => ({ ...prev, [field]: { text: newValue, isEditing: false } }));
+    
     const payload = {
       employeeId: employeeIdToFetch,
       about: field === 'about' ? newValue : allPreviousState.about.text,
       jobLove: field === 'jobLove' ? newValue : allPreviousState.jobLove.text,
       hobbies: field === 'hobbies' ? newValue : allPreviousState.hobbies.text,
     };
+    
     try {
       const endpoint = `employee/${employeeIdToFetch}/${recordExists ? 'updateAbout' : 'createAbout'}`;
-      if (recordExists) await publicinfoApi.put(endpoint, payload);
-      else {
+      
+      if (recordExists) {
+        await publicinfoApi.put(endpoint, payload);
+      } else {
         await publicinfoApi.post(endpoint, payload);
         setRecordExists(true);
       }
@@ -145,6 +163,7 @@ const About = () => {
         err.response &&
         (err.response.status === 500 || err.response.status === 409 ||
           (err.response.status === 400 && JSON.stringify(err.response.data).toLowerCase().includes("already recorded")));
+      
       if (isAlreadyRecordedError && !recordExists) {
         try {
           await publicinfoApi.put(`employee/${employeeIdToFetch}/updateAbout`, payload);
@@ -185,9 +204,10 @@ const About = () => {
       return (
         <button
           onClick={() => handleEdit(field)}
-          disabled={isReadOnly}
+          // 🔑 ఇక్కడ isReadOnly స్థానంలో canEdit చెక్
+          disabled={!canEdit} 
           className={`w-full border rounded-md px-2 py-2 text-xs sm:text-sm transition-colors duration-200 ${
-            isReadOnly
+            !canEdit
               ? theme === 'dark'
                 ? 'text-gray-500 border-gray-600 cursor-not-allowed'
                 : 'text-gray-400 border-gray-300 cursor-not-allowed'
@@ -195,8 +215,9 @@ const About = () => {
               ? 'text-purple-400 border-purple-400 hover:bg-purple-900/20'
               : 'text-purple-600 border-purple-600 hover:bg-purple-50'
           }`}
+          aria-label={!canEdit ? `No ${title} added` : `Add your ${title}`}
         >
-          {isReadOnly ? `No ${title} added` : `Add your ${title}`}
+          {!canEdit ? `No ${title} added` : `Add your ${title}`}
         </button>
       );
     }
@@ -214,7 +235,7 @@ const About = () => {
             value={editCache[field]}
             onChange={(e) => updateEditCache(field, e.target.value)}
             placeholder={`Tell us about your ${title.toLowerCase()}...`}
-            disabled={isReadOnly || isSaving}
+            disabled={!canEdit || isSaving} // 🔑 canEdit చెక్
             style={{ minHeight: '48px', resize: 'vertical' }}
           />
           <div className="flex flex-col sm:flex-row-reverse justify-end space-y-2 sm:space-y-0 sm:space-x-2 w-full">
@@ -232,7 +253,10 @@ const About = () => {
               </button>
               <button
                 onClick={() => handleSave(field)}
-                disabled={!editCache[field].trim() || isSaving}
+                // 🔑 ఇక్కడ disabled={!editCache[field].trim() || isSaving} స్థానంలో isSaving మాత్రమే ఉంచాలి
+                // ఎందుకంటే blank సేవ్ చేస్తే ఆటోమేటిక్‌గా handleDelete అవుతుంది (handleSave లో లాజిక్ ఉంది).
+                // కానీ user input లేకపోతే Save button enable చేయకూడదు కాబట్టి, పాత లాజిక్ ఉంచడం ఉత్తమం.
+                disabled={!editCache[field].trim() || isSaving} 
                 className={`w-full sm:w-auto px-2 py-1 rounded-md text-xs disabled:opacity-50 disabled:cursor-not-allowed ${
                   theme === 'dark'
                     ? 'bg-purple-600 text-white hover:bg-purple-700'
@@ -268,8 +292,8 @@ const About = () => {
             : 'bg-gray-50 border border-gray-200'
         }`}
       >
-        {/* Always-visible Edit on mobile; hover on larger screens */}
-        {!isReadOnly && (
+        {/* Edit button rendering logic సరిచేయబడింది */}
+        {canEdit && (
           <div className="absolute top-1 right-1 flex">
             <div className="sm:hidden">
               <EditButton onClick={() => handleEdit(field)} disabled={isSaving} />
