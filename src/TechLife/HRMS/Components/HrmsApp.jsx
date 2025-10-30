@@ -628,7 +628,7 @@ const HrmsApp = () => {
 <Route 
   path="/payroll/employee/:empId" 
   element={
-    <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN', 'HR', 'MANAGER']}>
+    <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN', 'HR', 'MANAGER','TEAM_LEAD']}>
       <RouteWrapper moduleName="Employee PayRoll">
         <EmployeePayRoll />
       </RouteWrapper>

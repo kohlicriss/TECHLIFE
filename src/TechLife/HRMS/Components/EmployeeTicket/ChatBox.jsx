@@ -63,7 +63,7 @@ const fetchMessages = async (pageToFetch = 0) => {
   try {
     setLoading(true);
     const res = await fetch(
-      `https://hrms.anasolconsultancyservices/api/ticket/employee/tickets/${ticketId}/messages?page=${pageToFetch}&size=20`,
+      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages?page=${pageToFetch}&size=20`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -177,7 +177,7 @@ const sendMessage = async () => {
 
   try {
     await fetch(
-      `https://hrms.anasolconsultancyservices/api/ticket/employee/tickets/${ticketId}/messages`,
+      `https://hrms.anasolconsultancyservices.com/api/ticket/employee/tickets/${ticketId}/messages`,
       {
         method: "POST",
         headers: {

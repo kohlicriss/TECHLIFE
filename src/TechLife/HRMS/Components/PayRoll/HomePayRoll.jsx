@@ -24,6 +24,7 @@ const HomePayRoll = () => {
   const token = localStorage.getItem("accessToken");
   const { theme } = useContext(Context);
   const isDark = theme === "dark";
+  const [matchedArray,setMatchedArray]=useState([]);
 
   const formDataRef = useRef({
     employeeId: '',
@@ -208,6 +209,9 @@ const HomePayRoll = () => {
 
           {/* Action Buttons */}
           <div className="p-6 space-y-4">
+                 {matchedArray.includes("GET_PAYROLL_MONTHLY") && (
+                
+           
             <button
               onClick={handleViewMonthly}
               className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl font-semibold transition-all duration-200 ${
@@ -216,10 +220,14 @@ const HomePayRoll = () => {
                   : 'bg-green-500 hover:bg-green-600 text-white shadow-md'
               } transform hover:scale-105`}
             >
+              
               <IoCalendarOutline className="w-5 h-5" />
               <span>View Monthly</span>
             </button>
 
+                 )}
+
+{matchedArray.includes("CREATE_PAYROLL") && (
             <button
               onClick={handleCreateEmployeeClick}
               className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl font-semibold transition-all duration-200 ${
@@ -231,6 +239,7 @@ const HomePayRoll = () => {
               <IoAddCircleOutline className="w-5 h-5" />
               <span>Create Employee</span>
             </button>
+)}
 
            
           </div>

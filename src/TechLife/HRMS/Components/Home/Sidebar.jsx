@@ -5,6 +5,7 @@ import {
   MessageCircle, LogOut, X, ChevronLeft, ChevronRight, UserCircle, BadgePlus,
   TicketCheck, UserRoundCog
 } from "lucide-react";
+import { TfiMoney } from "react-icons/tfi";
 import { Context } from "../HrmsContext";
 import { FaUsers } from "react-icons/fa";
 
@@ -48,7 +49,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" },
      { 
       name: "Pay Roll", 
-      icon: <BadgePlus size={18}/>, 
+      icon: <TfiMoney size={18}/>, 
       path: (['ADMIN', 'HR', 'MANAGER'].includes(userRole) 
         ? (empId ? `/payroll/home/${empId}` : "/payroll")
         : (empId ? `/payroll/employee/${empId}` : "/payroll/employee")
