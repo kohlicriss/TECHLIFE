@@ -208,8 +208,8 @@ const StatusColorsMap={
             <span className="text-2xl sm:text-3xl font-bold text-indigo-600"><FaRegFolderOpen /></span>
         </div>
         <div className="ml-0">
-            <h1 className={`text-xl sm:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{project.project_name}</h1>
-            <p className={`text-xs sm:text-sm mt-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project ID: {project.project_id}</p>
+            <h1 className={`text-xl sm:text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{project.title}</h1>
+            <p className={`text-xs sm:text-sm mt-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project ID: {project.projectId}</p>
         </div>
     </div>
 </div>
@@ -284,9 +284,9 @@ const StatusColorsMap={
             <div className={` ${theme==='dark'?'bg-gray-600':'bg-gradient-to-r from-white to-blue-50'} rounded-2xl shadow-lg border border-gray-200 p-3 space-y-6 col-span-1 lg:col-span-2`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className={`text-2xl ${theme==='dark'?'text-white':'text-gray-800'} font-bold`}>{project.project_name}</h2>
+                  <h2 className={`text-2xl ${theme==='dark'?'text-white':'text-gray-800'} font-bold`}>{project.title}</h2>
                   <p className={`text-sm mt-1 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
-                    Project ID: <span className="text-red-500 font-semibold">{project.project_id}</span>
+                    Project ID: <span className="text-red-500 font-semibold">{project.projectId}</span>
                   </p>
                 </div>
               </div>

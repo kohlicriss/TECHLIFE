@@ -14,35 +14,222 @@ import { authApi, dashboardApi, publicinfoApi } from "../../../../axiosInstance"
 import { IoPersonOutline } from "react-icons/io5";
 import AttendanceTable from "./TotalEmployeeAttendance";
 import { LiaFileAlt } from "react-icons/lia";
+import { Calendar, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Edit, X } from "lucide-react";
 
 
 
 const PIE_COLORS = ["#4F46E5", "#F97316"]; 
 const BAR_COLORS = { work: "#4F46E5", break: "#F97316" };
 const STANDARD_WORKDAY_HOURS = 8;
+const IST_OFFSET_MINUTES = 5 * 60 + 30;
 
-// Assuming these icons (Calendar, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Edit, X) are imported from a library like 'lucide-react' or similar.
-// Since the imports aren't provided, I will define simple placeholders for them.
-const Calendar = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
-const Clock = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-const CheckCircle = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
-const AlertTriangle = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
-const ChevronLeft = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>;
-const ChevronRight = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
-const Edit = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
-const X = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+const pad2 = (n) => String(n).padStart(2, '0');
 
+const tryNormalizeTo24 = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  // If contains AM/PM, let Date parse it (works with "hh:mm AM/PM" or "hh:mm:ss AM/PM")
+  if (/[AP]M$/i.test(timeStr.trim())) {
+    const d = new Date(`2000-01-01 ${timeStr}`);
+    if (isNaN(d)) return null;
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+  // Matches "HH:MM" or "H:MM" or "HH:MM:SS"
+  const hhmmMatch = timeStr.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (hhmmMatch) {
+    return `${pad2(Number(hhmmMatch[1]))}:${pad2(Number(hhmmMatch[2]))}`;
+  }
+  // Try ISO datetime parse -> extract hours/minutes
+  const maybeDate = new Date(timeStr);
+  if (!isNaN(maybeDate)) {
+    return `${pad2(maybeDate.getHours())}:${pad2(maybeDate.getMinutes())}`;
+  }
+  return null;
+};
+ const formatHHMMTo12h = (hhmm) => {
+  if (!hhmm) return 'N/A';
+  const [hStr, mStr] = hhmm.split(':');
+  const hh = Number(hStr);
+  const mm = Number(mStr || '0');
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return hhmm;
+  const period = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${String(mm).padStart(2, '0')} ${period}`;
+};
+
+const addMinutesToTimeString = (timeStr, minutesToAdd = IST_OFFSET_MINUTES) => {
+  const normalized = tryNormalizeTo24(timeStr);
+  if (!normalized) return timeStr;
+  const [hh, mm] = normalized.split(':').map(Number);
+  const totalMin = (hh * 60 + mm + minutesToAdd + 24 * 60) % (24 * 60);
+  const nh = Math.floor(totalMin / 60);
+  const nm = totalMin % 60;
+  return `${pad2(nh)}:${pad2(nm)}`;
+};
+
+// Apply offset for "13:00 - 14:00" style ranges
+const shiftRange = (rangeStr) => {
+  if (!rangeStr || typeof rangeStr !== 'string') return rangeStr;
+  const parts = rangeStr.split(' - ').map(p => p.trim());
+  if (parts.length !== 2) return rangeStr;
+  const s = addMinutesToTimeString(parts[0]);
+  const e = addMinutesToTimeString(parts[1]);
+  return `${s} - ${e}`;
+};
+
+// Apply offset to schedule object (Start_time, End_time, Break_hour)
+const applyOffsetToSchedule = (schedule) => {
+  if (!schedule) return schedule;
+  const res = { ...schedule };
+  if (res.Start_time) res.Start_time = addMinutesToTimeString(res.Start_time);
+  if (res.End_time) res.End_time = addMinutesToTimeString(res.End_time);
+  if (Array.isArray(res.Break_hour)) {
+    res.Break_hour = res.Break_hour.map(b => {
+      if (!b) return b;
+      const newB = { ...b };
+      if (newB.Time) newB.Time = shiftRange(newB.Time);
+      return newB;
+    });
+  } else if (res.Break_hour && typeof res.Break_hour === 'string') {
+    res.Break_hour = shiftRange(res.Break_hour);
+  }
+  return res;
+};
+const parseEffectiveHours = (effectiveHours) => {
+  if (!effectiveHours) return 0;
+  const s = String(effectiveHours).trim();
+  // ISO duration like PT8H30M
+  const match = s.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (match) {
+    const hours = match[1] ? parseInt(match[1], 10) : 0;
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    return hours * 60 + minutes;
+  }
+  // decimal hours like "8.5"
+  if (!isNaN(Number(s))) {
+    return Math.round(Number(s) * 60);
+  }
+  // hh:mm format
+  const hhmm = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm) return parseInt(hhmm[1], 10) * 60 + parseInt(hhmm[2], 10);
+  return 0;
+};
+const formatMinutesToHHMM = (totalMinutes) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+
+
+// Parse time string into Date and shift to IST (dateRef = 'YYYY-MM-DD' used when timeStr is 'HH:mm')
+const parseToISTDate = (timeStr, dateRef = null) => {
+  if (!timeStr) return null;
+  const raw = String(timeStr).trim();
+  try {
+    let d;
+    if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
+      d = new Date(raw);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw) && dateRef === null) {
+      d = new Date(raw);
+    } else if (/^\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
+      const datePart = dateRef || new Date().toISOString().slice(0, 10);
+      d = new Date(`${datePart}T${raw}${raw.includes('Z') ? '' : 'Z'}`);
+    } else {
+      d = new Date(raw);
+    }
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+  } catch {
+    return null;
+  }
+};
+ const parseToDateSafe = (timeStr, dateRef = null) => {
+  if (!timeStr) return null;
+  const raw = String(timeStr).trim();
+  // ISO-like or full datetime
+  if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // YYYY-MM-DD date only
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const d = new Date(`${raw}T00:00:00Z`);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // HH:mm or HH:mm:ss -> attach dateRef (or today) and treat as local time
+  const hhmm = tryNormalizeTo24(raw);
+  if (hhmm) {
+    const datePart = dateRef || new Date().toISOString().slice(0, 10);
+    const d = new Date(`${datePart}T${hhmm}:00`);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Fallback
+  const any = new Date(raw);
+  return isNaN(any.getTime()) ? null : any;
+};
+
+// convert/shift time string to IST display (adds 5:30 to UTC)
+// dateRef should be YYYY-MM-DD used when timeStr is "HH:mm" only
+const toISTTimeDisplay = (timeStr, dateRef = null) => {
+  if (!timeStr) return 'N/A';
+  const raw = String(timeStr).trim();
+
+  // If it's a plain time like "HH:mm" -> compute by string arithmetic and format
+  const hhmm = tryNormalizeTo24(raw);
+  if (hhmm && !/[TtZz]/.test(raw)) {
+    // addMinutesToTimeString returns HH:MM after adding IST_OFFSET_MINUTES
+    const shifted = addMinutesToTimeString(hhmm, IST_OFFSET_MINUTES);
+    return formatHHMMTo12h(shifted);
+  }
+
+  // Otherwise try parsing as Date and format in Asia/Kolkata timezone
+  const parsed = parseToDateSafe(raw, dateRef);
+  if (!parsed) return raw;
+
+  try {
+    // Use Intl to force India timezone display regardless of user's browser TZ
+    return new Intl.DateTimeFormat('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    }).format(parsed);
+  } catch {
+    // Fallback to local formatting (should rarely happen)
+    return parsed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+};
+
+// convert gross/effective value to display string (HH:MM)
+const toHHMMDisplay = (value) => {
+  const minutes = parseEffectiveHours(value || '');
+  return minutes > 0 ? formatMinutesToHHMM(minutes) : 'N/A';
+};
+
+// GraphQL endpoint & query (kept as-is)
+
+const DETAILS_QUERY = `
+  query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
+    getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
+      date
+      employeeId
+      isPresent
+      login
+      logout
+      effectiveHours
+      grossHours
+      mode
+    }
+  }
+`;
+// Mock Data
 const ATTENDANCE_DATA = [
-    { employeeId: "EMP001", date: "15-10-2025", effectiveHour: "09:00:00", isPresent: "Present", day: "Wednesday", login: "09:00:00", logout: "17:00:00" },
-    { employeeId: "EMP001", date: "16-10-2025", effectiveHour: "09:05:00", isPresent: "Present", day: "Thursday", login: "09:05:00", logout: "17:05:00" },
-    { employeeId: "EMP001", date: "17-10-2025", effectiveHour: "N/A",      isPresent: "Absent",  day: "Friday",   login: "N/A", logout: "N/A" },
-    { employeeId: "EMP001", date: "20-10-2025", effectiveHour: "N/A",      isPresent: "Holiday", day: "Monday", holiday: "Yes", login: "N/A", logout: "N/A" },
-    { employeeId: "EMP001", date: "21-10-2025", effectiveHour: "08:58:00", isPresent: "Present", day: "Tuesday", login: "08:58:00", logout: "16:58:00" },
-    { employeeId: "EMP001", date: "22-10-2025", effectiveHour: "09:10:00", isPresent: "Present", day: "Wednesday", login: "09:10:00", logout: "17:10:00" },
-    { employeeId: "EMP001", date: "23-10-2025", effectiveHour: "N/A",      isPresent: "Absent",  day: "Thursday", login: "N/A", logout: "N/A" },
-    { employeeId: "EMP001", date: "24-10-2025", effectiveHour: "09:00:00", isPresent: "Present", day: "Friday", login: "09:00:00", logout: "17:00:00" },
-    { employeeId: "EMP001", date: "25-10-2025", effectiveHour: "09:15:00", isPresent: "Present", day: "Saturday", login: "09:15:00", logout: "17:15:00" },
+    { date: '17-10-2025', employeeId: 'EMP001', effectiveHour: '8.5', isPresent: 'Present', login: '09:00', logout: '17:30' },
+    { date: '16-10-2025', employeeId: 'EMP001', effectiveHour: 'N/A', isPresent: 'Absent', login: 'N/A', logout: 'N/A' },
+    { date: '15-10-2025', employeeId: 'EMP001', effectiveHour: 'N/A', isPresent: 'Holiday', login: 'N/A', logout: 'N/A' },
 ];
+
+
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -52,6 +239,7 @@ const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const toIsoDate = (dateString) => {
     if (!dateString) return '';
     const parts = dateString.split('-');
+    // Converts DD-MM-YYYY to YYYY-MM-DD for date input
     if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
@@ -61,465 +249,1775 @@ const toIsoDate = (dateString) => {
 const toStandardDate = (isoDateString) => {
     if (!isoDateString) return '';
     const parts = isoDateString.split('-');
+    // Converts YYYY-MM-DD to DD-MM-YYYY for display/storage
     if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
     return isoDateString;
 };
 
+/**
+ * Common GraphQL Fetch Utility
+ * @param {string} query - The GraphQL query or mutation string.
+ * @param {object} variables - The variables object.
+ * @returns {Promise<object>} - The data object from the GraphQL response.
+ */
+const executeGraphQL = async (query, variables = {}) => {
+    try {
+        // use dashboardApi so baseURL and auth headers are applied consistently
+        const resp = await dashboardApi.post("/attendance/graphql", { query, variables }, {
+            headers: { "Content-Type": "application/json" }
+        });
+        // axios response shape: resp.data => { data, errors }
+        if (resp?.data?.errors && resp.data.errors.length) {
+            const msg = resp.data.errors.map(e => e.message).join("; ");
+            const err = new Error(msg);
+            err.graphql = resp.data.errors;
+            throw err;
+        }
+        return resp?.data?.data ?? null;
+    } catch (err) {
+        // surface helpful debug info
+        console.error("executeGraphQL error:", err?.message || err, err?.response?.data || err);
+        throw err;
+    }
+};
 
-// --- New Component for Day Details ---
+const GRAPHQL_URL = process.env.REACT_APP_HRMS_GRAPHQL_URL || "https://hrms.anasolconsultancyservices.com/api/attendance/graphql";
+const graphqlRequest = async (query, variables = {}) => {
+  const url = GRAPHQL_URL;
+  try {
+    // Choose client that likely has auth headers
+    const client = (dashboardApi && typeof dashboardApi.post === "function") ? dashboardApi : axios;
 
-const DayDetailsModal = ({ dayData, eventsOnThisDay, onClose }) => {
-    if (dayData.type === 'blank') return null;
+    // Build headers and ensure Authorization is provided from localStorage (Bearer token)
+    const token = (() => {
+      try { return localStorage.getItem('accessToken'); } catch { return null; }
+    })();
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
 
-    const { dateString, attendance } = dayData;
+    // Use absolute URL so axios does not mix baseURL/proxy paths
+    const resp = await client.post(url, { query, variables }, { headers });
+
+    // GraphQL-level errors
+    if (resp?.data?.errors && resp.data.errors.length) {
+      const msg = resp.data.errors.map(e => e.message).join("; ");
+      const err = new Error(msg);
+      err.graphql = resp.data.errors;
+      console.error("GraphQL response errors:", resp.data.errors);
+      throw err;
+    }
+
+    return resp?.data?.data ?? null;
+  } catch (err) {
+    console.error("Error executing GraphQL operation:", err?.message || err, {
+      url,
+      query: typeof query === "string" ? query.replace(/\s+/g, " ").slice(0, 200) + "..." : query,
+      variables,
+      responseData: err?.response?.data
+    });
+    throw err;
+  }
+};
+const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose }) => {
+
+  const { userData } = useContext(Context);
+
+  const employeeId = userData?.employeeId;
+
+  const [attendanceData, setAttendanceData] = useState(null);
+
+  const [eventsOnThisDay, setEventsOnThisDay] = useState(propEvents);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState(null);
+
+
+
+  const dateString = dayData?.dateString || '';
+
+
+
+  // helper: add IST offset (5:30) to an effectiveHours value and return HH:MM string
+
+  const addIstToEffective = (effValue) => {
+
+    try {
+
+      const baseMinutes = parseEffectiveHours(effValue || '');
+
+      if (!baseMinutes) return 'N/A';
+
+      const adjusted = baseMinutes; 
+
+      return formatMinutesToHHMM(adjusted);
+
+    } catch {
+
+      return 'N/A';
+
+    }
+
+  };
+
+
+
+  // NEW helper: shift given time by IST_OFFSET_MINUTES and return localized 12-hour string
+
+  // *** REPLACED WITH CORRECTED LOGIC ***
+
+  const shiftTimeToISTDisplay = (timeStr, dateIso = null) => {
+
+    if (!timeStr || timeStr === 'N/A') return 'N/A';
+
     
-    // Fallback data for dates without explicit ATTENDANCE_DATA
-    const displayAttendance = {
-        employeeId: attendance.employeeId || "EMP001 (Default)",
-        date: attendance.date || dateString,
-        effectiveHour: attendance.effectiveHour || "N/A",
-        isPresent: attendance.isPresent === 'N/A' ? "Not Logged" : attendance.isPresent,
-        login: attendance.login || "N/A",
-        logout: attendance.logout || "N/A",
+
+    const baseDateString = dateIso || new Date().toISOString().slice(0, 10); 
+
+    let d = new Date(`${baseDateString}T${timeStr}`); 
+
+    
+
+    if (isNaN(d.getTime())) {
+
+      try {
+
+        const parts = timeStr.split(':');
+
+        let h = parseInt(parts[0], 10) || 0;
+
+        let m = parseInt(parts[1], 10) || 0;
+
+        
+
+        d = new Date(baseDateString);
+
+        d.setHours(h, m, 0, 0);
+
+      } catch {
+
+        return timeStr;
+
+      }
+
+    }
+
+
+
+    // Explicitly add 330 minutes (5 hours 30 minutes) as requested
+
+    d.setMinutes(d.getMinutes() + IST_OFFSET_MINUTES); 
+
+    
+
+    // Format to 12-hour IST display
+
+    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  };
+
+  // *** END OF REPLACEMENT ***
+
+
+
+  useEffect(() => {
+
+    let mounted = true;
+
+    if (!dateString || !employeeId) {
+
+      // when using passed-in attendance, also convert times to IST and adjust effective hour
+
+      const src = dayData?.attendance ?? null;
+
+      if (src) {
+
+        const dateIso = toIsoDate(dateString) || undefined;
+
+        // USE shiftTimeToISTDisplay so times are explicitly +5:30
+
+        const loginIst = shiftTimeToISTDisplay(src.login ?? src.loginTime ?? 'N/A', dateIso);
+
+        const logoutIst = shiftTimeToISTDisplay(src.logout ?? src.logoutTime ?? 'N/A', dateIso);
+
+        const effAdj = addIstToEffective(src.effectiveHour ?? src.effectiveHours ?? src.effectiveHour);
+
+        setAttendanceData({
+
+          ...src,
+
+          login: loginIst,
+
+          logout: logoutIst,
+
+          effectiveHour: effAdj
+
+        });
+
+      } else {
+
+        setAttendanceData(null);
+
+      }
+
+      setEventsOnThisDay(propEvents || []);
+
+      setLoading(false);
+
+      return;
+
+    }
+
+
+
+    const QUERY = `
+
+     query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
+
+        getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
+
+          date
+
+          event
+
+          description
+
+          employeeId
+
+          isPresent
+
+          login
+
+          logout
+
+          effectiveHours
+
+          grossHours
+
+          holiday
+
+          mode
+
+        }
+
+      }
+
+    `;
+
+
+
+    const load = async () => {
+
+      setLoading(true);
+
+      try {
+
+        const iso = toIsoDate(dateString);
+
+        const variables = { employeeId, startDate: iso, endDate: iso };
+
+        const data = await graphqlRequest(QUERY, variables);
+
+        if (!mounted) return;
+
+        const items = data?.getDetailsBetweenDates || [];
+
+        const dayItem = items.find(i => i.date === dateString || i.date === iso) || null;
+
+     if (dayItem) {
+
+          const loginIst = shiftTimeToISTDisplay(dayItem.login ?? 'N/A', iso);
+
+          const logoutIst = shiftTimeToISTDisplay(dayItem.logout ?? 'N/A', iso);
+
+          const effAdj = addIstToEffective(dayItem.effectiveHours ?? dayItem.effectiveHour);
+
+          setAttendanceData({
+
+            employeeId: dayItem.employeeId || employeeId,
+
+            date: dayItem.date || dateString,
+
+            effectiveHour: effAdj,
+
+            isPresent: dayItem.isPresent ?? 'N/A',
+
+            login: loginIst,
+
+            logout: logoutIst,
+
+            holiday: dayItem.holiday ?? false,
+
+            mode: dayItem.mode ?? null
+
+          });
+
+        } else {
+
+          // fallback to provided dayData attendance (also convert)
+
+          const src = dayData?.attendance ?? { isPresent: 'N/A', login: 'N/A', logout: 'N/A', date: dateString };
+
+          const srcIso = toIsoDate(src.date || dateString);
+
+          setAttendanceData({
+
+            ...src,
+
+            login: shiftTimeToISTDisplay(src.login ?? 'N/A', srcIso),
+
+            logout: shiftTimeToISTDisplay(src.logout ?? 'N/A', srcIso),
+
+            effectiveHour: addIstToEffective(src.effectiveHour ?? src.effectiveHours),
+
+            holiday: src.holiday ?? false
+
+          });
+
+        }
+
+        const mappedEvents = items
+
+          .filter(it => it.event || it.description || (typeof it.holiday !== 'undefined'))
+
+          .map(it => ({
+
+            event: it.event || 'Event',
+
+            description: it.description || '',
+
+            startDate: it.startDate || it.date,
+
+            endDate: it.endDate || it.date,
+
+            holiday: Boolean(it.holiday)
+
+          }));
+
+        // If any event (backend or propEvents) marks this day as holiday, make sure attendanceData reflects that
+
+        const propEventsList = propEvents || [];
+
+        const anyHolidayFromMapped = mappedEvents.some(ev => ev.holiday);
+
+        const anyHolidayFromProp = propEventsList.some(ev => ev && (ev.holiday === true || String(ev.holiday).toLowerCase() === 'true'));
+
+        const anyHoliday = anyHolidayFromMapped || anyHolidayFromProp;
+
+        // If attendanceData exists and we detected a holiday override it; otherwise set it when building fallback
+
+        if (anyHoliday) {
+
+          setEventsOnThisDay(mappedEvents.length ? mappedEvents : propEventsList);
+
+          setAttendanceData(prev => ({
+
+            ...(prev || {}),
+
+            holiday: true,
+
+            // prefer backend isPresent if provided, otherwise mark as 'Holiday'
+
+            isPresent: prev && prev.isPresent ? prev.isPresent : 'Holiday'
+
+          }));
+
+        } else {
+
+          setEventsOnThisDay(mappedEvents.length ? mappedEvents : propEventsList);
+
+        }
+
+
+
+        
+
+         setError(null);
+
+      } catch (err) {
+
+        console.error("DayDetailsModal fetch failed:", err);
+
+        setError(err.message || "Failed to load details");
+
+        const src = dayData?.attendance ?? null;
+
+        if (src) {
+
+          const srcIso = toIsoDate(src.date || dateString);
+
+          setAttendanceData({
+
+            ...src,
+
+            login: shiftTimeToISTDisplay(src.login ?? 'N/A', srcIso),
+
+            logout: shiftTimeToISTDisplay(src.logout ?? 'N/A', srcIso),
+
+            effectiveHour: addIstToEffective(src.effectiveHour ?? src.effectiveHours)
+
+          });
+
+        } else {
+
+          setAttendanceData(null);
+
+        }
+
+        setEventsOnThisDay(propEvents || []);
+
+      } finally {
+
+        if (mounted) setLoading(false);
+
+      }
+
     };
 
+
+
+    load();
+
+    return () => { mounted = false; };
+
+  }, [dateString, userData?.employeeId]);
+
+  if (!dayData || dayData.type === 'blank') return null;
+
+  if (loading) {
+
     return (
-        <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-100">
-                <div className="flex justify-between items-center border-b pb-3 mb-4">
-                    <h2 className="text-2xl font-bold text-indigo-700 flex items-center">
-                        <Calendar className="mr-2 w-6 h-6" /> Details for {displayAttendance.date}
-                    </h2>
-                    <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
-                        <X className="w-6 h-6" />
-                    </button>
-                </div>
 
-                {/* Attendance Details */}
-                <div className="mb-6 p-4 border rounded-lg bg-indigo-50">
-                    <h3 className="text-xl font-semibold text-indigo-800 mb-3 border-b pb-1">Attendance</h3>
-                    <div className="space-y-2 text-gray-700">
-                        <p><strong>Employee ID:</strong> <span className="font-medium">{displayAttendance.employeeId}</span></p>
-                        <p><strong>Status:</strong> 
-                            <span className={`font-bold ml-1 px-2 py-0.5 rounded-full text-sm ${
-                                displayAttendance.isPresent === 'Present' ? 'bg-green-200 text-green-800' :
-                                displayAttendance.isPresent === 'Absent' ? 'bg-red-200 text-red-800' :
-                                displayAttendance.isPresent === 'Holiday' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'
-                            }`}>
-                                {displayAttendance.isPresent}
-                            </span>
-                        </p>
-                        <p><strong>Effective Hour:</strong> <span className="font-medium">{displayAttendance.effectiveHour}</span></p>
-                        <p><strong>Login Time:</strong> <span className="font-medium">{displayAttendance.login}</span></p>
-                        <p><strong>Logout Time:</strong> <span className="font-medium">{displayAttendance.logout}</span></p>
-                    </div>
-                </div>
+      <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
 
-                {/* Event Details */}
-                <div className="p-4 border rounded-lg bg-teal-50">
-                    <h3 className="text-xl font-semibold text-teal-800 mb-3 border-b pb-1">Events ({eventsOnThisDay.length})</h3>
-                    {eventsOnThisDay.length === 0 ? (
-                        <p className="text-gray-500 italic">No events scheduled for this day.</p>
-                    ) : (
-                        <div className="space-y-3 max-h-40 overflow-y-auto">
-                            {eventsOnThisDay.map((event, index) => (
-                                <div key={index} className="border-l-4 border-teal-400 pl-3 bg-white p-2 rounded shadow-sm">
-                                    <p className="font-bold text-gray-800">{event.event}</p>
-                                    <p className="text-sm text-gray-600 italic truncate">{event.description}</p>
-                                    {event.startDate !== event.endDate && (
-                                        <p className="text-xs text-teal-600 mt-1">
-                                            Multi-day event: {event.startDate} - {event.endDate}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+        <div className="bg-white/90 px-6 py-4 rounded-lg shadow-lg text-indigo-700 font-semibold">Loading Day Details…</div>
 
-                <div className="flex justify-end mt-6">
-                    <button onClick={onClose} className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150">
-                        Got It
-                    </button>
-                </div>
-            </div>
-        </div>
+      </div>
+
     );
+
+  }
+
+  const displayAttendance = attendanceData || (dayData?.attendance ?? { isPresent: 'N/A', login: 'N/A', logout: 'N/A', date: dateString });
+
+  return (
+
+    <div
+
+      role="dialog"
+
+      aria-modal="true"
+
+      aria-label={`Details for ${displayAttendance?.date || dateString}`}
+
+      className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"
+
+    >
+
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+
+
+
+      <div className="relative w-full max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-0">
+
+        {/* Header */}
+
+        <div className="md:col-span-2 flex items-center justify-between px-5 py-4 border-b">
+
+          <div className="flex items-center gap-3">
+
+            <Calendar className="w-6 h-6 text-indigo-600" />
+
+            <div>
+
+              <h3 className="text-lg font-bold text-indigo-700">Details — {MONTHS ? MONTHS[new Date().getMonth()] : ''} <span className="text-base font-medium text-gray-600"> {displayAttendance?.date || dateString}</span></h3>
+
+              <p className="text-xs text-gray-500">Employee: <span className="font-medium text-gray-700">{displayAttendance?.employeeId || employeeId || "N/A"}</span></p>
+
+            </div>
+
+          </div>
+
+          <button onClick={onClose} aria-label="Close details" className="p-2 rounded-full hover:bg-gray-100">
+
+            <X className="w-5 h-5 text-gray-600" />
+
+          </button>
+
+        </div>
+
+
+
+        {/* Left: Attendance summary */}
+
+        <section className="p-5 border-r md:border-r md:border-gray-100 bg-white">
+
+          <h4 className="text-sm font-semibold text-indigo-600 mb-3">Attendance</h4>
+
+          <div className="space-y-3 text-sm text-gray-700">
+
+           <div className="flex justify-between items-center">
+
+              <span className="text-gray-500">Status</span>
+
+              {(() => {
+
+                const raw = displayAttendance?.isPresent;
+
+                const holidayFlag = displayAttendance?.holiday === true || String(raw || '').toLowerCase().includes('holiday');
+
+                const s = String(raw || '').trim().toLowerCase();
+
+                const isPresent = ['present', 'p', 'yes', 'true', '1'].includes(s);
+
+                const isAbsent = ['absent', 'a', 'no', 'false', '0'].includes(s);
+
+                const badgeClass = holidayFlag
+
+                  ? 'bg-yellow-100 text-yellow-800'
+
+                  : isPresent
+
+                    ? 'bg-green-100 text-green-800'
+
+                    : isAbsent
+
+                      ? 'bg-red-100 text-red-800'
+
+                      : 'bg-gray-100 text-gray-800';
+
+                const label = holidayFlag ? 'Holiday' : (isPresent ? 'Present' : (isAbsent ? 'Absent' : (displayAttendance?.isPresent || 'N/A')));
+
+                return <span className={`ml-2 font-semibold px-2 py-0.5 rounded-full text-xs ${badgeClass}`}>{label}</span>;
+
+              })()}
+
+            </div>
+
+
+
+            <div className="flex justify-between">
+
+              <span className="text-gray-500">Login</span>
+
+              <span className="font-medium">{displayAttendance?.login || 'N/A'}</span>
+
+            </div>
+
+
+
+            <div className="flex justify-between">
+
+              <span className="text-gray-500">Logout</span>
+
+              <span className="font-medium">{displayAttendance?.logout || 'N/A'}</span>
+
+            </div>
+
+
+
+            <div className="flex justify-between">
+
+              <span className="text-gray-500">Effective Hours</span>
+
+              <span className="font-medium">{displayAttendance?.effectiveHour || 'N/A'}</span>
+
+            </div>
+
+
+
+            <div className="flex justify-between">
+
+              <span className="text-gray-500">Mode</span>
+
+              <span className="font-medium">{displayAttendance?.mode || '-'}</span>
+
+            </div>
+
+
+
+            <div className="mt-2">
+
+              <p className="text-xs text-gray-500">Notes</p>
+
+              {error ? (
+
+                <p className="text-xs text-red-600 mt-1">{error}</p>
+
+              ) : (
+
+                <p className="text-xs text-gray-600 mt-1">This view shows converted IST times and any event notes for the selected day.</p>
+
+              )}
+
+            </div>
+
+          </div>
+
+
+
+          <div className="mt-6">
+
+            <button onClick={onClose} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+
+              Got it
+
+            </button>
+
+          </div>
+
+        </section>
+
+
+
+        {/* Right: Events */}
+
+        <aside className="p-5 bg-gray-50">
+
+          <div className="flex items-center justify-between mb-3">
+
+            <h4 className="text-sm font-semibold text-teal-700">Events ({eventsOnThisDay.length})</h4>
+
+            <span className="text-xs text-gray-500">{eventsOnThisDay.length > 0 ? `${Math.min(eventsOnThisDay.length, 99)}` : '—'}</span>
+
+          </div>
+
+
+
+          {eventsOnThisDay.length === 0 ? (
+
+            <div className="flex flex-col items-center justify-center h-full text-center py-6">
+
+              <p className="text-sm text-gray-500 italic">No events scheduled for this day.</p>
+
+              <p className="text-xs text-gray-400 mt-2">You can add events from the calendar.</p>
+
+            </div>
+
+          ) : (
+
+            <ul className="space-y-3 max-h-[260px] overflow-y-auto pr-2">
+
+              {eventsOnThisDay.map((event, idx) => (
+
+                <li key={idx} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+
+                  <div className="flex items-start justify-between gap-3">
+
+                    <div className="flex-1">
+
+                      <div className="flex items-center gap-2">
+
+                        <span className="text-sm font-semibold text-gray-800">{event.event}</span>
+
+                        {event.holiday && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Holiday</span>}
+
+                      </div>
+
+                      <p className="text-xs text-gray-500 mt-1 truncate">{event.description || 'No description'}</p>
+
+                      {event.startDate !== event.endDate && (
+
+                        <p className="text-xs text-teal-600 mt-2">Multi-day: {event.startDate} — {event.endDate}</p>
+
+                      )}
+
+                    </div>
+
+                    <div className="flex-shrink-0 text-xs text-gray-400 ml-3">
+
+                      <span>{event.startDate}</span>
+
+                    </div>
+
+                  </div>
+
+                </li>
+
+              ))}
+
+            </ul>
+
+          )}
+
+        </aside>
+
+      </div>
+
+    </div>
+
+  );
+
+};
+
+// --- Updated EventFormModal (sends mutation to GraphQL) ---
+
+const EventFormModal = ({ onSubmit, selectedDate, onClose }) => {
+
+  const { userData } = useContext(Context);
+
+  const employeeId = userData?.employeeId;
+
+  const [eventTitle, setEventTitle] = useState('');
+
+  const [description, setDescription] = useState('');
+
+  const [startDate, setStartDate] = useState(toIsoDate(selectedDate.start) || '');
+
+  const [endDate, setEndDate] = useState(toIsoDate(selectedDate.end) || '');
+
+  const [isHalfDay, setIsHalfDay] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+
+
+  const MUTATION = `
+
+    mutation AddCalendarEntries($input: CalendarInput!) {
+
+      addCalendarEntries(input: $input) {
+
+        date
+
+        description
+
+        holiday
+
+      }
+
+    }
+
+  `;
+
+
+
+   const handleSubmit = async (e) => {
+
+    e.preventDefault();
+
+    setLoading(true);
+
+    try {
+
+      const input = {
+
+        startDate: startDate, // YYYY-MM-DD
+
+        endDate: endDate,
+
+        event: eventTitle,
+
+        description,
+
+        holiday: !!isHalfDay
+
+        // removed employeeId — backend CalendarInput does not accept this field
+
+      };
+
+      const variables = { input };
+
+      const data = await graphqlRequest(MUTATION, variables);
+
+      const added = data?.addCalendarEntries || [];
+
+      // convert returned dates if needed; send to parent as DD-MM-YYYY
+
+      const newEvents = added.map(a => ({
+
+        event: eventTitle,
+
+        description: a.description || description,
+
+        startDate: toStandardDate(a.date || startDate),
+
+        endDate: toStandardDate(a.date || endDate),
+
+        holiday: a.holiday ?? isHalfDay
+
+      }));
+
+      // notify parent
+
+      onSubmit(newEvents.length ? newEvents[0] : {
+
+        event: eventTitle,
+
+        description,
+
+        startDate: toStandardDate(startDate),
+
+        endDate: toStandardDate(endDate),
+
+        holiday: isHalfDay
+
+      });
+
+      onClose();
+
+    } catch (err) {
+
+      console.error("EventFormModal mutation failed:", err);
+
+      // Prefer GraphQL message if available
+
+      const graphqlMessage = err?.graphql?.length ? err.graphql.map(g => g.message).join("; ") : null;
+
+      const serverMessage = err?.response?.data?.message || err?.message;
+
+      alert("Failed to save event: " + (graphqlMessage || serverMessage || "Unknown error"));
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
+
+
+  return (
+
+    <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
+
+      <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
+
+        <h2 className="text-2xl font-bold text-indigo-700 mb-3 border-b pb-2 flex items-center">
+
+          <Calendar className="mr-2" /> {loading ? 'Saving...' : 'Add/Edit Event'}
+
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+          <div className="mb-2">
+
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="startDate">Start Date</label>
+
+            <input id="startDate" name="startDate" type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+
+          </div>
+
+          <div className="mb-2">
+
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="endDate">End Date</label>
+
+            <input id="endDate" name="endDate" type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+
+          </div>
+
+        </div>
+
+
+
+        <div className="mb-2">
+
+          <label className="block text-gray-700 font-medium mb-2" htmlFor="eventTitle">Event Title</label>
+
+          <input id="eventTitle" name="event" type="text" placeholder="e.g., Team Meeting" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+
+        </div>
+
+
+
+        <div className="flex items-center pt-6 mb-2">
+
+          <input id="holiday" type="checkbox" checked={isHalfDay} onChange={e => setIsHalfDay(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-blue-600" />
+
+          <label htmlFor="holiday" className="ml-2 block text-sm font-medium cursor-pointer">Is Holiday?</label>
+
+        </div>
+
+
+
+        <div className="mb-3">
+
+          <label className="block text-gray-700 font-medium mb-2" htmlFor="description">Description</label>
+
+          <textarea id="description" name="description" rows="3" placeholder="Details about the event..." value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+
+        </div>
+
+
+
+        <div className="flex justify-end space-x-4">
+
+          <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">Cancel</button>
+
+          <button type="submit" className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg">{loading ? 'Submitting...' : 'Submit'}</button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  );
+
 };
 
 
-// --- App Component ---
 
-function App() {
+// --- Updated EventListModal (fetches month range via GraphQL) ---
+
+const EventListModal = ({ currentYear, currentMonth, onClose }) => {
+
+  const { userData } = useContext(Context);
+
+  const employeeId = userData?.employeeId;
+
+  const [eventsList, setEventsList] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState(null);
+
+
+
+  const QUERY = `
+
+     query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
+
+       getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
+
+         date
+
+         description
+
+         holiday
+
+         event
+
+       }
+
+     }
+
+  `;
+
+
+
+  // pagination state (3 rows per page)
+
+  const ROWS_PER_PAGE = 3;
+
+  const [page, setPage] = useState(1);
+
+
+
+  useEffect(() => {
+
+    let mounted = true;
+
+    const fetchMonthlyEvents = async () => {
+
+      setLoading(true);
+
+      try {
+
+        const start = new Date(currentYear, currentMonth, 1);
+
+        const end = new Date(currentYear, currentMonth + 1, 0);
+
+        const startISO = start.toISOString().slice(0, 10);
+
+        const endISO = end.toISOString().slice(0, 10);
+
+        const variables = { employeeId, startDate: startISO, endDate: endISO };
+
+        const data = await graphqlRequest(QUERY, variables);
+
+        if (!mounted) return;
+
+        const fetched = data?.getDetailsBetweenDates || [];
+
+        const mapped = fetched.map(f => ({
+
+          event: f.event || 'Event',
+
+          description: f.description || '',
+
+          startDate: f.startDate || f.date,
+
+          endDate: f.endDate || f.date,
+
+          holiday: f.holiday ?? false
+
+        }));
+
+        setEventsList(mapped);
+
+        setError(null);
+
+        setPage(1); // reset to first page when new data arrives
+
+      } catch (err) {
+
+        console.error("EventListModal fetch failed:", err);
+
+        setError(err.message || "Failed to fetch event list");
+
+        setEventsList([]);
+
+      } finally {
+
+        if (mounted) setLoading(false);
+
+      }
+
+    };
+
+    fetchMonthlyEvents();
+
+    return () => { mounted = false; };
+
+  }, [currentYear, currentMonth, userData?.employeeId]);
+
+
+
+  const totalPages = Math.max(1, Math.ceil(eventsList.length / ROWS_PER_PAGE));
+
+  const startIndex = (page - 1) * ROWS_PER_PAGE;
+
+  const pageItems = eventsList.slice(startIndex, startIndex + ROWS_PER_PAGE);
+
+
+
+  if (loading) {
+
+    return (
+
+      <div className="p-4 absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
+
+        <div className="text-center py-6">
+
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-teal-400 border-t-transparent mx-auto mb-3"></div>
+
+          <div className="text-lg font-semibold text-teal-700">Loading Events...</div>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+
+  return (
+
+    // Non-overlay modal: render inline so it stays inside App layout
+
+    <div className=" absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
+
+      <div className="bg-white max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-4 sm:p-6 relative ">
+
+        <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-4">
+
+          <h2 className="text-2xl font-extrabold text-teal-600 flex items-center">
+
+            <Calendar className="mr-3 w-6 h-6" /> Events for {MONTHS[currentMonth]} {currentYear}
+
+          </h2>
+
+          <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
+
+            <X className="w-6 h-6" />
+
+          </button>
+
+        </div>
+
+
+
+        {error ? (
+
+          <p className="text-red-600 text-center py-6">{error}</p>
+
+        ) : eventsList.length === 0 ? (
+
+          <p className="text-gray-500 text-lg text-center py-10">No events added for this month yet. 🎉</p>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {pageItems.map((event, index) => (
+
+              <div key={`${event.startDate}-${startIndex + index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
+
+                <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
+
+                  <Clock className="inline w-4 h-4 mr-2" />
+
+                  Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
+
+                </p>
+
+                <p className="text-xl font-semibold text-gray-800 mb-2">{event.event}</p>
+
+                <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.description}</p>
+
+              </div>
+
+            ))}
+
+
+
+            {/* pagination controls */}
+
+            <div className="flex items-center justify-between mt-4">
+
+              <div className="text-sm text-gray-600">
+
+                Showing {startIndex + 1} - {Math.min(startIndex + ROWS_PER_PAGE, eventsList.length)} of {eventsList.length}
+
+              </div>
+
+              <div className="flex items-center gap-2">
+
+                <button
+
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+
+                  disabled={page <= 1}
+
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+
+                >
+
+                  Prev
+
+                </button>
+
+                <span className="text-sm">Page {page} / {totalPages}</span>
+
+                <button
+
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+
+                  disabled={page >= totalPages}
+
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+
+                >
+
+                  Next
+
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
+
+
+
+        <div className="flex justify-end mt-6">
+
+          <button onClick={onClose} className="px-6 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-150">
+
+            Close
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
+};
+
+ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
+
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [events, setEvents] = useState([]);
+
+    const [events, setEvents] = useState([]); 
+
     const [selectedDateForForm, setSelectedDateForForm] = useState({ start: null, end: null });
+
     const [showEventForm, setShowEventForm] = useState(false);
+
     const [showEventsList, setShowEventsList] = useState(false);
-    // New State for Day Details Modal
-    const [showDayDetails, setShowDayDetails] = useState(null); // Stores dayData object when open
-    // New State for Edit Mode
+
+    const [showDayDetails, setShowDayDetails] = useState(null);
+
     const [isEditing, setIsEditing] = useState(false);
 
 
+
     const currentYear = currentDate.getFullYear();
+
     const currentMonth = currentDate.getMonth();
 
-    const calendarDays = useMemo(() => {
+
+
+    const getEventsForDate = useCallback((dateString) => {
+
+        const targetDate = new Date(dateString.split('-').reverse().join('-'));
+
+        targetDate.setHours(0, 0, 0, 0);
+
+
+
+        return events.filter(event => {
+
+            const eventStart = new Date(event.startDate.split('-').reverse().join('-'));
+
+            const eventEnd = new Date(event.endDate.split('-').reverse().join('-'));
+
+            
+
+            eventStart.setHours(0, 0, 0, 0);
+
+            eventEnd.setHours(0, 0, 0, 0);
+
+
+
+            return targetDate >= eventStart && targetDate <= eventEnd;
+
+        });
+
+    }, [events]); 
+
+
+
+     const calendarDays = useMemo(() => {
+
         const totalDays = getDaysInMonth(currentYear, currentMonth);
+
         const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+
         const days = [];
+
+
+
         for (let i = 0; i < firstDay; i++) {
+
             days.push({ key: `blank-${i}`, type: 'blank' });
+
         }
+
+
+
         for (let day = 1; day <= totalDays; day++) {
+
             const dateString = `${String(day).padStart(2, '0')}-${String(currentMonth + 1).padStart(2, '0')}-${currentYear}`;
-            // Added login/logout time to attendance data for detail modal
-            const attendance = ATTENDANCE_DATA.find(data => data.date === dateString) || { isPresent: 'N/A', login: 'N/A', logout: 'N/A' };
-            days.push({ date: dateString, type: 'day', day: day, dateString, attendance });
+
+             const matchedRecord = (externalAttendanceRecords || []).find(r => {
+
+                if (!r || !r.date) return false;
+
+
+
+                if (/^\d{2}-\d{2}-\d{4}$/.test(r.date) && r.date === dateString) return true;
+
+
+
+                if (/^\d{4}-\d{2}-\d{2}$/.test(r.date)) {
+
+                    const asDisplay = toStandardDate(r.date); 
+
+                    return asDisplay === dateString;
+
+                }
+
+
+
+                return String(r.date) === dateString;
+
+            });
+
+
+
+            // build attendance object expected by DayBox / DayDetailsModal
+
+            let attendance = { isPresent: 'N/A', login: 'N/A', logout: 'N/A', effectiveHour: 'N/A', date: dateString };
+
+
+
+            if (matchedRecord) {
+
+                attendance = {
+
+                    date: dateString,
+
+                    employeeId: matchedRecord.employeeId ?? matchedRecord.employee_id ?? matchedRecord.employeeId,
+
+                    // prefer normalized display fields if present (loginDisplay/logoutDisplay), otherwise try raw fields
+
+                    login: matchedRecord.loginDisplay ?? matchedRecord.login ?? matchedRecord.login_time ?? 'N/A',
+
+                    logout: matchedRecord.logoutDisplay ?? matchedRecord.logout ?? matchedRecord.logout_time ?? 'N/A',
+
+                    // effective/gross; prefer already formatted HH:MM displays
+
+                    effectiveHour: matchedRecord.effectiveHoursDisplay ?? matchedRecord.effectiveHour ?? (matchedRecord.effectiveMinutes ? formatMinutesToHHMM(matchedRecord.effectiveMinutes) : 'N/A'),
+
+                    isPresent: matchedRecord.isPresent ?? (matchedRecord.attended ? 'Present' : (matchedRecord.holiday ? 'Holiday' : 'Absent')),
+
+                    holiday: matchedRecord.holiday ?? false,
+
+                    mode: matchedRecord.mode ?? null
+
+                };
+
+            }
+
+
+
+            days.push({
+
+                date: dateString,
+
+                type: 'day',
+
+                day: day,
+
+                dateString,
+
+                attendance
+
+            });
+
         }
+
         return days;
-    }, [currentYear, currentMonth]);
+
+    }, [currentYear, currentMonth, externalAttendanceRecords]);
 
     const changeMonth = useCallback((amount) => {
+
         setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + amount, 1));
-        // Close any open modals when changing month
+
         setShowDayDetails(null);
+
         setShowEventForm(false);
+
         setShowEventsList(false);
+
     }, []);
 
-    // Updated handleDayClick logic
+
+
     const handleDayClick = (dayData) => {
+
         if (dayData.type === 'blank') return;
 
+
+
         if (isEditing) {
-            // Edit mode: Open Event Form
+
             setSelectedDateForForm({ start: dayData.dateString, end: dayData.dateString });
+
             setShowEventForm(true);
-            setIsEditing(false); // Optionally turn off edit mode after one click
+
+            setIsEditing(false); 
+
         } else {
-            // Default mode: Open Day Details Modal
-            setShowDayDetails(dayData);
+
+            const eventsOnThisDay = getEventsForDate(dayData.dateString);
+
+            setShowDayDetails({ ...dayData, eventsOnThisDay }); 
+
         }
+
     };
 
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        const event = e.target.event.value;
-        const description = e.target.description.value;
-        const startDate = toStandardDate(e.target.startDate.value);
-        const endDate = toStandardDate(e.target.endDate.value);
 
-        const newEvent = {
-            startDate,
-            endDate,
-            event,
-            description
-        };
+
+    const handleFormSubmit = (newEvent) => {
+
+        // Add event to local state and close the form
 
         setEvents(prevEvents => [...prevEvents, newEvent]);
 
         setShowEventForm(false);
-        e.target.reset();
+
     };
 
-    // Event form component (No change in internal structure, just moved outside App for cleanliness if possible, but kept here per original structure)
-    const EventFormModal = () => (
-        <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"> 
-            <form onSubmit={handleFormSubmit} className="bg-white p-4 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
-                <h2 className="text-2xl font-bold text-indigo-700 mb-3 border-b pb-2 flex items-center">
-                    <Calendar className="mr-2" /> Add/Edit Event
-                </h2>
 
-                <div className="mb-2">
-                    <label className="block text-gray-700 font-medium mb-2" htmlFor="start_date">Start Date</label>
-                    <input
-                        id="startDate"
-                        name="startDate"
-                        type="date"
-                        required
-                        defaultValue={toIsoDate(selectedDateForForm.start)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
-                    />
-                </div>
 
-                <div className="mb-2">
-                    <label className="block text-gray-700 font-medium mb-2" htmlFor="end_date">End Date</label>
-                    <input
-                        id="endDate"
-                        name="endDate"
-                        type="date"
-                        required
-                        defaultValue={toIsoDate(selectedDateForForm.end)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
-                    />
-                </div>
+    // Calendar Day Box Component (Unchanged logic)
 
-                <div className="mb-2">
-                    <label className="block text-gray-700 font-medium mb-2" htmlFor="event">Event Title</label>
-                    <input
-                        id="event"
-                        name="event"
-                        type="text"
-                        required
-                        placeholder="e.g., Team Meeting"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
-                    />
-                </div>
+      const DayBox = ({ dayData }) => {
 
-                <div className="mb-3">
-                    <label className="block text-gray-700 font-medium mb-2" htmlFor="Description">Description</label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="3"
-                        required
-                        placeholder="Details about the event..."
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
-                    ></textarea>
-                </div>
+    if (dayData.type === 'blank') {
 
-                <div className="flex justify-end space-x-4">
-                    <button
-                        type="button"
-                        onClick={() => setShowEventForm(false)}
-                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-150"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md"
-                    >
-                        Submit
-                    </button>
-                </div>
-            </form>
-        </div>
-    );
+        return <div className="p-2 border border-gray-100 bg-gray-50 min-h-[20px] sm:min-h-[40px]"></div>;
 
-    // Event List Component (Updated to use fixed positioning for the modal)
-    const EventListModal = () => {
-        const currentMonthEvents = events
-            .filter(event => {
-                const eventStart = new Date(event.startDate.split('-').reverse().join('-'));
-                const eventEnd = new Date(event.endDate.split('-').reverse().join('-'));
-                const targetMonthStart = new Date(currentYear, currentMonth, 1);
-                const targetMonthEnd = new Date(currentYear, currentMonth + 1, 0);
+    }
 
-                const startsBeforeMonthEnd = eventStart <= targetMonthEnd;
-                const endsAfterMonthStart = eventEnd >= targetMonthStart;
 
-                return startsBeforeMonthEnd && endsAfterMonthStart;
-            })
-            .sort((a, b) => new Date(a.startDate.split('-').reverse().join('-')) - new Date(b.startDate.split('-').reverse().join('-')));
 
-        return (
-            <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"> 
-                <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-6">
-                        <h2 className="text-3xl font-extrabold text-teal-600 flex items-center">
-                            <Calendar className="mr-3 w-7 h-7" /> Events for {MONTHS[currentMonth]} {currentYear}
-                        </h2>
-                        <button onClick={() => setShowEventsList(false)} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
+    const { day, dateString, attendance } = dayData;
 
-                    {currentMonthEvents.length === 0 ? (
-                        <p className="text-gray-500 text-lg text-center py-10">No events added for this month yet. 🎉</p>
-                    ) : (
-                        <div className="space-y-6">
-                            {currentMonthEvents.map((event, index) => (
-                                <div key={`${event.startDate}-${index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
-                                    <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
-                                        <Clock className="inline w-4 h-4 mr-2" />
-                                        Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
-                                    </p>
-                                    <p className="text-xl font-semibold text-gray-800 mb-2">{event.event}</p>
-                                    <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.description}</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
 
-                    <button
-                        onClick={() => setShowEventsList(false)}
-                        className="mt-8 px-6 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-150 shadow-lg float-right"
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        );
-    };
 
-    // Calendar Day Box Component (Updated onClick handler)
-    const DayBox = ({ dayData }) => {
-        if (dayData.type === 'blank') {
-            return <div className="p-2 border border-gray-100 bg-gray-50 min-h-[20px] sm:min-h-[40px]"></div>;
+    // Normalize status so DayBox colors match DayDetailsModal behaviour
+
+    const normalizeStatus = (att) => {
+
+        if (!att) return 'unknown';
+
+        // holiday flag takes precedence
+
+        if (att.holiday === true || String(att.holiday).toLowerCase() === 'true') return 'holiday';
+
+
+
+        const candidates = [att.isPresent, att.status, att.present, att.attended];
+
+        let v = candidates.find(c => typeof c !== 'undefined' && c !== null);
+
+        if (typeof v === 'boolean') return v ? 'present' : 'absent';
+
+        if (v == null) {
+
+            // try effectiveHour/gross heuristics
+
+            const eff = parseEffectiveHours(att.effectiveHour ?? att.effectiveHours ?? '');
+
+            if (eff && eff > 0) return 'present';
+
+            return 'unknown';
+
         }
 
-        const { day, dateString, attendance } = dayData;
-        const isToday = dateString === new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        const s = String(v).trim().toLowerCase();
 
-        const eventsOnThisDay = events.filter(event => {
-            const eventStart = new Date(event.startDate.split('-').reverse().join('-'));
-            const eventEnd = new Date(event.endDate.split('-').reverse().join('-'));
-            const current = new Date(dateString.split('-').reverse().join('-'));
+        if (!s) return 'unknown';
 
-            eventStart.setHours(0, 0, 0, 0);
-            eventEnd.setHours(0, 0, 0, 0);
-            current.setHours(0, 0, 0, 0);
+        if (['present', 'p', 'yes', 'true', '1'].includes(s)) return 'present';
 
-            return current >= eventStart && current <= eventEnd;
-        });
+        if (['absent', 'a', 'no', 'false', '0'].includes(s)) return 'absent';
 
-        const hasEvents = eventsOnThisDay.length > 0;
-        let statusColor = 'bg-white';
-        let statusIcon = null;
+        if (s.includes('holiday') || s === 'h') return 'holiday';
 
-        if (attendance.isPresent === 'Present') {
-            statusColor = 'bg-green-100 border-green-300';
-            statusIcon = <CheckCircle className="w-4 h-4 text-green-600" />;
-        } else if (attendance.isPresent === 'Absent') {
-            statusColor = 'bg-red-100 border-red-300';
-            statusIcon = <AlertTriangle className="w-4 h-4 text-red-600" />;
-        } else if (attendance.isPresent === 'Holiday') {
-            statusColor = 'bg-yellow-100 border-yellow-300';
-            statusIcon = <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-        }
+        return 'unknown';
 
-        const AttendanceHover = () => (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 p-3 bg-white border border-indigo-300 rounded-lg shadow-xl z-10 w-48 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none text-left">
-                <p className="text-xs font-semibold text-indigo-600 border-b pb-1 mb-1">Attendance Info</p>
-                <div className="text-sm space-y-1">
-                    <p>📅 Date: <span className="font-medium">{attendance.date || dateString}</span></p>
-                    <p>⏰ Hour: <span className="font-medium">{attendance.effectiveHour || 'N/A'}</span></p>
-                    <p>✅ Present: <span className={`font-bold ${attendance.isPresent === 'Present' ? 'text-green-600' : 'text-red-600'}`}>
-                        {attendance.isPresent}
-                    </span></p>
-                </div>
-            </div>
-        );
-
-        return (
-            <div
-                className={`relative group p-2 sm:p-3 border border-gray-300 transition-all duration-200 cursor-pointer ${statusColor} ${isToday ? 'ring-4 ring-indigo-400 font-bold' : ''} ${hasEvents ? 'shadow-lg border-2 border-indigo-500' : 'hover:shadow-lg'} min-h-[50px] sm:min-h-[70px] flex flex-col justify-start ${isEditing ? 'cursor-crosshair ring-2 ring-pink-500' : ''}`}
-                // IMPORTANT: Pass the full dayData object
-                onClick={() => handleDayClick(dayData)} 
-            >
-                {/* Date and Icon (Top of Box) */}
-                <div className="flex justify-between items-start mb-1">
-                    <span className={`text-lg sm:text-xl ${isToday ? 'text-indigo-700' : 'text-gray-900'}`}>{day}</span>
-                    <div className='flex-shrink-0'>{statusIcon}</div>
-                </div>
-
-                {/* Event Indicator (Bottom of Box) */}
-                {hasEvents && (
-                    <div className='mt-auto'>
-                           <p className={`text-xs text-indigo-700 font-semibold truncate ${eventsOnThisDay.length > 1 ? 'border-t border-indigo-300 pt-1' : ''}`}>
-                            {eventsOnThisDay.length} {eventsOnThisDay.length > 1 ? 'Events' : 'Event'}
-                        </p>
-                    </div>
-                )}
-                <AttendanceHover />
-            </div>
-        );
     };
+
+
+
+    const eventsOnThisDay = getEventsForDate(dateString);
+
+    const hasEvents = eventsOnThisDay.length > 0;
+
+
+
+    // If any event on this day is marked as holiday, treat the day as holiday
+
+    const hasHolidayEvent = eventsOnThisDay.some(ev => ev && (ev.holiday === true || String(ev.holiday).toLowerCase() === 'true'));
+
+
+
+    // Determine effective status giving precedence to holiday events
+
+    const status = hasHolidayEvent ? 'holiday' : normalizeStatus(attendance);
+
+
+
+    const isToday = dateString === new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+
+
+
+    // map status to Tailwind classes + icon
+
+    let bgClass = 'bg-white';
+
+    let borderClass = 'border-gray-300';
+
+    let icon = null;
+
+    let textClass = 'text-gray-900';
+
+
+
+    if (status === 'present') {
+
+        bgClass = 'bg-green-50 hover:bg-green-200';
+
+        borderClass = 'border-green-500 border-2';
+
+        icon = <CheckCircle className="w-2 h-2 text-green-700" />;
+
+        textClass = 'text-green-800';
+
+    } else if (status === 'absent') {
+
+        bgClass = 'bg-red-50 hover:bg-red-200';
+
+        borderClass = 'border-red-500 border-2';
+
+        icon = <AlertTriangle className="w-2 h-2 text-red-700" />;
+
+        textClass = 'text-red-800';
+
+    } else if (status === 'holiday') {
+
+        bgClass = 'bg-yellow-50 hover:bg-yellow-200';
+
+        borderClass = 'border-yellow-500 border-2';
+
+        icon = <Calendar className="w-2 h-2 text-yellow-700" />;
+
+        textClass = 'text-yellow-800';
+
+    } else {
+
+        bgClass = 'bg-gray-50 hover:bg-gray-100';
+
+        borderClass = hasEvents ? 'border-indigo-500 border-2' : 'border-gray-300';
+
+    }
+
+
+
+    const todayRingClass = isToday ? 'ring-4 ring-indigo-400 font-bold' : '';
+
+    const editingClass = isEditing ? 'cursor-crosshair ring-2 ring-pink-500' : '';
+
+
 
     return (
+
+        <div
+
+            className={`relative group p-2 sm:p-3 border transition-all duration-200 cursor-pointer ${bgClass} ${borderClass} ${todayRingClass} ${editingClass} shadow-sm min-h-[50px] sm:min-h-[70px] flex flex-col justify-start`}
+
+            onClick={() => handleDayClick(dayData)}
+
+        >
+
+            <div className="flex justify-between items-start mb-1">
+
+                <span className={`text-lg sm:text-xl ${isToday ? 'text-indigo-700' : textClass}`}>{day}</span>
+
+                <div className='flex-shrink-0'>{icon}</div>
+
+            </div>
+
+
+
+            {hasEvents && (
+
+                <div className='mt-auto'>
+
+                    <p className={`text-xs text-indigo-700 font-semibold truncate ${eventsOnThisDay.length > 1 ? 'border-t border-indigo-300 pt-1' : ''}`}>
+
+                        {eventsOnThisDay.length} {eventsOnThisDay.length > 1 ? 'Events' : 'Event'}
+
+                    </p>
+
+                </div>
+
+            )}
+
+        </div>
+
+    );
+
+};
+
+
+
+    return (
+
         <div className="p-4 sm:p-8">
+
             <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-4 sm:p-6 relative">
 
-                {/* Modals are fixed position outside the calendar flow */}
-                {showEventForm && <EventFormModal />}
-                {showEventsList && <EventListModal />}
-                {showDayDetails && (
-                    <DayDetailsModal 
-                        dayData={showDayDetails} 
-                        eventsOnThisDay={events.filter(event => {
-                            const eventStart = new Date(event.start_date.split('-').reverse().join('-'));
-                            const eventEnd = new Date(event.end_date.split('-').reverse().join('-'));
-                            const current = new Date(showDayDetails.dateString.split('-').reverse().join('-'));
-                            eventStart.setHours(0, 0, 0, 0);
-                            eventEnd.setHours(0, 0, 0, 0);
-                            current.setHours(0, 0, 0, 0);
-                            return current >= eventStart && current <= eventEnd;
-                        })}
-                        onClose={() => setShowDayDetails(null)} 
+
+
+                {/* Modals are now calling the standalone components */}
+
+                {showEventForm && (
+
+                    <EventFormModal 
+
+                        onSubmit={handleFormSubmit} 
+
+                        selectedDate={selectedDateForForm} 
+
+                        onClose={() => setShowEventForm(false)} 
+
                     />
+
                 )}
 
+                {showEventsList && (
+
+                    <EventListModal 
+
+                        onClose={() => setShowEventsList(false)}
+
+                        currentYear={currentYear}
+
+                        currentMonth={currentMonth}
+
+                        setEvents={setEvents} // Pass setEvents to update App state with fresh data
+
+                    />
+
+                )}
+
+                {showDayDetails && (
+
+                    <DayDetailsModal 
+
+                        dayData={showDayDetails} 
+
+                        eventsOnThisDay={showDayDetails.eventsOnThisDay}
+
+                        onClose={() => setShowDayDetails(null)} 
+
+                    />
+
+                )}
+
+
+
+                {/* Main Content (Blurred when modal is open) */}
+
                 <div className={`${(showEventForm || showEventsList || showDayDetails) ? 'pointer-events-none opacity-50' : ''}`}>
+
                     <div className="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4">
+
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4 sm:mb-0">
+
                             {MONTHS[currentMonth]} <span className="text-indigo-600">{currentYear}</span>
+
                         </h1>
 
+
+
                         <div className="flex space-x-2 sm:space-x-4">
+
                             {/* New Edit Button */}
+
                             <button
+
                                 onClick={() => setIsEditing(prev => !prev)}
+
                                 className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 text-white font-semibold text-sm rounded-lg shadow-md transition duration-150 transform hover:scale-105 ${isEditing ? 'bg-indigo-700 hover:bg-indigo-800 ring-2 ring-pink-300' : 'bg-indigo-500 hover:bg-indigo-600'}`}
+
                             >
+
                                 <Edit className="w-4 h-4 mr-1 sm:mr-2"/> {isEditing ? 'Cancel Edit' : 'Edit '}
+
                             </button>
 
+
+
                             <button
+
                                 onClick={() => setShowEventsList(true)}
+
                                 className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-pink-500 text-white font-semibold text-sm rounded-lg shadow-md hover:bg-pink-600 transition duration-150 transform hover:scale-105"
+
                             >
+
                                 <Calendar className="w-4 h-4 mr-1 sm:mr-2"/> Events
+
+                            </button>
+
+
+
+                            <button
+
+                                onClick={() => changeMonth(-1)}
+
+                                className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
+
+                            >
+
+                                <ChevronLeft className="w-5 h-5" />
+
                             </button>
 
                             <button
-                                onClick={() => changeMonth(-1)}
-                                className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
+
                                 onClick={() => changeMonth(1)}
+
                                 className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
+
                             >
+
                                 <ChevronRight className="w-5 h-5" />
+
                             </button>
+
                         </div>
+
                     </div>
+
+
 
                     {/* Days of Week Header */}
+
                     <div className="grid grid-cols-7 gap-1 mb-1">
+
                         {DAYS_OF_WEEK.map(day => (
+
                             <div key={day} className="text-center font-semibold text-xs sm:text-sm text-indigo-700 p-2 bg-indigo-100 rounded">
+
                                 {day}
+
                             </div>
+
                         ))}
+
                     </div>
+
+
 
                     {/* Calendar Grid */}
+
                     <div className="grid grid-cols-7 gap-1">
+
                         {calendarDays.map((day, index) => (
+
                             <DayBox key={day.key || day.dateString || `day-${index}`} dayData={day} />
+
                         ))}
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
+
     );
+
 }
 
-// export default App; // Uncomment if exporting
-
 const calculateHours = (login, logout) => {
+    // If either missing, return 0
     if (!login || !logout) return 0;
-    const loginDate = new Date(`2000-01-01 ${login}`);
-    const logoutDate = new Date(`2000-01-01 ${logout}`);
-    const diff = (logoutDate - loginDate) / (1000 * 60 * 60);
-    return diff > 0 ? diff : 0;
+
+    // Shift both times by IST offset
+    const shiftedLogin = tryNormalizeTo24(login) ? addMinutesToTimeString(login) : null;
+    const shiftedLogout = tryNormalizeTo24(logout) ? addMinutesToTimeString(logout) : null;
+    if (!shiftedLogin || !shiftedLogout) return 0;
+
+    const loginDate = new Date(`2000-01-01T${shiftedLogin}:00`);
+    const logoutDate = new Date(`2000-01-01T${shiftedLogout}:00`);
+    let diffHours = (logoutDate - loginDate) / (1000 * 60 * 60);
+    if (diffHours < 0) diffHours += 24; // cross-midnight
+    return diffHours > 0 ? diffHours : 0;
 };
 
 const formatClockTime = (date) => {
@@ -550,86 +2048,6 @@ const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }
         ))}
     </div>
 )};
-
-const TrendingUpIcon = ({className }) => (
-    <svg className={`${className}  `} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor" >
-        <motion.polyline
-            points="23 6 13.5 15.5 8.5 10.5 1 18"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeInOut" }}
-        />
-        <motion.polyline
-            points="17 6 23 6 23 12"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeInOut" }}
-        />
-    </svg>
-);
-
-const TrendingDownIcon = ({ className,theme }) => (
-    <svg className={`${className}  ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor" >
-        <motion.polyline
-            points="23 18 13.5 8.5 8.5 13.5 1 6"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeInOut" }}
-        />
-        <motion.polyline
-            points="17 18 23 18 23 12"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeInOut" }}
-        />
-    </svg>
-);
-const backendData = [
-    {
-        id: 1,
-        title: "Total Hours Today",
-        currentValue: 8.5,
-        targetValue: 10,
-        trend: "up",
-        trendPercentage: "5",
-        trendPeriod: "This week",
-        chartData: [{name:"1",hours: 7}, {name:"2",hours: 8}, {name:"3",hours: 7.5}, {name:"4",hours: 9}, {name:"5",hours: 8.5}], 
-        chartColor: "#8884d8", 
-    },
-    {
-        id: 2,
-        title: "Total Hours Week",
-        currentValue: 40.5,
-        targetValue: 50,
-        trend: "up",
-        trendPercentage: "7",
-        trendPeriod: "Last week",
-        chartData: [{name:"1",hours: 30}, {name:"2",hours: 40.5}, {name:"3",hours: 38}, {name:"4",hours: 45}, {name:"5",hours: 40.5}], 
-        chartColor: "#4ADE80", 
-    },
-    {
-        id: 3,
-        title: "Total Hours Month",
-        currentValue: 162,
-        targetValue: 200,
-        trend: "down",
-        trendPercentage: "8",
-        trendPeriod: "Last Month",
-        iconColor: "text-blue-500", 
-    },
-    {
-        id: 4,
-        title: "Overtime this Month",
-        currentValue: 16,
-        targetValue: 28,
-        trend: "down",
-        trendPercentage: "6",
-        trendPeriod: "Last Month",
-        chartData: null,
-        iconColor: "text-pink-500",
-    }
-];
-
 //const dates = ["All", "11", "12", "13", "14", "15"];
 //const rawTableData = [
 //    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
@@ -662,111 +2080,6 @@ const backendData = [
 //    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
 //    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
 //];
-
-
-const ProfessionalStatCard = ({ icon, iconBgColor, iconTextColor, value, description, trend, trendPercentage, trendPeriod, chartData, chartColor }) => {
-    const isUp = trend === 'up';
-    const {theme}=useContext(Context);
-    return (
-        <div className={`rounded-xl p-2 shadow-lg border border-gray-100   ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}  transition-all duration-300 hover:shadow-xl`}>
-            <div className="flex items-start justify-between">
-                <div>
-                    <div className={`w-12 h-12 flex items-center justify-center rounded-lg mb-3 ${iconBgColor} ${iconTextColor} p-2`}>
-                        {React.cloneElement(icon, { className: 'w-8 h-8' })}
-                    </div>
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{description}</p>
-                    <p className={`text-2xl font-bold mt-1  ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                        {value}
-                    </p>
-                </div>
-
-                <div className="w-full h-40">
-                
-                    <ResponsiveContainer width="100%" height="80%">
-                        <LineChart data={chartData} margin={{ top: 50, right: 20, left: 15, bottom: 5 }}>
-
-                            
-                           <XAxis 
-                                dataKey="name" 
-                                stroke={theme === 'dark' ? '#E5E7EB' : '#4B5563'} 
-                                padding={{ left: 10, right: 10 }} 
-                                // axisLine={false} 
-                                // tickLine={false} 
-                            />
-                            
-                            <YAxis 
-                                dataKey="hours" 
-                                stroke={theme === 'dark' ? 'rgba(229, 231, 235, 1)' : '#4B5563'}  hide
-                            />
-                            
-                           
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '5px' }}
-                                labelStyle={{ color: '#fff' }}
-                                formatter={(value, name) => [`${value} hours`, name]}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="hours"
-                                stroke={chartColor}
-                                strokeWidth={2}
-                                dot={{ r: 3, fill: chartColor, strokeWidth: 1 }} 
-                             
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            
-            <div className="flex items-center mt-4">
-                <span className={`text-sm font-semibold ${isUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {isUp ? <TrendingUpIcon className="w-4 h-4 inline mr-1" /> : <TrendingDownIcon className="w-4 h-4 inline mr-1" />}
-                    {trendPercentage}%
-                </span>
-                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                    {trendPeriod} 
-                </span>
-            </div>
-        </div>
-    );
-};
-const ProgressBarCard = ({ currentValue, targetValue, description, icon,iconBgColor, iconColor, trend, trendPercentage, trendPeriod }) => {
-    const {theme}=useContext(Context);
-    const percentage = Math.round((currentValue / targetValue) * 100);
-    const isUp = trend === 'up';
-
-    return (
-        <div className={`rounded-xl p-5 shadow-lg border border-gray-100 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} `}>
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <div className={`w-10 h-10 flex items-center justify-center rounded-full mr-3 ${iconBgColor} `}>
-                        {React.cloneElement(icon, { className: `w-6 h-6 ${iconColor}` })}
-                    </div>
-                    <p className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{description}</p>
-                     <span className={`text-2xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-indigo-200 to-indigo-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                    {currentValue}/{targetValue}
-                </span>
-                </div>
-            </div>
-
-            
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-2">
-                <div
-                    className={`h-2.5 rounded-full`}
-                    style={{ width: `${percentage > 100 ? 100 : percentage}%`, backgroundColor: iconColor.split('-')[1] === 'blue' ? '#3B82F6' : '#10B981' }} // Tailwind రంగులను డైరెక్టుగా ఉపయోగించడం
-                ></div>
-            </div>
-
-            <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
-                <span>{percentage}% Completed</span>
-                <span className={`font-medium ${isUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {isUp ? '↑' : '↓'} {trendPercentage}% {trendPeriod} compare
-                </span>
-            </div>
-        </div>
-    );
-};
 
 // --- Sub-Component for Hours and Schedule Bar ---
 const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGED
@@ -823,22 +2136,23 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
         };
     }, [selectedMetricDate, Data]); // <--- USE selectedMetricDate
     const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
-    const renderScheduleBar = useCallback(() => {
-        if (!Data || selectedMetricDate === "All") // <--- USE selectedMetricDate
-            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
-        const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate); // <--- USE selectedMetricDate
-        if (!dayData)
-            return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedMetricDate}.</motion.div>; // <--- USE selectedMetricDate
-        const timePoints = new Set();
-    if (dayData.Start_time) {
-        timePoints.add(dayData.Start_time);
-    }
-    if (dayData.End_time) {
-        timePoints.add(dayData.End_time);
-    }
+  const renderScheduleBar = useCallback(() => {
+    if (!Data || selectedMetricDate === "All")
+        return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
+
+    const rawDay = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate);
+    if (!rawDay)
+        return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedMetricDate}.</motion.div>;
+
+    // Apply IST offset to schedule times
+    const dayData = applyOffsetToSchedule(rawDay);
+
+    const timePoints = new Set();
+    if (dayData.Start_time) timePoints.add(dayData.Start_time);
+    if (dayData.End_time) timePoints.add(dayData.End_time);
     if (dayData.Break_hour)
         dayData.Break_hour.forEach(b => {
-            if (b.Time) { 
+            if (b.Time) {
                 const [start, end] = b.Time.split(' - ');
                 if (start) timePoints.add(start);
                 if (end) timePoints.add(end);
@@ -925,7 +2239,7 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
                 </div>
             </div>
         );
-    }, [selectedMetricDate, Data, hoveredHour, getHourValue, scaleHour]); // <--- USE selectedMetricDate
+    },   [selectedMetricDate, Data, hoveredHour, getHourValue, scaleHour]); // <--- USE selectedMetricDate
 
     return (
         <motion.div
@@ -992,20 +2306,263 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
         </motion.div>
     );
 };
+ 
+const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => {
+  const { userData, theme } = useContext(Context);
+  const id = employeeId || userData?.employeeId || "ACS00000001";
 
+  const toIso = (d) => d?.toISOString?.().slice(0, 10) || d;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(() => toIso(new Date(startDate || todayIso)));
+  const [row, setRow] = useState(null);
+  const [loadingRows, setLoadingRows] = useState(false);
+  const [errorRows, setErrorRows] = useState(null);
+
+  const addIstToEffective = (effValue) => {
+    try {
+      const baseMinutes = parseEffectiveHours(effValue || '');
+      if (!baseMinutes) return 'N/A';
+      const adjusted = baseMinutes; 
+      return formatMinutesToHHMM(adjusted);
+    } catch {
+      return 'N/A';
+    }
+  };
+  const QUERY = `
+    query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
+      getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
+        date
+        employeeId
+        isPresent
+        login
+        logout
+        effectiveHours
+        grossHours
+        mode
+      }
+    }
+  `;
+  const adjustTimeString = (timeString, dateRef, minutesToAdd) => {
+    if (timeString === "N/A" || !timeString) return timeString;
+    const datetimeStr = `${dateRef} ${timeString}`;
+    const d = new Date(datetimeStr);
+    
+    if (isNaN(d.getTime())) {
+      const [h, m, s] = timeString.split(':').map(Number);
+      const totalMinutes = (h * 60) + (m || 0) + minutesToAdd;
+      const newHours = Math.floor(totalMinutes / 60) % 24;
+      const newMinutes = totalMinutes % 60;
+      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+    }
+    d.setMinutes(d.getMinutes() + minutesToAdd);
+    
+    // Format the new time back to HH:MM format
+    const newHours = String(d.getHours()).padStart(2, '0');
+    const newMinutes = String(d.getMinutes()).padStart(2, '0');
+    
+    return `${newHours}:${newMinutes}`;
+  };
+  useEffect(() => {
+    if (startDate) {
+      const iso = toIso(new Date(startDate));
+      setSelectedDate(iso);
+    }
+  }, [startDate]);
+
+  
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoadingRows(true);
+      try {
+        const s = selectedDate;
+        const e = selectedDate;
+        const variables = { employeeId: id, startDate: s, endDate: e };
+        const data = await graphqlRequest(QUERY, variables); 
+        const items = data?.getDetailsBetweenDates || [];
+
+        if (!mounted) return;
+
+        const item = items[0] || null;
+        if (!item) {
+          setRow(null);
+          setErrorRows("No data for selected day");
+          return;
+        }
+
+        const dateRef = /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : selectedDate;
+
+        const initialLoginTime = item.login ? toISTTimeDisplay(item.login, dateRef) : "N/A";
+        const initialLogoutTime = item.logout ? toISTTimeDisplay(item.logout, dateRef) : "N/A";
+
+        const loginIst = adjustTimeString(initialLoginTime, dateRef, IST_OFFSET_MINUTES);
+        const logoutIst = adjustTimeString(initialLogoutTime, dateRef, IST_OFFSET_MINUTES);
+
+        const effMin = parseEffectiveHours(item.effectiveHours ?? item.effectiveHour) || 0;
+        const grossMin = parseEffectiveHours(item.grossHours) || 0;
+      
+        const effWithIst = effMin ? formatMinutesToHHMM(effMin) : "N/A";
+        const grossWithIst = grossMin ? formatMinutesToHHMM(grossMin) : "N/A";
+
+        setRow({
+          date: item.date || selectedDate,
+          employeeId: item.employeeId,
+          isPresent: item.isPresent,
+        
+          login: loginIst, 
+          logout: logoutIst,
+          effectiveHours: effWithIst,
+          grossHours: grossWithIst,
+          mode: item.mode || "-"
+        });
+        setErrorRows(null);
+      } catch (err) {
+        console.error("ProfileAttendance fetch error:", err);
+        setErrorRows(err?.message || "Failed to load");
+        setRow(null);
+      } finally {
+        if (mounted) setLoadingRows(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, [id, selectedDate]);
+
+  const changeDay = (delta) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + delta);
+    setSelectedDate(d.toISOString().slice(0, 10));
+  };
+  const isDark = theme === 'dark';
+  const containerClasses = isDark 
+    ? 'bg-gray-800 text-white border-gray-700' 
+    : 'bg-white border-gray-200';
+  const buttonClasses = (active = false) => `
+    px-2 py-1 rounded-full text-xs font-medium transition-colors
+    ${isDark 
+      ? (active ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-gray-700 text-gray-300 hover:bg-gray-600') 
+      : (active ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+    }
+  `;
+  const infoCardClasses = `p-4 rounded-xl shadow-md ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`;
+  const statusClasses = (isPresent) => {
+    const status = String(isPresent || '').toUpperCase();
+    if (status === 'TRUE' || status === 'PRESENT') return 'bg-green-100 text-green-700';
+    if (status === 'FALSE' || status === 'ABSENT') return 'bg-red-100 text-red-700';
+    return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300';
+  };
+  
+  const StatusPill = ({ isPresent, mode }) => {
+    const statusText = String(isPresent || 'N/A').toUpperCase();
+    const pillClass = statusClasses(statusText);
+    
+    return (
+      <div className="flex items-center gap-3">
+        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${pillClass}`}>
+          {statusText === 'TRUE' ? 'Present' : statusText === 'FALSE' ? 'Absent' : statusText}
+        </span>
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+          Mode: {mode || 'N/A'}
+        </span>
+      </div>
+    );
+  };
+  
+  // Custom Metric Card component
+  const MetricCard = ({ title, value, icon, isPrimary = false }) => (
+    <div className={`p-2 rounded-xl flex flex-col justify-between h-full border ${isPrimary ? 'border-indigo-400':'border-gray-200'} ${isDark ? 'bg-gray-700' : 'bg-white'}`}>
+      <div className={`text-lg font-bold ${isPrimary ? 'text-indigo-500' : 'text-gray-900 '}`}>{value}</div>
+      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">{title}</div>
+    </div>
+  );
+  
+  return (
+    <div className={`p-2 rounded-2xl shadow-xl ${containerClasses}`}>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2">
+        {/* Navigation Buttons */}
+        {/*<div className="flex items-center gap-2">
+          <button onClick={() => changeDay(-1)} className={buttonClasses()}>
+           Prev
+          </button>
+          
+          <span className="text-sm font-semibold px-3 text-indigo-500 whitespace-nowrap">
+            {selectedDate}
+          </span>
+          
+          <button onClick={() => changeDay(1)} className={buttonClasses()}>
+            Next 
+          </button>
+          <button onClick={() => setSelectedDate(todayIso)} className={buttonClasses(selectedDate === todayIso)}>
+            Today
+          </button>
+        </div>*/}
+      </div>
+      {loadingRows ? (
+        <div className="text-center p-3">
+          <p className="text-sm text-indigo-400 animate-pulse">Loading attendance data...</p>
+        </div>
+      ) : errorRows ? (
+        <div className="text-center p-3 bg-red-50 rounded-lg">
+          <p className="text-sm text-red-600 font-medium">⚠️ Error: {errorRows}</p>
+        </div>
+      ) : !row ? (
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <p className="text-sm text-gray-500 dark:text-gray-400">No attendance record found for {selectedDate}.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="p-2 flex items-center justify-between">
+            <StatusPill isPresent={row.isPresent} mode={row.mode} />
+            <div className="flex items-center gap-2">
+             <button onClick={() => changeDay(-1)} className={buttonClasses()}>
+           Prev
+          </button>          
+          <span className="text-sm font-semibold px-2 text-indigo-500 whitespace-nowrap">
+            {selectedDate}
+          </span>
+          <button onClick={() => changeDay(1)} className={buttonClasses()}>
+            Next 
+          </button>
+          <button onClick={() => setSelectedDate(todayIso)} className={buttonClasses(selectedDate === todayIso)}>
+            Today
+          </button>
+          </div>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
+            <MetricCard 
+              title="First Login" 
+              value={row.login} 
+              isPrimary={!!(row.login && row.login !== 'N/A')}
+            />
+            <MetricCard 
+              title="Last Logout" 
+              value={row.logout} 
+              isPrimary={!!(row.logout && row.logout !== 'N/A')}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 // --- Main Attendance Dashboard Component ---
-const AttendancesDashboard = ({ onBack, currentUser }) => {
+const AttendancesDashboard = ({ onBack,currentUser , employeeId, startDate = null, endDate = null } ) => {
     const { empID } = useParams();
     const { userData,theme } = useContext(Context);
+    const id = employeeId || userData?.employeeId || "ACS00000001";
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-     const [sidebarView, setSidebarView] = useState(null);
+    const [sidebarView, setSidebarView] = useState(null);
     const [showAttendanceReports, setShowAttendanceReports] = useState(false);
-    const [showMainDashboard,setShowMainDashboard]=useState(false);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [selectedMonth, setSelectedMonth] = useState("All");
     const [selectedDate, setSelectedDate] = useState("All");
     const [selectedMetricDate, setSelectedMetricDate] = useState("All");
+    const [startDateFilter, setStartDateFilter] = useState('');
+    const [endDateFilter, setEndDateFilter] = useState('');
     const isMobile = useMediaQuery('(max-width:768px)');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [startTime, setStartTime] = useState(null);
@@ -1014,12 +2571,147 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [grossHours, setGrossHours] = useState(0);
     const [effectiveHours, setEffectiveHours] = useState(0);
+    const [todayAttendance, setTodayAttendance] = useState(null); 
+    const [loadingTodayAttendance, setLoadingTodayAttendance] = useState(false);
+    const [lastFetchedAt, setLastFetchedAt] = useState(() => Date.now());
     const [showModeConfirm, setShowModeConfirm] = useState(false);
     const [isLogoutConfirmed, setIsLogoutConfirmed] = useState(false);
-    const [sortOption, setSortOption] = useState("Recently added");
-    const [isLoading,setIsLoading]=useState(false);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentAttendanceId, setCurrentAttendanceId] = useState(() => {
+        try {
+            return localStorage.getItem('currentAttendanceId') || null;
+        } catch (e) {
+            return null;
+        }
+    });
+    const [sortBy, setSortBy] = useState('Recantly Added');
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(12);
+    const toIso = (d) => d?.toISOString?.().slice(0, 10) || d;
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const adjustTimeString = (timeString, dateRef, minutesToAdd) => {
+        if (timeString === "N/A" || !timeString) return timeString;
+        return timeString; 
+    };
+    const QUERY_TODAY_ATTENDANCE = `
+        query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
+            getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
+                date
+                effectiveHours
+                grossHours
+            }
+        }
+    `;
+    useEffect(() => {
+    if (isLoggedIn) {
+        const timerId = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timerId);
+    }
+}, [isLoggedIn]);   
+    useEffect(() => {
+        let mounted = true;
+        const loadTodayData = async () => {
+            setLoadingTodayAttendance(true);
+            try {
+                const s = todayIso;
+                const e = todayIso;
+                const variables = { employeeId: id, startDate: s, endDate: e };
+                const data = await graphqlRequest(QUERY_TODAY_ATTENDANCE, variables);
+                const items = data?.getDetailsBetweenDates || [];
+                if (!mounted) return;
+                const item = items[0] || null;
+                setTodayAttendance(item)
+                setLastFetchedAt(Date.now()); 
+                if (item) {
+                    const effMin = parseEffectiveHours(item.effectiveHours ?? item.effectiveHour) || 0;
+                    const grossMin = parseEffectiveHours(item.grossHours) || 0;
+                    setEffectiveHours(effMin * 60); 
+                    setGrossHours(grossMin * 60); 
+                } else {
+                    setEffectiveHours(0);
+                    setGrossHours(0);
+                }
+            } catch (err) {
+                // ... (Error handling)
+            } finally {
+                if (mounted) setLoadingTodayAttendance(false);
+            }
+        };
+        loadTodayData();
+        return () => { mounted = false; };
+    }, [id]);
+    const formatSecondsToHHMMSS = (secs) => {
+        const s = Math.max(0, Math.floor(Number(secs) || 0));
+        const hh = Math.floor(s / 3600);
+        const mm = Math.floor((s % 3600) / 60);
+        const ss = s % 60;
+        return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+    };
+    const elapsedTimeSeconds = isLoggedIn 
+    ? Math.floor(((currentTime.getTime() - lastFetchedAt) / 1000)) 
+    : 0;
+const displayedEffectiveSeconds = isLoggedIn 
+    ? (Number(effectiveHours) || 0) + elapsedTimeSeconds
+    : (Number(effectiveHours) || 0);
+
+const displayedGrossSeconds = isLoggedIn 
+    ? (Number(grossHours) || 0) + elapsedTimeSeconds
+    : (Number(grossHours) || 0);
+
+const grossHoursFormatted = formatSecondsToHHMMSS(displayedGrossSeconds);
+const effectiveHoursFormatted = formatSecondsToHHMMSS(displayedEffectiveSeconds);
+const buildRange = () => {
+   const today = new Date();
+   let year = today.getFullYear();
+   let monthIndex = today.getMonth();
+  let startISO = startDateFilter || "";
+  let endISO = endDateFilter || "";
+  const clampToToday = (iso) => {
+    if (!iso) return "";
+    try {
+      if (iso > todayISO) return todayISO;
+      return iso;
+    } catch {
+      return "";
+    }
+  };
+
+  startISO = clampToToday(startISO);
+  endISO = clampToToday(endISO);
+
+  if (startISO && !endISO) {
+    endISO = todayISO;
+  }
+  if (!startISO && endISO) {
+    const parts = endISO.split('-');
+    const startOfMonth = new Date(parts[0], Number(parts[1]) - 1, 1);
+    startISO = startOfMonth.toISOString().slice(0, 10);
+  }
+  if (!startISO && !endISO) {
+     if (selectedMonth) {
+        const m = new Date(`${selectedMonth} 1, ${year}`);
+        if (!isNaN(m)) monthIndex = m.getMonth();
+     }
+     const start = new Date(year, monthIndex, 1);
+     const end = new Date(year, monthIndex + 1, 0);
+     startISO = start.toISOString().slice(0, 10);
+     endISO = end.toISOString().slice(0, 10);
+  }
+  if (!startISO) startISO = endISO || todayISO;
+  if (!endISO) endISO = startISO || todayISO;
+  if (startISO > endISO) {
+    const tmp = startISO; startISO = endISO; endISO = tmp;
+  }
+  if (endISO > todayISO) endISO = todayISO;
+  if (startISO > todayISO) startISO = todayISO;
+
+  return { startISO, endISO };
+};
     const datesPerPage = 5;
     const [loggedInUserProfile, setLoggedInUserProfile] = useState({
         image: null,
@@ -1046,8 +2738,6 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
      const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
               const [matchedArray,setMatchedArray]=useState(null);
                const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
-        
-        
                useEffect(()=>{
                  let fetchedData=async()=>{
                          let response = await authApi.get(`role-access/${LoggedUserRole}`);
@@ -1062,62 +2752,137 @@ const AttendancesDashboard = ({ onBack, currentUser }) => {
                      setMatchedArray(loggedPermissiondata?.permissions)
                  }
                  },[loggedPermissiondata]);
-                 console.log(matchedArray);
+                 //console.log(matchedArray);
     
         const [hasAccess,setHasAccess]=useState([])
             useEffect(()=>{
                 setHasAccess(userData?.permissions)
             },[userData])
-            console.log("permissions from userdata:",hasAccess)
+           // console.log("permissions from userdata:",hasAccess)
     
 
+    const [refreshGrossFormatted, setRefreshGrossFormatted] = useState('00:00:00');
+    const [refreshEffectiveFormatted, setRefreshEffectiveFormatted] = useState('00:00:00');        
     const [barChartData, setBarChartData] = useState([]);
     const [rawPieData, setRawPieData] = useState([]);
     const [dates, setDates] = useState([]);
     const [Data, setData] = useState([])
     const [cardData, setCardData] = useState([]);
-    const[startIndex,setStartIndex]=useState(null)
-    const ATTENDANCE_ID_STORAGE_KEY = 'currentAttendanceId';
-    const CLOCKIN_TIME_STORAGE_KEY = `attendanceClockInTime_${userData?.employeeId}`;
-    const [profileData, setProfileData] = useState({
-       mode: "",
-       shift: "",
-       onTime: 0,
-       avgWorkingHours: 0,
-       loginTime: null,
-       logoutTime: null,
-       grossTimeDay: "",
-       effectiveTimeDay: "",
-     });
-const SHIFT_OPTIONS = ["Day Shift", "Night Shift"];
-const updateProfileField = async (field, value) => {
-    const today = new Date();
-    const day = today.getDate();
-    const month = today.getMonth() + 1;
-    const year = today.getFullYear();
-    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
+    const[startIndex,setStartIndex]=useState(0)
+    //const ATTENDANCE_ID_STORAGE_KEY = 'currentAttendanceId';
+    const attendanceStorageKey = `attendanceId_${id}`;
+    //const CLOCKIN_TIME_STORAGE_KEY = `attendanceClockInTime_${userData?.employeeId}`;
+    const toIsoWithIST = (timeValue) => {
+    if (!timeValue) return null;
     try {
-        await dashboardApi.get(url, { [field]: value });
-        setProfileData(prev => ({ ...prev, [field]: value }));
-    } catch (error) {
-        console.error(`Error updating ${field}:`, error);
+        if (typeof timeValue === 'string' && /T/.test(timeValue)) {
+            const d = new Date(timeValue);
+            if (isNaN(d)) return null;
+            const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+            return shifted.toISOString();
+        }
+        if (/^\d{4}-\d{2}-\d{2}/.test(timeValue)) {
+            const d = new Date(timeValue);
+            if (!isNaN(d)) {
+                const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+                return shifted.toISOString();
+            }
+        }
+        const hhmm = timeValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+        if (hhmm) {
+            const today = new Date();
+            const d = new Date(today.getFullYear(), today.getMonth(), today.getDate(), Number(hhmm[1]), Number(hhmm[2]), 0);
+            const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+            return shifted.toISOString();
+        }
+        const parsed = new Date(timeValue);
+        if (!isNaN(parsed)) {
+            const shifted = new Date(parsed.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+            return shifted.toISOString();
+        }
+    } catch (err) {
+        console.error("toIsoWithIST parse error:", err, timeValue);
     }
+    return null;
 };
-const handleShiftChange = (e) => {
-    const selectedShift = e.target.value;
-    updateProfileField("shift", selectedShift);
-};
-    const [currentAttendanceId, setCurrentAttendanceId] = useState(() => {
-    return localStorage.getItem(ATTENDANCE_ID_STORAGE_KEY) || null;
-   });
-   useEffect(() => {
-    const storedAttendanceId = localStorage.getItem(ATTENDANCE_ID_STORAGE_KEY);
-    
-    if (storedAttendanceId) {
-        setCurrentAttendanceId(storedAttendanceId);
-        // setIsLoggedIn(true); 
-    }
-}, []);
+useEffect(() => {
+   if (!dates || dates.length <= 1) return; 
+   if (selectedMetricDate && selectedMetricDate !== "All") return;
+
+   const firstDate = dates.find(d => d !== "All");
+   if (!firstDate) return;
+
+   const pieItem = rawPieData.find(item => item.Date === firstDate);
+   const barItem = barChartData.find(item => item.Date === firstDate);
+   const dateToSet = pieItem || barItem ? `${(pieItem||barItem).Date}-${(pieItem||barItem).Month}-${(pieItem||barItem).Year}` : firstDate;
+   setSelectedMetricDate(dateToSet);
+   const idx = dates.indexOf(firstDate);
+   if (idx >= 0) {
+     const pageStart = Math.floor(idx / datesPerPage) * datesPerPage;
+     setStartIndex(pageStart);
+   }
+ }, [dates, rawPieData, barChartData]); 
+//    const [profileData, setProfileData] = useState({
+//      mode: "",
+//      shift: "",
+//      onTime: 0,
+//      avgWorkingHours: 0,
+//      loginTime: null,
+//      logoutTime: null,
+//      grossTimeDay: "",
+//      effectiveTimeDay: "",
+//    });
+//const updateProfileField = async (field, value) => {
+//    try {
+//        const today = new Date();
+//        const day = today.getDate();
+//        const month = today.getMonth() + 1;
+//        const year = today.getFullYear();
+//        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
+//        await dashboardApi.put(url, { [field]: value }, { headers: { 'Content-Type': 'application/json' } });
+//        setProfileData(prev => ({ ...prev, [field]: value }));
+//    } catch (error) {
+//        console.error(`Error updating ${field}:`, error);
+//    }
+//};
+//useEffect(() => {
+//    let mounted = true;
+//    const fetchProfile = async () => {
+//        if (!userData?.employeeId) return;
+//        try {
+//            const today = new Date();
+//            const day = today.getDate();
+//            const month = today.getMonth() + 1;
+//            const year = today.getFullYear();
+//            const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
+//            const resp = await dashboardApi.get(url);
+//            if (!mounted) return;
+//            const data = resp?.data || {};
+//            const rawLogin = data.loginTime ?? data.login_time ?? data.login ?? null;
+//            const rawLogout = data.logoutTime ?? data.logout_time ?? data.logout ?? null;
+//
+//            const loginIso = toIsoWithIST(rawLogin);
+//            const logoutIso = toIsoWithIST(rawLogout);
+//
+//            setProfileData({
+//                mode: data.mode ?? data.profileMode ?? "",
+//                shift: data.shift ?? data.shiftName ?? "",
+//                onTime: data.onTime ?? data.on_time ?? 0,
+//                avgWorkingHours: data.avgWorkingHours ?? data.avg_working_hours ?? 0,
+//                loginTime: loginIso,   // ISO string adjusted with +5:30
+//                logoutTime: logoutIso, // ISO string adjusted with +5:30
+//                grossTimeDay: data.grossTimeDay ?? data.gross_time_day ?? "",
+//                effectiveTimeDay: data.effectiveTimeDay ?? data.effective_time_day ?? "",
+//            });
+//        } catch (err) {
+//            console.error("Failed to fetch profile data:", err);
+//        }
+//    };
+//
+//    fetchProfile();
+//    return () => { mounted = false; };
+//}, [userData?.employeeId]);
+
 
     // 1. Bar Chart Data
     useEffect(() => {
@@ -1132,7 +2897,7 @@ const handleShiftChange = (e) => {
 
     // 2. Attendance Table Data
     useEffect(() => {
-        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/attendance?page=0&size=10`;
+        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/attendance?page=0&size=${rowsPerPageOptions[rowsPerPageOptions.length - 1]}`;
         dashboardApi.get(url).then(response => {
             setRawTableData(response.data);
             const dates = ["All", ...response.map(item => item.Date)];
@@ -1185,17 +2950,45 @@ const handleShiftChange = (e) => {
        });
      }, [userData]);
   
-useEffect(() => {
-    const CLOCKIN_TIME_STORAGE_KEY = `attendanceClockInTime_${userData?.employeeId}`;
-    const savedClockIn = localStorage.getItem(CLOCKIN_TIME_STORAGE_KEY);
-    if (savedClockIn) {
+
+   useEffect(() => {
+  if (!id) return;
+  try {
+    const effKey = `today_effective_seconds_${id}`;
+    const grKey = `today_gross_seconds_${id}`;
+    const tsKey = `today_lastFetchedAt_${id}`;
+
+    const savedEff = Number(localStorage.getItem(effKey));
+    const savedGr = Number(localStorage.getItem(grKey));
+    const savedTs = Number(localStorage.getItem(tsKey));
+
+    if (!Number.isNaN(savedEff) && savedEff >= 0) setEffectiveHours(savedEff);
+    if (!Number.isNaN(savedGr) && savedGr >= 0) setGrossHours(savedGr);
+    if (!Number.isNaN(savedTs) && savedTs > 0) setLastFetchedAt(savedTs);
+  } catch (err) {
+    // fail silently
+    console.error("Restore today counters failed:", err);
+  }
+}, [id]);  
+   useEffect(() => {
+    try {
+      const storedId = localStorage.getItem(attendanceStorageKey);
+      if (storedId) {
+        // keep per-employee attendanceId across reloads so UI stays in "Clock Out" state
+        setCurrentAttendanceId(storedId);
         setIsLoggedIn(true);
-        setStartTime(new Date(savedClockIn));
-    } else {
+        setStartTime(null);
+      } else {
+        setCurrentAttendanceId(null);
         setIsLoggedIn(false);
         setStartTime(null);
+      }
+    } catch (err) {
+      setCurrentAttendanceId(null);
+      setIsLoggedIn(false);
+      setStartTime(null);
     }
-}, [userData?.employeeId]);
+  }, [attendanceStorageKey, id]);
     useEffect(() => {
     // 1. Gross/Effective Hours Timer Logic:
     if (isLoggedIn && startTime) {
@@ -1224,55 +3017,70 @@ useEffect(() => {
     if (!clockTimerRef.current) {
         clockTimerRef.current = setInterval(() => setCurrentTime(new Date()), 1000);
     }
+     const employeeId = userData?.employeeId;
+     const attendanceId = currentAttendanceId;
+    let lastHiddenAt = 0;
+    const HIDDEN_THRESHOLD_MS = 30 * 1000; // 30s threshold - adjust if needed
 
-    // 3. Browser/Screen State Management (NEW LOGIC)
-    const employeeId = userData?.employeeId;
-    const attendanceId = currentAttendanceId;
-
-    const handleDisconnect = async () => {
-        if (isLoggedIn && employeeId && attendanceId) {
-            console.log("Disconnecting due to visibility change or unload...");
-            const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/disconnected`;
-            try {
-                await fetch(apiUrl, { method: 'PUT', headers: { 'accept': '*/*' } });
-                console.log("Disconnected endpoint hit successfully.");
-            } catch (error) {
-                console.error("Disconnected API call failed:", error);
+    const handleDisconnect = async (useBeacon = false) => {
+        if (!isLoggedIn || !employeeId || !attendanceId) return;
+        const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/disconnected`;
+        try {
+            if (useBeacon && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+                const payload = JSON.stringify({ timestamp: new Date().toISOString() });
+                const blob = new Blob([payload], { type: "application/json" });
+                const ok = navigator.sendBeacon(apiUrl, blob);
+                console.log("Disconnected (beacon) sent:", ok, apiUrl);
+            } else {
+                await fetch(apiUrl, { method: "PUT", headers: { accept: "*/*", "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ timestamp: new Date().toISOString() }) });
+                console.log("Disconnected (fetch) done:", apiUrl);
             }
+        } catch (err) {
+            console.error("Disconnected API call failed:", err);
         }
     };
 
     const handleConnect = async () => {
-        if (isLoggedIn && employeeId && attendanceId) {
-            console.log("Connecting due to visibility change...");
-            const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/connected`;
-            try {
-                await fetch(apiUrl, { method: 'PUT', headers: { 'accept': '*/*' } });
-                console.log("Connected endpoint hit successfully.");
-            } catch (error) {
-                console.error("Connected API call failed:", error);
-            }
+        if (!isLoggedIn || !employeeId || !attendanceId) return;
+        const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/connected`;
+        try {
+            // simple PUT is fine when page is active
+            const resp = await fetch(apiUrl, { method: "PUT", headers: { accept: "*/*" } });
+            if (!resp.ok) console.warn("Connected endpoint returned non-OK:", resp.status);
+            else console.log("Connected endpoint hit:", apiUrl);
+        } catch (err) {
+            console.error("Connected API call failed:", err);
         }
     };
     const handleVisibilityChange = () => {
-        if (document.visibilityState === 'hidden') {
-            if (isLoggedIn) {
-                console.log("User moved to another tab/window is minimized. Only showing alert.");
+        if (!isLoggedIn) return;
+
+        if (document.visibilityState === "hidden") {
+            lastHiddenAt = Date.now();
+            console.log("Document hidden at", new Date(lastHiddenAt).toISOString());
+        } else if (document.visibilityState === "visible") {
+            const now = Date.now();
+            const delta = lastHiddenAt ? (now - lastHiddenAt) : Infinity;
+            console.log("Document visible again, hidden delta ms:", delta);
+            if (lastHiddenAt && delta > HIDDEN_THRESHOLD_MS) {
+                handleConnect();
             }
-        } else if (document.visibilityState === 'visible') {
-            handleConnect();
+            lastHiddenAt = 0;
         }
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    const handleBeforeUnload = (event) => {
-        if (isLoggedIn) {
-            console.log("Disconnecting due to beforeunload (closing tab/window or refresh)...");
-            handleDisconnect(); 
-        }
+    const onPageHide = () => {
+        if (!isLoggedIn) return;
+        handleDisconnect(true);
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => { 
+    const onBeforeUnload = (e) => {
+        if (!isLoggedIn) return;
+        handleDisconnect(true);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", onPageHide); 
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
@@ -1281,78 +3089,136 @@ useEffect(() => {
             clearInterval(clockTimerRef.current);
             clockTimerRef.current = null;
         }
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('beforeunload', handleBeforeUnload); // Cleanup లో add చేశాను
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("pagehide", onPageHide);
+        window.removeEventListener("beforeunload", onBeforeUnload);
     };
-}, [isLoggedIn, startTime, currentAttendanceId]);
-   
-    const handleModeChange = (newMode) => {  updateProfileField("mode", newMode); setMode(newMode); setShowModeConfirm(false); };
+}, [isLoggedIn, startTime, currentAttendanceId]); // Depend on currentAttendanceId
+   const updateProfileField = async (field, value) => {
+  try {
+    if (!userData?.employeeId) return null;
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.getMonth() + 1;
+    const year = today.getFullYear();
+    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
+    const resp = await dashboardApi.put(url, { [field]: value }, { headers: { 'Content-Type': 'application/json' } });
+    return resp?.data ?? null;
+  } catch (err) {
+    console.error(`Error updating profile field "${field}":`, err);
+    return null;
+  }
+};
+    const handleModeChange = async (newMode) => {
+    try {
+        setShowModeConfirm(false);
+        const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/${newMode}/clock-in`;
+        await dashboardApi.put(apiUrl, null, { headers: { 'Accept': '*/*' } });
+        await updateProfileField("mode", newMode);
+        setMode(newMode);
+    } catch (err) {
+        console.error("Failed to change mode:", err);
+        alert("Unable to change mode. Please try again.");
+    }
+};
 const handleRefresh = () => {
     const currentState = isLoggedIn;
-    setIsLoggedIn(false); 
-    setTimeout(() => setIsLoggedIn(currentState), 0); 
-};   
+    setIsLoggedIn(false);
+    const elapsedSinceFetch = Math.max(
+      0,
+      Math.floor(((currentTime?.getTime?.() || Date.now()) - (lastFetchedAt || Date.now())) / 1000)
+    );
+    const displayedEffective = isLoggedIn ? Number(effectiveHours) || 0 : (Number(effectiveHours) || 0) + elapsedSinceFetch;
+    const displayedGross = isLoggedIn ? Number(grossHours) || 0 : (Number(grossHours) || 0) + elapsedSinceFetch;
+    try {
+      const ef = formatSecondsToHHMMSS(displayedEffective);
+      const gr = formatSecondsToHHMMSS(displayedGross);
+      setRefreshEffectiveFormatted(ef);
+      setRefreshGrossFormatted(gr);
+    } catch (err) {
+      setRefreshEffectiveFormatted('00:00:00');
+      setRefreshGrossFormatted('00:00:00');
+    }
+    setTimeout(() => {
+      setIsLoggedIn(currentState);
+      setLastFetchedAt(Date.now());
+    }, 0);
+}; 
 const ATTENDANCE_RECORDS_KEY = `attendanceRecords_${userData?.employeeId}`;
-const handleLogin = () => {
-    const now = new Date();
-    setIsLoggedIn(true);
-    setStartTime(now);
-    setEndTime(null);
-    setGrossHours(0);
-    setEffectiveHours(0);
+const handleLogin = async () => {
+  const now = new Date();
+  setIsLoggedIn(true);
+  setStartTime(now);
+  setEndTime(null);
+  setGrossHours(0);
+  setEffectiveHours(0);
 
-   localStorage.setItem(CLOCKIN_TIME_STORAGE_KEY, now.toISOString());
+  const newRecord = {
+    employee_id: id,
+    date: now.toLocaleDateString(),
+    login_time: formatClockTime(now),
+    logout_time: null,
+    login_hours: 0,
+    barWidth: "0%",
+  };
 
-    const newRecord = {
-        employee_id: userData?.employeeId,
-        date: now.toLocaleDateString(),
-        login_time: formatClockTime(now),
-        logout_time: null,
-        login_hours: 0,
-        barWidth: "0%",
-    };
-
+  try {
     const records = JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || [];
     localStorage.setItem(ATTENDANCE_RECORDS_KEY, JSON.stringify([...records, newRecord]));
     setRawTableData(prev => [...prev, newRecord]);
-    const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/${mode}/clock-in`;
 
-    fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-            'accept': '*/*',
-        },
-    })
-    .then(response => {
-         if (!response.ok) {
-            if (response.status === 500) {
-                 return response.text().then(errorText => {
-                     throw new Error(`HTTP error! Status: ${response.status}. Server response: ${errorText || 'No detailed server message available.'}`);
-                 });
-            }
-            
-            throw new Error(`HTTP error! status: ${response.status}.`);
-        }
-        return response.json(); 
-    })
-       
-    .then(data => {
-        console.log("Clock-in successful:", data);
-        const attendanceIdFromResponse = data.attendanceId; 
-        if (attendanceIdFromResponse) {
-            setCurrentAttendanceId(attendanceIdFromResponse);
-            localStorage.setItem(ATTENDANCE_ID_STORAGE_KEY, attendanceIdFromResponse);
-            console.log(`Stored Attendance ID: ${attendanceIdFromResponse}`);
-        } else {
-            console.warn("Attendance ID not received in clock-in response.");
-        }
-    })
-    .catch(error => {
-        console.error("Clock-in failed:", error);
-        // Revert login state if API fails
-        setIsLoggedIn(false); 
-        setStartTime(null);
+    const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${id}/${mode}/clock-in`;
+
+    // Read Bearer token from localStorage (Application Auth / Bearer)
+    const token = (() => {
+      try { return localStorage.getItem('accessToken'); } catch { return null; }
+    })();
+
+    const headers = { accept: '*/*' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'PUT',
+      headers,
     });
+
+    if (!response.ok) {
+      const serverText = await response.text().catch(() => '');
+      // if unauthorized, clear local clock-in state
+      if (response.status === 401) {
+        setIsLoggedIn(false);
+        setStartTime(null);
+        throw new Error(`Unauthorized (401). Server response: ${serverText}`);
+      }
+      if (response.status === 500) {
+        throw new Error(`HTTP error! Status: ${response.status}. Server response: ${serverText || 'No detailed server message available.'}`);
+      }
+      throw new Error(`HTTP error! status: ${response.status}. ${serverText}`);
+    }
+
+    const data = await response.json().catch(() => null);
+    console.log("Clock-in successful:", data);
+
+    // store attendance id if returned
+    const attendanceIdFromResponse = data?.attendanceId || data?.id || data?.attendance_id;
+    if (attendanceIdFromResponse) {
+      setCurrentAttendanceId(attendanceIdFromResponse);
+      localStorage.setItem(attendanceStorageKey, attendanceIdFromResponse);
+      console.log(`Stored Attendance ID (${attendanceStorageKey}): ${attendanceIdFromResponse}`);
+    } else {
+      console.warn("Attendance ID not received in clock-in response.");
+    }
+
+    // If backend returns/refreshes an access token, persist it (common keys: accessToken, token, jwt)
+    const returnedToken = data?.accessToken || data?.token || data?.jwt;
+    if (returnedToken) {
+      try { localStorage.setItem('accessToken', returnedToken); console.log('Stored accessToken from server'); } catch (e) { console.warn('Failed to store accessToken:', e); }
+    }
+  } catch (error) {
+    console.error("Clock-in failed:", error);
+    setIsLoggedIn(false);
+    setStartTime(null);
+  }
 };
 const handleShowAttendances = () => {
         setSidebarView('attendances');
@@ -1396,32 +3262,33 @@ const handleConfirmLogout = async () => {
         console.error('Error during clock-out API call:', error);
         alert('A network error occurred while clocking out. You have been logged out locally, but the server record might be missing.');
     } finally {
-        // NEW: Clear Attendance ID from state and local storage on logout
-        setCurrentAttendanceId(null);
-        localStorage.removeItem(ATTENDANCE_ID_STORAGE_KEY);
-        localStorage.removeItem(CLOCKIN_TIME_STORAGE_KEY);
+            // NEW: Clear Attendance ID from state and local storage on logout
+            setCurrentAttendanceId(null);
+           localStorage.removeItem(attendanceStorageKey);
+           // no clock-in timestamp was stored — nothing to remove
 
-       setIsLoggedIn(false);
-    setIsLogoutConfirmed(false);
-    setEndTime(now);
+           setIsLoggedIn(false);
+        setIsLogoutConfirmed(false);
+        setEndTime(now);
 
     setRawTableData(prev => {
         if (prev.length === 0) return prev;
         const lastIndex = prev.length - 1;
         const lastRecord = prev[lastIndex];
         if (
-            lastRecord.date === now.toLocaleDateString() &&
-            !lastRecord.logout_time
-        ) {
-            const loginDate = new Date(`2000-01-01 ${lastRecord.login_time}`);
-            const logoutDate = now;
-            const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
-            const updatedRecord = {
-                ...lastRecord,
-                logout_time: formatClockTime(now),
-                login_hours: loginHours > 0 ? loginHours : 0,
-                barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
-            };
+    lastRecord.date === now.toLocaleDateString() &&
+    !lastRecord.logout_time
+) {
+    const shiftedLoginStr = addMinutesToTimeString(lastRecord.login_time);
+    const loginDate = new Date(`2000-01-01T${shiftedLoginStr}:00`);
+    const logoutDate = now;
+    const loginHours = ((logoutDate - loginDate) / (1000 * 60 * 60));
+    const updatedRecord = {
+        ...lastRecord,
+        logout_time: formatClockTime(now),
+        login_hours: loginHours > 0 ? loginHours : 0,
+        barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
+    };
 
             // Update localStorage
             const records = JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || [];
@@ -1447,35 +3314,220 @@ useEffect(() => {
 }, [userData?.employeeId]);
 
 const handleCancel = () => { setIsLogoutConfirmed(false); };
-const formatHours = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
-};
-const grossHoursFormatted = formatHours(grossHours);
-const effectiveHoursFormatted = formatHours(effectiveHours);
+   useEffect(() => {
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const employeeId = userData?.employeeId || "ACS00000001";
+        const { startISO, endISO } = buildRange();
+        const variables = { employeeId, startDate: startISO, endDate: endISO };
+        // Use graphqlRequest so Authorization header (Bearer token) is applied and errors are normalized
+        const payload = await graphqlRequest(DETAILS_QUERY, variables);
+        if (cancelled) return;
+        const data = payload?.getDetailsBetweenDates || [];
+
+        const normalized = data.map((item) => {
+          // dateForTime: prefer YYYY-MM-DD
+          const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
+            ? item.date
+            : (() => {
+                const parts = (item.date || '').split('-');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                return new Date().toISOString().slice(0, 10);
+              })();
+
+          // more robust UTC parsing with fallbacks
+          const toUtcDate = (raw) => {
+            if (!raw) return null;
+            const s = String(raw).trim();
+            if (!s || /^(-|n\/a|null)$/i.test(s)) return null;
+
+            // direct ISO / datetime with timezone
+            if (/\d{4}-\d{2}-\d{2}T/.test(s) || /[Zz]|[+\-]\d{2}:\d{2}$/.test(s)) {
+              const pd = new Date(s);
+              return isNaN(pd.getTime()) ? null : pd;
+            }
+
+            // try Date.parse (handles many formats incl. "YYYY-MM-DD hh:mm" or "MMM dd yyyy hh:mm")
+            const parsedByJS = new Date(s);
+            if (!isNaN(parsedByJS.getTime())) return parsedByJS;
+
+            // try plain time "HH:mm" or "HH:mm:ss" normalized -> treat as UTC on dateForTime
+            const hhmm = tryNormalizeTo24(s);
+            if (hhmm) {
+              const pd = new Date(`${dateForTime}T${hhmm}:00Z`);
+              return isNaN(pd.getTime()) ? null : pd;
+            }
+
+            // try "date time" with space -> convert to ISO-ish and append Z if missing timezone
+            const spaceSep = s.replace(' ', 'T');
+            if (/\d{4}-\d{2}-\d{2}T/.test(spaceSep)) {
+              const maybe = spaceSep.endsWith('Z') || /[+\-]\d{2}:\d{2}$/.test(spaceSep) ? new Date(spaceSep) : new Date(`${spaceSep}Z`);
+              if (!isNaN(maybe.getTime())) return maybe;
+            }
+
+            // final fallback: return null (we will display raw string)
+            return null;
+          };
+
+          // format Date (UTC) into India time string
+          const formatDateToIST = (dateObj) => {
+            if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
+            return new Intl.DateTimeFormat('en-IN', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+              timeZone: 'Asia/Kolkata'
+            }).format(dateObj);
+          };
+
+           const loginRaw = item.login ?? item.loginTime ?? null;
+           const logoutRaw = item.logout ?? item.logoutTime ?? null;
+
+          const loginUtc = loginRaw ? toUtcDate(loginRaw) : null;
+          const logoutUtc = logoutRaw ? toUtcDate(logoutRaw) : null;
+
+          // --- CHANGED: explicitly add IST offset (+5:30) to parsed UTC dates and format ---
+         const shiftAndFormat = (utcDate, rawValue) => {
+             if (!rawValue) return 'N/A';
+             try {
+               // try using already-parsed UTC date if available
+               let base = (utcDate && !isNaN(utcDate.getTime())) ? utcDate : null;
+ 
+               // fallback: if raw is HH:mm build a UTC instant for dateForTime
+               if (!base) {
+                 const hh = tryNormalizeTo24(String(rawValue));
+                 if (hh) {
+                   base = new Date(`${dateForTime}T${hh}:00Z`);
+                 }
+               }
+ 
+               // final parse fallback
+               if (!base) {
+                 const maybe = new Date(String(rawValue));
+                 if (!isNaN(maybe.getTime())) base = maybe;
+               }
+ 
+               if (!base || isNaN(base.getTime())) return String(rawValue);
+ 
+               // add IST offset (+5:30) explicitly
+               const istMs = base.getTime() + IST_OFFSET_MINUTES * 60 * 1000;
+               const istDate = new Date(istMs);
+ 
+               // Format the shifted instant as a 12-hour India-style time
+               return new Intl.DateTimeFormat('en-IN', {
+                 hour: '2-digit',
+                 minute: '2-digit',
+                 hour12: true,
+                 timeZone: 'UTC' // we've already shifted, present as UTC to avoid double TZ conversion
+               }).format(istDate);
+             } catch {
+               return String(rawValue);
+             }
+           };
+ 
+
+          const loginDisplay = shiftAndFormat(loginUtc, loginRaw);
+          const logoutDisplay = shiftAndFormat(logoutUtc, logoutRaw);
+
+          // compute duration using the parsed UTC Date objects (difference is timezone-safe)
+          let totalDurationMinutes = 0;
+          if (loginUtc && logoutUtc && !isNaN(loginUtc.getTime()) && !isNaN(logoutUtc.getTime())) {
+            totalDurationMinutes = Math.max(0, Math.floor((logoutUtc.getTime() - loginUtc.getTime()) / (1000 * 60)));
+          } else {
+            const eff = parseEffectiveHours(item.effectiveHours || '');
+            const gross = parseEffectiveHours(item.grossHours || '');
+            totalDurationMinutes = eff || gross || 0;
+          }
+          const effectiveMinutes = parseEffectiveHours(item.effectiveHours || '');
+          const grossMinutes = parseEffectiveHours(item.grossHours || '');
+
+          return {
+            ...item,
+            date: item.date,
+            loginDisplay,
+            logoutDisplay,
+            effectiveHoursDisplay: toHHMMDisplay(item.effectiveHours),
+            grossHoursDisplay: toHHMMDisplay(item.grossHours),
+            totalDurationMinutes,
+            totalDurationHHMM: totalDurationMinutes > 0 ? formatMinutesToHHMM(totalDurationMinutes) : 'N/A',
+            effectiveMinutes,
+            grossMinutes,
+            attended: (() => {
+              const v = item.isPresent;
+              if (v == null) return false;
+              const s = String(v).toLowerCase();
+              return ['present', 'p', 'yes', 'true', '1'].includes(s);
+            })()
+          };
+        });
+
+        setAttendanceRecords(normalized);
+        setPage(1);
+      } catch (err) {
+        console.error("Attendance fetch failed:", err);
+        // Prefer GraphQL-level messages if present
+        const graphqlMessage = err?.graphql?.length ? err.graphql.map(g => g.message).join('; ') : null;
+        const serverMessage = err?.response?.data?.message || err?.message;
+        if (err?.response?.status === 401) {
+          setError('Unauthorized (401). Please login to continue.');
+        } else {
+          setError(graphqlMessage || serverMessage || 'Failed to load attendance');
+        }
+         setAttendanceRecords([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };
+  }, [selectedMonth, userData, startDateFilter, endDateFilter]);
+
 const maxHoursInSeconds = 8 * 3600;
     const progress = (grossHours / maxHoursInSeconds) * 100;
-    const finalAttendanceData = useMemo(() => {
-        let data = [...rawTableData];
-        if (selectedMonth !== "All" && selectedMonth) {
-            const selectedMonthIndex = MONTHS.indexOf(selectedMonth) - 1;
-            data = data.filter((entry) => new Date(entry.date).getMonth() === selectedMonthIndex);
-        }
-        switch (sortOption) {
-            case "Ascending": data.sort((a, b) => new Date(a.date) - new Date(b.date)); break;
-            case "Descending": data.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
-            case "Last Month": const lastMonth = new Date(); lastMonth.setMonth(lastMonth.getMonth() - 1); data = data.filter(item => new Date(item.date) >= lastMonth); break;
-            case "Last 7 Days": const last7Days = new Date(); last7Days.setDate(last7Days.getDate() - 7); data = data.filter(item => new Date(item.date) >= last7Days); break;
-            default: data.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
-        }
-        const formattedData = data.map(entry => ({ ...entry, login_hours: calculateHours(entry.login_time, entry.logout_time), barWidth: `${(calculateHours(entry.login_time, entry.logout_time) / STANDARD_WORKDAY_HOURS) * 100}%` }));
-        const totalPages = Math.ceil(formattedData.length / rowsPerPage);
-        const paginatedData = formattedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-        return { paginatedData, totalPages, totalCount: formattedData.length };
-    }, [rawTableData, selectedMonth, sortOption, rowsPerPage, currentPage, MONTHS]);
-    const { paginatedData, totalPages } = finalAttendanceData;
+    const filteredSorted = useMemo(() => {
+       let result = [...attendanceRecords];
+   
+       switch (sortBy) {
+         case 'Ascending':
+           result.sort((a, b) => (a.employeeId || '').localeCompare(b.employeeId || ''));
+           break;
+         case 'Descending':
+           result.sort((a, b) => (b.employeeId || '').localeCompare(a.employeeId || ''));
+           break;
+         case 'Last 7 days':
+           result.sort((a, b) => new Date(b.date) - new Date(a.date));
+           break;
+         case 'Recantly Added':
+         default:
+           result.sort((a, b) => new Date(b.date) - new Date(a.date));
+           break;
+       }
+   
+       return result;
+     }, [attendanceRecords, sortBy]);
+   
+     const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
+     const pageItems = filteredSorted.slice((page - 1) * pageSize, page * pageSize);
+   
+   
+     // totals for filtered set (sum of totalDuration and gross)
+     const totals = useMemo(() => {
+       const sumDur = filteredSorted.reduce((acc, r) => acc + (r.totalDurationMinutes || 0), 0);
+       const sumGross = filteredSorted.reduce((acc, r) => acc + (r.grossMinutes || 0), 0);
+       return {
+         totalDurationMinutes: sumDur,
+         totalDurationHHMM: sumDur > 0 ? formatMinutesToHHMM(sumDur) : '00:00',
+         totalGrossMinutes: sumGross,
+         totalGrossHHMM: sumGross > 0 ? formatMinutesToHHMM(sumGross) : '00:00'
+       };
+     }, [filteredSorted]);
+   
+     // months array for select
+     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const filteredPieData = useMemo(() => {
         const dataToProcess = selectedDate === "All" ? rawPieData : rawPieData.filter((d) => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
         const totalWorking = dataToProcess.reduce((sum, row) => sum + row.Working_hour, 0);
@@ -1487,64 +3539,63 @@ const maxHoursInSeconds = 8 * 3600;
         return selectedDate === "All" ? barChartData : barChartData.filter((d) => `${d.Date}-${d.Month}-${d.Year}` === selectedDate);
     }, [selectedDate, barChartData]);
 
-    if (isLoading) {
-        return (
-          <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
-            <div className="min-h-screen flex items-center justify-center px-4">
-              <div className="text-center">
-                <div className="relative">
-                  <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <IoPersonOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-                  </div>
-                </div>
-                <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading Employee Attendance</h2>
-                <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Discovering your colleagues...</p>
-              </div>
-            </div>
-          </div>
-        );
-      }
+    if (loading) {
+         return (
+           <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
+             <div className="min-h-screen flex items-center justify-center px-4">
+               <div className="text-center">
+                 <div className="relative">
+                   <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                   <div className="absolute inset-0 flex items-center justify-center">
+                     <IoPersonOutline className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+                   </div>
+                 </div>
+                 <h2 className={`text-lg sm:text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Loading Employee Attendance</h2>
+                 <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Discovering your colleagues...</p>
+               </div>
+             </div>
+           </div>
+         );
 
+     }
     return (
         <div className={`min-h-screen ${theme === 'dark'? 'bg-gray-900': 'bg-gray-50'} font-sans text-gray-800 relative`}>
             {/* Sidebar */}
              <AnimatePresence>
             {(matchedArray || []).includes("VIEW_ATTENDANCE_REPORTS") && !isSidebarOpen && (
-              
-                    <motion.button onClick={() => setIsSidebarOpen(true)}  className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
-                        aria-label="Open Sidebar"
-                         >
-                        <ChevronLeft  />
-                    </motion.button>
-                    )}
-                    {showSidebar && isSidebarOpen && (
-                    <motion.div
-                                            key="sidebar"
-                                            className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
-                                        >
-                        <motion.h3
-                             className={`text-lg font-bold mt-20  cursor-pointer mb-1 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
-                             onClick={handleShowAttendance}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />Total Employee Attendance 
-                        </motion.h3>  
-                       <motion.h3
-                            className={`text-lg font-bold   cursor-pointer mb-4 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
-                            onClick={handleShowAttendanceReport}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
-                        </motion.h3> 
-                        
-                        <button onClick={() => setIsSidebarOpen(false)} className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
-                            aria-label="Close Sidebar">
-                            <ChevronRight />
-                        </button>
-                    </motion.div>                   
+                <motion.button onClick={() => setIsSidebarOpen(true)} className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
+                    aria-label="Open Sidebar"
+                >
+                    <ChevronLeft />
+                </motion.button>
+            )}
+              {showSidebar && isSidebarOpen && (
+              <motion.div
+                    key="sidebar"
+                    className={`fixed inset-y-0 right-0 w-80 ${theme==='dark'?'bg-gray-900':'bg-stone-100'} shadow-xl z-40 p-4 flex flex-col`}
+                >
+                  <motion.h3
+                       className={`text-lg font-bold mt-20  cursor-pointer mb-1 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
+                       onClick={handleShowAttendance}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                  >
+                      <LiaFileAlt className="w-5 h-5 inline-block mr-2"  />Total Employee Attendance 
+                  </motion.h3>  
+                 <motion.h3
+                      className={`text-lg font-bold   cursor-pointer mb-4 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
+                      onClick={handleShowAttendanceReport}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                  >
+                      <ChartBarIcon className="w-5 h-5 inline-block mr-2" /> Attendance Reports
+                  </motion.h3> 
+                  
+                  <button onClick={() => setIsSidebarOpen(false)} className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors z-50"
+                      aria-label="Close Sidebar">
+                      <ChevronRight />
+                  </button>
+              </motion.div>                   
               
             )}
             </AnimatePresence>
@@ -1744,21 +3795,25 @@ const maxHoursInSeconds = 8 * 3600;
 
             </div>
             <div className={`grid grid-cols-1 md:grid-cols-1`}>
+              <ProfileAttendance/>
     {/* Other Stats */}
-    <div className={`flex flex-col items-start p-3 rounded-xl   shadow w-full ${theme==='dark'?'bg-gray-800':'bg-gradient-to-br from-orange-50 via-white to-orange-100'}`}>
+    {/*<div className={`flex flex-col items-start p-3 rounded-xl   shadow w-full ${theme==='dark'?'bg-gray-800':'bg-gradient-to-br from-orange-50 via-white to-orange-100'}`}>
         <span className="text-lg font-semibold text-green-500 mb-1">Attendance % (Ontime)</span>
         <span className={`font-bold text-lg md:text-xl mb-2 ${profileData.onTime >= 75 ? 'text-green-500' : profileData.onTime >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>{profileData.onTime || 0}%</span>
         <div  className="flex flex-col items-start">
-            <div className={`grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 w-full`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-2 w-full`}>
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>shift: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.shift || '-'}</span></span>
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Login: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.loginTime ? new Date(profileData.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>   
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Avg. Working Hours: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.avgWorkingHours || 0}</span></span>
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Mode: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.mode || '-'}</span></span> 
         <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Logout: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.logoutTime ? new Date(profileData.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Gross Time (Day): <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.grossTimeDay || '-'}</span></span>
+        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Effective Time (Day): <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.effectiveTimeDay || '-'}</span></span>
+
         </div>
 
         </div>
-    </div>
+    </div>*/}
 </div>
             
             <div className="relative my-2 w-full flex justify-center">
@@ -1807,22 +3862,41 @@ const maxHoursInSeconds = 8 * 3600;
                         {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                     </motion.p>
                 </div>
+               {/*<div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                Today's Metrics: {todayIso}
+            </div>*/}
+            
+            {loadingTodayAttendance ? (
+                <p className="text-sm text-indigo-400 animate-pulse">Fetching today's hours...</p>
+            ) : (
                 <div className="grid grid-cols-2 gap-3 w-full max-w-xs md:max-w-md">
+                    {/* EFFECTIVE HOURS */}
                     <motion.div
-                        className={`rounded-xl p-2 shadow-sm text-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-indigo-500/50' : 'bg-indigo-50 border border-indigo-200'}`}
+                        className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-indigo-500/50' : 'bg-indigo-50 border border-indigo-200'}`}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <p className={`text-xs font-small mb-1 uppercase ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>Gross Time (Day)</p>
-                        <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-purple-700'}`}>{grossHoursFormatted}</p>
+                        <div className="text-xl font-bold text-indigo-500">
+                            {effectiveHoursFormatted}
+                        </div>
+                        <div className="text-xs font-semibold mt-1 text-gray-500">
+                            Effective Hours
+                        </div>
                     </motion.div>
+                    
+                    {/* GROSS HOURS */}
                     <motion.div
-                        className={`rounded-xl p-2 shadow-sm text-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-pink-500/50' : 'bg-pink-50 border border-pink-200'}`}
+                        className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-pink-500/50' : 'bg-pink-50 border border-pink-200'}`}
                         transition={{ type: "spring", stiffness: 300 }}
                     >
-                        <p className={`text-xs font-small mb-1 uppercase ${theme === 'dark' ? 'text-pink-400' : 'text-pink-600'}`}>Effective Time (Day)</p>
-                        <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-orange-700'}`}>{effectiveHoursFormatted}</p>
+                        <div className="text-xl font-bold text-pink-500">
+                            {grossHoursFormatted}
+                        </div>
+                        <div className="text-xs font-semibold mt-1 text-gray-500">
+                            Gross Hours
+                        </div>
                     </motion.div>
-                </div>
+                </div> 
+            )}
             </div>
 
             {/* Action Buttons - Reduced size and centered for mobile */}
@@ -1890,61 +3964,7 @@ const maxHoursInSeconds = 8 * 3600;
             </div>
         </div>
     </motion.div>
-                                {/* Stat Cards Grid */}
-                      { /*  <motion.div
-                            className="p-6 h-full flex flex-col justify-between"
-                            initial={{ opacity: 0, x: 50 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: 0.4 }}
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6 h-full">
-                                {backendData.map((data) => {
-                                    let icon, iconBgColor, iconTextColor;
-                
-                                    switch (data.title) {
-                                        case "Total Hours Today": icon = <ClockIcon />; iconBgColor = "bg-purple-100"; iconTextColor = "text-purple-500"; break;
-                                        case "Total Hours Week": icon = <CalendarDaysIcon />; iconBgColor = "bg-teal-100"; iconTextColor = "text-teal-500"; break;
-                                        case "Total Hours Month": icon = <BriefcaseIcon />; iconBgColor = "bg-blue-100"; iconTextColor = "text-blue-500"; break;
-                                        case "Overtime this Month": icon = <TrendingUpIcon />; iconBgColor = "bg-pink-100"; iconTextColor = "text-pink-500"; break;
-                                        default: icon = <BriefcaseIcon />; iconBgColor = "bg-gray-100"; iconTextColor = "text-gray-900";
-                                    }
-                
-                               
-                                    if (data.title === "Total Hours Month" || data.title === "Overtime this Month") {
-                                        return (
-                                            <ProgressBarCard
-                                                key={data.id}
-                                                icon={icon}
-                                                iconTextColor={iconTextColor}
-                                                iconColor={data.iconColor}
-                                                currentValue={data.currentValue}
-                                                targetValue={data.targetValue}
-                                                description={data.title}
-                                                trend={data.trend}
-                                                trendPercentage={data.trendPercentage}
-                                                trendPeriod={data.trendPeriod}
-                                            />
-                                        );
-                                    }
-                                    return (
-                                        <ProfessionalStatCard
-                                            key={data.id}
-                                            icon={icon}
-                                            iconBgColor={iconBgColor}
-                                            iconTextColor={iconTextColor}
-                                            value={`${data.currentValue}/${data.targetValue}`}
-                                            description={data.title}
-                                            trend={data.trend}
-                                            trendPercentage={data.trendPercentage}
-                                            trendPeriod={data.trendPeriod}
-                                            chartData={data.chartData}
-                                            chartColor={data.chartColor}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        </motion.div> */}
-                        <App/>
+                        <App attendanceRecords={attendanceRecords} />
                     </div>
                     
 
@@ -2057,124 +4077,156 @@ const maxHoursInSeconds = 8 * 3600;
                                 </motion.section>
                             </div>
                             {/* Attendance Records Table */}
-                            <motion.div
-    className={`p-4 sm:p-6 rounded-xl border border-gray-200 shadow-lg mb-8 ${theme === 'dark' ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-gray-200'}`} // Enhanced dark mode border/bg
-    initial={{ opacity: 0, y: 50 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay: 1 }}
->
-    <section>
-        <div className="flex justify-between items-start sm:items-center mb-5 flex-wrap gap-4"> 
-            <h2 className={`text-xl sm:text-2xl font-extrabold ${theme === 'dark' ? 'bg-gradient-to-br from-green-300 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-indigo-600 mr-2" /> Attendance Records
-            </h2>
-            <div className="flex flex-wrap items-center gap-4">
-                <div className="relative">
-                   <label htmlFor="month-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Select Month:</label>
-                    <select 
-                        id="month-select"
-                        value={selectedMonth} 
-                        onChange={(e) => { 
-                            setSelectedMonth(e.target.value); 
-                            setCurrentPage(1); 
-                        }} 
-                        className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
-                                   ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
-                    >
-                        {MONTHS.map((month) => (
-                            <option key={month} value={month}>{month}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="relative">
-                    <label htmlFor="sort-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Sort by:</label>
-                    <select 
-                        id="sort-select"
-                        value={sortOption} 
-                        onChange={(e) => { 
-                            setSortOption(e.target.value); 
-                            setCurrentPage(1); 
-                        }} 
-                        className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
-                                   ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
-                    >
-                        {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-md"> 
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className={`${theme === 'dark' ? 'bg-gray-700 text-indigo-400' : 'bg-indigo-50 text-indigo-700'}`}>
-                    <tr>
-                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>
-                            <div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div>
-                        </th>
-                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>
-                            <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div>
-                        </th>
-                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>
-                            <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div>
-                        </th>
-                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Login Hours</th>
-                        <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Daily Progress</th>
-                    </tr>
-                </thead>
-               <tbody className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'} divide-y divide-gray-200`}>
-    <AnimatePresence>
-        {paginatedData.length > 0 ? (
-            paginatedData
-                .filter(entry => entry && entry.date) 
-                .map((entry, idx) => (
-                    <motion.tr
-                        key={idx}
-                        className={`${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-indigo-50'} transition-colors duration-150`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: idx * 0.05 }}
-                    >
-                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>{entry.date}</td>
-                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">-</span>}</td>
-                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}><span className="font-bold">{entry.login_hours.toFixed(2)}</span> hrs</td>
-                        <td className={`px-4 py-3 text-sm whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
-                            <div className="relative rounded-full h-4 w-full bg-gray-200 overflow-hidden">
-                                <motion.div
-                                    className="bg-indigo-400 h-full rounded-full"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: entry.barWidth }}
-                                    transition={{ duration: 0.8, ease: "easeOut" }}
-                                />
-                                <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">{entry.login_hours.toFixed(1)}h</span>
-                            </div>
-                        </td>
-                    </motion.tr>
-                ))
-        ) : (
-            <tr><td colSpan="5" className={`px-4 py-3 text-center whitespace-nowrap ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} italic`}>No attendance records found for the selected options.</td></tr>
-        )}
-    </AnimatePresence>
-</tbody>
-            </table>
-        </div>
+                           <div className={`p-4 sm:p-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
+      <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2">
+         Employee Attendance Tracker
+      </h1>
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
         
-        {/* Pagination Controls (Refined spacing) */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between"> 
-            <div className="flex items-center gap-2 mb-4 sm:mb-0">
-                <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Rows per page:</span>
-                <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`border px-2 py-1 rounded-md text-sm cursor-pointer ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}>
-                    {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                </select>
-            </div>
-            <nav className="flex items-center gap-2">
-                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`px-4 py-2 text-sm font-medium border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}>Previous</button>
-                <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
-                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`px-4 py-2 text-sm font-medium border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}>Next</button>
-            </nav>
+       
+        <div className="flex flex-wrap gap-4">
+          {/* Leave dropdown removed as requested */}
+
+          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
+             <option value="">Select Month: All</option>
+             {months.map(m => <option key={m} value={m}>{m}</option>)}
+           </select>
+            <div className="flex items-center gap-2">
+  <label className="text-sm">From</label>
+  <input
+    type="date"
+    value={startDateFilter}
+    max={todayISO}
+    onChange={e => setStartDateFilter(e.target.value)}
+    className="p-2 border border-gray-300 rounded-lg text-sm bg-white"
+  />
+  <label className="text-sm">To</label>
+  <input
+    type="date"
+    value={endDateFilter}
+    max={todayISO}
+    onChange={e => setEndDateFilter(e.target.value)}
+    className="p-2 border border-gray-300 rounded-lg text-sm bg-white"
+  />
+
+  <button
+    onClick={() => { setPage(1); /* triggers fetch via effect dependencies */ }}
+    className="px-3 py-1 bg-indigo-600 text-white rounded-lg"
+  >
+    Apply
+  </button>
+  <button
+    onClick={() => { setStartDateFilter(''); setEndDateFilter(''); setPage(1); }}
+    className="px-3 py-1 bg-gray-200 rounded-lg"
+  >
+    Clear
+  </button>
+
+  {/* Quick-set buttons for convenience */}
+  {/*<button
+    title="Set start date to today"
+    onClick={() => { setStartDateFilter(todayISO); setPage(1); }}
+    className="px-2 py-1 bg-gray-100 rounded-lg text-sm border border-gray-300"
+  >
+    st date
+  </button>
+  <button
+    title="Set end date to today"
+    onClick={() => { setEndDateFilter(todayISO); setPage(1); }}
+    className="px-2 py-1 bg-gray-100 rounded-lg text-sm border border-gray-300"
+  >
+    en date
+  </button>*/}
+</div>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
+            <option value="Recantly Added">Sorted By: Recently Added</option>
+            <option value="Ascending">EmployeeId: Ascending</option>
+            <option value="Descending">EmployeeId: Descending</option>
+            <option value="This Month">Date: This Month</option>
+            <option value="Last Month">Date: Last Month</option>
+            <option value="Last 7 days">Date: Last 7 days</option>
+          </select>
+
+          <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="p-2 border border-gray-300 rounded-lg text-sm bg-white">
+            <option value={6}>6 / page</option>
+            <option value={12}>12 / page</option>
+            <option value={24}>24 / page</option>
+          </select>
         </div>
-    </section>
-</motion.div>
+      </div>
+
+      <div className="overflow-x-auto shadow-2xl rounded-xl">
+        <table className="min-w-full bg-white border-collapse">
+          <thead className="bg-indigo-600 text-white sticky top-0">
+            <tr>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Date</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Mode</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Login</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Logout</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Total Duration</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Effective Hours</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Status</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 sm:hidden">Employee Details</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={10} className="text-center py-8">Loading…</td></tr>
+            ) : error ? (
+              <tr><td colSpan={10} className="text-center py-8 text-red-600">{error}</td></tr>
+            ) : pageItems.length === 0 ? (
+              <tr><td colSpan={10} className="text-center py-6 text-gray-500">No attendance records found for the selected filters.</td></tr>
+            ) : pageItems.map(record => {
+              const totalDurationHHMM = record.totalDurationHHMM || 'N/A';
+              const effectiveHoursHHMM = record.effectiveHoursDisplay || 'N/A';
+              const grossHoursHHMM = record.grossHoursDisplay || 'N/A';
+              const statusColor = record.attended ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+
+              return (
+                <tr key={`${record.employeeId}-${record.date}`} className={`border-b transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
+                  <td className={`py-4 px-4 text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} hidden sm:table-cell`}>{record.date}</td>
+                  <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${record.mode === 'Office' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>{record.mode}</span>
+                  </td>
+                  <td className={`py-4 px-4 text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} hidden sm:table-cell`}>{record.loginDisplay}</td>
+                  <td className={`py-4 px-4 text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} hidden sm:table-cell`}>{record.logoutDisplay}</td>
+                  <td className={`py-4 px-4 text-sm font-semibold ${theme === 'dark' ? ' text-indigo-500' : 'text-indigo-700'} hidden sm:table-cell`}>{totalDurationHHMM}</td>
+                  <td className={`py-4 px-4 text-sm font-bold ${theme === 'dark' ? ' text-green-300' : 'text-green-700'} hidden sm:table-cell`}>{effectiveHoursHHMM}</td>
+                  <td className="py-4 px-4 text-sm hidden sm:table-cell">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor}`}>{record.attended ? 'Present' : 'Absent'}</span>
+                  </td>
+
+                  <td className="py-4 px-4 sm:hidden">
+                    <div className="flex flex-col space-y-1">
+                      <span className={`text-base font-bold ${theme === 'dark' ? ' text-indigo-300' : 'text-indigo-700'}`}>{record.employeeId}</span>
+                      <span className={`text-sm ${theme === 'dark' ? ' text-gray-100' : 'text-gray-600'}`}>Date: {record.date} ({record.mode})</span>
+                      <span className={`text-sm ${theme === 'dark' ? ' text-gray-100' : 'text-gray-600'}`}>{record.loginDisplay} - {record.logoutDisplay}</span>
+                      <div className="text-xs font-medium mt-1"><span className={`${theme === 'dark' ? ' text-green-400' : 'text-green-700'}`}>Effective: {effectiveHoursHHMM}</span></div>
+                      <div className="text-xs font-medium mt-1"><span className={`${theme === 'dark' ? ' text-indigo-300' : 'text-indigo-700'}`}>Total: {totalDurationHHMM}</span></div>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* pagination controls */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
+        <div className="flex items-center space-x-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
+          <span className="px-3 py-1">Page {page} / {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
+        </div>
+      </div>
+
+      <p className={`text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} mt-6 text-center`}>
+        Data is displayed for <strong>{filteredSorted.length}</strong> attendance record(s) based on current filters.
+      </p>
+    </div>
                         </motion.div>
                     )}
                 </AnimatePresence>

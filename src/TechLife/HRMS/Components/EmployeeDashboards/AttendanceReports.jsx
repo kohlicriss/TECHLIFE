@@ -10,6 +10,7 @@ import { AiOutlineGift } from "react-icons/ai";
 import { Context } from "../HrmsContext";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import {BarChart,Bar,XAxis,YAxis,CartesianGrid,ResponsiveContainer,} from "recharts";
+import axios from 'axios';
 
 const ChartData = [
     {
@@ -149,516 +150,872 @@ const EmployeePieChart = () => {
     </div>
   );
 };
-const employees = [
-    {
-        name: 'John Doe',
-        title: 'UI/UX Designer',
-        department: 'UI/UX',
-        status: 'Clocked In',
-        time: '09:15',
-        Arrival:"On-Time"
-    },
-    {
-        name: 'Raju',
-        title: 'Project Manager',
-        department: 'Management',
-        status: 'Clocked In',
-        time: '09:36',
-        Arrival:"On-Time"
-    },
-    {
-        name: 'Srilekha',
-        title: 'PHP Developer',
-        department: 'Development',
-        status: 'Clocked In',
-        time: '09:15',
-        Arrival:"On-Time",
-        details: {
-            clockIn: '10:30 AM',
-            clockOut: '09:45 AM',
-            production: '09:21 Hrs',
-        },
-    },
-    {
-        name: 'Anita',
-        title: 'Marketing Head',
-        department: 'Marketing',
-        Arrival: 'Late',
-        lateTime: '30 Min',
-        time: '10:35',
-    }
-
-];
-
-
+//const employees = [
+//    {
+//        name: 'John Doe',
+//        title: 'UI/UX Designer',
+//        department: 'UI/UX',
+//        status: 'Clocked In',
+//        time: '09:15',
+//        Arrival:"On-Time"
+//    },
+//    {
+//        name: 'Raju',
+//        title: 'Project Manager',
+//        department: 'Management',
+//        status: 'Clocked In',
+//        time: '09:36',
+//        Arrival:"On-Time"
+//    },
+//    {
+//        name: 'Srilekha',
+//        title: 'PHP Developer',
+//        department: 'Development',
+//        status: 'Clocked In',
+//        time: '09:15',
+//        Arrival:"On-Time",
+//        details: {
+//            clockIn: '10:30 AM',
+//            clockOut: '09:45 AM',
+//            production: '09:21 Hrs',
+//        },
+//    },
+//    {
+//        name: 'Anita',
+//        title: 'Marketing Head',
+//        department: 'Marketing',
+//        Arrival: 'Late',
+//        lateTime: '30 Min',
+//        time: '10:35',
+//    }
+//
+//];
 
 
-const departments = ['All Departments', 'UI/UX', 'Development', 'Management', 'HR', 'Marketing'];
-const timeframes = ['Today', 'This week', 'This month', 'Last Month'];
+
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ');
 }
+const TopOnTime = () => {
+    const { theme } = useContext(Context);
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-const ClockInOut = () => {
-    const {theme} = useContext(Context);
-    const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
-    const [selectedTimeframe, setSelectedTimeframe] = useState('Today');
+    const [stDate, setStDate] = useState(sevenDaysAgo);
+    const [enDate, setEnDate] = useState(todayISO);
+    const [items, setItems] = useState([]); // [{ id, count }] or [{ id, raw, durationReadable }]
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [mode, setMode] = useState('ontime'); // 'ontime' | 'overtime'
+
+    const parseISODuration = (iso) => {
+        if (!iso || typeof iso !== 'string') return 'N/A';
+        // match PT{hours}H{minutes}M{seconds}S — hours/minutes/seconds optional
+        const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+        if (!m) return iso;
+        const hours = parseInt(m[1] || '0', 10);
+        const minutes = parseInt(m[2] || '0', 10);
+        const seconds = parseInt(m[3] || '0', 10);
+        const remHours = hours % 24;
+        const parts = [];
+        if (remHours) parts.push(`${remHours}h`);
+        if (minutes) parts.push(`${minutes}m`);
+        if (seconds) parts.push(`${seconds}s`);
+        return parts.length ? parts.join(' ') : '0m';
+    };
+
+     const fetchTopOnTime = async (start = stDate, end = enDate, limit = 5) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const url = "https://hrms.anasolconsultancyservices.com/api/attendance/top-ontime";
+            const resp = await axios.get(url, { params: { start, end, limit } });
+            const payload = resp?.data ?? {};
+            if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+                const entries = Object.entries(payload).map(([id, count]) => ({ id, count: Number(count) || 0 }));
+                entries.sort((a, b) => b.count - a.count);
+                setItems(entries);
+            } else {
+                setItems([]);
+            }
+        } catch (err) {
+            // verbose logging
+            console.error("fetchTopOnTime error:", err);
+            console.error("axios response:", err?.response);
+            // readable message for UI
+            const serverBody = err?.response?.data;
+            const message = err?.response?.data?.message
+                || (serverBody ? JSON.stringify(serverBody) : null)
+                || err?.message
+                || "Failed to load top on-time";
+            setError(message);
+            setItems([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchTopOvertime = async (start = stDate, end = enDate, limit = 5) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const url = "https://hrms.anasolconsultancyservices.com/api/attendance/top-overtime";
+            const resp = await axios.get(url, { params: { start, end, limit } });
+            const payload = resp?.data ?? {};
+            if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+                const entries = Object.entries(payload).map(([id, raw]) => ({
+                    id,
+                    raw: String(raw),
+                    durationReadable: parseISODuration(String(raw)),
+                }));
+                entries.sort((a, b) => {
+                    const ah = parseInt((a.raw.match(/PT(\d+)H/) || [0,0])[1], 10) || 0;
+                    const bh = parseInt((b.raw.match(/PT(\d+)H/) || [0,0])[1], 10) || 0;
+                    return bh - ah;
+                });
+                setItems(entries);
+            } else {
+                setItems([]);
+            }
+        } catch (err) {
+            // verbose logging
+            console.error("fetchTopOvertime error:", err);
+            console.error("axios response:", err?.response);
+            // readable message for UI
+            const serverBody = err?.response?.data;
+            const message = err?.response?.data?.message
+                || (serverBody ? JSON.stringify(serverBody) : null)
+                || err?.message
+                || "Failed to load top overtime";
+            setError(message);
+            setItems([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        // fetch based on current mode when dates or mode change
+        if (mode === 'ontime') fetchTopOnTime(stDate, enDate, 5);
+        else fetchTopOvertime(stDate, enDate, 5);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stDate, enDate, mode]);
 
     return (
         <motion.div
-            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100'}`}
+            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme === 'dark' ? 'bg-gray-600 text-gray-100' : 'bg-stone-100 text-gray-900'}`}
             initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0.5,scale:1 }}
+            animate={{ opacity: 1, y: 0.5, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <h2 className={`flex items-start justify-start text-lg font-bold text-gray-800  ${theme==='dark' ? 'text-white ':'text-gray-800'}`}><ClockIcon className="w-6 h-6 text-blue-600 mr-2" />
-                    Clock-In/Out</h2>
-            <div className="flex items-end justify-end border-b pb-2 mb-2 border-gray-200 flex-wrap gap-2">
-                
-                <div className="flex items-end space-x-2">
-                    <Menu as="div" className="relative inline-block text-left">
-                        <div>
-                            <MenuButton className={`inline-flex justify-end w-full rounded-md border border-gray-200 shadow-sm px-4 py-2 text-sm font-medium  hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-700':'bg-white text-gray-700'}`}>
-                                {selectedDepartment}
-                                <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
-                            </MenuButton>
-                        </div>
-                        <Transition
-                            as={Fragment}
-                            enter="transition ease-out duration-100"
-                            enterFrom="transform opacity-0 scale-95"
-                            enterTo="transform opacity-100 scale-100"
-                            leave="transition ease-in duration-75"
-                            leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
-                        >
-                            <MenuItems className={`origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg  ring-1 ring-black ring-opacity-5 focus:outline-none z-10 ${theme==='dark' ? 'bg-gray-600 text-white':'bg-white text-gray-700'}`}>
-                                <div className="py-1">
-                                    {departments.map((department) => (
-                                        <MenuItem key={department}>
-                                            {({ active }) => (
-                                                <a
-                                                    href="#"
-                                                    onClick={() => setSelectedDepartment(department)}
-                                                    className={ classNames(
-                                                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-200',
-                                                        'block px-4 py-2 text-sm'
-                                                    )  }
-                                                >
-                                                    {department}
-                                                </a>
-                                            )}
-                                        </MenuItem>
-                                    ))}
-                                </div>
-                            </MenuItems>
-                        </Transition>
-                    </Menu>
+            <div className="flex items-center justify-between mb-2">
+                <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                    <ClockIcon className="w-6 h-6 text-blue-500 inline-block mr-2" />
+                    {mode === 'ontime' ? 'Top On-Time' : 'Top OverTime'}
+                </h2>
 
-                    <Menu as="div" className="relative inline-block text-left">
-                        <div>
-                             <MenuButton className={`inline-flex justify-end w-full rounded-md border border-gray-200 shadow-sm px-4 py-2 text-sm font-medium  hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-700':'bg-white text-gray-700'}`}>
-                                {selectedTimeframe}
-                                <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
-                            </MenuButton>
-                        </div>
-                        <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
-                            <MenuItems className={`origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg  ring-1 ring-black ring-opacity-5 focus:outline-none z-10 ${theme==='dark' ? 'bg-gray-600 text-white':'bg-white text-gray-700'}`}>
-                                <div className="py-1">
-                                    {timeframes.map((timeframe) => (
-                                        <MenuItem key={timeframe}>
-                                            {({ active }) => (
-                                                <a
-                                                    href="#"
-                                                    onClick={() => setSelectedTimeframe(timeframe)}
-                                                    className={classNames(
-                                                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-200',
-                                                        'block px-4 py-2 text-sm'
-                                                    )}
-                                                >
-                                                    {timeframe}
-                                                </a>
-                                            )}
-                                        </MenuItem>
-                                    ))}
-                                </div>
-                            </MenuItems>
-                        </Transition>
-                    </Menu>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => setMode('ontime')}
+                        className={`px-3 py-1 rounded text-sm ${mode === 'ontime' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+                    >
+                        Top On-Time
+                    </button>
+                    <button
+                        onClick={() => setMode('overtime')}
+                        className={`px-3 py-1 rounded text-sm ${mode === 'overtime' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
+                    >
+                        Top OverTime
+                    </button>
                 </div>
             </div>
-            <div className="space-y-4 flex-grow overflow-y-auto custom-scrollbar pr-2">
-                <AnimatePresence>
-                    {employees.map((employee, index) => (
-                        <motion.div    key={index}    className={`flex items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-blue-200 hover:text-gray-800 border ${theme==='dark' ? 'bg-gray-600 border-gray-200':'bg-gray-100 '}`}    
-                        initial={{ opacity: 0, y: 20 }}    animate={{ opacity: 1, y: 0 }}    exit={{ opacity: 0, y: -20 }}    transition={{ duration: 0.3, delay: index * 0.05 }}>
-                            <div className="flex items-center">
-                                <motion.img    className="w-10 h-10 rounded-full mr-4 object-cover"   src={ "https://randomuser.me/api/portraits/lego/1.jpg"}    alt={employee.name}    whileHover={{ scale: 1.1 }}/>
-                                <div>  <p className={`font-semibold  ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`} >{employee.name}</p>  <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.title}</p> <p className={`text-sm ${theme==='dark' ? 'text-white  ':'text-gray-800 '}`}>{employee.Arrival}</p>  </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <ClockIcon className={`h-5 w-5 ${theme=== 'dark' ? 'text-gray-200':'text-gray-400'}`} />
-                                <div className={`px-3 py-1 rounded-full  text-sm font-medium ${employee.Arrival==='On-Time'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>
-                                    {employee.time}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-2 mb-2">
+                <input
+                    type="date"
+                    value={stDate}
+                    onChange={(e) => setStDate(e.target.value)}
+                    className="p-1 border rounded"
+                />
+                <input
+                    type="date"
+                    value={enDate}
+                    onChange={(e) => setEnDate(e.target.value)}
+                    className="p-1 border rounded"
+                />
+                <button
+                    onClick={() => {
+                        if (mode === 'ontime') fetchTopOnTime(stDate, enDate, 5);
+                        else fetchTopOvertime(stDate, enDate, 5);
+                    }}
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                    disabled={loading}
+                >
+                    Apply
+                </button>
+            </div>
+
+            <div className="space-y-3 overflow-y-auto pr-2 flex-1">
+                {loading ? (
+                    <div className="text-center py-6">Loading…</div>
+                ) : error ? (
+                    <div className="text-red-600 text-center py-4">Error: {String(error)}</div>
+                ) : items.length === 0 ? (
+                    <div className="text-gray-500 text-center py-6">No data for selected range.</div>
+                ) : (
+                    <AnimatePresence>
+                        {items.map((it, idx) => (
+                            <motion.div
+                                key={it.id}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8 }}
+                                transition={{ duration: 0.2, delay: idx * 0.03 }}
+                                className={`flex items-center justify-between rounded-lg p-2 border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
+                            >
+                                <div className="flex items-center">
+                                    <motion.img
+                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(it.id)}&background=DDD&color=333`}
+                                        alt={it.id}
+                                        className="w-10 h-10 rounded-full mr-3 object-cover"
+                                    />
+                                    <div>
+                                        <p className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{it.id}</p>
+                                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                                            {mode === 'ontime' ? 'On-time count' : `Overtime: ${it.durationReadable || it.raw}`}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
+
+                                <div className="flex items-center space-x-2">
+                                    <div className={`px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800`}>
+                                        {mode === 'ontime' ? it.count : (it.durationReadable || 'N/A')}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                )}
             </div>
         </motion.div>
     );
 };
 
-const onTimeDate = [
-  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 100 },
-  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 120 },
-  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 80 },
-  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 150 },
-  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 7 },
-];
+//const onTimeDate = [
+//  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 100 },
+//  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 120 },
+//  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 80 },
+//  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 150 },
+//  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 7 },
+//];
 
 const EmployeeBarChart = () => {
-    const {theme}=useContext(Context);
-  // Y-axis lo "Date-Month" format kosam data ni format cheyyadam
-  const formattedData = onTimeDate.map((item) => ({
-    name: `${item.Date}-${item.Month}`,
-    employees: item.NoofEmployee,
-    
-  }));
-  const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
-  const backgroundColor = theme==='dark' ? "bg-gray-800" : "bg-white";
+  const { theme } = useContext(Context);
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const [stDate, setStDate] = useState(sevenDaysAgo);
+  const [enDate, setEnDate] = useState(todayISO);
+
+  const [dataPoints, setDataPoints] = useState([]); // [{ date: '2025-10-14', employees: 6 }, ...]
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
   const barColor = "#ADD8E6";
 
-  return (
-    <motion.div
-            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0.5,scale:1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-        >
-        
-      <ClockIcon className="w-6 h-6 text-blue-600 inline-block mr-2" /> <h2 className="text-xl font-semibold mb-4 text-start"> On-Time Employees</h2>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={formattedData}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
-          <YAxis stroke={textColor} tick={{ fill: textColor }} hide/>
-          <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
-          <Bar dataKey="employees" fill={barColor} />
-        </BarChart>
-      </ResponsiveContainer>
-      
-    </motion.div>
-  );
-};
+  const fetchOnTimeCounts = async (start = stDate, end = enDate) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = "https://hrms.anasolconsultancyservices.com/api/attendance/numberOfOnTime";
+      const resp = await axios.get(url, { params: { stDate: start, enDate: end } });
+      const payload = resp?.data ?? {};
 
-const overTimeworkDate = [
-  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 50, Hour: 3 },
-  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 60, Hour: 5 },
-  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 10, Hour: 10 },
-  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 8, Hour: 15 },
-  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 40, Hour: 20 },
-];
+      let entries = [];
+      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        entries = Object.entries(payload).map(([dateStr, count]) => {
+          const d = new Date(dateStr);
+          const display = !isNaN(d.getTime())
+            ? d.toLocaleString("en-US", { day: "2-digit", month: "short" }) // "14 Oct"
+            : dateStr;
+          return { date: dateStr, label: display, employees: Number(count) || 0 };
+        });
+      } else if (Array.isArray(payload)) {
+        // fallback array shape
+        entries = payload.map(it => ({
+          date: it.date || it.Date || "",
+          label: it.date || it.Date || "",
+          employees: Number(it.count ?? it.NoofEmployee ?? it.noOfEmployee ?? it.value) || 0,
+        }));
+      }
 
-const EmployeeOvertimeChart = () => {
-  const {theme}=useContext(Context);
-  const [chartType, setChartType] = useState("hours");
-
-  const formattedData = overTimeworkDate.map((item) => ({
-    name: `${item.Date}-${item.Month}`,
-    hours: item.Hour,
-    employees: item.NoofEmployee,
-  }));
-
-  const yAxisDataKey = chartType === "hours" ? "hours" : "employees";
-  const yAxisLabel = chartType === "hours" ? "Hours" : "No. of Employees";
-
-  const handleChartChange = (type) => {
-    setChartType(type);
+      // sort ascending by date
+      entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setDataPoints(entries);
+    } catch (err) {
+      console.error("Failed to fetch on-time counts:", err?.response ?? err);
+      setError(err?.response?.data ?? err?.message ?? "Failed to load data");
+      setDataPoints([]);
+    } finally {
+      setLoading(false);
+    }
   };
-  const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
-  const backgroundColor = theme==='dark' ? "bg-gray-800" : "bg-white";
-  const barColor = "#B19CD9";
+
+  useEffect(() => {
+    fetchOnTimeCounts(stDate, enDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <motion.div
-            className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0.5,scale:1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-        >
-      <h2 className="text-xl font-semibold mb-4 text-start">
-        OverTime
-      </h2>
-      <div className="absolute top-4 right-4 flex space-x-2">
+      className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme === 'dark' ? 'bg-gray-700 text-gray-200 ' : 'bg-stone-100 text-gray-800'}`}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0.5, scale: 1 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+    >
+      <div className="mb-1">
+        <h2 className="text-xl font-semibold">On-Time Employees</h2>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-2 mb-2">
+        <input
+          type="date"
+          value={stDate}
+          onChange={(e) => setStDate(e.target.value)}
+          className="p-1 border rounded"
+        />
+        <input
+          type="date"
+          value={enDate}
+          onChange={(e) => setEnDate(e.target.value)}
+          className="p-1 border rounded"
+        />
         <button
-          onClick={() => handleChartChange("hours")}
-          className={`py-1 px-3 rounded-md text-sm font-medium ${
-            chartType === "hours"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
+          onClick={() => fetchOnTimeCounts(stDate, enDate)}
+          className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+          disabled={loading}
         >
-          Hours
-        </button>
-        <button
-          onClick={() => handleChartChange("employees")}
-          className={`py-1 px-3 rounded-md text-sm font-medium ${
-            chartType === "employees"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
-        >
-          Employees
+          Apply
         </button>
       </div>
 
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={formattedData}
-          margin={{
-            top: 40,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          
-          <XAxis dataKey="name"  stroke={textColor} tick={{ fill: textColor }} />
-          <YAxis label={{ value: yAxisLabel, angle: -90, position: "insideLeft" }} stroke={textColor} tick={{ fill: textColor }} hide />
-          <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
-          <Bar dataKey={yAxisDataKey} fill={barColor} barSize={40} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="flex-1">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">Loading…</div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center text-red-600">Error: {String(error)}</div>
+        ) : dataPoints.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-gray-500">No data for selected range.</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={dataPoints.map((d) => ({ name: d.label, employees: d.employees }))}
+              margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
+            >
+              <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
+              <YAxis label={{ value: "No. of Employees", angle: -90, position: "insideLeft" }} stroke={textColor} tick={{ fill: textColor }} hide />
+              <Tooltip contentStyle={{ backgroundColor: theme === 'dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
+              <Bar dataKey="employees" fill={barColor} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
     </motion.div>
   );
 };
-const AttendanceTable = () => {
-    const {theme} = useContext(Context);
-    const [selectedMonth, setSelectedMonth] = useState("All");
-    const [sortOption, setSortOption] = useState("Recently added");
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
-    const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days", "This Month"];
-    const rowsPerPageOptions = [10, 25, 50, 100];
-    const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    const [rawTableData, setRawTableData] = useState(() => {
-        // Try to load from localStorage first
-        const stored = localStorage.getItem("attendanceTableData");
-        return stored ? JSON.parse(stored) : [];
-    });
 
-    // Fetch data from API and store in localStorage
-    useEffect(() => {
-    const fetchAttendanceData = async () => {
-        const today = new Date();
-        const day = today.getDate();
-        const month = today.getMonth() + 1;
-        const year = today.getFullYear();
+//const overTimeworkDate = [
+//  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 50, Hour: 3 },
+//  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 60, Hour: 5 },
+//  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 10, Hour: 10 },
+//  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 8, Hour: 15 },
+//  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 40, Hour: 20 },
+//];
 
-        let apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/admin/present/${year}/${month}/${day}?page=0&size=${rowsPerPageOptions[rowsPerPageOptions.length - 1]}`;
+const EmployeeOvertimeChart = () => {
+  const { theme } = useContext(Context);
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-        if (sortOption === "This Month") {
-            apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/admin/month/${year}/${month}?page=0&size=${rowsPerPageOptions[rowsPerPageOptions.length - 1]}`;
-        }
+  const [stDate, setStDate] = useState(sevenDaysAgo);
+  const [enDate, setEnDate] = useState(todayISO);
 
-        try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-            // Some endpoints return { content: [...] }, some return [...]
-            let records = [];
-            if (Array.isArray(data)) {
-                records = data;
-            } else if (Array.isArray(data.content)) {
-                records = data.content;
-            }
-            setRawTableData(records);
-            localStorage.setItem("attendanceTableData", JSON.stringify(records));
-        } catch (error) {
-            console.error("Failed to fetch attendance data:", error);
-        }
-    };
-    fetchAttendanceData();
-}, [sortOption]);
-    const STANDARD_WORKDAY_HOURS = 10;
-    const calculateHours = (login, logout) => {
-        if (!login || !logout) return 0;
-        const loginDate = new Date(`2000-01-01 ${login}`);
-        const logoutDate = new Date(`2000-01-01 ${logout}`);
-        const diff = (logoutDate - loginDate) / (1000 * 60 * 60);
-        return diff > 0 ? diff : 0;
-    };
+  const [dataPoints, setDataPoints] = useState([]); // [{ date: '2025-10-14', employees: 8 }, ...]
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-    const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }) => (
-        <div className={`flex gap-2 sm:gap-3 flex-wrap ${className}`}>
-            {options.map((option) => (
-                <motion.button
-                    key={option}
-                    onClick={() => onSelect(option)}
-                    className={`px-4 py-2 rounded-lg border text-xs sm:text-sm font-semibold
-                    ${selectedOption === option ? "bg-blue-600 text-white shadow-md border-blue-600" : "bg-white text-gray-700 border-gray-300"}
-                    hover:bg-blue-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    {option}
-                </motion.button>
-            ))}
-        </div>
-    );
-    const finalAttendanceData = useMemo(() => {
-        let data = [...rawTableData];
-        if (selectedMonth !== "All" && selectedMonth) {
-            const selectedMonthIndex = MONTHS.indexOf(selectedMonth) - 1;
-            data = data.filter((entry) => new Date(entry.date).getMonth() === selectedMonthIndex);
-        }
-        switch (sortOption) {
-            case "Ascending": data.sort((a, b) => new Date(a.date) - new Date(b.date)); break;
-            case "Descending": data.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
-            case "Last Month": const lastMonth = new Date(); lastMonth.setMonth(lastMonth.getMonth() - 1); data = data.filter(item => new Date(item.date) >= lastMonth); break;
-            case "Last 7 Days": const last7Days = new Date(); last7Days.setDate(last7Days.getDate() - 7); data = data.filter(item => new Date(item.date) >= last7Days); break;
-            default: data.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
-        }
-        const formattedData = data.map(entry => ({ ...entry, login_hours: calculateHours(entry.login_time, entry.logout_time), barWidth: `${(calculateHours(entry.login_time, entry.logout_time) / STANDARD_WORKDAY_HOURS) * 100}%` }));
-        const totalPages = Math.ceil(formattedData.length / rowsPerPage);
-        const paginatedData = formattedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-        return { paginatedData, totalPages, totalCount: formattedData.length };
-    }, [rawTableData, selectedMonth, sortOption, rowsPerPage, currentPage, MONTHS]);
+  const textColor = theme === "dark" ? "#FFFFFF" : "#000000";
+  const barColor = "#B19CD9";
 
-    const { paginatedData, totalPages } = finalAttendanceData;
+  const fetchOvertimeCounts = async (start = stDate, end = enDate) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = "https://hrms.anasolconsultancyservices.com/api/attendance/numberOfOvertime";
+      const resp = await axios.get(url, { params: { stDate: start, enDate: end } });
+      // expected response: object mapping date -> count, e.g. { "2025-10-14": 8, "2025-10-13": 7, ... }
+      const payload = resp?.data ?? {};
+      let entries = [];
+      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        entries = Object.entries(payload).map(([dateStr, count]) => {
+          // safe parse to Date for sorting; keep original key for label if parse fails
+          const d = new Date(dateStr);
+          const display = !isNaN(d.getTime())
+            ? d.toLocaleString("en-US", { day: "2-digit", month: "short" }) // e.g. "14 Oct"
+            : dateStr;
+          return { date: dateStr, label: display, employees: Number(count) || 0 };
+        });
+      } else if (Array.isArray(payload)) {
+        // fallback: array of items { date: "...", count: N }
+        entries = payload.map((it) => ({
+          date: it.date || it.Date || "",
+          label: it.date || it.Date || "",
+          employees: Number(it.count ?? it.NoofEmployee ?? it.noOfEmployee ?? it.value) || 0,
+        }));
+      }
 
-    return (
-                                    <motion.div
-                                       className={`p-4 sm:p-6  rounded-xl border border-gray-200 shadow-lg mb-2 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
-                                       initial={{ opacity: 0, y: 50 }}
-                                       animate={{ opacity: 1, y: 0 }}
-                                       transition={{ duration: 0.5, delay: 1 }}
-                                   >
-                                       <section>
-                                           <div className="flex justify-between items-start sm:items-center mb-5 flex-wrap gap-4"> {/* Adjusted items-start for mobile wrapping */}
-                                                       
-                                                       {/* Table Title (Enhanced for prominence) */}
-                                                       <h2 className={`text-xl sm:text-2xl font-extrabold ${theme === 'dark' ? 'bg-gradient-to-br from-green-300 to-green-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                                                           <CalendarDaysIcon className="w-6 h-6 sm:w-7 sm:h-7 inline-block text-indigo-600 mr-2" /> Attendance Records
-                                                       </h2>
-                                                       
-                                                       {/* Filter and Sort Controls */}
-                                                       <div className="flex flex-wrap items-center gap-4">
-                                                           
-                                                           {/* 1. MONTH SELECTION DROPDOWN (NEW) */}
-                                                           <div className="relative">
-                                                              <label htmlFor="month-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Select Month:</label>
-                                                               <select 
-                                                                   id="month-select"
-                                                                   value={selectedMonth} 
-                                                                   onChange={(e) => { 
-                                                                       setSelectedMonth(e.target.value); 
-                                                                       setCurrentPage(1); 
-                                                                   }} 
-                                                                   className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
-                                                                              ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
-                                                               >
-                                                                   {/* Assuming MONTHS is an array of strings like ["All", "January", "February", ...] */}
-                                                                   {MONTHS.map((month) => (
-                                                                       <option key={month} value={month}>{month}</option>
-                                                                   ))}
-                                                               </select>
-                                                           </div>
-                                           
-                                                           {/* 2. SORT OPTION DROPDOWN (Existing, refined styling) */}
-                                                           <div className="relative">
-                                                               <label htmlFor="sort-select" className={`text-sm font-semibold mr-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Sort by:</label>
-                                                               <select 
-                                                                   id="sort-select"
-                                                                   value={sortOption} 
-                                                                   onChange={(e) => { 
-                                                                       setSortOption(e.target.value); 
-                                                                       setCurrentPage(1); 
-                                                                   }} 
-                                                                   className={`border px-3 py-2 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-colors cursor-pointer 
-                                                                              ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600 hover:border-indigo-500' : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-500'}`}
-                                                               >
-                                                                   {sortOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                                               </select>
-                                                           </div>
-                                                       </div>
-                                                   </div>
-                                                   
-                                                  <div className="overflow-x-auto rounded-lg border border-purple-400">
-                                                      <table className="min-w-full divide-y divide-gray-200">
-                                                          <thead className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'}`}>
-                                                              <tr>
-                                                                  <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Employee ID</th>
-                                                                  <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><CalendarDaysIcon className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" /> Date</div></th>
-                                                                  <th scope="col"className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" /> Login Time</div></th>
-                                                                  <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" /> Logout Time</div></th>
-                                                                  <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Login Hours</th>
-                                                                  <th scope="col" className={`px-4 py-3 text-left text-xs sm:text-sm font-medium  uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Daily Progress</th>
-                                                              </tr>
-                                                          </thead>
-                                                          <tbody className={`${theme === 'dark' ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-800'} divide-y divide-gray-200`}>
-                                                              <AnimatePresence>
-                                                                  {paginatedData.length > 0 ? (
-                                                                      paginatedData.map((entry, idx) => (
-                                                                          <motion.tr
-                                                                              key={idx}
-                                                                              className="hover:bg-indigo-200 transition-colors duration-150"
-                                                                              initial={{ opacity: 0, y: 20 }}
-                                                                              animate={{ opacity: 1, y: 0 }}
-                                                                              exit={{ opacity: 0, y: -20 }}
-                                                                              transition={{ duration: 0.3, delay: idx * 0.05 }}
-                                                                          >
-                                                                              <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.employee_id}</td>
-                                                                              <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.date}</td>
-                                                                              <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.login_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                              <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>{entry.logout_time || <span className="text-red-500 font-semibold">Absent</span>}</td>
-                                                                              <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}><span className={`font-semibold text-indigo-700 ${theme === 'dark' ? 'text-white' : 'text-indigo-700'}`}>{entry.login_hours.toFixed(2)}</span> hrs</td>
-                                                                              <td className={`px-4 py-3 text-sm  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
-                                                                                  <div className="relative rounded-full h-4 w-full bg-indigo-100 overflow-hidden">
-                                                                                      <motion.div
-                                                                                          className="bg-blue-300 h-full rounded-full"
-                                                                                          initial={{ width: 0 }}
-                                                                                          animate={{ width: entry.barWidth }}
-                                                                                          transition={{ duration: 0.8, ease: "easeOut" }}
-                                                                                      />
-                                                                                      <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white mix-blend-difference">{entry.login_hours.toFixed(1)}h</span>
-                                                                                  </div>
-                                                                              </td>
-                                                                          </motion.tr>
-                                                                      ))
-                                                                  ) : (
-                                                                      <tr><td colSpan="5"className={`px-4 py-3 text-center  whitespace-nowrap ${theme === 'dark' ? 'text-white' : 'text-gray-600'}italic`}>No attendance records found for the selected options.</td></tr>
-                                                                  )}
-                                                              </AnimatePresence>
-                                                          </tbody>
-                                                      </table>
-                                                  </div>
-                                        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
-                                        <div className="flex items-center gap-2 mb-4 sm:mb-0">
-                                            <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
-                                            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className={`border border-gray-300 px-2 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}>
-                                                {rowsPerPageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                                            </select>
-                                        </div>
-                                        <nav className="flex items-center gap-2">
-                                            <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Previous</button>
-                                            <span  className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
-                                            <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Next</button>
-                                        </nav>
-                                    </div>
-                                </section>
-        </motion.div>
-    );
+      // sort ascending by date
+      entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setDataPoints(entries);
+    } catch (err) {
+      console.error("Failed to fetch overtime counts:", err?.response ?? err);
+      setError(err?.response?.data ?? err?.message ?? "Failed to load data");
+      setDataPoints([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOvertimeCounts(stDate, enDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <motion.div
+      className={` rounded-xl shadow-md p-2 w-full h-96 font-sans border border-gray-200  flex flex-col ${theme === 'dark' ? 'bg-gray-700 text-gray-200 ' : 'bg-stone-100 text-gray-800'}`}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0.5, scale: 1 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+    >
+       <div className="mb-1">
+        <h2 className="text-xl font-semibold">OverTime (No. of Employees)</h2>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-2">
+        <input
+          type="date"
+          value={stDate}
+          onChange={(e) => setStDate(e.target.value)}
+          className="p-1 border rounded"
+        />
+        <input
+          type="date"
+          value={enDate}
+          onChange={(e) => setEnDate(e.target.value)}
+          className="p-1 border rounded"
+        />
+        <button
+          onClick={() => fetchOvertimeCounts(stDate, enDate)}
+          className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+          disabled={loading}
+        >
+          Apply
+        </button>
+      </div>
+
+      <div className="flex-1">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">Loading…</div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center text-red-600">Error: {String(error)}</div>
+        ) : dataPoints.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-gray-500">No data for selected range.</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={dataPoints.map((d) => ({ name: d.label, employees: d.employees }))}
+              margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
+            >
+              <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
+              <YAxis label={{ value: "No. of Employees", angle: -90, position: "insideLeft" }} stroke={textColor} tick={{ fill: textColor }} hide />
+              <Tooltip contentStyle={{ backgroundColor: theme === 'dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }} />
+              <Bar dataKey="employees" fill={barColor} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </motion.div>
+  );
 };
+// ...existing helpers...
+const parseEffectiveHours = (effectiveHours) => {
+  if (!effectiveHours) return 0;
+  const match = ('' + effectiveHours).match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (match) {
+    const hours = match[1] ? parseInt(match[1], 10) : 0;
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    return hours * 60 + minutes;
+  }
+  if (!isNaN(Number(effectiveHours))) {
+    return Math.round(Number(effectiveHours) * 60);
+  }
+  const hhmm = ('' + effectiveHours).match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm) return parseInt(hhmm[1], 10) * 60 + parseInt(hhmm[2], 10);
+  return 0;
+};
+const formatMinutesToHHMM = (totalMinutes) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const IST_OFFSET_MINUTES = 5 * 60 + 30;
+
+// convert/shift time string to IST display (adds 5:30 to UTC)
+const toISTTimeDisplay = (timeStr, dateRef = null) => {
+  if (!timeStr) return 'N/A';
+  const raw = String(timeStr).trim();
+  if (raw === 'N/A') return 'N/A';
+  try {
+    let d;
+    if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
+      d = new Date(raw);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw) && dateRef === null) {
+      d = new Date(raw);
+    } else if (/^\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
+      const datePart = dateRef || new Date().toISOString().slice(0,10);
+      d = new Date(`${datePart}T${raw}${raw.includes('Z') ? '' : 'Z'}`);
+    } else {
+      d = new Date(raw);
+    }
+    if (isNaN(d.getTime())) return raw;
+    const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+    return shifted.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  } catch (e) {
+    return raw;
+  }
+};
+
+// parse time into Date (shifted to IST) for duration calc
+const parseToISTDate = (timeStr, dateRef = null) => {
+  if (!timeStr) return null;
+  const raw = String(timeStr).trim();
+  try {
+    let d;
+    if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
+      d = new Date(raw);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw) && dateRef === null) {
+      d = new Date(raw);
+    } else if (/^\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
+      const datePart = dateRef || new Date().toISOString().slice(0,10);
+      d = new Date(`${datePart}T${raw}${raw.includes('Z') ? '' : 'Z'}`);
+    } else {
+      d = new Date(raw);
+    }
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+  } catch {
+    return null;
+  }
+};
+
+const toHHMMDisplay = (value) => {
+  const minutes = parseEffectiveHours(value || '');
+  return minutes > 0 ? formatMinutesToHHMM(minutes) : 'N/A';
+};
+
+// GraphQL endpoint & query
+const GRAPHQL_URL = "https://hrms.anasolconsultancyservices.com/api/attendance/graphql";
+const ALL_EMPLOYEES_QUERY = `
+  query GetAllEmployeeDetailsOnDates($date: Date!) {
+    getAllEmployeeDetailsOnDates(date: $date) {
+      date
+      event
+      employeeId
+      isPresent
+      login
+      logout
+      effectiveHours
+      grossHours
+      holiday
+      mode
+    }
+  }
+`;
+
+// Component
+const AttendanceTable = ({onBack}) => {
+  // removed leaveType state per request
+  const [sortBy, setSortBy] = useState('Recantly Added');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const {theme, userData}=useContext(Context);
+
+  // fetched attendance records
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+
+  // build start/end date for fetch based on selectedMonth or current month
+  const buildRange = () => {
+    const today = new Date();
+    let year = today.getFullYear();
+    let monthIndex = today.getMonth(); // 0-based
+    if (selectedMonth) {
+      const m = new Date(`${selectedMonth} 1, ${year}`);
+      if (!isNaN(m)) monthIndex = m.getMonth();
+    }
+    const start = new Date(year, monthIndex, 1);
+    const end = new Date(year, monthIndex + 1, 0);
+    const toISO = d => d.toISOString().slice(0,10);
+    return { startISO: toISO(start), endISO: toISO(end) };
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const fetchDate = selectedDate || new Date().toISOString().slice(0,10);
+        const variables = { date: fetchDate };
+
+        const resp = await axios.post(GRAPHQL_URL, { query: ALL_EMPLOYEES_QUERY, variables }, {
+          headers: { "Content-Type": "application/json" }
+        });
+        if (cancelled) return;
+        if (resp?.data?.errors && resp.data.errors.length) {
+          throw new Error(resp.data.errors.map(e => e.message).join('; '));
+        }
+        const data = resp?.data?.data?.getAllEmployeeDetailsOnDates || [];
+
+        const normalized = data.map(item => {
+          const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : (() => {
+            const parts = (item.date || '').split('-');
+            if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return new Date().toISOString().slice(0,10);
+          })();
+
+          // compute login/logout IST dates for duration
+         const loginIST = parseToISTDate(item.login, dateForTime);
+          const logoutIST = parseToISTDate(item.logout, dateForTime);
+
+          // total duration (base)
+          let totalDurationMinutes = 0;
+          if (loginIST && logoutIST && !isNaN(loginIST.getTime()) && !isNaN(logoutIST.getTime())) {
+            totalDurationMinutes = Math.max(0, Math.floor((logoutIST - loginIST) / (1000 * 60)));
+          } else {
+            // fallback: try effectiveHours if available (in minutes)
+            totalDurationMinutes = parseEffectiveHours(item.effectiveHours || '') || 0;
+          }
+
+          // Add IST offset minutes to durations and to effective/gross hours as requested
+          totalDurationMinutes = Math.max(0, totalDurationMinutes + IST_OFFSET_MINUTES);
+
+          const effectiveBase = parseEffectiveHours(item.effectiveHours || '');
+          const effectiveMinutes = effectiveBase ? Math.max(0, effectiveBase + IST_OFFSET_MINUTES) : 0;
+
+          const grossBase = parseEffectiveHours(item.grossHours || '');
+          const grossMinutes = grossBase ? Math.max(0, grossBase + IST_OFFSET_MINUTES) : 0;
+
+          return {
+            ...item,
+            date: item.date,
+            loginDisplay: (loginIST && !isNaN(loginIST.getTime()))
+              ? loginIST.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+              : toISTTimeDisplay(item.login, dateForTime),
+            logoutDisplay: (logoutIST && !isNaN(logoutIST.getTime()))
+              ? logoutIST.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+              : toISTTimeDisplay(item.logout, dateForTime),
+            effectiveHoursDisplay: effectiveMinutes > 0 ? formatMinutesToHHMM(effectiveMinutes) : 'N/A',
+            grossHoursDisplay: grossMinutes > 0 ? formatMinutesToHHMM(grossMinutes) : 'N/A',
+            totalDurationMinutes,
+            totalDurationHHMM: totalDurationMinutes > 0 ? formatMinutesToHHMM(totalDurationMinutes) : 'N/A',
+            attended: (() => {
+              const v = item.isPresent;
+              if (v == null) return false;
+              const s = String(v).toLowerCase();
+              return ['present','p','yes','true','1'].includes(s);
+            })()
+          };
+        });
+
+        setAttendanceRecords(normalized);
+        setPage(1);
+      } catch (err) {
+        console.error(err);
+        setError(err.message || 'Failed to load attendance');
+        setAttendanceRecords([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };
+  }, [selectedDate, userData]);
+
+  // Filtering / sorting / pagination uses attendanceRecords state
+  const filteredSorted = useMemo(() => {
+    let result = [...attendanceRecords];
+
+    // removed leaveType filtering per request
+
+    switch (sortBy) {
+      case 'Ascending':
+        result.sort((a,b) => (a.employeeId||'').localeCompare(b.employeeId||''));
+        break;
+      case 'Descending':
+        result.sort((a,b) => (b.employeeId||'').localeCompare(a.employeeId||''));
+        break;
+      case 'Last Month':
+        break;
+      case 'Last 7 days':
+        result.sort((a,b) => new Date(b.date) - new Date(a.date));
+        break;
+      case 'This Month':
+        break;
+      case 'Recantly Added':
+      default:
+        result.sort((a,b) => new Date(b.date) - new Date(a.date));
+        break;
+    }
+
+    return result;
+  }, [attendanceRecords, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
+  const pageItems = filteredSorted.slice((page-1)*pageSize, page*pageSize);
+
+  const totalEmployees = useMemo(() => {
+    const uniqueIds = new Set(attendanceRecords.map(item => item.employeeId));
+    return uniqueIds.size;
+  }, [attendanceRecords]);
+
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  return (
+    <div className={`p-4 sm:p-8 ${theme==='dark'?'bg-gray-800':'bg-gray-50'} min-h-screen`}>
+      <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2">
+        <span role="img" aria-label="clock">⏰</span> Employee Attendance Tracker
+      </h1>
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme==='dark'?'bg-gray-700':'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
+        <div className={`text-lg font-semibold ${theme==='dark'?'text-gray-100':'text-gray-700'} mb-4 sm:mb-0`}>
+          Total Employees: <span className="text-indigo-600 text-2xl">{totalEmployees}</span>
+        </div>
+
+        <div className="flex flex-wrap gap-4 items-center">
+         {/* Single-date fetch control */}
+         <div className="flex items-center space-x-2">
+           <input type="date" value={selectedDate} onChange={(e)=>{ setSelectedDate(e.target.value); }} className="p-2 border border-gray-300 rounded-lg" />
+           <button onClick={()=>setSelectedDate('')} className="px-3 py-2 bg-gray-200 rounded">Clear</button>
+         </div>
+
+          <select value={selectedMonth} onChange={(e)=>setSelectedMonth(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'}`}>
+            <option value="">Select Month: All</option>
+            {months.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+
+          <select value={sortBy} onChange={(e)=>setSortBy(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'}`}>
+            <option value="Recantly Added">Sorted By: Recently Added</option>
+            <option value="Ascending">EmployeeId: Ascending</option>
+            <option value="Descending">EmployeeId: Descending</option>
+            <option value="This Month">Date: This Month</option>
+            <option value="Last Month">Date: Last Month</option>
+            <option value="Last 7 days">Date: Last 7 days</option>
+          </select>
+
+          <select value={pageSize} onChange={(e)=>{setPageSize(Number(e.target.value)); setPage(1);}} className="p-2 border border-gray-300 rounded-lg text-sm bg-white">
+            <option value={6}>6 / page</option>
+            <option value={12}>12 / page</option>
+            <option value={24}>24 / page</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto shadow-2xl rounded-xl">
+        <table className="min-w-full bg-white border-collapse">
+          <thead className="bg-indigo-600 text-white sticky top-0">
+            <tr>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">EmployeeId</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Date</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Mode</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Login</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Logout</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Total Duration</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Gross Hours</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Effective Hours</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Status</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 sm:hidden">Employee Details</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={10} className="text-center py-8">Loading…</td></tr>
+            ) : error ? (
+              <tr><td colSpan={10} className="text-center py-8 text-red-600">{error}</td></tr>
+            ) : pageItems.length === 0 ? (
+              <tr><td colSpan={10} className="text-center py-6 text-gray-500">No attendance records found for the selected filters.</td></tr>
+            ) : pageItems.map(record => {
+                const totalDurationHHMM = record.totalDurationHHMM || 'N/A';
+                const effectiveHoursHHMM = record.effectiveHoursDisplay || 'N/A';
+                const grossHoursHHMM = record.grossHoursDisplay || 'N/A';
+                const statusColor = record.attended ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+
+                return (
+                  <tr key={`${record.employeeId}-${record.date}`} className={`border-b transition-colors duration-200 ${theme==='dark'?'bg-gray-700 hover:bg-gray-600':'hover:bg-gray-200'}`}>
+                    <td className={`py-4 px-4 ${theme==='dark'?' text-gray-50':'text-gray-700'} font-medium hidden sm:table-cell`}>{record.employeeId}</td>
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'} hidden sm:table-cell`}>{record.date}</td>
+                    <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell"><span className={`px-3 py-1 text-xs font-semibold rounded-full ${record.mode === 'Office' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>{record.mode}</span></td>
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'} hidden sm:table-cell`}>{record.loginDisplay}</td>
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'} hidden sm:table-cell`}>{record.logoutDisplay}</td>
+                    <td className={`py-4 px-4 text-sm font-semibold ${theme==='dark'?' text-indigo-500':'text-indigo-700'} hidden sm:table-cell`}>{totalDurationHHMM}</td>
+                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-purple-300':'text-purple-700'} hidden sm:table-cell`}>{grossHoursHHMM}</td>
+                    <td className={`py-4 px-4 text-sm font-bold ${theme==='dark'?' text-green-300':'text-green-700'} hidden sm:table-cell`}>{effectiveHoursHHMM}</td>
+                    <td className="py-4 px-4 text-sm hidden sm:table-cell"><span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor}`}>{record.attended ? 'Present' : 'Absent'}</span></td>
+
+                    <td className="py-4 px-4 sm:hidden">
+                      <div className="flex flex-col space-y-1">
+                        <span className={`text-base font-bold ${theme==='dark'?' text-indigo-300':'text-indigo-700'}`}>{record.employeeId}</span>
+                        <span className={`text-sm ${theme==='dark'?' text-gray-100':'text-gray-600'}`}>Date: {record.date} ({record.mode})</span>
+                        <span className={`text-sm ${theme==='dark'?' text-gray-100':'text-gray-600'}`}>{record.loginDisplay} - {record.logoutDisplay}</span>
+                        <div className="text-xs font-medium mt-1"><span className={`${theme==='dark'?' text-green-400':'text-green-700'}`}>Effective: {effectiveHoursHHMM}</span></div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* pagination controls */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
+        <div className="flex items-center space-x-2">
+          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
+          <span className="px-3 py-1">Page {page} / {totalPages}</span>
+          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
+        </div>
+      </div>
+
+      <p className={`text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'} mt-6 text-center`}>
+        Data is displayed for <strong>{filteredSorted.length}</strong> attendance record(s) based on current filters.
+      </p>
+    </div>
+  );
+};
+
+
+
 
 function AttendanceReports({ onBack }) {
     return (
@@ -677,7 +1034,7 @@ function AttendanceReports({ onBack }) {
                 
             </div>
              <div className="grid grid-cols-1 lg:grid-cols-3  gap-6 mb-8">
-                <ClockInOut />
+                <TopOnTime />
                 <EmployeeBarChart/>
                 <EmployeeOvertimeChart/>
             </div>

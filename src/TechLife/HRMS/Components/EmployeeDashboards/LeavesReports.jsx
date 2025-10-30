@@ -388,28 +388,28 @@ const Calendar = () => {
     </div>
   );
 };
-const Data = [
-    {
-        title: "Total Present",
-        value: "104/108",
-    },
-    {
-        title: "Paid Leaves",
-        value: "10",
-    },
-    {
-        title: "Unpaid Leaves",
-        value: "10",
-    },
-    {
-        title: "Sick leaves",
-        value: "15",
-    },
-    {
-        title: "Pending Request",
-        value: "15",
-    }
-];
+//const Data = [
+//    {
+//        title: "Total Present",
+//        value: "104/108",
+//    },
+//    {
+//        title: "Paid Leaves",
+//        value: "10",
+//    },
+//    {
+//        title: "Unpaid Leaves",
+//        value: "10",
+//    },
+//    {
+//        title: "Sick leaves",
+//        value: "15",
+//    },
+//    {
+//        title: "Pending Request",
+//        value: "15",
+//    }
+//];
 
 const ChartCard = ({ title, icontextcolor, value, icon, color, }) => {
     const {theme} = useContext(Context);
@@ -419,7 +419,6 @@ const ChartCard = ({ title, icontextcolor, value, icon, color, }) => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-           
         >
             <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-3 ${color}  ${icontextcolor}`}>
                 {React.cloneElement(icon, { className: `w-8 h-8 rounded-full` })}
@@ -428,12 +427,93 @@ const ChartCard = ({ title, icontextcolor, value, icon, color, }) => {
                 <h3 className={`text-xl font-semibold  ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{title}</h3>
                 <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{value}</p>
             </div>
-    
         </motion.div>
     );
 };
 
-const LeaveCharts = () => {
+const LeaveCharts = ({ start, end }) => {
+    const { theme } = useContext(Context);
+    const [items, setItems] = useState([]);
+    const [loadingCards, setLoadingCards] = useState(false);
+    const [errorCards, setErrorCards] = useState(null);
+
+    const fetchSummary = async (s = start, e = end) => {
+        setLoadingCards(true);
+        setErrorCards(null);
+        try {
+            const url = "https://hrms.anasolconsultancyservices.com/api/attendance/attendance-summary-between-dates";
+            const resp = await axios.get(url, { params: { start: s, end: e } });
+            let payload = resp?.data;
+
+            // payload may be an array (per-day) or single aggregated object — normalize to aggregated totals
+            const aggregate = {
+                present: 0,
+                absent: 0,
+                paidApprovedLeaves: 0,
+                paidUnapprovedLeaves: 0,
+                unpaidApprovedLeaves: 0,
+                unpaidUnapprovedLeaves: 0,
+                sickApprovedLeaves: 0,
+                sickUnapprovedLeaves: 0,
+                casualApprovedLeaves: 0,
+                casualUnapprovedLeaves: 0,
+                approvedLeaves: 0,
+                pendingLeaves: 0,
+            };
+
+            if (Array.isArray(payload)) {
+                // sum numeric fields across array
+                payload.forEach((row) => {
+                    Object.keys(aggregate).forEach((k) => {
+                        const val = Number(row[k] ?? row[k.replace('Approved','')] ?? 0);
+                        aggregate[k] += isNaN(val) ? 0 : val;
+                    });
+                    // handle legacy keys that may differ
+                    aggregate.sickApprovedLeaves += Number(row.sickLeaves ?? 0) || 0;
+                    aggregate.present += Number(row.present ?? 0) || 0;
+                    aggregate.absent += Number(row.absent ?? 0) || 0;
+                });
+            } else if (payload && typeof payload === "object") {
+                // single object — use values (fallbacks for key name differences)
+                aggregate.present = Number(payload.present ?? payload.totalPresent ?? 0);
+                aggregate.absent = Number(payload.absent ?? 0);
+                aggregate.paidApprovedLeaves = Number(payload.paidApprovedLeaves ?? payload.paidApproved ?? 0);
+                aggregate.paidUnapprovedLeaves = Number(payload.paidUnapprovedLeaves ?? payload.paidUnapproved ?? 0);
+                aggregate.unpaidApprovedLeaves = Number(payload.unpaidApprovedLeaves ?? payload.unpaidApproved ?? 0);
+                aggregate.unpaidUnapprovedLeaves = Number(payload.unpaidUnapprovedLeaves ?? payload.unpaidUnapproved ?? 0);
+                aggregate.sickApprovedLeaves = Number(payload.sickApprovedLeaves ?? payload.sickLeaves ?? 0);
+                aggregate.sickUnapprovedLeaves = Number(payload.sickUnapprovedLeaves ?? 0);
+                aggregate.casualApprovedLeaves = Number(payload.casualApprovedLeaves ?? 0);
+                aggregate.casualUnapprovedLeaves = Number(payload.casualUnapprovedLeaves ?? 0);
+                aggregate.approvedLeaves = Number(payload.approvedLeaves ?? 0);
+                aggregate.pendingLeaves = Number(payload.pendingLeaves ?? 0);
+            }
+
+            // Build display items as requested (present/absent, paidApproved/paidUnapproved, ...)
+            const cardData = [
+                { title: "Total Present", value: `${aggregate.present}/${aggregate.absent}`, color: "bg-green-100", icon: <FaUsers className="w-4 h-4 text-white" />, icontextcolor: "text-green-300" },
+                { title: "Paid Leaves", value: `${aggregate.paidApprovedLeaves}/${aggregate.paidUnapprovedLeaves}`, color: "bg-pink-100", icon: <FaRegUser className="w-4 h-4 text-white" />, icontextcolor: "text-pink-300" },
+                { title: "Unpaid Leaves", value: `${aggregate.unpaidApprovedLeaves}/${aggregate.unpaidUnapprovedLeaves}`, color: "bg-yellow-100", icon: <FiUser className="w-4 h-4 text-white" />, icontextcolor: "text-yellow-300" },
+                { title: "Sick leaves", value: `${aggregate.sickApprovedLeaves}/${aggregate.sickUnapprovedLeaves}`, color: "bg-purple-100", icon: <FiUser className="w-4 h-4 text-white" />, icontextcolor: "text-purple-300" },
+                { title: "Casual Leaves", value: `${aggregate.casualApprovedLeaves}/${aggregate.casualUnapprovedLeaves}`, color: "bg-blue-100", icon: <FaUserEdit className="w-4 h-4 text-white" />, icontextcolor: "text-blue-300" },
+                { title: "Pending", value: `${aggregate.approvedLeaves}/${aggregate.pendingLeaves}`, color: "bg-gray-100", icon: <CircleUserRound className="w-4 h-4 text-white" />, icontextcolor: "text-gray-300" },
+            ];
+
+            setItems(cardData);
+        } catch (err) {
+            console.error("Failed to fetch attendance summary:", err?.response ?? err);
+            setErrorCards(err?.response?.data ?? err?.message ?? "Failed to load summary");
+            setItems([]);
+        } finally {
+            setLoadingCards(false);
+        }
+    };
+
+    useEffect(() => {
+        if (start && end) fetchSummary(start, end);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [start, end]);
+
     return (
         <motion.div
             className="p-6 h-full flex flex-col justify-between"
@@ -441,64 +521,125 @@ const LeaveCharts = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-6 gap-6 h-full">
-                <AnimatePresence>
-                    <EmployeePieChart/>
-                    {Data.map((data, index) => {
-                        let icon, icontextcolor, colorHandler;
-                        switch (data.title) {
-                            case "Total Present": icon = <FaUsers className="w-4 h-4 text-white" />; colorHandler = "bg-green-100"; icontextcolor = "text-green-300"; break;
-                            case "Paid Leaves": icon = <FaRegUser className="w-4 h-4 text-white" />; colorHandler = "bg-pink-100";  icontextcolor = "text-pink-300"; break;
-                            case "Unpaid Leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-300"; break;
-                            case "Sick leaves": icon = <FiUser className="w-4 h-4 text-white" />; colorHandler = "bg-purple-100"; icontextcolor = "text-purple-300"; break;
-                            case "Pending Request": icon = <FaUserEdit className="w-4 h-4 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-300"; break;
-                            default: icon = <CircleUserRound className="w-4 h-4 text-white" />; colorHandler = "bg-gray-100";
-                        }
-                        return (
-                            <ChartCard key={index} icon={icon} color={colorHandler} icontextcolor={icontextcolor} value={data.value} title={data.title} trends={data.trends} trendPercentage={data.trendPercentage} trendPeriod={data.trendPeriod} />
-                        );
-                    })}
-                </AnimatePresence>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-7 gap-6 h-full">
+                     <EmployeePieChart start={start} end={end} />
+                {loadingCards ? (
+                    <div className="col-span-full text-center">Loading summary…</div>
+                ) : errorCards ? (
+                    <div className="col-span-full text-center text-red-600">Error: {String(errorCards)}</div>
+                ) : (
+                    items.map((data, index) => (
+                        <ChartCard
+                            key={index}
+                            icon={data.icon}
+                            color={data.color}
+                            icontextcolor={data.icontextcolor}
+                            value={data.value}
+                            title={data.title}
+                        />
+                    ))
+                )}
             </div>
         </motion.div>
     );
 };
-const piechartData = [
-  { title: "Total Present", value: 104 },
-  { title: "Paid Leaves ", value: 10 },
-  { title: "Unpaid Leaves", value: 6 },
-  { title:"Sick leaves", value: 5 },
-  { title: "Pending Request", value: 10 },
-];
+//const piechartData = [
+//  { title: "Total Present", value: 104 },
+//  { title: "Paid Leaves ", value: 10 },
+//  { title: "Unpaid Leaves", value: 6 },
+//  { title:"Sick leaves", value: 5 },
+//  { title: "Pending Request", value: 10 },
+//];
 
 const COLORS = ["#3B82F6", "#F59E0B", "#EF4444", "#84CC16", "#6B7280"];
 
-const EmployeePieChart = () => {
-    const {theme}=useContext(Context);
+const EmployeePieChart = ({ start, end }) => {
+    const { theme } = useContext(Context);
+    const [chartData, setChartData] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        const fetchSummary = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const url = "https://hrms.anasolconsultancyservices.com/api/attendance/attendance-summary-between-dates";
+                const resp = await axios.get(url, { params: { start, end } });
+                const payload = resp?.data;
+
+                // payload may be array of day objects or single aggregated object — reduce to totals
+                const aggregate = (Array.isArray(payload) ? payload : [payload]).reduce((acc, row = {}) => {
+                    acc.present += Number(row.present ?? 0);
+                    acc.paid += Number(row.paidApprovedLeaves ?? 0);
+                    acc.unpaid += Number(row.unpaidApprovedLeaves ?? 0);
+                    acc.sick += Number(row.sickLeaves ?? row.sickLeaves ?? 0);
+                    acc.casual += Number(row.casualApprovedLeaves ?? 0);
+                    acc.pending += Number(row.pendingLeaves ?? 0);
+                    return acc;
+                }, { present: 0, paid: 0, unpaid: 0, sick: 0, casual: 0, pending: 0 });
+
+                const data = [
+                    { title: "Present", value: aggregate.present },
+                    { title: "Paid Leaves", value: aggregate.paid },
+                    { title: "Unpaid Leaves", value: aggregate.unpaid },
+                    { title: "Sick Leaves", value: aggregate.sick },
+                    { title: "Casual Leaves", value: aggregate.casual },
+                    { title: "Pending", value: aggregate.pending },
+                ];
+
+                if (!cancelled) setChartData(data);
+            } catch (err) {
+                if (!cancelled) setError(err?.response?.data ?? err.message ?? "Failed to load");
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        fetchSummary();
+        return () => { cancelled = true; };
+    }, [start, end]);
+
     const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
-  return (
-    <div className="flex justify-center items-center">
-      {/* Chart container */}
-      <PieChart width={180} height={180}>
-        <Pie data={piechartData} dataKey="value" nameKey="title" cx="50%" cy="50%" innerRadius={50}  outerRadius={80} >
-          {piechartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <text
-            x="50%"
-            y="50%"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className={`text-lg font-small `}
-            stroke={textColor}
-        >
-            Leaves
-        </text>
-        <Tooltip />
-      </PieChart>
-    </div>
-  );
+
+    if (loading) {
+        return <div className="flex items-center justify-center p-4">Loading...</div>;
+    }
+    if (error) {
+        return <div className="text-sm text-red-600 p-2">Error loading chart</div>;
+    }
+
+    return (
+        <div className="flex justify-center items-center">
+            <PieChart width={180} height={180}>
+                <Pie
+                    data={chartData}
+                    dataKey="value"
+                    nameKey="title"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                >
+                    {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                </Pie>
+                <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className={`text-lg font-small`}
+                    stroke={textColor}
+                >
+                    Leaves
+                </text>
+                <Tooltip formatter={(value) => `${Number(value).toLocaleString()}`} />
+            </PieChart>
+        </div>
+    );
 };
 //const currentLeaveHistoryData = [
 //    {
@@ -1804,7 +1945,11 @@ function LeavesReports({ onBack }) {
     const [isLoading,setIsLoading]=useState();
     const [showAttendanceForm, setShowAttendanceForm] = useState(false);
      const [showShiftForm, setShowShiftForm] = useState(false);
-    
+     
+    const todayISO = new Date().toISOString().slice(0,10);
+    const sevenDaysAgoISO = new Date(Date.now() - 6*24*60*60*1000).toISOString().slice(0,10);
+    const [stDate, setStDate] = useState(sevenDaysAgoISO);
+    const [enDate, setEnDate] = useState(todayISO);
         const handleAddAttendance = (data) => {
             // You can POST data to your backend here or update local state
             console.log("Attendance Added:", data);
@@ -1820,7 +1965,16 @@ function LeavesReports({ onBack }) {
                 <h1 className={`text-3xl sm:text-4xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                     Leaves Report
                 </h1>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
+
+                <div className="flex items-center gap-2">
+                  {/* date pickers placed to the left of control buttons */}
+                  <div className="flex items-center space-x-2 mr-2">
+                    <input type="date" value={stDate} onChange={(e) => setStDate(e.target.value)} className="p-1 border rounded bg-white text-sm" />
+                    <input type="date" value={enDate} onChange={(e) => setEnDate(e.target.value)} className="p-1 border rounded bg-white text-sm" />
+                    <button onClick={() => { /* trigger refresh for LeaveCharts by updating state only */ }} className="px-3 py-1 bg-gray-200 rounded text-sm">Range</button>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
                     <motion.button
                         className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
                         onClick={() => setShowAttendanceForm(true)}
@@ -1848,10 +2002,12 @@ function LeavesReports({ onBack }) {
                         </svg>
                         Back to Dashboard
                     </motion.button>
+                  </div>
                 </div>
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2">
-                <LeaveCharts />
+                {/* pass stDate/enDate to LeaveCharts so cards update for selected range */}
+                <LeaveCharts start={stDate} end={enDate} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
                 <Attendance />

@@ -1,392 +1,392 @@
-import React, { useState, useMemo, useContext } from 'react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
+import axios from 'axios';
 import { Context } from '../HrmsContext';
 
-const employeeAttendanceData = [
-  {
-    "employeeId": "ACS00000001",
-    "name": "Arjun Reddy",
-    "attendanceId": "ACS00000001_2025-10-09",
-    "date": "2025-10-09",
-    "month": "October",
-    "year": 2025,
-    "mode": "Office",
-    "loginTime": "2025-10-09T09:10:00Z",
-    "logoutTime": "2025-10-09T18:05:00Z",
-    "breaks": [
-      {
-        "startTime": "2025-10-09T13:00:00Z",
-        "endTime": "2025-10-09T13:30:00Z"
-      }
-    ],
-    "effectiveHours": "PT8H25M",
-    "attended": true,
-    "leavesTaken": 2
-  },
-  {
-    "employeeId": "ACS00000002",
-    "name": "Priya Sharma",
-    "attendanceId": "ACS00000002_2025-10-10",
-    "date": "2025-10-10",
-    "month": "October",
-    "year": 2025,
-    "mode": "Remote",
-    "loginTime": "2025-10-10T09:00:00Z",
-    "logoutTime": "2025-10-10T17:30:00Z",
-    "breaks": [],
-    "effectiveHours": "PT8H30M",
-    "attended": true,
-    "leavesTaken": 5
-  },
-  {
-    "employeeId": "ACS00000003",
-    "name": "Vikram Singh",
-    "attendanceId": "ACS00000003_2025-09-28",
-    "date": "2025-09-28",
-    "month": "September",
-    "year": 2025,
-    "mode": "Office",
-    "loginTime": "2025-09-28T09:30:00Z",
-    "logoutTime": "2025-09-28T17:00:00Z",
-    "breaks": [
-      {
-        "startTime": "2025-09-28T12:00:00Z",
-        "endTime": "2025-09-28T12:30:00Z"
-      },
-      {
-        "startTime": "2025-09-28T15:00:00Z",
-        "endTime": "2025-09-28T15:15:00Z"
-      }
-    ],
-    "effectiveHours": "PT7H15M",
-    "attended": true,
-    "leavesTaken": 0
-  },
-  {
-    "employeeId": "ACS00000004",
-    "name": "Sita Kumari",
-    "attendanceId": "ACS00000004_2025-10-05",
-    "date": "2025-10-05",
-    "month": "October",
-    "year": 2025,
-    "mode": "Remote",
-    "loginTime": "2025-10-05T09:45:00Z",
-    "logoutTime": "2025-10-05T18:15:00Z",
-    "breaks": [
-      {
-        "startTime": "2025-10-05T13:15:00Z",
-        "endTime": "2025-10-05T13:45:00Z"
-      }
-    ],
-    "effectiveHours": "PT7H45M",
-    "attended": true,
-    "leavesTaken": 1
-  },
-  {
-    "employeeId": "ACS00000005",
-    "name": "Rahul Das",
-    "attendanceId": "ACS00000005_2025-08-15",
-    "date": "2025-08-15",
-    "month": "August",
-    "year": 2025,
-    "mode": "Office",
-    "loginTime": "2025-08-15T08:50:00Z",
-    "logoutTime": "2025-08-15T17:50:00Z",
-    "breaks": [],
-    "effectiveHours": "PT9H0M",
-    "attended": true,
-    "leavesTaken": 3
-  }
-];
+// helpers
 const parseEffectiveHours = (effectiveHours) => {
-  const match = effectiveHours.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-  const hours = match[1] ? parseInt(match[1], 10) : 0;
-  const minutes = match[2] ? parseInt(match[2], 10) : 0;
-  return hours * 60 + minutes; // నిమిషాల్లో మొత్తం సమయం.
+  if (!effectiveHours) return 0;
+  const s = String(effectiveHours).trim();
+  // ISO duration like PT8H30M
+  const match = s.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (match) {
+    const hours = match[1] ? parseInt(match[1], 10) : 0;
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    return hours * 60 + minutes;
+  }
+  // decimal hours like "8.5"
+  if (!isNaN(Number(s))) {
+    return Math.round(Number(s) * 60);
+  }
+  // hh:mm format
+  const hhmm = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm) return parseInt(hhmm[1], 10) * 60 + parseInt(hhmm[2], 10);
+  return 0;
 };
-
-
-const calculateBreakTime = (breaks) => {
-  let totalBreakMinutes = 0;
-  breaks.forEach(b => {
-    const start = new Date(b.startTime);
-    const end = new Date(b.endTime);
-    const diffMs = end - start;
-    totalBreakMinutes += Math.floor(diffMs / (1000 * 60));
-  });
-  return totalBreakMinutes;
-};
-
-
 const formatMinutesToHHMM = (totalMinutes) => {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
-const AttendanceTable = ({onBack}) => {
-  const [leaveType, setLeaveType] = useState('');
-  const [sortBy, setSortBy] = useState('Recantly Added');
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const {theme}=useContext(Context);
+const IST_OFFSET_MINUTES = 5 * 60 + 30; // 330 minutes
 
- 
-  const filteredData = useMemo(() => {
-    let result = [...employeeAttendanceData];
+// Parse time string into Date and shift to IST (dateRef = 'YYYY-MM-DD' used when timeStr is a time only)
+const parseToISTDate = (timeStr, dateRef = null) => {
+  if (!timeStr) return null;
+  const raw = String(timeStr).trim();
+  try {
+    let d;
+    let datePart = dateRef || new Date().toISOString().slice(0, 10);
 
-    if (selectedMonth) {
-      result = result.filter(item => item.month.toLowerCase() === selectedMonth.toLowerCase());
-    }
-
+    // 1. Handle full ISO-like strings (with date/time/T/Z)
+    if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
+      d = new Date(raw);
+    } 
+    // 2. Handle raw time strings like '05:43:02.079951'
+    else if (/^\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(raw)) {
+      // **FIX:** Treat the raw time (HH:mm:ss.ms) as UTC for the given date, then apply IST offset.
+      // This ensures the +5:30 shift is applied correctly.
+      let timeOnly = raw.split('.')[0]; // Use only HH:mm:ss part for construction
+      d = new Date(`${datePart}T${timeOnly}Z`);
+    } 
+    // 3. Handle Date only string (YYYY-MM-DD)
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      d = new Date(raw);
+    }
+    // 4. Fallback attempt
+    else {
+      d = new Date(raw);
+    }
     
-    if (leaveType) {
-    
-        result = result.filter(item => item.leavesTaken > 0);
-    }
-    
+    if (isNaN(d.getTime())) return null;
+    
+    // Shift time to IST by adding the offset
+    return new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+  } catch {
+    return null;
+  }
+};
 
-    switch (sortBy) {
-      case 'Ascending':
-    
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'Descending':
-        
-        result.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case 'Last Month':
-      
-        const targetMonth = new Date().getMonth() === 0 ? 'December' : new Date(0, new Date().getMonth() - 1).toLocaleString('en-US', { month: 'long' });
-        result.sort((a, b) => {
-            if (a.month === targetMonth && b.month !== targetMonth) return -1;
-            if (a.month !== targetMonth && b.month === targetMonth) return 1;
-            return 0;
-        });
-        break;
-      case 'Last 7 days':
-      
-        result.sort((a, b) => new Date(b.date) - new Date(a.date));
-        break;
-      case 'This Month':
-        
-        const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
-        result.sort((a, b) => {
-            if (a.month === currentMonth && b.month !== currentMonth) return -1;
-            if (a.month !== currentMonth && b.month === currentMonth) return 1;
-            return 0;
-        });
-        break;
-      case 'Recantly Added':
-      default:
-       
-        result.sort((a, b) => new Date(b.date) - new Date(a.date));
-        break;
-    }
-    
-    return result;
-  }, [employeeAttendanceData, leaveType, sortBy, selectedMonth]);
+// convert/shift time string to IST display (adds 5:30 to UTC)
+// dateRef should be YYYY-MM-DD used when timeStr is "HH:mm" only
+const toISTTimeDisplay = (timeStr, dateRef = null) => {
+  if (!timeStr) return 'N/A';
+  const raw = String(timeStr).trim();
+  try {
+    const d = parseToISTDate(raw, dateRef);
+    if (!d) return raw;
+    // Use 'en-IN' for locale time string in IST
+    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  } catch {
+    return raw;
+  }
+};
 
- 
-  const totalEmployees = useMemo(() => {
-    const uniqueIds = new Set(employeeAttendanceData.map(item => item.employeeId));
-    return uniqueIds.size;
-  }, [employeeAttendanceData]);
+// convert gross/effective value to display string (HH:MM)
+const toHHMMDisplay = (value) => {
+  const minutes = parseEffectiveHours(value || '');
+  return minutes > 0 ? formatMinutesToHHMM(minutes) : 'N/A';
+};
 
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// GraphQL endpoint & query (Ensure no invisible characters here)
+const GRAPHQL_URL = "https://hrms.anasolconsultancyservices.com/api/attendance/graphql";
+const DETAILS_QUERY = `
+query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
+  getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
+    date
+    employeeId
+    isPresent
+    login
+    logout
+    effectiveHours
+    grossHours
+    mode
+  }
+}
+`;
 
+// Component
+const AttendanceTable = ({ onBack }) => {
+  // leaveType removed as requested
+  const [sortBy, setSortBy] = useState('Recantly Added');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const { theme, userData } = useContext(Context);
 
-  const tableHeaders = [
-    'EmployeeId',
-    'Date',
-    'Mode',
-    'Login',
-    'Logout',
-    'Total Duration',
-    'Break Duration',
-    'Effective Hours',
-    'Leaves Taken',
-    'Status'
-  ];
+  // fetched attendance records
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  return (
-    <div className={`p-4 sm:p-8 ${theme==='dark'?'bg-gray-400':'bg-gray-50'}min-h-screen`}>
-      <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2">
-        <span role="img" aria-label="clock">⏰</span> Employee Attendance Tracker
-      </h1>
-      <button
-        onClick={onBack}
-        className="mb-4 px-4 py-2 bg-indigo-100 text-blue-600 rounded-lg font-semibold shadow hover:bg-indigo-200 transition"
-      >
-        ← Back to Dashboard
-      </button>
+  // pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
-      {/* Overview Section & Dropdowns */}
-      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme==='dark'?'bg-gray-700':'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
-        <div className={`text-lg font-semibold ${theme==='dark'?'text-gray-100':'text-gray-700'} mb-4 sm:mb-0`}>
-          Total Employees: <span className="text-indigo-600 text-2xl">{totalEmployees}</span>
-        </div>
-        
-        <div className="flex flex-wrap gap-4">
-          
-          {/* Leave Type Dropdown */}
-          <select
-            value={leaveType}
-            onChange={(e) => setLeaveType(e.target.value)}
-            className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300`}
-          >
-            <option value="">Leave Type: All</option>
-            <option value="sick">Sick</option>
-            <option value="paid">Paid</option>
-            <option value="unpaid">Unpaid</option>
-            <option value="casual">Casual</option>
-          </select>
+  // build start/end date for fetch based on selectedMonth or current month
+  const buildRange = () => {
+    const today = new Date();
+    let year = today.getFullYear();
+    let monthIndex = today.getMonth(); // 0-based
+    
+    // If a month is selected, find its index and use current year
+    if (selectedMonth) {
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const index = monthNames.indexOf(selectedMonth);
+      if(index !== -1) monthIndex = index;
+    }
+    
+    const start = new Date(year, monthIndex, 1);
+    const end = new Date(year, monthIndex + 1, 0); // Day 0 of next month gives last day of current month
+    const toISO = (d) => d.toISOString().slice(0, 10);
+    return { startISO: toISO(start), endISO: toISO(end) };
+  };
 
-          {/* Select Month Dropdown */}
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300`}
-          >
-            <option value="">Select Month: All</option>
-            {months.map(m => (
-              <option key={m} value={m}>{m.slice(0, 3)}</option>
-            ))}
-          </select>
-          
-          {/* Sorted By Dropdown */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className={`p-2 border border-gray-300 rounded-lg text-sm ${theme==='dark'?'bg-gray-700 text-gray-50':'bg-white'} hover:border-indigo-500 transition-colors focus:ring-2 focus:ring-indigo-300`}
-          >
-            <option value="Recantly Added">Sorted By: Recently Added</option>
-            <option value="Ascending">Name: Ascending</option>
-            <option value="Descending">Name: Descending</option>
-            <option value="This Month">Date: This Month</option>
-            <option value="Last Month">Date: Last Month</option>
-            <option value="Last 7 days">Date: Last 7 days</option>
-          </select>
-          
-        </div>
-      </div>
+  useEffect(() => {
+    let cancelled = false;
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Use userData employeeId or fallback to a default one
+        const employeeId = userData?.employeeId || "ACS00000001"; 
+        const { startISO, endISO } = buildRange();
+        const variables = { employeeId, startDate: startISO, endDate: endISO };
 
-      <div className="overflow-x-auto shadow-2xl rounded-xl">
-        <table className="min-w-full bg-white border-collapse">
-          
-          {/* Table Header (Desktop View) */}
-          <thead className="bg-indigo-600 text-white sticky top-0">
-            <tr>
-              {tableHeaders.map(header => (
-                <th key={header} className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">
-                  {header}
-                </th>
-              ))}
-       
-              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 sm:hidden">
-                Employee Details
-              </th>
-            </tr>
-          </thead>
-          
-          {/* Table Body */}
-          <tbody>
-            {filteredData.length === 0 ? (
-              <tr>
-                <td colSpan={10} className={`text-center py-6 ${theme==='dark'?' text-gray-50':'text-gray-500'}  text-lg`}>
-                  No attendance records found for the selected filters.
-                </td>
-              </tr>
-            ) : (
-              filteredData.map((record, index) => {
-                const totalMinutesEffective = parseEffectiveHours(record.effectiveHours);
-                const breakMinutes = calculateBreakTime(record.breaks);
-                
-           
-                // Total Duration = Effective Hours + Break Duration
-                const loginTimeDate = new Date(record.loginTime);
-                const logoutTimeDate = new Date(record.logoutTime);
-                const totalDurationMinutes = Math.floor((logoutTimeDate - loginTimeDate) / (1000 * 60));
-                const totalDurationHHMM = formatMinutesToHHMM(totalDurationMinutes);
-                
-                const effectiveHoursHHMM = formatMinutesToHHMM(totalMinutesEffective);
-                const breakDurationHHMM = formatMinutesToHHMM(breakMinutes);
+        const resp = await axios.post(GRAPHQL_URL, { query: DETAILS_QUERY, variables }, {
+          headers: { "Content-Type": "application/json" }
+        });
 
-                
-                const statusColor = record.attended ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+        if (cancelled) return;
+        if (resp?.data?.errors && resp.data.errors.length) {
+          throw new Error(resp.data.errors.map(e => e.message).join('; '));
+        }
+        const data = resp?.data?.data?.getDetailsBetweenDates || [];
 
-                return (
-                  <tr 
-                    key={record.attendanceId} 
-                    className={`border-b transition-colors duration-200  ${theme==='dark'?'bg-gray-700 hover:bg-gray-600':'hover:bg-gray-200'}`}
-                  >
-                    
-                    
-                    <td className={`py-4 px-4 ${theme==='dark'?' text-gray-50':'text-gray-700'} font-medium hidden sm:table-cell`}>
-                      {record.employeeId}
-                    </td>
-                    <td className={`py-4 px-4 text-sm${theme==='dark'?' text-gray-50':'text-gray-700'}  hidden sm:table-cell`}>
-                      {record.date}
-                    </td>
-                    <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${record.mode === 'Office' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {record.mode}
-                      </span>
-                    </td>
-                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'}  hidden sm:table-cell`}>
-                      {loginTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })}
-                    </td>
-                    <td className={`py-4 px-4 text-sm${theme==='dark'?' text-gray-50':'text-gray-700'}  hidden sm:table-cell`}>
-                      {logoutTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })}
-                    </td>
-                    <td className={`py-4 px-4 text-sm font-semibold ${theme==='dark'?' text-indigo-500':'text-indigo-700'} hidden sm:table-cell`}>
-                      {totalDurationHHMM}
-                    </td>
-                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-orange-300':'text-orange-600'} hidden sm:table-cell`}>
-                      {breakDurationHHMM}
-                    </td>
-                    <td className={`py-4 px-4 text-sm font-bold ${theme==='dark'?' text-green-300':'text-green-700'} hidden sm:table-cell`}>
-                      {effectiveHoursHHMM}
-                    </td>
-                    
-                    <td className={`py-4 px-4 text-sm ${theme==='dark'?' text-red-300':'text-red-600'} font-medium hidden sm:table-cell`}>
-                      {record.leavesTaken}
-                    </td>
+        // normalize and compute durations
+        const normalized = data.map((item) => {
+          // dateForTime: prefer YYYY-MM-DD
+          const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
+            ? item.date
+            : new Date().toISOString().slice(0, 10); // Fallback to current date
 
-                    <td className="py-4 px-4 text-sm hidden sm:table-cell">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
-                        {record.attended ? 'Present' : 'Absent'}
-                      </span>
-                    </td>
+          // parse login/logout to IST dates (Used for duration calculation)
+          const loginIST = parseToISTDate(item.login, dateForTime);
+          const logoutIST = parseToISTDate(item.logout, dateForTime);
 
-                    {/* Mobile View (sm:hidden) */}
-                    <td className="py-4 px-4 sm:hidden">
-                      <div className="flex flex-col space-y-1">
-                        <span className={`text-base font-bold ${theme==='dark'?' text-indigo-300':'text-indigo-700'}`}>{record.name}</span>
-                        <span className={`text-sm ${theme==='dark'?' text-gray-100':'text-gray-600'}`}>Date: {record.date} ({record.mode})</span>
-                        <span className={`text-sm ${theme==='dark'?' text-gray-100':'text-gray-600'}`}>
-                          {loginTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })} - 
-                          {logoutTimeDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })}
-                        </span>
-                        <div className="text-xs font-medium mt-1">
-                            <span className={`${theme==='dark'?' text-green-400':'text-green-700'} `}>Effective: {effectiveHoursHHMM}</span> | 
-                            <span className={`${theme==='dark'?' text-red-400':'text-red-700'}`}> Leaves: {record.leavesTaken}</span>
-                        </div>
-                      </div>
-                    </td>
-                    
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-          
-        </table>
-      </div>
-      
-      <p className={`text-sm ${theme==='dark'?' text-gray-50':'text-gray-700'}  mt-6 text-center`}>
-        Data is displayed for **{filteredData.length}** attendance record(s) based on current filters.
-      </p>
-    </div>
-  );
+          // compute minutes
+          let totalDurationMinutes = 0;
+          if (loginIST && logoutIST && !isNaN(loginIST.getTime()) && !isNaN(logoutIST.getTime())) {
+            // Calculate difference in minutes between IST login and IST logout
+            totalDurationMinutes = Math.max(0, Math.floor((logoutIST - loginIST) / (1000 * 60)));
+          } else {
+            // fallback to effectiveHours or grossHours
+            const eff = parseEffectiveHours(item.effectiveHours || '');
+            const gross = parseEffectiveHours(item.grossHours || '');
+            totalDurationMinutes = eff || gross || 0;
+          }
+
+          const effectiveMinutes = parseEffectiveHours(item.effectiveHours || '');
+          const grossMinutes = parseEffectiveHours(item.grossHours || '');
+
+          return {
+            ...item,
+            date: item.date,
+            // These are the IST-adjusted display values
+            loginDisplay: toISTTimeDisplay(item.login, dateForTime), 
+            logoutDisplay: toISTTimeDisplay(item.logout, dateForTime),
+            effectiveHoursDisplay: toHHMMDisplay(item.effectiveHours),
+            grossHoursDisplay: toHHMMDisplay(item.grossHours),
+            totalDurationMinutes,
+            totalDurationHHMM: totalDurationMinutes > 0 ? formatMinutesToHHMM(totalDurationMinutes) : 'N/A',
+            effectiveMinutes,
+            grossMinutes,
+            attended: (() => {
+              const v = item.isPresent;
+              if (v == null) return false;
+              const s = String(v).toLowerCase();
+              return ['present', 'p', 'yes', 'true', '1'].includes(s);
+            })()
+          };
+        });
+
+        setAttendanceRecords(normalized);
+        setPage(1);
+      } catch (err) {
+        console.error(err);
+        setError(err.message || 'Failed to load attendance');
+        setAttendanceRecords([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };
+  }, [selectedMonth, userData]);
+
+  // Filtering / sorting / pagination uses attendanceRecords state
+  const filteredSorted = useMemo(() => {
+    let result = [...attendanceRecords];
+
+    switch (sortBy) {
+      case 'Ascending':
+        result.sort((a, b) => (a.employeeId || '').localeCompare(b.employeeId || ''));
+        break;
+      case 'Descending':
+        result.sort((a, b) => (b.employeeId || '').localeCompare(a.employeeId || ''));
+        break;
+      case 'Last 7 days':
+      case 'Recantly Added':
+      default:
+        result.sort((a, b) => new Date(b.date) - new Date(a.date));
+        break;
+    }
+
+    // (Sorting logic for 'This Month', 'Last Month', etc., removed as it relies on fetch logic, 
+    // but the default sorting is by date/Recantly Added)
+
+    return result;
+  }, [attendanceRecords, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
+  const pageItems = filteredSorted.slice((page - 1) * pageSize, page * pageSize);
+
+  const totalEmployees = useMemo(() => {
+    const uniqueIds = new Set(attendanceRecords.map(item => item.employeeId));
+    return uniqueIds.size;
+  }, [attendanceRecords]);
+
+  // totals for filtered set (sum of totalDuration and gross)
+  const totals = useMemo(() => {
+    const sumDur = filteredSorted.reduce((acc, r) => acc + (r.totalDurationMinutes || 0), 0);
+    const sumGross = filteredSorted.reduce((acc, r) => acc + (r.grossMinutes || 0), 0);
+    return {
+      totalDurationMinutes: sumDur,
+      totalDurationHHMM: sumDur > 0 ? formatMinutesToHHMM(sumDur) : '00:00',
+      totalGrossMinutes: sumGross,
+      totalGrossHHMM: sumGross > 0 ? formatMinutesToHHMM(sumGross) : '00:00'
+    };
+  }, [filteredSorted]);
+
+  // months array for select
+  const months = [
+    "January","February","March","April","May","June","July","August","September","October","November","December"
+  ];
+
+  return (
+    <div className={`p-4 sm:p-8 ${theme === 'dark' ? 'bg-gray-400' : 'bg-gray-50'} min-h-screen`}>
+      <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2">
+        <span role="img" aria-label="clock">⏰</span> Employee Attendance Tracker
+      </h1>
+      <button onClick={onBack} className="mb-4 px-4 py-2 bg-indigo-100 text-blue-600 rounded-lg font-semibold shadow hover:bg-indigo-200 transition">← Back to Dashboard</button>
+
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
+        <div className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'} mb-4 sm:mb-0`}>
+          Total Employees: <span className="text-indigo-600 text-2xl">{totalEmployees}</span>
+        </div>
+
+        <div className="flex flex-wrap gap-4">
+          {/* Leave dropdown removed as requested */}
+
+          <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
+            <option value="">Select Month: All</option>
+            {months.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
+            <option value="Recantly Added">Sorted By: Recently Added</option>
+            <option value="Ascending">EmployeeId: Ascending</option>
+            <option value="Descending">EmployeeId: Descending</option>
+            <option value="This Month">Date: This Month</option>
+            <option value="Last Month">Date: Last Month</option>
+            <option value="Last 7 days">Date: Last 7 days</option>
+          </select>
+
+          <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="p-2 border border-gray-300 rounded-lg text-sm bg-white">
+            <option value={6}>6 / page</option>
+            <option value={12}>12 / page</option>
+            <option value={24}>24 / page</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto shadow-2xl rounded-xl">
+        <table className="min-w-full bg-white border-collapse">
+          <thead className="bg-indigo-600 text-white sticky top-0">
+            <tr>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">EmployeeId</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Date</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Mode</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Login (IST)</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Logout (IST)</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Total Duration</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-b border-indigo-500 hidden sm:table-cell">Effective Hours</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 hidden sm:table-cell">Status</th>
+              <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 sm:hidden">Employee Details</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={10} className="text-center py-8">Loading…</td></tr>
+            ) : error ? (
+              <tr><td colSpan={10} className="text-center py-8 text-red-600">{error}</td></tr>
+            ) : pageItems.length === 0 ? (
+              <tr><td colSpan={10} className="text-center py-6 text-gray-500">No attendance records found for the selected filters.</td></tr>
+            ) : pageItems.map(record => {
+              const totalDurationHHMM = record.totalDurationHHMM || 'N/A';
+              const effectiveHoursHHMM = record.effectiveHoursDisplay || 'N/A';
+              const statusColor = record.attended ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+
+              return (
+                <tr key={`${record.employeeId}-${record.date}`} className={`border-b transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'hover:bg-gray-200'}`}>
+                  <td className={`py-4 px-4 ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} font-medium hidden sm:table-cell`}>{record.employeeId}</td>
+                  <td className={`py-4 px-4 text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} hidden sm:table-cell`}>{record.date}</td>
+                  <td className="py-4 px-4 text-sm text-gray-600 hidden sm:table-cell">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${record.mode === 'Office' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>{record.mode}</span>
+                  </td>
+                  {/* **FIXED:** Use the IST converted display values */}
+                  <td className={`py-4 px-4 text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} hidden sm:table-cell`}>{record.loginDisplay}</td>
+                  <td className={`py-4 px-4 text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} hidden sm:table-cell`}>{record.logoutDisplay}</td>
+                  
+                  <td className={`py-4 px-4 text-sm font-semibold ${theme === 'dark' ? ' text-indigo-500' : 'text-indigo-700'} hidden sm:table-cell`}>{totalDurationHHMM}</td>
+                  <td className={`py-4 px-4 text-sm font-bold ${theme === 'dark' ? ' text-green-300' : 'text-green-700'} hidden sm:table-cell`}>{effectiveHoursHHMM}</td>
+                  <td className="py-4 px-4 text-sm hidden sm:table-cell">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor}`}>{record.attended ? 'Present' : 'Absent'}</span>
+                  </td>
+
+                  <td className="py-4 px-4 sm:hidden">
+                    <div className="flex flex-col space-y-1">
+                      <span className={`text-base font-bold ${theme === 'dark' ? ' text-indigo-300' : 'text-indigo-700'}`}>{record.employeeId}</span>
+                      <span className={`text-sm ${theme === 'dark' ? ' text-gray-100' : 'text-gray-600'}`}>Date: {record.date} ({record.mode})</span>
+                      {/* **FIXED:** Use the IST converted display values */}
+                      <span className={`text-sm ${theme === 'dark' ? ' text-gray-100' : 'text-gray-600'}`}>{record.loginDisplay} - {record.logoutDisplay}</span>
+                      <div className="text-xs font-medium mt-1"><span className={`${theme === 'dark' ? ' text-green-400' : 'text-green-700'}`}>Effective: {effectiveHoursHHMM}</span></div>
+                      <div className="text-xs font-medium mt-1"><span className={`${theme === 'dark' ? ' text-indigo-300' : 'text-indigo-700'}`}>Total: {totalDurationHHMM}</span></div>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* pagination controls */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
+        <div className="flex items-center space-x-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
+          <span className="px-3 py-1">Page {page} / {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
+        </div>
+        
+      </div>
+
+      <p className={`text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} mt-6 text-center`}>
+        Data is displayed for <strong>{filteredSorted.length}</strong> attendance record(s) based on current filters.
+      </p>
+    </div>
+  );
 };
 
 export default AttendanceTable;

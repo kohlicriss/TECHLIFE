@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { CircleUserRound } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip, FaUsers, FaRegFolderOpen } from 'react-icons/fa';
@@ -9,8 +9,318 @@ import { Context } from '../HrmsContext';
 import classNames from 'classnames';
 import { FiDelete, FiEdit } from "react-icons/fi";
 import { authApi } from '../../../../axiosInstance';
+// -------- Add ProjectOverviewForm component (Create / Update) ----------
+const ProjectOverviewForm = ({ mode = 'create', projectId, initialData = {}, onClose = () => {}, onSuccess = () => {} }) => {
+  const { theme } = useContext(Context);
+  const [form, setForm] = useState({
+    timeline_progress: initialData.timeline_progress || '',
+    client: initialData.client || '',
+    total_cost: initialData.total_cost || '',
+    days_to_work: initialData.days_to_work || '',
+    priority: initialData.priority || '',
+    startedOn: initialData.startedOn ? initialData.startedOn.slice(0,10) : '',
+    endDate: initialData.endDate ? initialData.endDate.slice(0,10) : '',
+    manager_employeeId: initialData.manager?.employeeId || '',
+    manager_name: initialData.manager?.name || '',
+    dueAlert: typeof initialData.dueAlert !== 'undefined' ? initialData.dueAlert : 0,
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const base = 'https://hrms.anasolconsultancyservices.com/api/employee';
+  const handleChange = (k) => (e) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+  const persistReturnedToken = async (res, bodyData) => {
+    const authHeader = res.headers.get('authorization') || res.headers.get('Authorization');
+    if (authHeader) {
+      const raw = String(authHeader).startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
+      try { localStorage.setItem('accessToken', raw); } catch {}
+    }
+    const returnedToken = bodyData?.accessToken || bodyData?.token || bodyData?.jwt;
+    if (returnedToken) {
+      const raw = String(returnedToken).startsWith('Bearer ') ? returnedToken.split(' ')[1] : returnedToken;
+      try { localStorage.setItem('accessToken', raw); } catch {}
+    }
+  };
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!projectId) return alert('Project id missing');
+    const token = localStorage.getItem('accessToken');
+    if (!token) return alert('Missing access token. Please login.');
+    const payload = {
+      timeline_progress: form.timeline_progress,
+      client: form.client,
+      total_cost: form.total_cost,
+      days_to_work: form.days_to_work,
+      priority: form.priority,
+      startedOn: form.startedOn || null,
+      endDate: form.endDate || null,
+      manager: { employeeId: form.manager_employeeId, name: form.manager_name },
+      dueAlert: Number(form.dueAlert || 0)
+    };
+    const url = mode === 'create'
+      ? `${base}/create/ProjectOverview/${encodeURIComponent(projectId)}`
+      : `${base}/update/ProjectOverview/${encodeURIComponent(projectId)}`;
+    setSubmitting(true);
+    try {
+      const res = await fetch(url, {
+        method: mode === 'create' ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      const body = await res.json().catch(() => null);
+      await persistReturnedToken(res, body);
+      if (!res.ok) {
+        const msg = body?.message || res.statusText || `Status ${res.status}`;
+        throw new Error(msg);
+      }
+      onSuccess(body || payload);
+      onClose();
+    } catch (err) {
+      console.error(`${mode} overview failed`, err);
+      alert(`Failed to ${mode} overview: ${err.message || err}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <form onSubmit={handleSubmit} className={`w-full max-w-lg p-6 rounded-xl shadow-xl ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-gray-900'}`} onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold">{mode === 'create' ? 'Create Project Overview' : 'Update Project Overview'}</h3>
+          <button type="button" onClick={onClose} className="text-gray-500">×</button>
+        </div>
 
-// --- ProjectCard Data and Component ---
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="text-sm">Timeline Progress</label>
+            <input className="w-full p-2 border rounded" value={form.timeline_progress} onChange={handleChange('timeline_progress')} />
+          </div>
+          <div>
+            <label className="text-sm">Client</label>
+            <input className="w-full p-2 border rounded" value={form.client} onChange={handleChange('client')} />
+          </div>
+          <div>
+            <label className="text-sm">Total Cost</label>
+            <input className="w-full p-2 border rounded" value={form.total_cost} onChange={handleChange('total_cost')} />
+          </div>
+          <div>
+            <label className="text-sm">Days to Work</label>
+            <input className="w-full p-2 border rounded" value={form.days_to_work} onChange={handleChange('days_to_work')} />
+          </div>
+          <div>
+            <label className="text-sm">Priority</label>
+            <input className="w-full p-2 border rounded" value={form.priority} onChange={handleChange('priority')} />
+          </div>
+          <div>
+            <label className="text-sm">Due Alert (days)</label>
+            <input type="number" className="w-full p-2 border rounded" value={form.dueAlert} onChange={handleChange('dueAlert')} />
+          </div>
+          <div>
+            <label className="text-sm">Start Date</label>
+            <input type="date" className="w-full p-2 border rounded" value={form.startedOn} onChange={handleChange('startedOn')} />
+          </div>
+          <div>
+            <label className="text-sm">End Date</label>
+            <input type="date" className="w-full p-2 border rounded" value={form.endDate} onChange={handleChange('endDate')} />
+          </div>
+          <div>
+            <label className="text-sm">Manager Employee ID</label>
+            <input className="w-full p-2 border rounded" value={form.manager_employeeId} onChange={handleChange('manager_employeeId')} />
+          </div>
+          <div>
+            <label className="text-sm">Manager Name</label>
+            <input className="w-full p-2 border rounded" value={form.manager_name} onChange={handleChange('manager_name')} />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Cancel</button>
+          <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 text-white rounded">
+            {submitting ? 'Saving...' : (mode === 'create' ? 'Create' : 'Update')}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+const APIBASE_URL = 'https://hrms.anasolconsultancyservices.com/api/employee/overview/';
+// Helper to persist access token (accepts "Bearer xxx" or "xxx")
+const storeAccessToken = (rawTokenOrHeader) => {
+    if (!rawTokenOrHeader) return;
+    const token = String(rawTokenOrHeader).startsWith('Bearer ')
+        ? String(rawTokenOrHeader).split(' ')[1]
+        : String(rawTokenOrHeader);
+    try { localStorage.setItem('accessToken', token); } catch (e) { /* ignore */ }
+};
+ // ...existing code...
+ const ProjectDetails = () => {
+    const { projectId: paramProjectId } = useParams(); // read from URL if present
+    const [projectId, setProjectId] = useState(() => paramProjectId || localStorage.getItem('selectedProjectId') || '');
+    const [projectData, setProjectData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const {theme} = useContext(Context);
+     const [showUpdateOverview, setShowUpdateOverview] = useState(false);
+
+    
+    // keep localStorage in sync with route-driven selection
+    useEffect(() => {
+        if (paramProjectId && paramProjectId !== projectId) {
+            setProjectId(paramProjectId);
+            try { localStorage.setItem('selectedProjectId', paramProjectId); } catch {}
+        }
+    }, [paramProjectId]);
+
+    useEffect(() => {
+       const fetchProjectData = async () => {
+           setLoading(true);
+           setError(null);
+
+           // ensure we have a projectId to fetch
+           if (!projectId) {
+               setError('No project selected. Select a project to view details.');
+               setLoading(false);
+               setProjectData(null);
+               return;
+           }
+
+           const url = `${APIBASE_URL}${encodeURIComponent(projectId)}`;
+
+           // Use stored access token (set by your authentication flow)
+           const token = localStorage.getItem('accessToken');
+           if (!token) {
+               setError('Access token missing. Please login (store accessToken in localStorage).');
+               setLoading(false);
+               return;
+           }
+
+           try {
+               const response = await fetch(url, {
+                   method: 'GET',
+                   headers: {
+                       'Authorization': `Bearer ${token}`,
+                       'Accept': 'application/json',
+                   },
+               });
+
+               // If backend returned a refreshed token in headers, persist it
+               const authHeader = response.headers.get('authorization') || response.headers.get('Authorization');
+               if (authHeader) storeAccessToken(authHeader);
+
+               if (response.status === 401) {
+                   setError('Unauthorized (401). Access token invalid or expired. Please re-login.');
+                   setProjectData(null);
+                   return;
+               }
+
+               if (!response.ok) {
+                   const txt = await response.text().catch(() => null);
+                   throw new Error(txt || `HTTP ${response.status}`);
+               }
+
+               const data = await response.json();
+               // persist token if returned in body
+               const returnedToken = data?.accessToken || data?.token || data?.jwt;
+               if (returnedToken) storeAccessToken(returnedToken);
+
+               setProjectData(data);
+           } catch (err) {
+               console.error("Fetch error:", err);
+               setError(`Failed to fetch project data. Check the token and URL. Error: ${err.message}`);
+           } finally {
+               setLoading(false);
+           }
+       };
+
+       fetchProjectData();
+    }, [projectId]);  // Dependency array includes PROJECT_ID
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-40">
+                <p className="text-xl text-blue-600">Loading project details...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-red-100 border border-red-400 text-red-700 p-4 rounded m-6" role="alert">
+                <p className="font-bold">Error!</p>
+                <p className="text-sm">{error}</p>
+            </div>
+        );
+    }
+    
+    if (!projectData) {
+        return (
+            <div className="flex justify-center items-center h-40">
+                <p className="text-xl text-gray-500">No project data found.</p>
+            </div>
+        );
+    }
+
+    // --- Project Details Display (Styled with Tailwind CSS) ---
+    return (
+        <div className="p-2 space-y-4">
+            <div className="flex items-end justify-end border-b pb-2 mb-2">
+               <button title="Update Overview" onClick={() => setShowUpdateOverview(true)} className="p-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600">
+                  <FiEdit />
+                </button>
+            </div>
+            {/* General Project Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <InfoCard title="Client" value={projectData.client} />
+                <InfoCard title="Total Cost" value={`$${projectData.total_cost || 'N/A'}`} />
+                <InfoCard title="Timeline Progress" value={projectData.timeline_progress} />
+                <InfoCard title="Priority" value={projectData.priority} />
+            </div> 
+             {showUpdateOverview && (
+              <ProjectOverviewForm
+                mode="update"
+                projectId={projectId}
+                initialData={projectData}
+                onClose={() => setShowUpdateOverview(false)}
+                onSuccess={(updated) => {  setProjectData(updated); }}
+              />
+            )}           
+          {/* Modals: Create / Update Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <InfoCard title="Start Date" value={projectData.startedOn ? new Date(projectData.startedOn).toLocaleDateString() : 'N/A'} />
+                <InfoCard title="End Date" value={projectData.endDate ? new Date(projectData.endDate).toLocaleDateString() : 'N/A'} />
+                <InfoCard title="Days to Work" value={projectData.days_to_work} />
+            </div>
+
+            {/* Manager Details */}
+            {projectData.manager && (
+                <div className={`p-1 rounded-lg border-l-4 border-blue-500 shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-blue-50'}`}>
+                    <h2 className={`text-xl font-semibold ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'} mb-1`}>Project Manager</h2>
+                    <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <span className="font-medium">Name:</span> {projectData.manager.name}
+                    </p>
+                    <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <span className="font-medium">Employee ID:</span> {projectData.manager.employeeId}
+                    </p>
+                </div>
+            )}
+            
+            {/* Due Alert */}
+            <div className="pt-2 border-t mt-2">
+                <p className={`text-lg font-bold ${projectData.dueAlert > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    Due Alert: {projectData.dueAlert} {projectData.dueAlert > 0 ? 'Days Overdue!' : 'No Alert'}
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// Helper component for cleaner display
+const InfoCard = ({ title, value }) => {
+    const {theme} = useContext(Context);
+    return (
+    <div className={`p-2 rounded-lg border shadow-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+        <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
+        <p className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>{value || 'N/A'}</p>
+    </div>
+    );  
+};
 const projects = [
     {
         name: "HRMS Project",
@@ -24,15 +334,14 @@ const projects = [
         ],
         duration: "12 months",
         modules: ["Payroll", "Attendance Tracking", "Leave Management"],
-        status: "On Track", 
-        kpis: { 
+        status: "On Track",
+        kpis: {
             "Sprints Completed": "5/10",
             "Bugs Critical": "2",
             "Code Coverage": "85%"
         },
-        managerContact: { email: "ramesh@abc.com", phone: "+919876543210" } 
+        managerContact: { email: "ramesh@abc.com", phone: "+919876543210" }
     },
-
     {
         name: "Employee Self-Service App",
         description:  "The Employee Self-Service App is a user-friendly platform that empowers employees to independently manage their personal, professional, and administrative tasks. It reduces HR workload by allowing employees to access and update their records, apply for leaves, view payslips, and track attendance—all from a mobile or web interface.",
@@ -50,10 +359,8 @@ const projects = [
     {
         name: "Payroll Automation",
         description:  "Payroll Automation",
-
         description: "The Payroll Automation system is designed to streamline and automate the entire payroll process, ensuring accurate, timely, and compliant salary disbursements. It eliminates manual calculations and reduces errors by integrating attendance, leaves, tax regulations, and employee benefits into a seamless payroll workflow",
         team: [{ role: "Lead Developer", avatars: [1] }, { role: "Backend Developers", avatars: [3] }, { role: "QA Engineer", avatars: [1] }, { role: "Business Analyst", avatars: [1] },
-
 ],
         duration: "9 months",
         modules: ["Tax Compliance", "Benefit Integration", "Automated Disbursement"],
@@ -68,7 +375,6 @@ const projects = [
     {
         name: "Attendance System Upgrade",
         description:"Attendance System Upgrade",
-
         description: "The Attendance System Upgrade modernizes and enhances the organization’s time-tracking infrastructure. It introduces advanced features like biometric integration, real-time monitoring, geo-tagging, and seamless syncing with payroll and HR modules—ensuring higher accuracy, reduced time theft, and improved workforce accountability.",
         team: [  { role: "System Architect", avatars: [1] }, { role: "Software Engineers", avatars: [2] }, { role: "Hardware Integration Specialist", avatars: [1] }, { role: "QA Tester", avatars: [1] }, ],
         duration: "7 months",
@@ -110,34 +416,31 @@ const projects = [
         managerContact: { email: "chatbotdev@abc.com", phone: "+915555555555" }
     }
 ];
-
-
 const projectData = {
     projectDetails: {
-      client: "ABC Enterprises",
-      totalCost: "$1400",
-      DaysToWork: "120 days",
-      createdOn: "14 Nov 2024",
-      startedOn: "15 Jan 2025",
-      endDate: "15 Nov 2025",
-      dueAlert: 1,
-      Manager: {
-        name: "Ramesh",
-      },
-      priority: "High"
+      //client: "ABC Enterprises",
+      //totalCost: "$1400",
+      //DaysToWork: "120 days",
+      //createdOn: "14 Nov 2024",
+      //startedOn: "15 Jan 2025",
+      //endDate: "15 Nov 2025",
+      //dueAlert: 1,
+      //Manager: {
+      //  name: "Ramesh",
+      //},
+      //priority: "High",
     },
 };
-const firstColumnData = { Manager: projectData.projectDetails.Manager };
-const secondColumnData = {
-    client: projectData.projectDetails.client,
-    totalCost: projectData.projectDetails.totalCost,
-    DaysToWork: projectData.projectDetails.DaysToWork,
-    priority: projectData.projectDetails.priority,
-    startedOn: projectData.projectDetails.startedOn,
-    endDate: projectData.projectDetails.endDate
-};
-const projectIconMap = {
-    "HRMS Project": { icon: "👥", color: "text-indigo-500" },
+//const firstColumnData = { Manager: projectData.projectDetails.Manager };
+//const secondColumnData = {
+//    client: projectData.projectDetails.client,
+//    totalCost: projectData.projectDetails.totalCost,
+//    DaysToWork: projectData.projectDetails.DaysToWork,
+//    priority: projectData.projectDetails.priority,    
+// startedOn: projectData.projectDetails.startedOn,
+//    endDate: projectData.projectDetails.endDate
+//}
+const projectIconMap = {    "HRMS Project": { icon: "👥", color: "text-indigo-500" },
     "Employee Self-Service App": { icon: "📱", color: "text-green-500" },
     "Payroll Automation": { icon: "💰", color: "text-yellow-500" },
     "Attendance System Upgrade": { icon: "🕒", color: "text-blue-500" },
@@ -162,9 +465,10 @@ const calculateProgress = (startDateStr, endDateStr) => {
     return Math.min(100, Math.round((elapsedDuration / totalDuration) * 100));
 };
 
+
 const ProjectCard = () => {
-    const {theme} = useContext(Context); 
-    const motion = { 
+    const {theme} = useContext(Context);
+    const motion = {
         div: ({ children, ...props }) => <div {...props}>{children}</div>,
         button: ({ children, ...props }) => <button {...props}>{children}</button>,
         span: ({ children, ...props }) => <span {...props}>{children}</span>,
@@ -173,12 +477,47 @@ const ProjectCard = () => {
     };
 
     const [currentIndex, setCurrentIndex] = useState(0);
-    const currentProject = projects[currentIndex];
+    const currentProject = projects[currentIndex]
     const { icon, color } = projectIconMap[currentProject.name] || { icon: null, color: "" };
-    const progressPercent = calculateProgress(projectData.projectDetails.startedOn, projectData.projectDetails.endDate);
+    const { projectId: paramProjectId } = useParams(); // read from URL if present
+    const [projectId, setProjectId] = useState(() => paramProjectId || localStorage.getItem('selectedProjectId') || '');
 
+    // local state renamed to avoid shadowing module-scope `projectData`
+    const [localProjectData, setLocalProjectData] = useState(null);
+    const [showCreateOverview, setShowCreateOverview] = useState(false);
+    const [overviewSubmitting, setOverviewSubmitting] = useState(false);
+
+    // compute progress using the fetched localProjectData (fallback to module-level `projectData` if needed)
+    const progressSource = localProjectData || projectData;
+    const progressPercent = calculateProgress(progressSource?.projectDetails?.startedOn, progressSource?.projectDetails?.endDate);
+
+    const handleDeleteOverview = async () => {
+       if (!projectId) return alert('Project id missing');
+       if (!window.confirm(`Delete overview for ${projectId}? This cannot be undone.`)) return;
+       const token = localStorage.getItem('accessToken');
+       if (!token) return alert('Missing access token. Please login.');
+       setOverviewSubmitting(true);
+       try {
+         const url = `https://hrms.anasolconsultancyservices.com/api/employee/delete/${encodeURIComponent(projectId)}`;
+         const res = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+         const body = await res.json().catch(()=>null);
+         // persist token if returned
+         const authHeader = res.headers.get('authorization') || res.headers.get('Authorization');
+         if (authHeader) storeAccessToken(authHeader);
+         if (body?.accessToken || body?.token || body?.jwt) storeAccessToken(body?.accessToken || body?.token || body?.jwt);
+         if (!res.ok) throw new Error(body?.message || res.statusText || `Status ${res.status}`);
+         setLocalProjectData(null);
+         alert('Project overview deleted.');
+       } catch (err) {
+         console.error('Delete overview failed', err);
+         alert('Delete failed: ' + (err.message || err));
+       } finally {
+         setOverviewSubmitting(false);
+       }
+     };
     const goToNextProject = () => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % projects.length);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % projects.length);
+
     };
 
     const goToPreviousProject = () => {
@@ -201,7 +540,7 @@ const ProjectCard = () => {
     return (
         <motion.div
             className={`relative p-6 rounded-xl shadow-2xl mx-auto border border-orange-400  ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-r from-orange-10 to-orange-50'}`}
-            key={currentIndex} 
+            key={currentIndex}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -285,47 +624,35 @@ const ProjectCard = () => {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.5, duration: 0.5 }}
                 >
-                    <h2 className="text-xl font-bold mb-4 border-b pb-2">Project Overview</h2>
-                    
-                    {/* Project Progress Bar */}
-                    <div className="mb-6">
-                        <h3 className={`text-sm font-semibold uppercase ${color} mb-1`}>Timeline Progress</h3>
-                        <div className="w-full bg-gray-300 rounded-full h-2.5 dark:bg-gray-700">
-                            <motion.div 
-                                className={`h-2.5 rounded-full ${color.replace('text', 'bg')}`} 
-                                style={{ width: `${progressPercent}%` }}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progressPercent}%` }}
-                                transition={{ duration: 1.5 }}
-                            />
-                        </div>
-                        <p className="text-right text-sm font-medium mt-1">{progressPercent}% Complete</p>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row gap-6">
-                        <div className="md:w-1/3 flex flex-col justify-center items-center p-2 border border-dashed rounded-lg   group hover:ring-2 ring-blue-500 transition cursor-pointer">
-                            <img src={getAvatarUrl(0)} alt={firstColumnData.Manager.name} className="w-20 h-20 rounded-full mb-2 object-cover ring-2 ring-blue-500" />
-                            <p className="text-lg font-semibold ">{firstColumnData.Manager.name}</p>
-                            <p className="text-sm text-gray-500">Project Manager</p>
-                            <div className="flex gap-2 mt-2 text-sm">
-                                <a href={`mailto:${currentProject.managerContact.email}`} className="text-blue-500 hover:underline">📧 Email</a>
-                                <a href={`tel:${currentProject.managerContact.phone}`} className="text-green-500 hover:underline">📞 Call</a>
-                            </div>
-                        </div>
-
-                        {/* Project Details Grid */}
-                        <div className="md:w-2/3 grid grid-cols-2 gap-y-4 gap-x-2">
-                            {Object.entries(secondColumnData).map(([key, value]) => {
-                                const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                                return (
-                                    <div key={key} className="p-1">
-                                        <dt className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} text-xs font-medium uppercase`}>{label}</dt>
-                                        <dd className={`mt-1 text-md font-bold ${key === 'priority' ? 'text-red-500' : theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>{value}</dd>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <div className="flex items-start justify-between border-b pb-2 mb-2">
+              <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                Project Overview ({projectId})
+              </h1>
+              <div className="flex items-center gap-2">
+                <button title="Create Overview" onClick={() => setShowCreateOverview(true)} className="p-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+                  <FaPlus />
+                </button>
+                {/*<button title="Update Overview" onClick={() => setShowUpdateOverview(true)} className="p-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600">
+                  <FiEdit />
+                </button>*/}
+                <button title="Delete Overview" onClick={handleDeleteOverview} disabled={overviewSubmitting} className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700">
+                  <FiDelete />
+                </button>
+              </div>
+            </div>
+                    <ProjectDetails />
+                    <AnimatePresence>
+            {showCreateOverview && (
+              <ProjectOverviewForm
+                mode="create"
+                projectId={projectId}
+                initialData={{}}
+                onClose={() => setShowCreateOverview(false)}
+                onSuccess={(newData) => {  setLocalProjectData(newData); }}
+              />
+            )}
+           
+          </AnimatePresence>
                 </motion.div>
                 <motion.div
                     className={`p-4 rounded-lg shadow-lg border border-gray-100 col-span-1 lg:col-span-3 ${theme==='dark' ? 'bg-gray-800 text-white':'bg-gradient-to-br from-indigo-50 to-white'}`}
@@ -339,7 +666,7 @@ const ProjectCard = () => {
                         {currentProject.team.map((teamMember, index) => (
                             <motion.div
                                 key={index}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-md  dark:hover:bg-gray-200 transition border-l-4 border-indigo-400" 
+                                className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-md  dark:hover:bg-gray-200 transition border-l-4 border-indigo-400"
                                 initial={{ x: -20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
                                 transition={{ delay: 0.7 + index * 0.05 }}
@@ -351,10 +678,10 @@ const ProjectCard = () => {
                                     <span className="text-sm font-bold mr-3">{teamMember.avatars[0]}</span>
                                     <div className="flex -space-x-2 overflow-hidden">
                                         {Array.from({ length: Math.min(teamMember.avatars[0], 4) }).map((_, avatarIndex) => (
-                                            <img 
+                                            <img
                                                 key={avatarIndex}
                                                 className={`inline-block h-8 w-8 rounded-full ring-2 ${theme === 'dark' ? 'ring-gray-800' : 'ring-white'} object-cover`}
-                                                src={getAvatarUrl(avatarIndex + 1 + index * 5)} 
+                                                src={getAvatarUrl(avatarIndex + 1 + index * 5)}
                                                 alt={`Avatar ${avatarIndex + 1}`}
                                                 title={`${teamMember.role} Member ${avatarIndex + 1}`}
                                             />
@@ -371,10 +698,9 @@ const ProjectCard = () => {
                     </div>
                 </motion.div>
             </div>
-
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 flex-wrap gap-4">
-                <div className="relative inline-flex items-center justify-center gap-4 group">
+                <div className="relative inline-flex items-center justify-center gap-4 group">  
                 <div
                     className="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
                 ></div>
@@ -403,7 +729,6 @@ const ProjectCard = () => {
                     </svg>
                 </a>
                 </div>
-
                 <div className="relative inline-flex items-center justify-center gap-4 group">
                     <div
                         className="absolute inset-0 duration-1000 opacity-60 transitiona-all bg-gradient-to-r from-indigo-500 via-pink-500 to-yellow-400 rounded-xl blur-lg filter group-hover:opacity-100 group-hover:duration-200"
@@ -735,336 +1060,443 @@ const MyTeam = () => {
     );
 };
 
-const Form = ({ label, theme, placeholder, type = 'text', ...props }) => {
-    // Standard input styling based on theme
-    const inputClasses = theme === 'dark' 
-        ? 'border-gray-600 bg-gray-700 text-white' 
-        : 'border-gray-300 bg-white text-gray-800';
 
-    return (
-        <div className='relative'>
-            {/* The label is now placed normally, instead of using the complex absolute positioning */}
-            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                {label}
-            </label>
-            <input 
-                type={type} 
-                placeholder={placeholder} 
-                {...props} 
-                className={`w-full px-4 py-2 border rounded-lg transition duration-300 text-sm 
-                    focus:ring-2 focus:ring-green-600/40 focus:border-green-600 focus:outline-none 
-                    ${inputClasses}`} 
-            />
-        </div>
-    );
+
+// API Endpoint Base
+const APIBASEURL = 'https://hrms.anasolconsultancyservices.com/api/employee'; 
+
+// --- Data Fetching Logic (Updated) ---
+const fetchProjectStatus = async (employeeId, page, size, token) => {
+    if (!token) throw new Error("Authentication token missing.");
+    if (!employeeId) throw new Error("Employee ID is missing.");
+    
+    // Construct the endpoint using URL parameters
+    const url = `${APIBASEURL}/${page}/${size}/projectId/asc/all/projectStatus/${employeeId}`;
+    
+    const response = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error("Unauthorized: Token expired or invalid. Please log in again.");
+        }
+        const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`API Error: ${errorBody.message || response.statusText}`);
+    }
+    return response.json();
 };
 // --- ProjectStatus Data and Component ---
 function ProjectStatus() {
-    const { userData,theme } = useContext(Context);
-    const role = (userData?.roles?.[0] || "").toUpperCase();
-    const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
+    const { userData, theme } = useContext(Context);
+    const employeeId = userData?.employeeId; // Assuming employeeId is present in userData
     const COLORS = ["#4f46e5", "#059669", "#f59e0b", "#10b981", "#ec4899", "#0ea5e9"];
 
-    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
-          const [matchedArray,setMatchedArray]=useState(null);
-           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
-    
-    
-           useEffect(()=>{
-             let fetchedData=async()=>{
-                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
-                     console.log("from Project Status :",response.data);
-                     setLoggedPermissionData(response.data);
-             }
-             fetchedData();
-             },[])
+    // State for Data Fetching and Pagination
+    const [teamData, setTeamData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [paginationInfo, setPaginationInfo] = useState({
+        pageNumber: 1, // Start page from your endpoint URL
+        pageSize: 10,  // Size from your endpoint URL
+        totalElements: 0,
+        totalPages: 1,
+    });
+
+    // --- Data Fetching Logic ---
+    const loadProjectStatus = useCallback(async (page, size) => {
+        setLoading(true);
+        setError(null);
+        const token = getAccessToken();
         
-             useEffect(()=>{
-             if(loggedPermissiondata){
-                 setMatchedArray(loggedPermissiondata?.permissions)
-             }
-             },[loggedPermissiondata]);
-             console.log(matchedArray);
-
-    const [hasAccess,setHasAccess]=useState([])
-        useEffect(()=>{
-            setHasAccess(userData?.permissions)
-        },[userData])
-        console.log("permissions from userdata:",hasAccess)
-
-    const projectstatusData = [
-        { Project_id: "P_01", Project_name: "HRMS Project", Status: 80, Duration: "5 Months" },
-        { Project_id: "P_02", Project_name: "Employee Self-Service App", Status: 55, Duration: "6 Months" },
-        { Project_id: "P_03", Project_name: "Payroll Automation", Status: 90, Duration: "5 Months" },
-        { Project_id: "P_04", Project_name: "Attendance System Upgrade", Status: 67, Duration: "1 Months" },
-        { Project_id: "P_05", Project_name: "AI-Based Recruitment Tool", Status: 77, Duration: "6 Months" },
-        { Project_id: "P_06", Project_name: "Internal Chatbot System", Status: 41, Duration: "4 Months" }
-    ];
-
-    const [teamData, setTeamData] = useState(projectstatusData);
-    const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({ Project_id: "", Project_name: "", Status: "", Duration: "" });
-    const [editIndex, setEditIndex] = useState(null);
-
-    const handleAddOrEdit = (e) => {
-        e.preventDefault();
-        if (editIndex !== null) {
-            setTeamData(prev =>
-                prev.map((item, idx) => idx === editIndex ? formData : item)
-            );
-        } else {
-            setTeamData(prev => [...prev, formData]);
+        if (!employeeId) {
+            setError("Employee ID not available for fetching status.");
+            setLoading(false);
+            return;
         }
-        setShowForm(false);
-        setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" });
-        setEditIndex(null);
+
+        try {
+            const data = await fetchProjectStatus(employeeId, page, size, token);
+            
+            // Map the API data keys to the component's expected keys 
+            // and convert status to percentage.
+            const mappedData = data.content.map(item => ({
+                Project_id: item.project_id,
+                Project_name: item.project_name,
+                // Convert 0.0 to 0 (or multiply by 100 for percentage)
+                Status: Math.round(Number(item.status) * 100), 
+                Duration: item.duration,
+            }));
+            
+            setTeamData(mappedData);
+            setPaginationInfo({
+                pageNumber: data.pageNumber,
+                pageSize: data.pageSize,
+                totalElements: data.totalElements,
+                totalPages: data.totalPages,
+            });
+        } catch (err) {
+            console.error("Failed to load project status:", err);
+            setError(err.message);
+            setTeamData([]); // Clear data on error
+        } finally {
+            setLoading(false);
+        }
+    }, [employeeId]); // Dependency on employeeId
+
+    // Load data effect
+    useEffect(() => {
+        // Use the API's starting page number (1 in your example URL)
+        loadProjectStatus(paginationInfo.pageNumber, paginationInfo.pageSize);
+    }, [loadProjectStatus, paginationInfo.pageNumber, paginationInfo.pageSize]);
+
+    // Handle pagination change
+    const handlePageChange = (newPage) => {
+        if (newPage >= 0 && newPage < paginationInfo.totalPages) {
+            setPaginationInfo(prev => ({ ...prev, pageNumber: newPage }));
+        }
     };
 
-    const handleEdit = (idx) => {
-        setFormData(teamData[idx]);
-        setEditIndex(idx);
-        setShowForm(true);
-    };
-
-    const handleDelete = (idx) => {
-        setTeamData(prev => prev.filter((_, i) => i !== idx));
-    };
-
-     return (
+    // --- Component Rendering ---
+    return (
         <motion.div
-            className={`p-6  rounded-lg shadow-xl border border-green-500 h-full overflow-hidden ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-green-10 to-green-50'} `}
+            className={`p-6 rounded-lg shadow-xl border border-green-500 h-full flex flex-col ${theme === 'dark' ? 'bg-gray-800' : 'bg-gradient-to-br from-green-10 to-green-50'} `}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-green-800 ${theme==='dark' ? 'bg-gradient-to-br from-green-100 to-green-400 bg-clip-text text-transparent ':''}`}>Project Status Overview</h2>
-                {(matchedArray || []).includes("UPDATE_PROJSTATUS") && (
-                    <motion.button
-                        className={`flex items-center ${theme==='dark'?'bg-gray-500 text-green-500':'bg-green-50 text-green-700'} border border-green-500 font-bold py-2 px-4 rounded-xl shadow transition`}
-                        onClick={() => { setShowForm(true); setFormData({ Project_id: "", Project_name: "", Status: "", Duration: "" }); setEditIndex(null); }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <FaPlus className="mr-2" /> Update Status
-                    </motion.button>
-                )}
-            </div>
-            <AnimatePresence>
-    {showForm && (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            // Added backdrop click to close
-            onClick={() => { setShowForm(false); setEditIndex(null); }} 
-        >
-            <motion.form
-                // Professional width and clean background classes
-                className={`w-full max-w-lg rounded-3xl shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
-                onSubmit={handleAddOrEdit}
-                initial={{ scale: 0.8, y: -50 }} // Smoother animation
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.8, y: -50 }}
-                transition={{ duration: 0.3 }}
-                // Prevent modal closure when clicking inside
-                onClick={(e) => e.stopPropagation()}
-            > 
-                {/* Professional Header - Using Green/Teal for "Status/Project" theme */}
-                <div className="text-center rounded-t-3xl p-6 bg-gradient-to-r from-green-500 to-teal-600">
-                    <h3 className="text-2xl font-extrabold text-white flex items-center justify-center space-x-3"> 
-                        {/* Using a clear icon (assuming you have access to a project/check icon) */}
-                        <i className="fas fa-tasks mr-2"></i>
-                        <span>{editIndex !== null ? "Edit Project Status" : "Update Project Status"}</span>
-                    </h3> 
-                    <p className="text-sm text-white/90 mt-1">Submit the current progress and estimated duration.</p>
-                </div>
-
-                <div className="space-y-6 p-8">
-                    <div className="grid grid-cols-1 gap-6">
-                        
-                        {/* 1. Project ID */}
-                        <Form 
-                            label="Project ID"
-                            theme={theme}
-                            placeholder="e.g., PROJ-2025-001" 
-                            value={formData.Project_id} 
-                            onChange={e => setFormData({ ...formData, Project_id: e.target.value })} 
-                            required 
-                        />
-                        
-                        {/* 2. Project Name */}
-                        <Form 
-                            label="Project Name"
-                            theme={theme}
-                            placeholder="e.g., HRMS Deployment" 
-                            value={formData.Project_name} 
-                            onChange={e => setFormData({ ...formData, Project_name: e.target.value })} 
-                            required 
-                        />
-                        
-                        {/* 3. Status (%) */}
-                        <Form 
-                            label="Status Percentage (%)"
-                            theme={theme}
-                            type="number" 
-                            placeholder="0 to 100" 
-                            value={formData.Status} 
-                            onChange={e => setFormData({ ...formData, Status: e.target.value })} 
-                            required 
-                            min="0"
-                            max="100"
-                        />
-                        
-                        {/* 4. Duration */}
-                        <Form 
-                            label="Estimated Duration (e.g., 4 weeks)"
-                            theme={theme}
-                            type="text" 
-                            placeholder="e.g., 4 Weeks Remaining" 
-                            value={formData.Duration} 
-                            onChange={e => setFormData({ ...formData, Duration: e.target.value })} 
-                            required 
-                        />
-                    </div>
-                    
-                    {/* Action Buttons - Professional Footer */}
-                    <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
-                        <motion.button 
-                            type="button" 
-                            className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600" 
-                            onClick={() => { setShowForm(false); setEditIndex(null); }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Cancel
-                        </motion.button>
-                        <motion.button 
-                            type="submit" 
-                            className="px-5 py-2.5 rounded-lg border border-transparent bg-green-600 text-sm font-semibold text-white shadow-md hover:bg-green-700 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            {editIndex !== null ? "Update Status" : "Add Status"}
-                        </motion.button>
-                    </div>
-                </div>
-            </motion.form>
-        </motion.div>
-    )}
-</AnimatePresence>
+                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-800'}`}>Project Status Overview</h2>
+            </div> 
             
-    {/* Table container with responsive overflow */}
-    <div className="overflow-x-auto rounded-xl">
-        <table className={`min-w-full  divide-y divide-gray-200  `}>
-            <thead className="">
-                <tr className={`text-left  w-full text-sm  uppercase  tracking-wider ${theme==='dark'?'bg-gray-500 text-white  ':'bg-green-50 text-green-700'}`}>
-                    <th className="py-2 px-4 font-semibold">Project ID</th>
-                    <th className="py-2 px-4 font-semibold">Project Name</th>
-                    <th className="py-2 px-4 font-semibold">Duration</th>
-                    <th className="py-2 px-4 font-semibold">Status</th>
-                    {(matchedArray || []).includes("EDIT_PROJSTATUS") && <th className="py-2 px-4 ">Edit</th>}
-                    {(matchedArray || []).includes("DELETE_PROJSTATUS") && <th className="py-2 px-4 ">Delete</th>}
-                </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-500">
-                <AnimatePresence mode="wait">
-                    {teamData.map((project, index) => (
-                        <motion.tr
-                            key={project.Project_id}
-                            className="border-t border-gray-100 hover:bg-gray-50"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                        >
-                            <td className={`py-2 px-4  whitespace-nowrap text-sm ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{project.Project_id}</td>
-                           <td className={`py-2 px-4   whitespace-nowrap text-sm ${theme==='dark' ?  'bg-gray-500  text-gray-200':''}`}>{project.Project_name}</td>
-                            <td className={`py-2 px-4 whitespace-nowrap  text-sm ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{project.Duration}</td>
-                            <td className={`py-2 px-4  whitespace-nowrap  w-32 flex items-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                <ResponsiveContainer width="75%" height={25}>
-                                    <BarChart
-                                        layout="vertical"
-                                        data={[{ name: project.Project_name, value: Number(project.Status) }]}
-                                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+            {loading && <p className="text-center py-4 text-green-500">Loading project status...</p>}
+            {error && <p className="text-center py-4 text-red-500">Error: {error}</p>}
+            
+            {/* Table container with responsive overflow and fixed height */}
+            <div className="overflow-x-auto overflow-y-auto rounded-xl flex-grow">
+                <table className={`min-w-full divide-y ${theme === 'dark' ? 'divide-gray-600 bg-gray-700' : 'divide-gray-200 bg-white'}`}>
+                    <thead className="sticky top-0 z-10"> {/* Sticky header for scrollable table */}
+                        <tr className={`text-left w-full text-xs sm:text-sm uppercase tracking-wider ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-green-100 text-green-800'}`}>
+                            <th className="py-2 px-4 font-semibold whitespace-nowrap">Project ID</th>
+                            <th className="py-2 px-4 font-semibold whitespace-nowrap">Project Name</th>
+                            <th className="py-2 px-4 font-semibold whitespace-nowrap">Duration</th>
+                            <th className="py-2 px-4 font-semibold whitespace-nowrap">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className={`divide-y ${theme === 'dark' ? 'divide-gray-600' : 'divide-gray-100'}`}>
+                        <AnimatePresence mode="wait">
+                            {teamData.length > 0 ? (
+                                teamData.map((project, index) => (
+                                    <motion.tr
+                                        key={project.Project_id}
+                                        className={`${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-green-50/50'} transition duration-150`}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        transition={{ duration: 0.3, delay: index * 0.05 }}
                                     >
-                                        <XAxis type="number" domain={[0, 100]} hide />
-                                        <YAxis type="category" dataKey="name" hide />
-                                        <Tooltip formatter={(value) => `${value}%`} />
-                                        <Bar dataKey="value" radius={[5, 5, 5, 5]}>
-                                            <Cell fill={COLORS[index % COLORS.length]} />
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                                <span className={`text-xs  ml-2 ${theme==='dark' ? 'text-gray-200':'text-gray-600'}`}>{project.Status}%</span>
-                            </td>
-                            {(matchedArray || []).includes("EDIT_PROJSTATUS") && (
-                                <td className={`py-2 px-4  whitespace-nowrap ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                    <button className={`${theme==='dark'?'text-indigo-200':'text-indigo-600'} hover:text-indigo-800 font-small`}  onClick={() => handleEdit(index)}><FiEdit className='w-5 h-5'/></button>
-                                </td>
+                                        <td className={`py-2 px-4 whitespace-nowrap text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{project.Project_id}</td>
+                                        <td className={`py-2 px-4 whitespace-nowrap text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{project.Project_name}</td>
+                                        <td className={`py-2 px-4 whitespace-nowrap text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{project.Duration}</td>
+                                        <td className={`py-2 px-4 whitespace-nowrap w-40 flex items-center ${theme === 'dark' ? 'text-gray-200' : 'text-gray-600'}`}>
+                                            <ResponsiveContainer width="75%" height={25}>
+                                                <BarChart
+                                                    layout="vertical"
+                                                    data={[{ name: project.Project_name, value: project.Status }]}
+                                                    margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                                                >
+                                                    <XAxis type="number" domain={[0, 100]} hide />
+                                                    <YAxis type="category" dataKey="name" hide />
+                                                    {/* Tooltip is helpful but may look messy in a tight table. */}
+                                                    {/* <Tooltip formatter={(value) => `${value}%`} /> */}
+                                                    <Bar dataKey="value" radius={[5, 5, 5, 5]} fill={COLORS[index % COLORS.length]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                            <span className="text-xs ml-2 font-semibold min-w-[30px]">{project.Status}%</span>
+                                        </td>
+                                    </motion.tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className={`text-center py-6 text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        No project statuses available.
+                                    </td>
+                                </tr>
                             )}
-                            {(matchedArray || []).includes("DELETE_PROJSTATUS") && (
-                                <td className={`py-2 px-4  whitespace-nowrap  ${theme==='dark' ? 'bg-gray-500 ':''}`}>
-                                    <button className={`${theme==='dark'?'text-red-200':'text-red-600'} hover:text-red-800 font-small`}   onClick={() => handleDelete(index)}><FiDelete className='w-5 h-5'/></button>
-                                </td>
-                            )}
-                        </motion.tr>
-                    ))}
-                </AnimatePresence>
-            </tbody>
-        </table>
-    </div>
+                        </AnimatePresence>
+                    </tbody>
+                </table>
+            </div>
+            
+            {/* Pagination Controls */}
+            {paginationInfo.totalElements > 0 && (
+                <div className={`flex justify-between items-center mt-4 p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-white border border-gray-200 text-gray-700'} shadow-inner`}>
+                    <span className="text-sm">
+                        Showing {teamData.length} of {paginationInfo.totalElements} projects
+                    </span>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => handlePageChange(paginationInfo.pageNumber - 1)}
+                            disabled={paginationInfo.pageNumber === 1 || paginationInfo.first} // Page 1 is the starting point
+                            className="px-3 py-1 rounded-lg text-sm bg-green-200 text-green-800 hover:bg-green-300 disabled:opacity-50 transition"
+                        >
+                            &larr; Prev
+                        </button>
+                        <span className="px-3 py-1 rounded-lg text-sm bg-green-600 text-white font-bold">
+                            Page {paginationInfo.pageNumber} of {paginationInfo.totalPages}
+                        </span>
+                        <button
+                            onClick={() => handlePageChange(paginationInfo.pageNumber + 1)}
+                            disabled={paginationInfo.pageNumber >= paginationInfo.totalPages || paginationInfo.last}
+                            className="px-3 py-1 rounded-lg text-sm bg-green-200 text-green-800 hover:bg-green-300 disabled:opacity-50 transition"
+                        >
+                            Next &rarr;
+                        </button>
+                    </div>
+                </div>
+            )}
         </motion.div>
     );
 }
+const API_ENDPOINT = 'https://hrms.anasolconsultancyservices.com/api/employee/project';
 
-const Forms = ({ label, theme, placeholder, type = 'text', children, className = '', ...props }) => {
-    // Standard input styling based on theme
-    const inputClasses = theme === 'dark' 
-        ? 'border-gray-600 bg-gray-700 text-white' 
-        : 'border-gray-300 bg-white text-gray-800';
+const ProjectForm = ({ onClose, editProject = null }) => {
+   const [formData, setFormData] = useState({
+     title: '',
+     description: '',
+     projectPriority: 'Medium',
+     projectStatus: 'Not Started',
+     startDate: '',
+     endDate: '',
+     openTask: 0,
+     closedTask: 0,
+     teamLeadId: [''],
+   });
+   const [fileAttachment, setFileAttachment] = useState(null);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+   const [submissionMessage, setSubmissionMessage] = useState('');
+ 
+  // when editing, prefill form
+  useEffect(() => {
+    if (!editProject) return;
+    setFormData({
+      title: editProject.title || editProject.project_name || editProject.title || '',
+      description: editProject.description || '',
+      projectPriority: editProject.projectPriority || editProject.Priority || 'Medium',
+      projectStatus: editProject.projectStatus || editProject.status || 'Not Started',
+      startDate: editProject.startDate || editProject.start_date || '',
+      endDate: editProject.endDate || editProject.end_date || '',
+      openTask: editProject.openTask ?? editProject.Open_task ?? 0,
+      closedTask: editProject.closedTask ?? editProject.Closed_task ?? 0,
+      teamLeadId: Array.isArray(editProject.teamLeadId) ? editProject.teamLeadId : (editProject.teamLeadId ? [String(editProject.teamLeadId)] : (editProject.Team_Lead ? [String(editProject.Team_Lead)] : [''])),
+    });
+    // clear previously attached file preview when editing
+    setFileAttachment(null);
+  }, [editProject]);
 
-    const inputStyle = `w-full px-4 py-3 border rounded-lg transition duration-300 text-sm 
-                        focus:ring-2 focus:ring-purple-600/40 focus:border-purple-600 focus:outline-none 
-                        ${inputClasses} ${className}`;
+   const handleChange = (e) => {
+     const { name, value } = e.target;
+     const processedValue = (name === 'openTask' || name === 'closedTask') ? parseInt(value) || 0 : value;
+     setFormData((prev) => ({ ...prev, [name]: processedValue }));
+   };
+   const handleFileChange = (e) => setFileAttachment(e.target.files?.[0] || null);
+   const handleTeamLeadChange = (e, idx) => {
+     const arr = [...formData.teamLeadId];
+     arr[idx] = e.target.value;
+     setFormData(prev => ({ ...prev, teamLeadId: arr }));
+   };
+ 
+   const submitProject = async (e) => {
+     e.preventDefault();
+     setIsSubmitting(true);
+     setSubmissionMessage('');
+ 
+     const dto = {
+       title: formData.title,
+       description: formData.description,
+       projectPriority: formData.projectPriority,
+       projectStatus: formData.projectStatus,
+       startDate: formData.startDate,
+       endDate: formData.endDate,
+       openTask: Number(formData.openTask || 0),
+       closedTask: Number(formData.closedTask || 0),
+       teamLeadId: formData.teamLeadId.filter(Boolean),
+     };
+ 
+     const fd = new FormData();
+     // append as JSON string under expected key
+     fd.append('projectDTO', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
+     if (fileAttachment) fd.append('details', fileAttachment, fileAttachment.name);
+ 
+     const token = localStorage.getItem('accessToken');
+     if (!token) {
+       setSubmissionMessage('❌ Authentication token missing. Please login.');
+       setIsSubmitting(false);
+       return;
+     }
+ 
+     try {
+      // If editProject present => update with PUT to /project/{projectId}
+      const url = editProject && (editProject.projectId || editProject.project_id)
+        ? `${API_ENDPOINT}/${editProject.projectId || editProject.project_id}`
+        : API_ENDPOINT;
+      const method = editProject ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+       if (!res.ok) {
+         let errText = res.statusText;
+         try { const j = await res.json(); errText = j.message || errText; } catch {}
+         setSubmissionMessage(`❌ Submission failed (${res.status}): ${errText}`);
+       } else {
 
-    return (
-        <div className='relative'>
-            <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                {label}
-            </label>
-            {type === 'textarea' ? (
-                <textarea 
-                    placeholder={placeholder} 
-                    {...props} 
-                    className={`${inputStyle} min-h-[100px]`} 
-                />
-            ) : type === 'select' ? (
-                 <select 
-                    {...props} 
-                    className={`${inputStyle} appearance-none h-12`}
-                 >
-                    {children}
-                 </select>
-            ) : (
-                <input 
-                    type={type} 
-                    placeholder={placeholder} 
-                    {...props} 
-                    className={inputStyle} 
-                />
-            )}
+        setSubmissionMessage(editProject ? '✅ Project updated successfully!' : '✅ Project created successfully!');
+         setFormData({
+           title: '', description: '', projectPriority: 'Medium', projectStatus: 'Not Started',
+           startDate: '', endDate: '', openTask: 0, closedTask: 0, teamLeadId: [''],
+         });
+         setFileAttachment(null);
+         setTimeout(onClose, 1200);
+       }
+     } catch (err) {
+       console.error(err);
+       setSubmissionMessage(`❌ An error occurred: ${err.message}`);
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
+ 
+   const inputClass = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150";
+   const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <motion.form
+        onSubmit={submitProject}
+        className="bg-white p-6 rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.98, opacity: 0 }}
+      >
+       <button 
+             type="button" 
+             onClick={onClose} 
+             className="absolute w-6 h-6 top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl font-bold p-1 leading-none"
+         >
+             &times;
+         </button>
+        <h1 className="text-3xl font-extrabold text-blue-700 border-b pb-3 mb-6 sticky top-0 bg-white z-10">
+          {editProject ? 'Edit Project' : 'Create New Project'}
+        </h1>
+ 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+           <label htmlFor="title" className={labelClass}>Project Title <span className="text-red-500">*</span></label>
+            <input name="title" value={formData.title} onChange={handleChange} required className={inputClass} />
+          </div>
+          <div>
+             <label htmlFor="startDate" className={labelClass}>Start Date <span className="text-red-500">*</span></label>
+            <input name="startDate" type="date" value={formData.startDate} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+          <label htmlFor="endDate" className={labelClass}>End Date <span className="text-red-500">*</span></label>
+            <input name="endDate" type="date" value={formData.endDate} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Priority</label>
+            <select name="projectPriority" value={formData.projectPriority} onChange={handleChange} className={inputClass}>
+              <option>Low</option><option>Medium</option><option>High</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Status</label>
+            <select name="projectStatus" value={formData.projectStatus} onChange={handleChange} className={inputClass}>
+              <option>Not Started</option><option>On Going</option><option>Completed</option>
+            </select>
+          </div>
         </div>
-    );
+
+        <div className="mt-4">
+          <label htmlFor="description" className={labelClass}>Description <span className="text-red-500">*</span></label>
+          <textarea name="description" rows="4" value={formData.description} onChange={handleChange} className={inputClass} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className={labelClass}>Open Tasks</label>
+            <input name="openTask" type="number" min="0" value={formData.openTask} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Closed Tasks</label>
+            <input name="closedTask" type="number" min="0" value={formData.closedTask} onChange={handleChange} className={inputClass} />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className={labelClass}>Team Lead ID</label>
+          <input name="teamLead" value={formData.teamLeadId[0]} onChange={(e) => handleTeamLeadChange(e, 0)} className={inputClass} placeholder="e.g., EMP-005" />
+        </div>
+
+        <div className="mt-4 border-t pt-4">
+          <label className={`${labelClass} text-base`}>Details (attach file)</label>
+          <input type="file" onChange={handleFileChange} className="mt-2" />
+          {fileAttachment && <p className="text-sm mt-2">Selected: <strong>{fileAttachment.name}</strong></p>}
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
+          <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded">
+            {isSubmitting ? 'Creating...' : 'Create Project'}
+          </button>
+        </div>
+
+        {submissionMessage && (
+          <p className={`mt-4 p-2 rounded ${submissionMessage.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{submissionMessage}</p>
+        )}
+      </motion.form>
+    </div>
+  );
 };
-// ...existing code...
+
+const getAccessToken = () => {
+
+    return localStorage.getItem('accessToken'); 
+}
+const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/employee'; 
+
+const fetchProjects = async (page, size, token) => {
+    if (!token) throw new Error("Authentication token missing.");
+    const url = `${API_BASE_URL}/${page}/${size}/projectId/asc/projects`;
+    
+    const response = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error("Unauthorized: Token expired or invalid. Please log in again.");
+        }
+        const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`API Error: ${errorBody.message || response.statusText}`);
+    }
+    return response.json();
+};
+// --- END MOCK API ---
+
+
 function Project() {
-    const { userData,theme } = useContext(Context);
+    const { userData, theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
-
-    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
           const [matchedArray,setMatchedArray]=useState(null);
            const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
     
@@ -1072,7 +1504,7 @@ function Project() {
            useEffect(()=>{
              let fetchedData=async()=>{
                      let response = await authApi.get(`role-access/${LoggedUserRole}`);
-                     console.log("from Projects :",response.data);
+                     console.log("from MyTeam :",response.data);
                      setLoggedPermissionData(response.data);
              }
              fetchedData();
@@ -1085,144 +1517,168 @@ function Project() {
              },[loggedPermissiondata]);
              console.log(matchedArray);
 
-    const [hasAccess,setHasAccess]=useState([])
-        useEffect(()=>{
-            setHasAccess(userData?.permissions)
-        },[userData])
-        console.log("permissions from userdata:",hasAccess)
+             const [hasAccess,setHasAccess]=useState([])
+                   useEffect(()=>{
+                       setHasAccess(userData?.permissions)
+                   },[userData])
+                   console.log("permissions from userdata:",hasAccess)
 
-    const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                  Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",       Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",   Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",   Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",     Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
-
-    const teamLeadImageMap = {
-        Naveen: "https://i.pravatar.cc/40?img=1",
-        Rajiv: "https://i.pravatar.cc/40?img=2",
-        Manikanta: "https://i.pravatar.cc/40?img=3",
-        Ravinder: "https://i.pravatar.cc/40?img=4",
-        Sravani: "https://i.pravatar.cc/40?img=5",
-        Gayatri: "https://i.pravatar.cc/40?img=6"
-    };
-
-
-    const getPriorityColor = (priority) => {
-        switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
-    const getStatusColor = (status) => {
-        switch (status) {case "In Progress":    return "bg-green-100 text-green-800";case "Ongoing": return "bg-blue-100 text-blue-800";case "Upcoming": return "bg-yellow-100 text-yellow-800";case "Completed": return "bg-purple-100 text-purple-800";default: return "bg-gray-100 text-gray-800";} };
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [newProject, setNewProject] = useState({
-        project_id: "",
-        project_name: "",
-        status: "Ongoing",
-        start_date: "",
-        end_date: "",
-        team_Lead:"",
-        Priority: "Medium",
-        Open_task: 0,
-        Closed_task: 0,
-        rating: "",
-        remark: "",
-        completionNote: "",
-        relatedLinks: [""],
-        attachedFileLinks: [],
+    
+    // State for Data Fetching and Pagination
+    const [projectTableData, setProjectTableData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [paginationInfo, setPaginationInfo] = useState({
+        pageNumber: 0,
+        pageSize: 11,
+        totalElements: 0,
+        totalPages: 1,
     });
-    const [files, setFiles] = useState([]);
-    const handleCreateProject = (e) => {
-        e.preventDefault();
-        setProjectTableData(prev => [
-            ...prev,
-            { ...newProject, project_id: `P_${prev.length + 1}`, attachedFileLinks: files }
-        ]);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("All");
+    const navigate = useNavigate();
+    //useEffect(() => {
+    //    const fetchedData = async () => {
+    //        if (!LoggedUserRole) return;
+    //        try {
+    //            
+    //            let response = await fetch(`${API_BASE_URL.replace('/api/employee', '/api')}/role-access/${LoggedUserRole}`).then(res => res.json()); // Adjust path as needed
+    //            
+    //            console.log("from Projects Role Access:", response);
+    //            setLoggedPermissionData(response);
+    //        } catch (err) {
+    //            console.error("Error fetching role permissions:", err);
+    //            // setError(err.message); // Set a general error state if needed
+    //        }
+    //    };
+    //    fetchedData();
+    //}, [LoggedUserRole]);
+    //useEffect(() => {
+    //    if (loggedPermissiondata && loggedPermissiondata.permissions) {
+    //        setMatchedArray(loggedPermissiondata.permissions);
+    //    }
+    //}, [loggedPermissiondata]);
+    const loadProjects = useCallback(async (page, size) => {
+        setLoading(true);
+        setError(null);
+        const token = getAccessToken();
+        
+        try {
+            const data = await fetchProjects(page, size, token);
+            
+            setProjectTableData(data.content);
+            setPaginationInfo({
+                pageNumber: data.pageNumber,
+                pageSize: data.pageSize,
+                totalElements: data.totalElements,
+                totalPages: data.totalPages,
+            });
+        } catch (err) {
+            console.error("Failed to load projects:", err);
+            setError(err.message);
+            setProjectTableData([]); // Clear data on error
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+    useEffect(() => {
+
+        loadProjects(paginationInfo.pageNumber, paginationInfo.pageSize);
+    }, [loadProjects, paginationInfo.pageNumber, paginationInfo.pageSize]);
+    const handleRowClick = (proj) => {
+        const idKey = proj.projectId || proj.project_id; 
+        try { localStorage.setItem('selectedProjectId', idKey); } catch {}
+        navigate(`/project-details/${idKey}`, { state: { project: proj } });
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 0 && newPage < paginationInfo.totalPages) {
+            setPaginationInfo(prev => ({ ...prev, pageNumber: newPage }));
+        }
+    };
+    const getPriorityColor = (priority) => {
+        switch (priority) {
+            case "High": return "bg-green-100 text-green-800";
+            case "Medium": return "bg-orange-100 text-orange-800";
+            case "Low": return "bg-red-100 text-red-800";
+            default: return "bg-gray-100 text-gray-800";
+        }
+    };
+    
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "In Progress": return "bg-green-100 text-green-800";
+            case "Ongoing": return "bg-blue-100 text-blue-800";
+            case "Upcoming": return "bg-yellow-100 text-yellow-800";
+            case "Completed": return "bg-purple-100 text-purple-800";
+            default: return "bg-gray-100 text-gray-800";
+        }
+    };
+       const getTeamLeadDisplay = (proj) => {
+        if (!proj) return "N/A";
+        if (Array.isArray(proj.teamLeadId) && proj.teamLeadId.length) return proj.teamLeadId.join(', ');
+        if (Array.isArray(proj.TeamLeadId) && proj.TeamLeadId.length) return proj.TeamLeadId.join(', ');
+        if (proj.teamLeadId) return String(proj.teamLeadId);
+        if (proj.TeamLeadId) return String(proj.TeamLeadId);
+        if (proj.TeamLead) return String(proj.TeamLead);
+        if (proj.Team_Lead) return String(proj.Team_Lead);
+        return "N/A";
+    };
+    const handleProjectSubmissionSuccess = () => {
         setShowCreateForm(false);
-        setNewProject({
-            project_id: "",
-            project_name: "",
-            status: "Ongoing",
-            start_date: "",
-            end_date: "",
-            team_Lead:"",
-            Priority: "Medium",
-            Open_task: 0,
-            Closed_task: 0,
-            rating: "",
-            remark: "",
-            completionNote: "",
-            relatedLinks: [""],
-            attachedFileLinks: [],
-        });
-        setFiles([]);
+        loadProjects(paginationInfo.pageNumber, paginationInfo.pageSize); 
     };
 
-    const handleFileChange = (e) => {
-        setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+     const handleEditClick = (e, proj) => {
+        e.stopPropagation();
+        setShowCreateForm(true);
+        setEditTarget(proj);
     };
 
-    const removeFile = (index) => {
-        setFiles(prev => prev.filter((_, i) => i !== index));
+    // delete project
+    const handleDeleteClick = async (e, proj) => {
+        e.stopPropagation();
+        if (!proj) return;
+        const id = proj.projectId || proj.project_id;
+        if (!id) return alert('Missing project id'); 
+        if (!window.confirm(`Delete project ${id}? This cannot be undone.`)) return;
+        
+        const token = localStorage.getItem('accessToken');
+        if (!token) return alert('Missing auth token. Login required.');
+        try {
+            const resp = await fetch(`${API_ENDPOINT}/${id}`, { 
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+            });
+            if (!resp.ok) {
+                const body = await resp.json().catch(()=>null);
+                throw new Error(body?.message || resp.statusText || 'Delete failed');
+            }
+            loadProjects(paginationInfo.pageNumber, paginationInfo.pageSize);
+        } catch (err) {
+            console.error('Delete failed', err);
+            alert('Delete failed: ' + (err.message || 'Unknown error'));
+        }
     };
+    const [editTarget, setEditTarget] = useState(null);
 
-    const handleRelatedLinkChange = (index, value) => {
-        const newLinks = [...newProject.relatedLinks];
-        newLinks[index] = value;
-        setNewProject(prev => ({ ...prev, relatedLinks: newLinks }));
-    };
-
-    const addRelatedLink = () => {
-        setNewProject(prev => ({ ...prev, relatedLinks: [...prev.relatedLinks, ""] }));
-    };
-
-    const removeRelatedLink = (index) => {
-        setNewProject(prev => ({
-            ...prev,
-            relatedLinks: prev.relatedLinks.filter((_, i) => i !== index)
-        }));
-    };
-    const [editProjectIndex, setEditProjectIndex] = useState(null);
-const [editProjectData, setEditProjectData] = useState(null);
-
-const handleEditProject = (idx) => {
-    setEditProjectIndex(idx);
-    setEditProjectData(projectTableData[idx]);
-    setShowEditForm(true);
-};
-
-const handleDeleteProject = (idx) => {
-    setProjectTableData(prev => prev.filter((_, i) => i !== idx));
-};
-
-const [showEditForm, setShowEditForm] = useState(false);
-
-const handleUpdateProject = (e) => {
-    e.preventDefault();
-    setProjectTableData(prev =>
-        prev.map((proj, idx) => idx === editProjectIndex ? editProjectData : proj)
+    const filteredProjects = projectTableData.filter(
+        (proj) => statusFilter === "All" || proj.projectStatus === statusFilter
     );
-    setShowEditForm(false);
-    setEditProjectIndex(null);
-    setEditProjectData(null);
-};
- const [statusFilter, setStatusFilter] = useState("All");
-   const navigate = useNavigate();
-const handleRowClick = (proj) => {
-    navigate(`/project-details/${proj.project_id}`, { state: { project: proj } });
-};
-    return (
+   return (
         <motion.div
-            className={`p-6  rounded-2xl shadow-xl border border-purple-500 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-purple-10 to-purple-50 '}`}
+            className={`p-6 rounded-2xl shadow-2xl border border-purple-500 relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-gradient-to-br from-purple-10 to-purple-50 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
         >
-            <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
-                    Project Overview</h2>
-                    {(matchedArray || []).includes("CREATE_PROJECT") && (
+            <div className="flex justify-between items-center mb-4 border-b pb-4">
+                <h2 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-purple-400' : 'text-purple-800'}`}>
+                    Project Overview
+                </h2>
+                {(matchedArray || []).includes("CREATE_PROJECT") && (
                     <motion.button
-                        className={`  flex items-center ${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50 text-purple-700'}  font-bold py-2 px-4 rounded-xl border border-purple-500 shadow transition`}
+                        className={`flex items-center text-sm sm:text-base ${theme === 'dark' ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-700 text-white hover:bg-purple-800'} font-bold py-2 px-4 rounded-xl shadow-md transition`}
                         onClick={() => setShowCreateForm(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1230,495 +1686,135 @@ const handleRowClick = (proj) => {
                         <FaPlus className="mr-2" /> Create Project
                     </motion.button>
                 )}
-                     </div>
-                    <div>
-                    <select
-                       value={statusFilter}
-                       onChange={(e) => setStatusFilter(e.target.value)}
-                       className={`${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50  text-purple-700'} border border-purple-500   font-medium rounded-xl px-4 py-2 text-sm shadow   shadow transition`}
-                    >
-                     <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select All</option>
-                     <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
-                     <option value="Upcoming" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Upcoming</option>
-                     <option value="Completed"className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Completed</option>
-                   </select>
             </div>
-            {/* Full-page overlay for the form */}
-            <AnimatePresence>
-    {showCreateForm && (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            // Allow closing by clicking backdrop
-            onClick={() => setShowCreateForm(false)} 
-        >
-            <motion.div 
-                className="relative w-full max-w-xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform transition-all duration-300"
-                initial={{ scale: 0.95, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                exit={{ scale: 0.95, opacity: 0 }} 
-                transition={{ duration: 0.3 }}
-                onClick={(e) => e.stopPropagation()} // Prevent closure when clicking inside
-            >
-                <motion.form
-                    className={`w-full max-w-xl rounded-3xl shadow-2xl  relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} `}
-                    onSubmit={handleCreateProject}
+            <div className="flex justify-between items-center mb-6">
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className={`min-w-[150px] border-2 border-purple-400 font-medium rounded-xl px-4 py-2 text-sm shadow-inner transition ${theme === 'dark' ? 'bg-gray-700 text-purple-200 focus:border-purple-500' : 'bg-white text-purple-800 focus:border-purple-600'}`}
                 >
-                    {/* Professional Header */}
-                    <div className="text-start rounded-t-3xl p-6 bg-gradient-to-r from-purple-600 to-indigo-700">
-                        <h3 className="text-2xl font-extrabold text-white flex items-center space-x-3"> 
-                            <i className="fas fa-rocket mr-2"></i> <span>Create New Project</span>
-                        </h3>
-                        <p className="text-sm text-white/90 mt-1">Define project scope, timeline, and initial resources.</p>
-                    </div>
-
-                    <div className="space-y-6 p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            
-                            {/* Row 1: Project Name & Team Lead */}
-                            <Forms 
-                                label="Project Name"
-                                theme={theme}
-                                placeholder="e.g., Q3 HRMS Update"
-                                value={newProject.project_name}
-                                onChange={e => setNewProject({ ...newProject, project_name: e.target.value })}
-                                required
-                            />
-                            <Forms 
-                                label="Team Lead (Name & Image URL)"
-                                theme={theme}
-                                placeholder="Name + Profile image URL"
-                                value={newProject.team_Lead} // Assuming a state field named team_lead exists
-                                onChange={e => setNewProject({ ...newProject, team_lead: e.target.value })} // Adjust state key if needed
-                                required
-                            />
-
-                            {/* Row 2: Status & Priority */}
-                            <Forms 
-                                label="Project Status"
-                                theme={theme}
-                                type="select"
-                                value={newProject.status}
-                                onChange={e => setNewProject({ ...newProject, status: e.target.value })}
-                            >
-                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Status</option>
-                                <option value="Ongoing" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Ongoing</option>
-                                <option value="Upcoming" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Upcoming</option>
-                                <option value="Completed" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Completed</option>
-                            </Forms>
-                            <Forms 
-                                label="Project Priority"
-                                theme={theme}
-                                type="select"
-                                value={newProject.Priority}
-                                onChange={e => setNewProject({ ...newProject, Priority: e.target.value })}
-                            >
-                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Priority</option>
-                                <option value="High" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>High</option>
-                                <option value="Medium" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Medium</option>
-                                <option value="Low" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Low</option>
-                            </Forms>
-
-                            {/* Row 3: Dates */}
-                            <Forms 
-                                label="Start Date"
-                                theme={theme}
-                                type="date"
-                                value={newProject.start_date}
-                                onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
-                                required
-                            />
-                            <Forms 
-                                label="End Date"
-                                theme={theme}
-                                type="date"
-                                value={newProject.end_date}
-                                onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
-                                required
-                            />
-
-                            {/* Row 4: Tasks & Rating */}
-                            <Forms 
-                                label="Open Tasks"
-                                theme={theme}
-                                type="number"
-                                placeholder="0"
-                                value={newProject.Open_task}
-                                onChange={e => setNewProject({ ...newProject, Open_task: Number(e.target.value) })}
-                            />
-                             <Forms 
-                                label="Closed Tasks"
-                                theme={theme}
-                                type="number"
-                                placeholder="0"
-                                value={newProject.Closed_task}
-                                onChange={e => setNewProject({ ...newProject, Closed_task: Number(e.target.value) })}
-                            />
-                             <Forms 
-                                label="Project Rating (1-5)"
-                                theme={theme}
-                                type="number"
-                                placeholder="1-5"
-                                min="1"
-                                max="5"
-                                value={newProject.rating}
-                                onChange={e => setNewProject({ ...newProject, rating: e.target.value })}
-                            />
-                        </div>
-
-                        {/* Textareas: Full width, better labeled */}
-                        <Forms 
-                            label="Employee Team / Members (Comma Separated)"
-                            theme={theme}
-                            type="textarea"
-                            placeholder="List team members, e.g., Alice, Bob, Charlie"
-                            value={newProject.Employee_team}
-                            onChange={e => setNewProject({ ...newProject, Employee_team: e.target.value })}
-                        />
-                        <Forms 
-                            label="Remark / Internal Notes"
-                            theme={theme}
-                            type="textarea"
-                            placeholder="Add any internal remarks or dependencies here."
-                            value={newProject.remark}
-                            onChange={e => setNewProject({ ...newProject, remark: e.target.value })}
-                        />
-                        <Forms 
-                            label="Completion Note (Visible upon closure)"
-                            theme={theme}
-                            type="textarea"
-                            placeholder="Final notes on project closure."
-                            value={newProject.completionNote}
-                            onChange={e => setNewProject({ ...newProject, completionNote: e.target.value })}
-                        />
-
-                        {/* Related Links & Attachments */}
-                        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            {/* Related Links Block (Preserving your dynamic logic) */}
-                            <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Related Links:</label>
-                            {newProject.relatedLinks.map((link, index) => (
-                                <div key={index} className="flex gap-2 items-center">
-                                    <input
-                                        type="url"
-                                        value={link}
-                                        onChange={e => handleRelatedLinkChange(index, e.target.value)} // Assuming this function exists
-                                        className={FormInput({ theme }).inputStyle} // Reuse general input style
-                                        placeholder="Enter related link URL"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeRelatedLink(index)} // Assuming this function exists
-                                        className="p-2 text-red-600 hover:text-red-800 disabled:opacity-50 transition"
-                                        disabled={newProject.relatedLinks.length === 1}
-                                    >
-                                        <FaTrashAlt />
-                                    </button>
-                                </div>
-                            ))}
-                            <button
-                                type="button"
-                                onClick={addRelatedLink} // Assuming this function exists
-                                className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium text-sm transition"
-                            >
-                                <FaPlus className="mr-1 w-4 h-4" /> Add Related Link
-                            </button>
-
-                            {/* Attach Files Block (Preserving your dynamic logic) */}
-                            <label className={`block text-sm font-medium pt-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Attach Files:</label>
-                            <div className="flex items-center space-x-3">
-                                <label className="flex items-center cursor-pointer px-4 py-2 border border-gray-400 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                    <i className="fas fa-paperclip mr-2"></i> Choose File(s)
-                                    <input
-                                        type="file"
-                                        multiple
-                                        onChange={handleFileChange} // Assuming this function exists
-                                        className="hidden"
-                                    />
-                                </label>
-                                <p className="text-sm italic text-gray-500 dark:text-gray-400">{files.length > 0 ? `${files.length} file(s) attached` : "No files selected."}</p>
-                            </div>
-                            {files.length > 0 && ( // Display attached files list
-                                <ul className="space-y-1 mt-2 p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 max-h-32 overflow-y-auto">
-                                    {files.map((file, index) => (
-                                        <li key={index} className="flex justify-between items-center text-sm">
-                                            <span className="text-gray-800 dark:text-gray-200 truncate" title={file.name}>{file.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeFile(index)} // Assuming this function exists
-                                                className="text-red-500 hover:text-red-700 ml-2"
-                                                aria-label={`Remove ${file.name}`}
-                                            >
-                                                <FaTrashAlt className="w-4 h-4" />
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
-                            <motion.button
-                                type="button"
-                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                                onClick={() => setShowCreateForm(false)}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                Cancel
-                            </motion.button>
-                            <motion.button
-                                type="submit"
-                                className="px-5 py-2.5 rounded-lg border border-transparent bg-purple-600 text-sm font-semibold text-white shadow-md hover:bg-purple-700 transition-colors"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                Create Project
-                            </motion.button>
-                        </div>
-                    </div>
-                </motion.form>
-            </motion.div>
-        </motion.div>
-    )}
-</AnimatePresence>
-            <AnimatePresence>
-    {showEditForm && (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            // Allow closing by clicking backdrop
-            onClick={() => setShowEditForm(false)}
-        >
-            <motion.form
-                // Reduced max-width for simpler edit form
-                className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}
-                onSubmit={handleUpdateProject}
-                initial={{ scale: 0.8, y: -50 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.8, y: -50 }}
-                transition={{ duration: 0.3 }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Professional Header */}
-                <div className="text-center rounded-t-3xl p-6 bg-gradient-to-r from-purple-500 to-fuchsia-600">
-                    <h3 className="text-2xl font-extrabold text-white flex items-center justify-center space-x-3">
-                        <i className="fas fa-edit mr-2"></i> <span>Edit Project</span>
-                    </h3>
-                    <p className="text-sm text-white/90 mt-1">Modify core details and progress metrics.</p>
-                </div>
-
-                <div className="space-y-6 p-8">
-                    <div className="grid grid-cols-1 gap-y-4 gap-x-6">
-                        
-                        {/* 1. Project Name */}
-                        <Forms
-                            label="Project Name"
-                            theme={theme}
-                            placeholder="Project Name"
-                            value={editProjectData?.project_name || ""}
-                            onChange={e => setEditProjectData({ ...editProjectData, project_name: e.target.value })}
-                            required
-                        />
-
-                        {/* 2. Status & Priority */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <Forms
-                                label="Status"
-                                theme={theme}
-                                type="select"
-                                value={editProjectData?.status || ""}
-                                onChange={e => setEditProjectData({ ...editProjectData, status: e.target.value })}
-                            >
-                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Status</option>
-                                <option value="Ongoing">Ongoing</option>
-                                <option value="Upcoming">Upcoming</option>
-                                <option value="Completed">Completed</option>
-                            </Forms>
-                             <Forms
-                                label="Priority"
-                                theme={theme}
-                                type="select"
-                                value={editProjectData?.Priority || ""}
-                                onChange={e => setEditProjectData({ ...editProjectData, Priority: e.target.value })}
-                            >
-                                <option value="" className={`${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}>Select Priority</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
-                            </Forms>
-                        </div>
-                        
-                        {/* 3. Dates */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <Forms
-                                label="Start Date"
-                                theme={theme}
-                                type="date"
-                                value={editProjectData?.start_date || ""}
-                                onChange={e => setEditProjectData({ ...editProjectData, start_date: e.target.value })}
-                                required
-                            />
-                            <Forms
-                                label="End Date"
-                                theme={theme}
-                                type="date"
-                                value={editProjectData?.end_date || ""}
-                                onChange={e => setEditProjectData({ ...editProjectData, end_date: e.target.value })}
-                                required
-                            />
-                        </div>
-
-                        {/* 4. Tasks */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <Forms
-                                label="Open Tasks"
-                                theme={theme}
-                                type="number"
-                                placeholder="Open Tasks"
-                                value={editProjectData?.Open_task || 0}
-                                onChange={e => setEditProjectData({ ...editProjectData, Open_task: Number(e.target.value) })}
-                            />
-                            <Forms
-                                label="Closed Tasks"
-                                theme={theme}
-                                type="number"
-                                placeholder="Closed Tasks"
-                                value={editProjectData?.Closed_task || 0}
-                                onChange={e => setEditProjectData({ ...editProjectData, Closed_task: Number(e.target.value) })}
-                            />
-                        </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
-                        <motion.button
-                            type="button"
-                            className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                            onClick={() => setShowEditForm(false)}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Cancel
-                        </motion.button>
-                        <motion.button
-                            type="submit"
-                            className="px-5 py-2.5 rounded-lg border border-transparent bg-fuchsia-600 text-sm font-semibold text-white shadow-md hover:bg-fuchsia-700 transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            Update Project
-                        </motion.button>
-                    </div>
-                </div>
-            </motion.form>
-        </motion.div>
-    )}
-</AnimatePresence>
-          <div className="overflow-x-auto rounded-xl  ">
-            <table className="min-w-full bg-white  ">
-                <thead className={` text-left uppercase tracking-wider ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
-                    <tr>
-                        <th className="p-3 text-sm md:text-base">Project</th>
-                        <th className="p-3 text-sm md:text-base">Team_Lead</th>
-                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
-                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
-                        <th className="p-3 text-sm md:text-base">Priority</th>
-                        <th className="p-3 text-sm md:text-base">Status</th>
-                        <th className="p-3 text-sm md:text-base">Open Task</th>
-                        <th className="p-3 text-sm md:text-base">Closed Task</th>
-                        <th className="p-3 text-sm md:text-base">Details</th>
-                        {(matchedArray || []).includes("DELETE_PROJECTS") &&<th className="p-3 text-sm md:text-base">Delete</th>}
-                    </tr>
-                </thead>
-                <tbody  className="bg-white ">
-                    <AnimatePresence>
-                        {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
-                        .map((proj, index) => (
-                            <motion.tr
-                                key={proj.project_id}
-                                className="border-t border-gray-100 hover:bg-gray-50"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                 onClick={() => handleRowClick(proj)}
-                            >
-                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
-                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> 
-                                     <motion.img
-                                            src={teamLeadImageMap[proj.Team_Lead] || "https://i.pravatar.cc/40?img=19"} // Fallback image
-                                            alt={proj.Team_Lead}
-                                            className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm inline-block mr-2"
-                                            whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
-                                        />
-                                        {proj.Team_Lead}
-                                    
-                                </td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.Priority} onChange={e => {proj.Priority = e.target.value}} onClick={e => { e.stopPropagation()}} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
-                                          proj.Priority === "High"
-                                            ? "bg-red-100 text-red-700"
-                                            : proj.Priority === "Medium"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : "bg-green-100 text-green-700"
-                                        }`}
-                                    >
-                                     <option value="High" className="text-red-600 ">🔴 High </option>
-                                     <option value="Medium" className="text-yellow-600">🟡 Medium </option>
-                                     <option value="Low" className="text-green-600"> 🟢 Low </option>
-                                 </select>
-                                </td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.status} onChange={e => {proj.status = e.target.value}} onClick={e => { e.stopPropagation()}}  className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
-                                          proj.status === "Ongoing"
-                                            ? "bg-blue-100 text-blue-700"
-                                            : proj.status === "Upcoming"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : "bg-purple-100 text-purple-700"
-                                        }`}
-                                    >
-                                     <option value="Ongoing" className="text-blue-600 ">🔵 Ongoing</option>
-                                     <option value="Upcoming" className="text-yellow-600">🟡 Upcoming</option>
-                                     <option value="Completed" className="text-blue-600">🟣 Completed</option>
-                                 </select>
-                                </td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
-                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
-                            {(matchedArray || []).includes("DELETE_PROJECT") && (
-                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <motion.button
-                                        whileHover={{ scale: 1.2 }}
-                                        onClick={e => { e.stopPropagation(); handleEditProject(index); }}
-                                    >
-                                        <FiEdit className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.2 }}
-                                       onClick={e => { e.stopPropagation(); handleDeleteProject(index); }}
-                                        className="ml-2"
-                                    >
-                                        <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
-                                    </motion.button>
-                                </td>
-                            )}
-                            </motion.tr>
-                            ))}
-                    </AnimatePresence>
-                </tbody>
-            </table>
+                    <option value="All" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>All Statuses</option>
+                    <option value="In Progress" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>InProgress</option>
+                    <option value="Completed" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>Completed</option>
+                    <option value="Not Started" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>NotStarted</option>
+                </select>
+                
+                {loading && <p className={`text-base ${theme === 'dark' ? 'text-purple-300' : 'text-purple-700'}`}>Loading projects...</p>}
+                {error && <p className="text-red-500 font-semibold text-base">Error: {error}</p>}
             </div>
+            <div className="overflow-x-auto rounded-xl shadow-2xl">
+                <table className={`min-w-full divide-y divide-gray-200 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}`}>
+                    <thead className={`text-left uppercase tracking-wider text-xs sm:text-sm ${theme === 'dark' ? 'bg-gray-700 text-purple-300 border-b border-purple-500' : 'bg-purple-100 text-purple-800'}`}>
+                        <tr>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Project</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Team Lead</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap"><FaCalendarAlt className="inline mr-1" />Start</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap"><FaCalendarAlt className="inline mr-1" />End</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Priority</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Status</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Open/Closed</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Details</th>
+                             {(matchedArray || []).includes("DELETE_PROJECT") && ( <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Actions</th>)}
+                        </tr>
+                    </thead>
+                    <tbody className={`divide-y divide-gray-100 ${theme === 'dark' ? 'divide-gray-600' : 'bg-white'}`}>
+                        <AnimatePresence mode="wait">
+                            {filteredProjects.length > 0 ? (
+                                filteredProjects
+                                .map((proj, index) => (
+                                    <motion.tr
+                                        key={proj.projectId || proj.project_id}
+                                        className={`border-t border-gray-100 ${theme === 'dark' ? 'text-gray-100 hover:bg-gray-600' : 'text-gray-800 hover:bg-purple-50'} cursor-pointer transition duration-150`}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        transition={{ duration: 0.3, delay: index * 0.02 }}
+                                        onClick={() => handleRowClick(proj)}
+                                    >
+                                        <td className="py-3 px-4 text-sm font-bold max-w-[200px] whitespace-normal"> {proj.title || proj.project_name}</td>
+
+                                        <td className="py-3 px-4 text-sm max-w-[150px] font-medium text-gray-600 whitespace-normal">
+                                            {getTeamLeadDisplay(proj)}
+                                        </td>
+                                        <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.startDate}</td>
+                                        <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.endDate}</td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold shadow-sm ${getPriorityColor(proj.projectPriority || proj.Priority)}`}>
+                                                {proj.projectPriority || proj.Priority}
+                                            </span>
+                                        </td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold shadow-sm ${getStatusColor(proj.projectStatus || proj.status)}`}>
+                                                {proj.projectStatus || proj.status}
+                                            </span>
+                                        </td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4 text-sm whitespace-nowrap">
+                                            <span className="text-blue-600 font-semibold">{proj.openTask || proj.Open_task || 0}</span> / <span className="text-gray-500">{proj.closedTask || proj.Closed_task || 0}</span>
+                                        </td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4 text-center">
+                                            <a href={proj.details || proj.Details} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>
+                                                <motion.div whileHover={{ scale: 1.2 }}>
+                                                    <FaFileAlt className={`${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'} text-lg transition`} />
+                                                </motion.div>
+                                            </a>
+                                        </td>
+                                         {(matchedArray || []).includes("DELETE_PROJECT") && (
+                                        <td className="py-3 px-4 text-sm whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                                            <button onClick={(e) => handleEditClick(e, proj)} className="mr-3 text-indigo-600 hover:text-indigo-800" title="Edit">
+                                                <FiEdit />
+                                            </button>
+                                            <button onClick={(e) => handleDeleteClick(e, proj)} className="text-red-600 hover:text-red-800" title="Delete">
+                                                <FiDelete />
+                                            </button>
+                                        </td>
+                                        )}
+                                    </motion.tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className={`p-10 text-center text-lg ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
+                                        {loading ? 'Fetching data...' : 'No projects found matching the filter.'}
+                                    </td>
+                                </tr>
+                            )}
+                        </AnimatePresence>
+                    </tbody>
+                </table>
+            </div>
+            <div className={`flex flex-col sm:flex-row justify-between items-center mt-6 p-3 rounded-xl ${theme === 'dark' ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-white border border-gray-200 text-gray-700'} shadow-md`}>
+                <span className="text-sm mb-2 sm:mb-0">
+                    Showing {projectTableData.length} projects out of {paginationInfo.totalElements} total
+                </span>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => handlePageChange(paginationInfo.pageNumber - 1)}
+                        disabled={paginationInfo.pageNumber === 0}
+                        className="px-3 py-1 rounded-lg text-sm bg-purple-200 text-purple-800 hover:bg-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                        &larr; Previous
+                    </button>
+                    <span className="px-3 py-1 rounded-lg text-sm bg-purple-600 text-white font-bold">
+                        {paginationInfo.pageNumber + 1} / {paginationInfo.totalPages}
+                    </span>
+                    <button
+                        onClick={() => handlePageChange(paginationInfo.pageNumber + 1)}
+                        disabled={paginationInfo.pageNumber >= paginationInfo.totalPages - 1}
+                        className="px-3 py-1 rounded-lg text-sm bg-purple-200 text-purple-800 hover:bg-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                        Next &rarr;
+                    </button>
+                </div>
+            </div>
+            <AnimatePresence>
+                {showCreateForm && (
+                    <ProjectForm
+                        onClose={handleProjectSubmissionSuccess}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
-
 // --- Combined HRMS Dashboard Component ---
 const ProjectDashboard = () => {
     const { userData,theme } = useContext(Context);
