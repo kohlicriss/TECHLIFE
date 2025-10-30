@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload, IoTrashOutline } from 'react-icons/io5';
+import { IoClose, IoDocumentText, IoCheckmarkCircle, IoWarning, IoEye, IoAdd, IoCloudUpload } from 'react-icons/io5';
 import { Context } from '../../HrmsContext';
 import { publicinfoApi } from '../../../../../axiosInstance';
 import { useParams, useLocation } from 'react-router-dom';
 
-// Reusable Modal Component
 const Modal = ({ children, onClose, title, type, theme }) => {
   let titleClass;
   let icon = null;
@@ -21,7 +20,7 @@ const Modal = ({ children, onClose, title, type, theme }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-250">
+    <div className="fixed inset-0 /60 backdrbg-blackop-blur-md flex justify-center items-center z-250">
       <div className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md m-4 border ${
         theme === 'dark'
           ? 'bg-gray-800 border-gray-700'
@@ -86,7 +85,7 @@ const identityFields = {
       label: "Aadhaar Image",
       name: "aadhaarImage",
       type: "file",
-      required: true, // Required on Add
+      required: true,
       hint: "Upload clear image of your Aadhaar card"
     },
   ],
@@ -108,9 +107,9 @@ const identityFields = {
     {
       label: "Date of Birth",
       name: "dateOfBirth",
-      type: "date",
+      type: "text",
       required: true,
-      hint: "Select your birth date"
+      hint: "Format: YYYY-MM-DD (e.g., 1990-01-15)"
     },
     {
       label: "Parent's Name",
@@ -123,7 +122,7 @@ const identityFields = {
       label: "PAN Image",
       name: "panImage",
       type: "file",
-      required: true, // Required on Add
+      required: true,
       hint: "Upload clear image of your PAN card"
     },
   ],
@@ -189,7 +188,7 @@ const identityFields = {
       label: "License Image",
       name: "licenseImage",
       type: "file",
-      required: true, // Required on Add
+      required: true,
       hint: "Upload clear image of your driving license"
     },
   ],
@@ -278,7 +277,7 @@ const identityFields = {
       label: "Passport Image",
       name: "passportImage",
       type: "file",
-      required: true, // Required on Add
+      required: true,
       hint: "Upload clear image of your passport"
     },
   ],
@@ -337,7 +336,7 @@ const identityFields = {
       label: "Voter Image",
       name: "uploadVoter",
       type: "file",
-      required: true, // Required on Add
+      required: true,
       hint: "Upload clear image of your voter ID"
     },
   ],
@@ -406,44 +405,6 @@ const documentConfig = {
   },
 };
 
-// ------------------------------------------
-// 🚨 NEW VALIDATION HELPER FUNCTIONS
-// ------------------------------------------
-
-/**
- * Calculates the maximum allowed date for a person to be 18+ years old.
- * @returns {string} Date string in YYYY-MM-DD format (e.g., '2007-10-28').
- */
-const getMaxDate = () => {
-  const today = new Date();
-  // Calculate the year 18 years ago
-  const maxYear = today.getFullYear() - 18;
-  // Set the max date to 18 years ago, ensuring month and day remain today's values
-  const maxDate = new Date(maxYear, today.getMonth(), today.getDate());
-
-  // Return in YYYY-MM-DD format
-  return maxDate.toISOString().split('T')[0];
-};
-
-/**
- * Checks if the selected date ensures the user is at least 18 years old.
- * @param {string} dateString Date string from the input (YYYY-MM-DD).
- * @returns {boolean} True if 18 or older, false otherwise.
- */
-const isAtLeast18YearsOld = (dateString) => {
-  if (!dateString) return true;
-
-  const selectedDate = new Date(dateString);
-  const today = new Date();
-
-  // Calculate the date 18 years ago (The latest allowed birth date)
-  const minDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-
-  // Check if the selected date is EARLIER THAN OR EQUAL TO the minimum allowed date.
-  return selectedDate <= minDate;
-};
-
-
 const Document = () => {
   const [editingSection, setEditingSection] = useState(null);
   const [identityData, setIdentityData] = useState({});
@@ -451,7 +412,7 @@ const Document = () => {
   const { empID } = useParams();
   const location = useLocation();
   const fileInputRef = useRef(null);
-  const { theme, userData, matchedArray } = useContext(Context);
+  const { theme, userData,matchedArray } = useContext(Context);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [searchFilter, setSearchFilter] = useState('');
@@ -459,19 +420,27 @@ const Document = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
-  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
 
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
 
   const documentEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
-  const isReadOnly = false;
-  const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
 
-// ------------------------------------------
-// 🚨 MODIFIED VALIDATION FUNCTIONS (Added 18+ check)
-// ------------------------------------------
+  const loggedInEmpID = userData?.employeeId;
+  const isOwnProfile = String(loggedInEmpID) === String(documentEmployeeId);
+
+  const hasEditPermission = matchedArray?.includes("PROFILE_DOCUMENTS_EDIT_ADMIN");
+
+  const isReadOnly = (
+    !isOwnProfile &&
+    (
+      !fromContextMenu ||
+      (fromContextMenu && !hasEditPermission)
+    )
+  );
+
+  const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
 
   const validatePanData = (data) => {
     const errors = {};
@@ -489,8 +458,6 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
-    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
-      errors.dateOfBirth = 'You must be at least 18 years old.';
     } else if (!/^\d{4}-\d{2}-\d{2}$/.test(data.dateOfBirth)) {
       errors.dateOfBirth = 'Date of birth must be in YYYY-MM-DD format';
     }
@@ -518,8 +485,6 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
-    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
-      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.aadhaarName) {
@@ -549,8 +514,6 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
-    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
-      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.bloodGroup) {
@@ -594,8 +557,6 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
-    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
-      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.name) {
@@ -651,8 +612,6 @@ const Document = () => {
 
     if (!data.dateOfBirth) {
       errors.dateOfBirth = 'Date of birth is required';
-    } else if (!isAtLeast18YearsOld(data.dateOfBirth)) {
-      errors.dateOfBirth = 'You must be at least 18 years old.';
     }
 
     if (!data.address) {
@@ -665,10 +624,6 @@ const Document = () => {
 
     return errors;
   };
-
-// ------------------------------------------
-// END OF MODIFIED VALIDATION FUNCTIONS
-// ------------------------------------------
 
   const validateFormData = (subSection, data) => {
     switch (subSection) {
@@ -753,9 +708,8 @@ const Document = () => {
   };
 
   const handleFileChange = (field, file) => {
-    setEditingData(prev => ({ ...prev, [field]: file }));
+    setEditingData(prev => ({...prev, [field]: file }));
   };
-
 
   const handleUpdate = async (subSection) => {
     setIsUpdating(true);
@@ -872,41 +826,8 @@ const Document = () => {
     }
   };
 
-  const handleDelete = (subSectionKey) => {
-    setDeleteConfirmation({ show: true, sectionKey: subSectionKey });
-  };
-
-  const confirmDelete = async () => {
-    const { sectionKey } = deleteConfirmation;
-    const docTitle = documentConfig[sectionKey].title;
-
-    try {
-      let urlKey = sectionKey;
-      if (sectionKey === 'drivingLicense') {
-        urlKey = 'driving';
-      }
-
-      const url = `employee/${documentEmployeeId}/${urlKey}`;
-      await publicinfoApi.delete(url);
-
-      setPopup({ show: true, message: `${docTitle} deleted successfully.`, type: 'success' });
-
-      setIdentityData(prev => {
-        const updatedData = { ...prev, [sectionKey]: null };
-        const completed = Object.values(updatedData).filter(Boolean).length;
-        setCompletionStats({ completed, total: 5 });
-        return updatedData;
-      });
-    } catch (err) {
-      console.error(`Failed to delete ${docTitle}:`, err);
-      setPopup({ show: true, message: `Error deleting ${docTitle}. You may not have the required permissions.`, type: 'error' });
-    } finally {
-      setDeleteConfirmation({ show: false, sectionKey: null });
-    }
-  };
-
   const SkeletonCard = () => (
-    <div className={`border rounded-none sm:rounded-2xl shadow-sm overflow-hidden animate-pulse ${
+    <div className={`border rounded-none sm:rounded-2xl shadow-sm overflow-hidden ${
       theme === 'dark'
         ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
@@ -958,11 +879,9 @@ const Document = () => {
     const isError = errors[name];
     const fieldValue = editingData[name] || '';
 
-
     const handleLocalFieldChange = (value) => {
       handleEditFieldChange(name, value);
 
-      // Specific format validation logic
       if (name === 'panNumber' && value) {
         if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) {
           setErrors(prev => ({ ...prev, [name]: 'PAN format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)' }));
@@ -974,15 +893,6 @@ const Document = () => {
       } else if (name === 'voterIdNumber' && value) {
         if (!/^[A-Z]{3}[0-9]{7}$/.test(value)) {
           setErrors(prev => ({ ...prev, [name]: 'Voter ID format: 3 letters + 7 digits (e.g., ABC1234567)' }));
-        }
-      } else if (name === 'dateOfBirth' || name === 'expiresOn' || name === 'issueDate' || name === 'dateOfIssue' || name === 'dateOfExpiration' || name === 'issuedDate') {
-        // Clear specific validation error if user changes the date
-        if (errors[name] && errors[name] === 'You must be at least 18 years old.') {
-          setErrors(prev => {
-            const newErrors = { ...prev };
-            delete newErrors[name];
-            return newErrors;
-          });
         }
       }
     };
@@ -1018,12 +928,12 @@ const Document = () => {
             <select
               value={fieldValue}
               onChange={(e) => handleLocalFieldChange(e.target.value)}
-              className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+              className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl appearance-none focus:ring-4 focus:ring-blue-500/20 focus:outline-none ${
                 isError
-                  ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
+                  ? 'border-red-300 bg-red-50 focus:ring-red-500/20'
                   : theme === 'dark'
-                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white '
+                  : 'border-gray-200 bg-white '
               } ${
                 isDisabled
                   ? theme === 'dark'
@@ -1040,7 +950,7 @@ const Document = () => {
                 </option>
               ))}
             </select>
-            <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 pointer-events-none">
               <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
               }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1053,14 +963,12 @@ const Document = () => {
             type="date"
             value={fieldValue}
             onChange={(e) => handleLocalFieldChange(e.target.value)}
-            // 🚨 ADDED MAX ATTRIBUTE FOR UX: Only for DOB fields
-            max={name === 'dateOfBirth' ? getMaxDate() : undefined}
-            className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+            className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:outline-none ${
               isError
-                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
+                ? 'border-red-300 bg-red-50 focus:ring-red-500/20'
                 : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                ? 'border-gray-600 bg-gray-700 text-white '
+                : 'border-gray-200 bg-white '
             } ${
               isDisabled
                 ? theme === 'dark'
@@ -1071,12 +979,12 @@ const Document = () => {
             disabled={isDisabled}
           />
         ) : type === 'file' ? (
-          <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 ${
+          <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl ${
             isError
               ? 'border-red-300 bg-red-50'
               : theme === 'dark'
-                ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+              ? 'border-gray-600 bg-gray-800'
+              : 'border-gray-300 bg-gray-50'
           } ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
             <input
               type="file"
@@ -1099,20 +1007,21 @@ const Document = () => {
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent the file dialog from opening
+                    e.stopPropagation();
                     handleFileChange(name, null);
-                    if (fileInputRef.current) {
-                      fileInputRef.current.value = "";
+                    if(fileInputRef.current) {
+                        fileInputRef.current.value = "";
                     }
                   }}
-                  className={`inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
+                  className={`inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-full font-semibold ${
                     theme === 'dark'
-                      ? 'bg-red-900/50 text-red-300 hover:bg-red-900'
-                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                      ? 'bg-red-900/50 text-red-300'
+                      : 'bg-red-100 text-red-700'
                   }`}
                 >
-                  <IoTrashOutline />
-                  <span>Remove</span>
+                  {}
+                  {}
+                  <span>Remove File</span>
                 </button>
               </div>
             ) : (
@@ -1138,12 +1047,12 @@ const Document = () => {
           <textarea
             value={fieldValue}
             onChange={(e) => handleLocalFieldChange(e.target.value)}
-            className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+            className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:outline-none ${
               isError
-                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
+                ? 'border-red-300 bg-red-50 focus:ring-red-500/20'
                 : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                ? 'border-gray-600 bg-gray-700 text-white '
+                : 'border-gray-200 bg-white '
             } ${
               isDisabled
                 ? theme === 'dark'
@@ -1160,12 +1069,12 @@ const Document = () => {
             type={type}
             value={fieldValue}
             onChange={(e) => handleLocalFieldChange(e.target.value)}
-            className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+            className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:outline-none ${
               isError
-                ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
+                ? 'border-red-300 bg-red-50 focus:ring-red-500/20'
                 : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                ? 'border-gray-600 bg-gray-700 text-white '
+                : 'border-gray-200 bg-white '
             } ${
               isDisabled
                 ? theme === 'dark'
@@ -1180,7 +1089,7 @@ const Document = () => {
         )}
 
         {isError && (
-          <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+          <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600">
             <IoWarning className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs sm:text-sm font-medium">{isError}</p>
           </div>
@@ -1198,14 +1107,14 @@ const Document = () => {
     const config = documentConfig[subSection];
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-200 p-2 sm:p-4 animate-fadeIn">
-        <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp ${
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-200 p-2 sm:p-4">
+        <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl ${
           theme === 'dark' ? 'bg-gray-800' : 'bg-white'
         }`}>
           <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative flex items-center justify-between">
-              <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <div className="text-2xl sm:text-3xl md:text-4xl">
                   <config.icon />
                 </div>
@@ -1218,10 +1127,10 @@ const Document = () => {
               </div>
               <button
                 onClick={() => setEditingSection(null)}
-                className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all duration-200 group"
+                className="p-2 sm:p-3 rounded-full group"
                 aria-label="Close"
               >
-                <IoClose className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-200" />
+                <IoClose className="w-5 h-5 sm:w-6 sm:h-6 " />
               </button>
             </div>
           </div>
@@ -1233,21 +1142,19 @@ const Document = () => {
                   const isIdField = ['aadhaarNumber', 'panNumber', 'licenseNumber', 'passportNumber', 'voterIdNumber'].includes(f.name);
                   const isDisabled = isUpdate && isIdField;
 
-                  // --- UPDATED LOGIC FOR CONDITIONAL REQUIRED STAR ---
                   let isRequired = f.required;
-                  // Now includes licenseImage and passportImage
+
                   const fileFieldsOptionalOnUpdate = ['aadhaarImage', 'panImage', 'uploadVoter', 'licenseImage', 'passportImage'];
                   if (f.type === 'file' && isUpdate && fileFieldsOptionalOnUpdate.includes(f.name)) {
                     isRequired = false;
                   }
-                  // --- END OF UPDATED LOGIC ---
 
                   return renderField(f.label, f.name, f.type, isRequired, f.options, isDisabled, f.hint);
                 })}
               </div>
 
               {errors.general && (
-                <div className={`mt-4 sm:mt-6 p-4 sm:p-5 border-l-4 border-red-400 rounded-r-xl animate-slideIn ${
+                <div className={`mt-4 sm:mt-6 p-4 sm:p-5 border-l-4 border-red-400 rounded-r-xl ${
                   theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
                 }`}>
                   <div className="flex items-center">
@@ -1269,10 +1176,10 @@ const Document = () => {
             <button
               type="button"
               onClick={() => setEditingSection(null)}
-              className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 ${
+              className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold focus:ring-4 focus:ring-gray-500/20 ${
                 theme === 'dark'
-                  ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                  ? 'border-gray-600 text-gray-300'
+                  : 'border-gray-300 text-gray-700'
               }`}
             >
               Cancel
@@ -1281,13 +1188,13 @@ const Document = () => {
               type="button"
               onClick={() => handleUpdate(subSection)}
               disabled={isUpdating}
-              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 flex items-center justify-center space-x-2 ${
+              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/30 flex items-center justify-center space-x-2 ${
                 isUpdating ? 'cursor-not-allowed opacity-75' : ''
               }`}
             >
               {isUpdating ? (
                 <>
-                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full"></div>
                   <span>Updating...</span>
                 </>
               ) : (
@@ -1304,10 +1211,10 @@ const Document = () => {
   };
 
   const DetailItem = ({ label, value }) => (
-    <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-300 hover:scale-105 ${
+    <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border ${
       theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
-        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600'
+        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100'
     }`}>
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
@@ -1333,7 +1240,7 @@ const Document = () => {
   );
 
   const DetailItemWithLink = ({ label, link }) => (
-    <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-300 hover:scale-105 ${
+    <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border ${
       theme === 'dark'
         ? 'bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border-blue-700'
         : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'
@@ -1350,15 +1257,15 @@ const Document = () => {
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm font-semibold hover:underline transition-all duration-200 group break-words ${
+              className={`inline-flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm font-semibold group break-words ${
                 theme === 'dark'
-                  ? 'text-blue-300 hover:text-blue-200'
-                  : 'text-blue-700 hover:text-blue-900'
+                  ? 'text-blue-300'
+                  : 'text-blue-700'
               }`}
             >
               <IoEye className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>View Document</span>
-              <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
             </a>
@@ -1374,15 +1281,15 @@ const Document = () => {
     </div>
   );
 
-  const IdentitySubSection = ({ title, data, onEdit, subSectionKey, onDelete, isAdmin }) => {
+  const IdentitySubSection = ({ title, data, onEdit, subSectionKey }) => {
     const config = documentConfig[subSectionKey];
     const hasData = !!data;
 
     return (
-      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500
-                         overflow-hidden group hover:scale-[1.02] ${
+      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg shadow-xl transition-all duration-500
+                          overflow-hidden group scale-[1.02] ${
         theme === 'dark'
-          ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
+          ? `bg-gray-800 ${config.darkBorderColor} shadow-blue-500/20`
           : `bg-white ${config.borderColor}`
       }`}>
         <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b-2 relative overflow-hidden ${
@@ -1393,7 +1300,7 @@ const Document = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30 z-[0]"></div>
           <div className="relative flex items-center justify-between">
             <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-              <div className="text-2xl sm:text-3xl md:text-4xl transform group-hover:scale-110 transition-transform duration-300">
+              <div className="text-2xl sm:text-3xl md:text-4xl ">
                 <config.icon />
               </div>
               <div className="min-w-0 flex-1">
@@ -1418,31 +1325,18 @@ const Document = () => {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-              {((fromContextMenu && isAdmin && hasData) ||
-                (matchedArray?.includes("PROFILES_DOCUMENTS_DELETE") && hasData)
-              ) && (
-                  <button
-                    onClick={() => onDelete(subSectionKey)}
-                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-red-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
-                      theme === 'dark'
-                        ? 'text-red-400 bg-gray-700 border-2 border-red-800 hover:bg-red-900/50'
-                        : 'text-red-600 bg-white border-2 border-red-200 hover:bg-red-50'
-                    }`}
-                  >
-                    <IoTrashOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Delete</span>
-                  </button>
-                )}
+             {}
 
+              {}
               {!isReadOnly && (
                 <button
                   onClick={() => onEdit(subSectionKey)}
-                  className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-xs sm:text-sm ${
+                  className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md shadow-lg text-xs sm:text-sm ${
                     hasData
                       ? theme === 'dark'
-                        ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
-                        : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
-                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                        ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} bg-gray-600`
+                        : `${config.textColor} bg-white border-2 ${config.borderColor} bg-gray-50`
+                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white from-blue-600 to-indigo-700'
                   }`}
                 >
                   {hasData ? (
@@ -1513,7 +1407,7 @@ const Document = () => {
               {!isReadOnly && (
                 <button
                   onClick={() => onEdit(subSectionKey)}
-                  className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
+                  className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg sm:rounded-xl shadow-lg text-sm"
                 >
                   <IoAdd className="w-4 h-4" />
                   <span>Add {title}</span>
@@ -1551,7 +1445,7 @@ const Document = () => {
           theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
         }`}>
           <div
-            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full transition-all duration-700 ease-out"
+            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
@@ -1585,7 +1479,7 @@ const Document = () => {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center px-4">
             <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
+              <div className=" rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <IoDocumentText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
               </div>
@@ -1602,7 +1496,7 @@ const Document = () => {
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"
+                  className="w-2 h-2 rounded-full bg-blue-500"
                   style={{ animationDelay: `${i * 0.2}s` }}
                 ></div>
               ))}
@@ -1626,7 +1520,6 @@ const Document = () => {
                     {isReadOnly && ' • Read-only access'}
                   </p>
                 </div>
-
               </div>
             </div>
           )}
@@ -1644,13 +1537,13 @@ const Document = () => {
                   placeholder="Search documents..."
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
-                  className={`w-full px-4 sm:px-5 py-3 sm:py-4 pl-10 sm:pl-12 border-2 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 ${
+                  className={`w-full px-4 sm:px-5 py-3 sm:py-4 pl-10 sm:pl-12 border-2 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/20 ${
                     theme === 'dark'
-                      ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-500'
-                      : 'border-gray-200 bg-white text-black placeholder-gray-500 focus:border-blue-500'
+                      ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400'
+                      : 'border-gray-200 bg-white text-black placeholder-gray-500'
                   }`}
                 />
-                <svg className={`absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 ${
+                <svg className={`absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 ${
                   theme === 'dark' ? 'text-gray-400' : 'text-gray-400'
                 }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1677,8 +1570,8 @@ const Document = () => {
                 <button
                   onClick={() => setPopup({ show: false, message: '', type: '' })}
                   className={`${
-                    popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-                  } text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
+                    popup.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+                  } text-white font-semibold py-2 px-4 sm:px-6 rounded-lg text-sm`}
                 >
                   OK
                 </button>
@@ -1694,8 +1587,7 @@ const Document = () => {
                 data={identityData[key]}
                 onEdit={openEditSection}
                 subSectionKey={key}
-                onDelete={handleDelete}
-                isAdmin={isAdmin}
+
               />
             ))}
 
@@ -1722,71 +1614,11 @@ const Document = () => {
             )}
           </div>
 
-          {deleteConfirmation.show && (
-            <Modal
-              onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-              title="Confirm Deletion"
-              type="confirm"
-              theme={theme}
-            >
-              <p className={`mb-4 sm:mb-6 ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                Are you sure you want to delete the {documentConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                <button
-                  onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-                  className={`px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${
-                    theme === 'dark'
-                      ? 'bg-gray-600 hover:bg-gray-500'
-                      : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-                >
-                  Delete
-                </button>
-              </div>
-            </Modal>
-          )}
+          {}
+          {}
         </div>
       )}
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideIn {
-          from { transform: translateX(-10px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-        .animate-slideUp {
-          animation: slideUp 0.4s ease-out;
-        }
-        .animate-slideIn {
-          animation: slideIn 0.3s ease-out;
-        }
-        .animate-spin-slow {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

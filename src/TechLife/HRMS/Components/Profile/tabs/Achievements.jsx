@@ -21,8 +21,8 @@ const Modal = ({ children, onClose, title, type, theme }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-[1000] animate-fadeIn">
-      <div className={`w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl animate-slideUp transform-gpu ${
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 z-[1000]">
+      <div className={`w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl transform-gpu ${
         theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
       }`}>
         <div className="p-4 sm:p-6">
@@ -44,44 +44,44 @@ const Modal = ({ children, onClose, title, type, theme }) => {
 };
 
 // Reusable Input Field Component
-const InputField = ({ 
-  name, 
-  label, 
-  type = 'text', 
-  required = false, 
-  hint, 
-  placeholder, 
-  value, 
-  onChange, 
+const InputField = ({
+  name,
+  label,
+  type = 'text',
+  required = false,
+  hint,
+  placeholder,
+  value,
+  onChange,
   onBlur,
   isError,
-  options = [], 
+  options = [],
   multiple = false,
   accept,
-  theme 
+  theme
 }) => {
-  const baseInputClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+  const baseInputClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
     isError
       ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
       : theme === 'dark'
-      ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-      : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+      ? 'border-gray-600 bg-gray-700 text-white'
+      : 'border-gray-200 bg-white'
   }`;
 
-  const textareaClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+  const textareaClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl resize-none h-24 sm:h-32 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
     isError
       ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
       : theme === 'dark'
-      ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-      : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+      ? 'border-gray-600 bg-gray-700 text-white'
+      : 'border-gray-200 bg-white'
   }`;
 
-  const selectClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
+  const selectClass = `w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl appearance-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
     isError
       ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
       : theme === 'dark'
-      ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-      : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+      ? 'border-gray-600 bg-gray-700 text-white'
+      : 'border-gray-200 bg-white'
   }`;
 
   return (
@@ -92,7 +92,7 @@ const InputField = ({
         {label}
         {required && <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>}
       </label>
-      
+
       {hint && (
         <p className={`text-xs mb-2 ${
           theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
@@ -138,12 +138,12 @@ const InputField = ({
           rows={4}
         />
       ) : type === 'file' ? (
-        <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300 ${
+        <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl ${
           isError
             ? 'border-red-300 bg-red-50'
             : theme === 'dark'
-            ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-            : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+            ? 'border-gray-600 bg-gray-800'
+            : 'border-gray-300 bg-gray-50'
         } cursor-pointer`}>
           <input
             type="file"
@@ -183,7 +183,7 @@ const InputField = ({
       )}
 
       {isError && (
-        <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+        <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600">
           <IoWarning className="w-4 h-4 flex-shrink-0" />
           <p className="text-xs sm:text-sm font-medium">{isError}</p>
         </div>
@@ -196,18 +196,18 @@ const Achivements = () => {
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const { empID } = useParams();
   const location = useLocation();
-  const { userData, theme } = useContext(Context);
+  const { userData, theme, matchedArray } = useContext(Context);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  
+
   // State for popups
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, achievementId: null });
-  
+
   // Form state
   const [formData, setFormData] = useState({
     certificationName: '',
@@ -227,11 +227,13 @@ const Achivements = () => {
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
   const targetEmployeeId = searchParams.get('targetEmployeeId');
   const employeeIdToFetch = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
-  
-  const userRole = userData?.roles?.[0]?.toUpperCase();
-  const hasManagementAccess = ["ADMIN", "MANAGER", "HR"].includes(userRole);
-  const isOwnProfile = employeeIdToFetch === empID;
-  const canEdit = isOwnProfile || hasManagementAccess;
+
+  const loggedInEmpID = userData?.employeeId;
+  const isOwnProfile = String(employeeIdToFetch) === String(loggedInEmpID);
+  const hasEditPermission = matchedArray?.includes("EDIT_PER"); // Using "EDIT_PER" as requested
+
+  // 🔑 UPDATED canEdit LOGIC: User can edit if it's their own profile OR (from context menu AND has EDIT_PER)
+  const canEdit = isOwnProfile || (fromContextMenu && hasEditPermission);
 
   // Configuration for different achievement types
   const config = {
@@ -336,14 +338,14 @@ const Achivements = () => {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    
+
     if (files) {
       setFormData(prev => ({ ...prev, [name]: files[0] }));
       setUploadedFiles([...files]);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
+
     // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: null }));
@@ -352,17 +354,17 @@ const Achivements = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     achievementFormFields.forEach(field => {
       if (field.required && !formData[field.name]) {
         errors[field.name] = `${field.label} is required`;
       }
-      
+
       if (field.type === 'url' && formData[field.name] && !isValidUrl(formData[field.name])) {
         errors[field.name] = 'Please enter a valid URL';
       }
     });
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -377,6 +379,11 @@ const Achivements = () => {
   };
 
   const handleOpenModal = (achievement = null) => {
+    if (!canEdit) {
+      setPopup({ show: true, message: 'You do not have permission to add or edit achievements for this user.', type: 'error' });
+      return;
+    }
+
     if (achievement) {
       setSelectedAchievement(achievement);
       setIsEditMode(true);
@@ -389,6 +396,7 @@ const Achivements = () => {
         expirationMonth: achievement.expirationMonth || '',
         expirationYear: achievement.expirationYear || '',
         licenseNumber: achievement.licenseNumber || '',
+        // NOTE: We don't populate achievementFile here for security reasons, only link/URL
         achievementFile: null
       });
     } else {
@@ -435,12 +443,18 @@ const Achivements = () => {
 
   const confirmDelete = async () => {
     const { achievementId } = deleteConfirmation;
+    if (!canEdit) {
+      setPopup({ show: true, message: 'You do not have permission to delete achievements.', type: 'error' });
+      return;
+    }
+
     try {
+      // NOTE: API URL changed from old request version for consistency with delete method
       await publicinfoApi.delete(`/employee/${employeeIdToFetch}/${achievementId}/achievements`);
       setAchievements(achievements.filter(ach => ach.id !== achievementId));
       setPopup({ show: true, message: 'Achievement deleted successfully!', type: 'success' });
     } catch (err) {
-      console.error('Error deleting achievement:', err);
+      console.error('Error deleting achievement:', err.response?.data || err.message);
       setPopup({ show: true, message: 'Failed to delete achievement. Please try again.', type: 'error' });
     } finally {
       setDeleteConfirmation({ show: false, achievementId: null });
@@ -451,11 +465,15 @@ const Achivements = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      setPopup({ show: true, message: 'Please fill the feilds in the form before submitting.', type: 'error' });
+      setPopup({ show: true, message: 'Please fix the errors in the form before submitting.', type: 'error' });
       return;
     }
 
-    // ... (rest of the FormData setup remains the same)
+    if (!canEdit) {
+      setPopup({ show: true, message: 'You do not have permission to save achievements.', type: 'error' });
+      return;
+    }
+
     const achievementDTO = {
       certificationName: formData.certificationName,
       issuingAuthorityName: formData.issuingAuthorityName,
@@ -478,30 +496,24 @@ const Achivements = () => {
     }
 
     submissionData.append('achievementsDTO', new Blob([JSON.stringify(achievementDTO)], { type: 'application/json' }));
-    // --- END FormData setup ---
 
     try {
       if (isEditMode) {
         const url = `/employee/${employeeIdToFetch}/${selectedAchievement.id}/achievements`;
-        await publicinfoApi.put(url, submissionData, { // Just await, no need to store response here
+        await publicinfoApi.put(url, submissionData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         setPopup({ show: true, message: 'Achievement updated successfully!', type: 'success' });
       } else {
         const url = `/employee/achievements/${employeeIdToFetch}`;
-        await publicinfoApi.post(url, submissionData, { // Just await
+        await publicinfoApi.post(url, submissionData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         setPopup({ show: true, message: 'Achievement added successfully!', type: 'success' });
       }
 
-      // --- MODIFICATION START ---
-      // Instead of manually updating state with potentially stale response data,
-      // re-fetch the entire list to ensure consistency.
       await fetchAchievements();
-      // --- MODIFICATION END ---
-
-      handleCloseModal(); // Close modal after success and re-fetch
+      handleCloseModal();
 
     } catch (err) {
       console.error('Error saving achievement:', err.response?.data || err.message);
@@ -511,19 +523,17 @@ const Achivements = () => {
         type: 'error'
       });
     }
-    // No finally block needed here, isSubmitting isn't used in this version
   };
 
   const getAchievementFileUrl = (filePath) => {
     if (!filePath) return null;
-    // Directly return the filePath, as it contains the full S3 URL
     return filePath;
   };
 
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
       <div className="text-center px-4">
@@ -545,8 +555,8 @@ const Achivements = () => {
 
   if (error) return (
     <div className={`min-h-screen flex items-center justify-center ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
       <div className="text-center px-4">
@@ -567,15 +577,15 @@ const Achivements = () => {
 
   return (
     <div className={`min-h-screen ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
         : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'
     }`}>
       <div className="max-w-8xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-6 sm:py-8 md:py-12">
         {/* Header Section */}
         <div className={`rounded-none sm:rounded-2xl md:rounded-3xl p-4 sm:p-6 md:p-8 shadow-lg border mb-6 sm:mb-8 mx-4 sm:mx-0 ${
-          theme === 'dark' 
-            ? 'bg-gray-800 border-gray-700' 
+          theme === 'dark'
+            ? 'bg-gray-800 border-gray-700'
             : 'bg-white border-gray-200'
         }`}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
@@ -597,9 +607,9 @@ const Achivements = () => {
               </div>
             </div>
             {canEdit && (
-              <button 
+              <button
                 onClick={() => handleOpenModal()}
-                className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base flex items-center justify-center space-x-2`}
+                className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base flex items-center justify-center space-x-2`}
               >
                 <IoAdd className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Add Achievement</span>
@@ -612,8 +622,8 @@ const Achivements = () => {
         <div className="mx-4 sm:mx-0">
           {achievements.length === 0 ? (
             <div className={`text-center py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8 rounded-none sm:rounded-2xl md:rounded-3xl shadow-lg border ${
-              theme === 'dark' 
-                ? 'bg-gray-800 border-gray-700' 
+              theme === 'dark'
+                ? 'bg-gray-800 border-gray-700'
                 : 'bg-white border-gray-200'
             }`}>
               <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 ${
@@ -631,15 +641,15 @@ const Achivements = () => {
               <p className={`text-sm sm:text-base max-w-md mx-auto break-words ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
               }`}>
-                {isOwnProfile 
+                {isOwnProfile
                   ? 'No achievements have been recorded yet. Add your certifications and accomplishments to showcase your expertise.'
                   : 'This employee has not added any achievements or certifications yet.'
                 }
               </p>
               {canEdit && isOwnProfile && (
-                <button 
+                <button
                   onClick={() => handleOpenModal()}
-                  className={`mt-6 sm:mt-8 px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base flex items-center space-x-2 mx-auto`}
+                  className={`mt-6 sm:mt-8 px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl focus:ring-4 focus:ring-blue-500/30 text-sm sm:text-base flex items-center space-x-2 mx-auto`}
                 >
                   <IoAdd className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Add Your First Achievement</span>
@@ -654,33 +664,33 @@ const Achivements = () => {
                 const fileUrl = getAchievementFileUrl(achievement.achievementFile);
 
                 return (
-                  <div key={achievement.id} className={`p-4 sm:p-6 md:p-8 rounded-none sm:rounded-2xl md:rounded-3xl shadow-lg border hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] relative group ${
-                    theme === 'dark' 
-                      ? 'bg-gray-800 border-gray-700 hover:shadow-blue-500/20' 
+                  <div key={achievement.id} className={`p-4 sm:p-6 md:p-8 rounded-none sm:rounded-2xl md:rounded-3xl shadow-lg border relative group ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 border-gray-700'
                       : 'bg-white border-gray-200'
                   }`}>
                    {canEdit && (
-  <div className={`absolute top-4 right-4 sm:top-6 sm:right-6 flex space-x-2 transition-opacity duration-300 ${
+  <div className={`absolute top-4 right-4 sm:top-6 sm:right-6 flex space-x-2 ${
     // Always visible on mobile (xs), only on hover on sm+
     'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
   }`}>
-    <button 
+    <button
       onClick={() => handleOpenModal(achievement)}
-      className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
+      className={`p-2 rounded-lg ${
         theme === 'dark'
-          ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700'
-          : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+          ? 'text-gray-400'
+          : 'text-gray-500'
       }`}
       title="Edit achievement"
     >
       <IoPencil className="w-3 h-3 sm:w-4 sm:h-4" />
     </button>
-    <button 
+    <button
       onClick={() => handleDelete(achievement.id)}
-      className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
+      className={`p-2 rounded-lg ${
         theme === 'dark'
-          ? 'text-gray-400 hover:text-red-400 hover:bg-gray-700'
-          : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
+          ? 'text-gray-400'
+          : 'text-gray-500'
       }`}
       title="Delete achievement"
     >
@@ -688,12 +698,12 @@ const Achivements = () => {
     </button>
   </div>
 )}
-                    
+
                     <div className="flex flex-col lg:flex-row items-start space-y-4 lg:space-y-0 lg:space-x-6">
                       <div className={`p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-md flex-shrink-0 bg-gradient-to-r ${config.color}`}>
                         <IoDocumentText className="text-2xl sm:text-3xl text-white" />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="mb-4 sm:mb-6">
                           <h3 className={`text-lg sm:text-xl md:text-2xl font-bold mb-2 break-words ${
@@ -708,7 +718,7 @@ const Achivements = () => {
                             {achievement.issuingAuthorityName}
                           </p>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm md:text-base">
                           <div className={`p-3 sm:p-4 rounded-lg ${
                             theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'
@@ -729,7 +739,7 @@ const Achivements = () => {
                               {achievement.issueMonth} {achievement.issueYear}
                             </span>
                           </div>
-                          
+
                           <div className={`p-3 sm:p-4 rounded-lg ${
                             theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'
                           }`}>
@@ -746,12 +756,12 @@ const Achivements = () => {
                             <span className={`font-medium break-words ${
                               theme === 'dark' ? 'text-white' : 'text-gray-900'
                             }`}>
-                              {achievement.expirationMonth && achievement.expirationYear 
-                                ? `${achievement.expirationMonth} ${achievement.expirationYear}` 
+                              {achievement.expirationMonth && achievement.expirationYear
+                                ? `${achievement.expirationMonth} ${achievement.expirationYear}`
                                 : 'No Expiration'}
                             </span>
                           </div>
-                          
+
                           <div className={`p-3 sm:p-4 rounded-lg sm:col-span-2 lg:col-span-1 ${
                             theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'
                           }`}>
@@ -772,18 +782,18 @@ const Achivements = () => {
                             </span>
                           </div>
                         </div>
-                        
+
                         {(hasCredentialUrl || hasAchievementFile) && (
                           <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3">
                             {hasCredentialUrl && (
-                              <a 
-                                href={achievement.certificationURL} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 text-xs sm:text-sm ${
+                              <a
+                                href={achievement.certificationURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm ${
                                   theme === 'dark'
-                                    ? 'text-blue-400 bg-blue-900/20 hover:bg-blue-900/40 border border-blue-700'
-                                    : 'text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200'
+                                    ? 'text-blue-400 bg-blue-900/20 border border-blue-700'
+                                    : 'text-blue-600 bg-blue-50 border border-blue-200'
                                 }`}
                               >
                                 <span>View Credential</span>
@@ -791,14 +801,14 @@ const Achivements = () => {
                               </a>
                             )}
                             {hasAchievementFile && (
-                              <a 
-                                href={fileUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 text-xs sm:text-sm ${
+                              <a
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm ${
                                   theme === 'dark'
-                                    ? 'text-purple-400 bg-purple-900/20 hover:bg-purple-900/40 border border-purple-700'
-                                    : 'text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                                    ? 'text-purple-400 bg-purple-900/20 border border-purple-700'
+                                    : 'text-purple-600 bg-purple-50 border border-purple-200'
                                 }`}
                               >
                                 <span>View File</span>
@@ -819,7 +829,7 @@ const Achivements = () => {
         {/* Add/Edit Modal */}
        {isModalOpen && (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
-      <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] flex flex-col shadow-2xl animate-slideUp ${
+      <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] flex flex-col shadow-2xl ${
         theme === 'dark' ? 'bg-gray-800' : 'bg-white'
       }`}>
         {/* Fixed Header */}
@@ -833,7 +843,7 @@ const Achivements = () => {
                 {isEditMode ? 'Update the achievement details' : 'Fill in the details to add a new achievement'}
               </p>
             </div>
-            <button onClick={handleCloseModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+            <button onClick={handleCloseModal} className="p-2 rounded-lg">
               <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
@@ -900,20 +910,20 @@ const Achivements = () => {
           <button
             type="button"
             onClick={handleCloseModal}
-            className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
+            className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold focus:ring-4 focus:ring-gray-500/20 text-sm sm:text-base ${
               theme === 'dark'
-                ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                ? 'border-gray-600 text-gray-300'
+                : 'border-gray-300 text-gray-700'
             }`}
           >
             Cancel
           </button>
-          
+
           {isEditMode ? (
             <button
               type="submit"
               onClick={handleSubmit}
-              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-purple-500/30 text-sm sm:text-base`}
+              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white font-bold rounded-lg sm:rounded-xl focus:ring-4 focus:ring-purple-500/30 text-sm sm:text-base`}
             >
               Update Achievement
             </button>
@@ -921,7 +931,7 @@ const Achivements = () => {
             <button
               type="submit"
               onClick={handleSubmit}
-              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg sm:rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-green-500/30 text-sm sm:text-base`}
+              className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg sm:rounded-xl focus:ring-4 focus:ring-green-500/30 text-sm sm:text-base`}
             >
               Add Achievement
             </button>
@@ -947,10 +957,10 @@ const Achivements = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setPopup({ show: false, message: '', type: '' })}
-                className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold rounded-lg transition-colors duration-200 text-sm sm:text-base ${
-                  popup.type === 'success' 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-red-600 hover:bg-red-700 text-white'
+                className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold rounded-lg text-sm sm:text-base ${
+                  popup.type === 'success'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-red-600 text-white'
                 }`}
               >
                 OK
@@ -975,17 +985,17 @@ const Achivements = () => {
             <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={() => setDeleteConfirmation({ show: false, achievementId: null })}
-                className={`px-4 sm:px-6 py-2 sm:py-3 border-2 rounded-lg font-semibold transition-all duration-200 text-sm sm:text-base ${
+                className={`px-4 sm:px-6 py-2 sm:py-3 border-2 rounded-lg font-semibold text-sm sm:text-base ${
                   theme === 'dark'
-                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                    ? 'border-gray-600 text-gray-300'
+                    : 'border-gray-300 text-gray-700'
                 }`}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200 text-sm sm:text-base"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-red-600 text-white font-semibold rounded-lg text-sm sm:text-base"
               >
                 Delete
               </button>

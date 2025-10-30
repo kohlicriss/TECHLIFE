@@ -257,7 +257,7 @@ const TeamDetails = () => {
                             Details for team ID: {team.teamId}
                         </p>
                     </div>
-                    {matchedArray.includes("TEAMS_EDIT_TEAM") && (
+                    {matchedArray.includes("MY_TEAM_EDIT_TEAM") && (
                         <button
                             onClick={() => setIsEditModalOpen(true)}
                             className="w-full sm:w-auto bg-blue-600 text-white px-3 sm:px-4 md:px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center shadow-md text-xs sm:text-sm md:text-base"

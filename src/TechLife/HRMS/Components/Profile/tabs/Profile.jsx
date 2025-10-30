@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoTrashOutline, IoCreateOutline } from "react-icons/io5";
+import { IoClose, IoPersonOutline, IoCheckmarkCircle, IoWarning, IoAdd, IoMailOutline, IoLocationOutline, IoSchoolOutline, IoBriefcaseOutline, IoCloudUpload, IoEye, IoCreateOutline } from "react-icons/io5";
 import { Context } from "../../HrmsContext";
 import { publicinfoApi } from "../../../../../axiosInstance";
 import { useParams, useLocation } from "react-router-dom";
@@ -32,7 +32,6 @@ const Modal = ({ children, onClose, title, type, theme }) => {
     </div>
   );
 };
-
 
 const sectionFields = {
   primaryDetails: [
@@ -105,9 +104,10 @@ const sectionFields = {
     {
       label: "Nationality",
       name: "nationality",
-      type: "text",
+      type: "select",
       required: true,
-      hint: "Enter your nationality (up to 50 characters)"
+      options: ["Indian", "American", "British", "Canadian", "Australian", "German", "French", "Japanese", "Chinese", "Brazilian", "Mexican", "Italian", "Spanish", "Russian", "South Korean", "Indonesian", "Saudi Arabian", "Turkish", "Argentine", "Other"],
+      hint: "Select your nationality"
     },
   ],
   contactDetails: [
@@ -310,7 +310,6 @@ const sectionFields = {
   ],
 };
 
-// Section configurations with icons and colors
 const sectionConfig = {
   primaryDetails: {
     icon: IoPersonOutline,
@@ -374,7 +373,6 @@ const sectionConfig = {
   },
 };
 
-// Helper function to check if data has meaningful values
 const hasActualData = (data, sectionKey) => {
   if (!data) return false;
 
@@ -391,45 +389,24 @@ const hasActualData = (data, sectionKey) => {
   });
 };
 
-// ------------------------------------------
-// 🚨 NEW 18+ VALIDATION HELPER FUNCTIONS
-// ------------------------------------------
-
-/**
- * Calculates the maximum allowed date for a person to be 18+ years old.
- * @returns {string} Date string in YYYY-MM-DD format (e.g., '2007-10-28').
- */
 const getMaxDate = () => {
   const today = new Date();
-  // Calculate the year 18 years ago
   const maxYear = today.getFullYear() - 18;
-  // Set the max date to 18 years ago, ensuring month and day remain today's values
   const maxDate = new Date(maxYear, today.getMonth(), today.getDate());
 
-  // Return in YYYY-MM-DD format
   return maxDate.toISOString().split('T')[0];
 };
 
-/**
- * Checks if the selected date ensures the user is at least 18 years old.
- * @param {string} dateString Date string from the input (YYYY-MM-DD).
- * @returns {boolean} True if 18 or older, false otherwise.
- */
 const isAtLeast18YearsOld = (dateString) => {
-  if (!dateString) return true; // Let required validation handle empty string
+  if (!dateString) return true;
 
   const selectedDate = new Date(dateString);
   const today = new Date();
-
-  // Calculate the date 18 years ago (The latest allowed birth date)
   const minDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
 
-  // Check if the selected date is EARLIER THAN OR EQUAL TO the minimum allowed date.
   return selectedDate <= minDate;
 };
 
-
-// Comprehensive validation function based on hints
 const validateFieldByHint = (fieldName, value, hint, fieldType) => {
   if (!value || value.trim() === '') return null;
 
@@ -468,7 +445,6 @@ const validateFieldByHint = (fieldName, value, hint, fieldType) => {
       if (birthDate >= today) {
         return 'Date of birth must be in the past';
       }
-      // 🚨 ADDED 18+ VALIDATION FOR DOB
       if (!isAtLeast18YearsOld(trimmedValue)) {
         return 'You must be at least 18 years old.';
       }
@@ -577,7 +553,6 @@ const validateFieldByHint = (fieldName, value, hint, fieldType) => {
   return null;
 };
 
-// Network error handler
 const handleNetworkError = (error) => {
   if (!navigator.onLine) {
     return 'No internet connection. Please check your network and try again.';
@@ -644,9 +619,6 @@ function Profile() {
   const [networkError, setNetworkError] = useState(null);
 
   const [popup, setPopup] = useState({ show: false, message: '', type: '' });
-  const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, sectionKey: null });
-
-  const [deleteItemConfirmation, setDeleteItemConfirmation] = useState({ show: false, type: '', item: null, id: null });
 
   const searchParams = new URLSearchParams(location.search);
   const fromContextMenu = searchParams.get('fromContextMenu') === 'true';
@@ -654,9 +626,18 @@ function Profile() {
 
   const profileEmployeeId = fromContextMenu && targetEmployeeId ? targetEmployeeId : empID;
 
-  const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
+  const loggedInEmpID = userData?.employeeId;
+  const isOwnProfile = String(loggedInEmpID) === String(profileEmployeeId);
+  const hasEditPermission = matchedArray?.includes("EDIT_PER");
 
-  const isReadOnly = fromContextMenu && targetEmployeeId && targetEmployeeId !== empID && !isAdmin;
+  const isReadOnly = (
+    !isOwnProfile &&
+    (
+      !fromContextMenu ||
+      (fromContextMenu && !hasEditPermission)
+    )
+  );
+  const isAdmin = userData?.roles?.[0]?.toUpperCase() === 'ADMIN';
 
   const hasFormChanges = (currentData, initialData, selectedFile = null) => {
     if (selectedFile) return true;
@@ -777,99 +758,6 @@ function Profile() {
 
     setSelectedFile(null);
     setEditingSection({ section, isAdd: isAdd || !itemData });
-  };
-
-  const handleDelete = (sectionKey) => {
-    setDeleteConfirmation({ show: true, sectionKey });
-  };
-
-  const handleDeleteItem = (type, item, id) => {
-    setDeleteItemConfirmation({ show: true, type, item, id });
-  };
-
-  const confirmDeleteItem = async () => {
-    const { type, item, id } = deleteItemConfirmation;
-
-    try {
-      if (type === 'education') {
-        await publicinfoApi.delete(`employee/${profileEmployeeId}/degreeDetails/${id}`);
-        const updatedEduRes = await publicinfoApi.get(`employee/${profileEmployeeId}/degreeDetails`);
-        setEduData(updatedEduRes.data);
-        setPopup({ show: true, message: 'Education record deleted successfully.', type: 'success' });
-      } else if (type === 'experience') {
-        await publicinfoApi.delete(`employee/${profileEmployeeId}/previousExperience/${id}`);
-        const updatedExpRes = await publicinfoApi.get(`employee/${profileEmployeeId}/previousExperience`);
-        setExperience(updatedExpRes.data);
-        setPopup({ show: true, message: 'Experience record deleted successfully.', type: 'success' });
-      }
-    } catch (err) {
-      console.error(`Failed to delete ${type}:`, err);
-      setPopup({ show: true, message: `Error deleting ${type} record.`, type: 'error' });
-    } finally {
-      setDeleteItemConfirmation({ show: false, type: '', item: null, id: null });
-    }
-  };
-
-  const confirmDelete = async () => {
-    const { sectionKey } = deleteConfirmation;
-    const sectionTitle = sectionConfig[sectionKey].title;
-
-    try {
-      let url = '';
-
-      switch (sectionKey) {
-        case 'primaryDetails':
-          url = `employee/${profileEmployeeId}/primary/details`;
-          break;
-        case 'contactDetails':
-          url = `employee/${profileEmployeeId}/contact`;
-          break;
-        case 'address':
-          url = `employee/${profileEmployeeId}/address`;
-          break;
-        case 'education':
-          setPopup({ show: true, message: "Education deletion should be done per entry. This feature needs backend support for bulk deletion.", type: 'error' });
-          return;
-        case 'experience':
-          setPopup({ show: true, message: "Experience deletion should be done per entry. This feature needs backend support for bulk deletion.", type: 'error' });
-          return;
-        default:
-          throw new Error("Invalid section for deletion");
-      }
-
-      await publicinfoApi.delete(url);
-      setPopup({ show: true, message: `${sectionTitle} deleted successfully.`, type: 'success' });
-
-      switch (sectionKey) {
-        case 'primaryDetails':
-          setPrimaryData(null);
-          break;
-        case 'contactDetails':
-          setContactDetails(null);
-          break;
-        case 'address':
-          setAddressData(null);
-          break;
-        default:
-          break;
-      }
-
-      const sections = [
-        sectionKey === 'primaryDetails' ? false : hasActualData(primarydata, 'primaryDetails'),
-        sectionKey === 'contactDetails' ? false : hasActualData(contactdetails, 'contactDetails'),
-        sectionKey === 'address' ? false : hasActualData(addressData, 'address'),
-        hasActualData(eduData, 'education'),
-        hasActualData(experience, 'experience'),
-      ];
-      const completed = sections.filter(Boolean).length;
-      setCompletionStats({ completed, total: 5 });
-
-    } catch (err) {
-      console.error(`Failed to delete ${sectionTitle}:`, err);
-      setPopup({ show: true, message: `Error deleting ${sectionTitle}. You may not have the required permissions.`, type: 'error' });
-    } finally {
-      setDeleteConfirmation({ show: false, sectionKey: null });
-    }
   };
 
   const handleEditFieldChange = (field, value) => {
@@ -1095,7 +983,6 @@ function Profile() {
       }
     });
 
-
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -1169,7 +1056,7 @@ function Profile() {
 
     if (type === "file") {
       return (
-        <div className="group relative" key={name}>
+        <div className="relative" key={name}>
           <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
             theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
             }`}>
@@ -1185,12 +1072,12 @@ function Profile() {
             </p>
           )}
 
-          <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl transition-all duration-300
+          <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl
             ${isError
               ? 'border-red-300 bg-red-50'
               : theme === 'dark'
-                ? 'border-gray-600 bg-gray-800 hover:border-blue-400 hover:bg-blue-900/20'
-                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                ? 'border-gray-600 bg-gray-800'
+                : 'border-gray-300 bg-gray-50'
             }`}>
             <input
               type="file"
@@ -1211,19 +1098,16 @@ function Profile() {
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
                 }`}>PNG, JPG, PDF up to 10MB</p>
 
-              {/* --- MODIFICATION START --- */}
-              {/* Only show selected file name, do not show existing fieldValue (the URL) */}
               {selectedFile && (
                 <p className={`mt-2 text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
                   Selected: {selectedFile.name}
                 </p>
               )}
-              {/* --- END MODIFICATION --- */}
             </div>
           </div>
 
           {isError && (
-            <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+            <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600">
               <IoWarning className="w-4 h-4 flex-shrink-0" />
               <p className="text-xs sm:text-sm font-medium">{isError}</p>
             </div>
@@ -1233,7 +1117,7 @@ function Profile() {
     }
 
     return (
-      <div className="group relative" key={name}>
+      <div className="relative" key={name}>
         <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
           theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
           }`}>
@@ -1254,13 +1138,13 @@ function Profile() {
             <select
               value={fieldValue}
               onChange={(e) => handleEditFieldChange(name, e.target.value)}
-              className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 appearance-none text-sm
+              className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl appearance-none text-sm
                 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                 ${isError
                   ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                   : theme === 'dark'
-                    ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                    : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                    ? 'border-gray-600 bg-gray-700 text-white'
+                    : 'border-gray-200 bg-white'
                 }`}
             >
               <option value="">Choose {label}</option>
@@ -1278,26 +1162,26 @@ function Profile() {
             value={fieldValue}
             onChange={(e) => handleEditFieldChange(name, e.target.value)}
             max={name === 'dateOfBirth' ? getMaxDate() : undefined}
-            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl text-sm
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                 : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white'
+                  : 'border-gray-200 bg-white'
               }`}
           />
         ) : type === "textarea" ? (
           <textarea
             value={fieldValue}
             onChange={(e) => handleEditFieldChange(name, e.target.value)}
-            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm resize-none h-24 sm:h-32
+            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl text-sm resize-none h-24 sm:h-32
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                 : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white'
+                  : 'border-gray-200 bg-white'
               }`}
             placeholder={`Enter ${label.toLowerCase()}...`}
             required={required}
@@ -1307,13 +1191,13 @@ function Profile() {
             type={type}
             value={fieldValue}
             onChange={(e) => handleEditFieldChange(name, e.target.value)}
-            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl transition-all duration-300 text-sm
+            className={`w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl text-sm
               focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
               ${isError
                 ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
                 : theme === 'dark'
-                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500 group-hover:border-blue-400'
-                  : 'border-gray-200 bg-white hover:border-gray-300 group-hover:border-blue-300'
+                  ? 'border-gray-600 bg-gray-700 text-white'
+                  : 'border-gray-200 bg-white'
               }`}
             placeholder={`Enter ${label.toLowerCase()}...`}
             required={required}
@@ -1321,7 +1205,7 @@ function Profile() {
         )}
 
         {isError && (
-          <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600 animate-slideIn">
+          <div className="mt-2 sm:mt-3 flex items-center space-x-2 text-red-600">
             <IoWarning className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs sm:text-sm font-medium">{isError}</p>
           </div>
@@ -1338,8 +1222,8 @@ function Profile() {
     const IconComponent = config.icon;
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4 animate-fadeIn">
-        <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl animate-slideUp flex flex-col ${
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4">
+        <div className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col ${
           theme === 'dark' ? 'bg-gray-800' : 'bg-white'
           }`}>
           <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${config.color} text-white relative overflow-hidden`}>
@@ -1358,10 +1242,10 @@ function Profile() {
               </div>
               <button
                 onClick={handleCancelEdit}
-                className="p-2 sm:p-3 hover:bg-white/20 rounded-full transition-all duration-200 group flex-shrink-0"
+                className="p-2 sm:p-3 rounded-full flex-shrink-0"
                 aria-label="Close"
               >
-                <IoClose className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-200" />
+                <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           </div>
@@ -1373,7 +1257,7 @@ function Profile() {
               </div>
 
               {networkError && (
-                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
+                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl ${
                   theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
                   }`}>
                   <div className="flex items-start">
@@ -1391,7 +1275,7 @@ function Profile() {
               )}
 
               {errors.general && (
-                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl animate-slideIn ${
+                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 md:p-5 border-l-4 border-red-400 rounded-r-lg sm:rounded-r-xl ${
                   theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
                   }`}>
                   <div className="flex items-center">
@@ -1411,10 +1295,10 @@ function Profile() {
             <button
               type="button"
               onClick={handleCancelEdit}
-              className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 focus:ring-4 focus:ring-gray-500/20 text-sm ${
+              className={`w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold focus:ring-4 focus:ring-gray-500/20 text-sm ${
                 theme === 'dark'
-                  ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                  ? 'border-gray-600 text-gray-300 bg-gray-600'
+                  : 'border-gray-300 text-gray-700 bg-white'
                 }`}
             >
               Cancel
@@ -1424,13 +1308,12 @@ function Profile() {
               onClick={() => handleSubmit(section)}
               disabled={isUpdating}
               className={`w-full sm:w-auto px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r ${config.color} text-white font-bold rounded-lg sm:rounded-xl
-                hover:shadow-lg transform hover:scale-105 transition-all duration-200
                 focus:ring-4 focus:ring-blue-500/30 flex items-center justify-center space-x-2 text-sm
                 ${isUpdating ? 'cursor-not-allowed opacity-75' : ''}`}
             >
               {isUpdating ? (
                 <>
-                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full animate-spin-slow"></div>
+                  <div className="h-4 w-4 sm:h-5 sm:w-5 border-4 border-white border-t-transparent rounded-full"></div>
                   <span>{isAdd ? 'Adding...' : 'Updating...'}</span>
                 </>
               ) : (
@@ -1447,10 +1330,10 @@ function Profile() {
   };
 
   const DetailItem = ({ label, value }) => (
-    <div className={`group p-3 sm:p-4 rounded-lg sm:rounded-xl border transition-all duration-300 hover:scale-105 ${
+    <div className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border ${
       theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 hover:shadow-md hover:shadow-blue-500/20'
-        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100 hover:shadow-md'
+        ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600'
+        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-100'
       }`}>
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
@@ -1469,17 +1352,17 @@ function Profile() {
         </div>
 
       </div>
-    </div>
+      </div>
   );
 
-  const EducationExperienceItem = ({ type, item, index, onEdit, onDelete }) => {
+  const EducationExperienceItem = ({ type, item, index, onEdit }) => {
     const config = sectionConfig[type];
     const IconComponent = config.icon;
 
     return (
-      <div className={`col-span-full border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
+      <div className={`col-span-full border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 ${
         theme === 'dark'
-          ? `bg-gray-700 ${config.darkBorderColor} hover:shadow-blue-500/20`
+          ? `bg-gray-700 ${config.darkBorderColor}`
           : `bg-gray-50 ${config.borderColor}`
         }`}>
         <div className="flex items-start justify-between mb-4">
@@ -1509,25 +1392,14 @@ function Profile() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => onEdit(item)}
-                className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                className={`p-2 rounded-lg ${
                   theme === 'dark'
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-500 text-white'
                   }`}
                 title="Edit"
               >
                 <IoCreateOutline className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onDelete(type, item, item.id)}
-                className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
-                  theme === 'dark'
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-red-500 hover:bg-red-600 text-white'
-                  }`}
-                title="Delete"
-              >
-                <IoTrashOutline className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -1541,10 +1413,10 @@ function Profile() {
               <DetailItem label="CGPA/Percentage" value={item.cgpaOrPercentage} />
               {item.addFiles && (
                 <div className="col-span-full">
-                  <a href={item.addFiles} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center space-x-2 p-2 sm:p-3 rounded-lg border transition-all duration-300 hover:scale-105 ${
+                  <a href={item.addFiles} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center space-x-2 p-2 sm:p-3 rounded-lg border ${
                     theme === 'dark'
-                      ? 'bg-gray-600 border-gray-500 text-white hover:bg-gray-500'
-                      : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50'
+                      ? 'bg-gray-600 border-gray-500 text-white'
+                      : 'bg-white border-gray-200 text-gray-900'
                     }`}>
                     <IoCheckmarkCircle className="w-4 h-4 text-green-500" />
                     <span className="font-semibold text-xs sm:text-sm">View Certificate</span>
@@ -1571,10 +1443,10 @@ function Profile() {
     const hasData = hasActualData(data, sectionKey);
 
     return (
-      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500
-                         overflow-hidden group hover:scale-[1.02] mb-6 sm:mb-8 ${
+      <div className={`border-2 rounded-none sm:rounded-2xl shadow-lg
+                         overflow-hidden mb-6 sm:mb-8 ${
         theme === 'dark'
-          ? `bg-gray-800 ${config.darkBorderColor} hover:shadow-blue-500/20`
+          ? `bg-gray-800 ${config.darkBorderColor}`
           : `bg-white ${config.borderColor}`
         }`}>
         <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b-2 relative overflow-hidden ${
@@ -1585,7 +1457,7 @@ function Profile() {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/30"></div>
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-              <div className={`p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl shadow-md transform group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ${
+              <div className={`p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl shadow-md flex-shrink-0 ${
                 theme === 'dark' ? 'bg-gray-700' : 'bg-white'
                 }`}>
                 <IconComponent className={`w-6 h-6 sm:w-8 sm:h-8 ${
@@ -1613,10 +1485,10 @@ function Profile() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-              {(sectionKey === 'education' || sectionKey === 'experience') && (!isReadOnly || isAdmin) && (
+              {(sectionKey === 'education' || sectionKey === 'experience') && !isReadOnly && (
                 <button
                   onClick={() => openEditSection(sectionKey, null, true)}
-                  className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
+                  className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg sm:rounded-xl shadow-lg text-sm"
                 >
                   <IoAdd className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Add {sectionKey === 'education' ? 'Education' : 'Experience'}</span>
@@ -1624,16 +1496,16 @@ function Profile() {
                 </button>
               )}
 
-              {(!isReadOnly || isAdmin) && !['education', 'experience'].includes(sectionKey) && (
+              {!isReadOnly && !['education', 'experience'].includes(sectionKey) && (
                 <button
                   onClick={() => openEditSection(sectionKey)}
-                  className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 cursor-pointer rounded-lg sm:rounded-xl font-semibold transition-all duration-300
-                                 transform hover:scale-105 focus:ring-4 focus:ring-blue-500/20 shadow-md hover:shadow-lg text-sm
+                  className={`flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 cursor-pointer rounded-lg sm:rounded-xl font-semibold
+                                 focus:ring-4 focus:ring-blue-500/20 shadow-md text-sm
                                  ${hasData
                       ? theme === 'dark'
-                        ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor} hover:bg-gray-600`
-                        : `${config.textColor} bg-white border-2 ${config.borderColor} hover:bg-gray-50`
-                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                        ? `${config.darkTextColor} bg-gray-700 border-2 ${config.darkBorderColor}`
+                        : `${config.textColor} bg-white border-2 ${config.borderColor}`
+                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
                     }`}
                 >
                   {hasData ? (
@@ -1651,18 +1523,18 @@ function Profile() {
                   )}
                 </button>
               )}
-            </div>
 
-            {isReadOnly && !isAdmin && (
-              <div className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-gray-400 border-2 border-gray-600'
-                  : 'bg-gray-100 text-gray-500 border-2 border-gray-300'
-                }`}>
-                <IoEye className="w-3 h-3 sm:w-4 sm:h-4 inline mr-2" />
-                <span>View Only</span>
-              </div>
-            )}
+              {isReadOnly && (
+                <div className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 text-gray-400 border-2 border-gray-600'
+                    : 'bg-gray-100 text-gray-500 border-2 border-gray-300'
+                  }`}>
+                  <IoEye className="w-3 h-3 sm:w-4 sm:h-4 inline mr-2" />
+                  <span>View Only</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1695,8 +1567,7 @@ function Profile() {
                 <button
                   onClick={() => openEditSection(sectionKey, null, true)}
                   className="inline-flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-indigo-600
-                                 text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-indigo-700
-                                 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm"
+                                 text-white font-semibold rounded-lg sm:rounded-xl shadow-lg text-sm"
                 >
                   <IoAdd className="w-4 h-4" />
                   <span>Add {title}</span>
@@ -1743,7 +1614,7 @@ function Profile() {
           theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
           }`}>
           <div
-            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full transition-all duration-700 ease-out"
+            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 sm:h-3 rounded-full"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
@@ -1770,7 +1641,7 @@ function Profile() {
         <div className="min-h-screen flex items-center justify-center px-4">
           <div className="text-center">
             <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
+              <div className="rounded-full h-16 w-16 sm:h-20 sm:w-20 border-4 border-blue-500 border-t-transparent mx-auto mb-4 sm:mb-6"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <IoPersonOutline className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
               </div>
@@ -1783,11 +1654,10 @@ function Profile() {
               }`}>Fetching profile information...</p>
             <div className="flex justify-center space-x-2 mt-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className={`w-2 h-2 rounded-full bg-blue-500 animate-pulse`}
-                  style={{ animationDelay: `${i * 0.2}s` }}></div>
+                <div key={i} className={`w-2 h-2 rounded-full bg-blue-500`}></div>
               ))}
             </div>
-          </div>
+        </div>
         </div>
       </div>
     );
@@ -1852,7 +1722,6 @@ function Profile() {
               <DetailItem label="District" value={addressData?.district} />
             </Section>
 
-            {/* Updated Education Section */}
             <Section sectionKey="education" title="Education Details" data={eduData}>
               {eduData?.map((edu, index) => (
                 <EducationExperienceItem
@@ -1861,12 +1730,10 @@ function Profile() {
                   item={edu}
                   index={index}
                   onEdit={(item) => openEditSection('education', item)}
-                  onDelete={handleDeleteItem}
                 />
               ))}
             </Section>
 
-            {/* Updated Experience Section */}
             <Section sectionKey="experience" title="Previous Experience" data={experience}>
               {experience?.map((exp, index) => (
                 <EducationExperienceItem
@@ -1875,7 +1742,6 @@ function Profile() {
                   item={exp}
                   index={index}
                   onEdit={(item) => openEditSection('experience', item)}
-                  onDelete={handleDeleteItem}
                 />
               ))}
             </Section>
@@ -1895,63 +1761,9 @@ function Profile() {
             <div className="flex justify-end">
               <button
                 onClick={() => setPopup({ show: false, message: '', type: '' })}
-                className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors text-sm`}
+                className={`${popup.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white font-semibold py-2 px-4 sm:px-6 rounded-lg text-sm`}
               >
                 OK
-              </button>
-            </div>
-          </Modal>
-        )}
-
-        {deleteConfirmation.show && (
-          <Modal
-            onClose={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-            title="Confirm Deletion"
-            type="confirm"
-            theme={theme}
-          >
-            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-              Are you sure you want to delete the {sectionConfig[deleteConfirmation.sectionKey].title}? This action cannot be undone.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-              <button
-                onClick={() => setDeleteConfirmation({ show: false, sectionKey: null })}
-                className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </Modal>
-        )}
-
-        {deleteItemConfirmation.show && (
-          <Modal
-            onClose={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
-            title="Confirm Deletion"
-            type="confirm"
-            theme={theme}
-          >
-            <p className={`mb-4 sm:mb-6 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-              Are you sure you want to delete this {deleteItemConfirmation.type} record? This action cannot be undone.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-              <button
-                onClick={() => setDeleteItemConfirmation({ show: false, type: '', item: null, id: null })}
-                className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'}`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteItem}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors text-sm"
-              >
-                Delete
               </button>
             </div>
           </Modal>
@@ -1970,13 +1782,13 @@ function Profile() {
             <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => setNoChangesModal({ show: false, section: null, onContinue: null })}
-                className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold transition-colors text-sm ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-sm ${theme === 'dark' ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-700'}`}
               >
                 Go Back & Make Changes
               </button>
               <button
                 onClick={noChangesModal.onContinue}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 transition-colors text-sm"
+                className="w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-semibold text-white bg-yellow-600 text-sm"
               >
                 Continue Anyway
               </button>
@@ -1984,31 +1796,6 @@ function Profile() {
           </Modal>
         )}
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideIn {
-          from { transform: translateX(-10px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-        .animate-slideUp { animation: slideUp 0.4s ease-out; }
-        .animate-slideIn { animation: slideIn 0.3s ease-out; }
-        .animate-spin-slow {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

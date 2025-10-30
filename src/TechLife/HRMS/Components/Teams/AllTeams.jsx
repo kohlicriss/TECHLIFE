@@ -760,7 +760,7 @@ const AllTeams = () => {
     };
 
     const fetchAdminAllTeams = async () => {
-        if (!matchedArray || !matchedArray.includes("ADMIN_FETCHING_ALLTEAMS")) {
+        if (!matchedArray || !matchedArray.includes("MY_TEAM_ADMIN_FETCHING_ALLTEAMS")) {
             setAdminAllTeams([]);
             setLoading(false);
             return;
@@ -1130,7 +1130,7 @@ const AllTeams = () => {
                                             <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
                                                 <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
                                             </Link>
-                                            {matchedArray?.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
+                                            {matchedArray?.includes("MY_TEAM_DELETE_TEAM") && !fromContextMenu && (
                                                 <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
                                                     <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
                                                 </button>
@@ -1189,7 +1189,7 @@ const AllTeams = () => {
         );
     };
 
-    const hasAdminPermissions = matchedArray && matchedArray.includes("ADMIN_FETCHING_ALLTEAMS");
+    const hasAdminPermissions = matchedArray && matchedArray.includes("MY_TEAM_ADMIN_FETCHING_ALLTEAMS");
 
     return (
         <div className={`relative flex min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -1232,7 +1232,7 @@ const AllTeams = () => {
                                 />
                                 <FaSearch className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
                             </div>
-                            {matchedArray?.includes("CREATE_TEAM") && !fromContextMenu && (
+                            {matchedArray?.includes("MY_TEAM_CREATE_TEAM") && !fromContextMenu && (
                                 <button
                                     onClick={() => setIsCreateModalOpen(true)}
                                     className="w-full sm:w-auto bg-black text-white px-4 sm:px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center shadow-md text-sm"
