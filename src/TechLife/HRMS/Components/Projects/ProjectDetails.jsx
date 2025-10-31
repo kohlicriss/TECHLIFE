@@ -24,7 +24,22 @@ const ProjectDetails = () => {
   }, []);
 
   const scrollToSection = (ref) => {
-    ref.current.scrollIntoView({ behavior: "smooth" });
+try {
+      if (!ref) return;
+      // support both ref objects and element ids
+      if (typeof ref === 'string') {
+        const el = document.getElementById(ref);
+        if (el) return el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      if (!ref.current) {
+        // element not mounted yet
+        return;
+      }
+      ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (err) {
+      console.warn('scrollToSection failed', err);
+    }
   };
   const navigate = useNavigate();
   const location = useLocation();
@@ -307,7 +322,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
   const [progress, setprogress] = useState([]);
    const [selectedTask, setSelectedTask] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
-    const loadTasks = async (pid) => {
+     const loadTasks = async (pid) => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
@@ -369,7 +384,6 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
         setProgressLoading(false);
         return [];
       }
-
       const arr = await res.json().catch(() => []);
       const list = Array.isArray(arr) ? arr : [];
       const mapped = list.map((o, i) => ({
@@ -458,7 +472,6 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
             onClick={() => scrollToSection(Tasks)}
             className={`flex flex-col items-center p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} text-xs w-1/4 flex-shrink-0`}
           >
-            
             <span className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} font-medium mt-1`}>Tasks</span>
           </button>
           <button
@@ -657,6 +670,70 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
                   <div className="py-6 text-center text-sm text-gray-500">No task details available.</div>
                 )}
               </div>
+            </div>
+          </section>
+          <section ref={teamRef} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 scroll-mt-24">
+            <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} p-6 rounded-xl shadow-md`}>
+              <h2 className="text-2xl font-bold mb-6">Team Members</h2>
+              <div className="space-y-4">
+                {projectInfo.team.map((member, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleSelectMember(member)}
+                    className={`cursor-pointer ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800  hover:bg-gray-50 '}  p-4 rounded-xl shadow-md flex items-center justify-between transition ${selectedMember === member ? 'border-2 border-indigo-500' : ''}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <img src={member.image || member.employeeImage || getAvatarUrl(index)} alt={member.name} className="w-12 h-12 rounded-full border object-cover" />
+                       <div>
+                         <h3 className="text-lg font-semibold">{member.name}</h3>
+                       <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-sm`}>{member.role}</p>
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-6">
+                       <div className="text-center">
+                        <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-xs`}>Performance %</p>
+                        <p className={`font-semibold text-base ${member.percentageCompleted >= 75 ? "text-green-500" : member.percentageCompleted > 0 ? "text-yellow-500" : "text-gray-500"}`}>
+                          {Math.round((member.percentageCompleted || 0))}%
+                        </p>
+                       </div>
+                       <div className="text-center">
+                        <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-xs`}>Status</p>
+                        <span className={`inline-flex items-center justify-center w-12 h-8 rounded-md border ${member.status ? 'border-green-500 text-green-600' : 'border-gray-300 text-gray-500'}`}>
+                          {member.status || '0/0'}
+                        </span>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+             <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-gradient-to-r from-white to-blue-50 text-gray-800'} p-6 rounded-xl shadow-md`}>
+              <h2 className="text-2xl font-bold mb-6">Member Details</h2>
+              {selectedMember ? (
+                <div className={`${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl space-y-4`}>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={selectedMember.employeeImage || selectedMember.image || getAvatarUrl(projectInfo.team.indexOf(selectedMember))}
+                      alt={selectedMember.employeeName || selectedMember.name}
+                      className="w-20 h-20 rounded-full border-2 border-indigo-400 object-cover"
+                    />
+                    <div>
+                      <h3 className="text-2xl font-bold">{selectedMember.employeeName || selectedMember.name || selectedMember.displayName}</h3>
+                      <p className="text-indigo-600 font-medium">{selectedMember.role}</p>
+                    </div>
+                  </div>
+                  <div className={`space-y-2 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
+                    <p className="flex items-center gap-2 text-sm"><MdEmail /> {selectedMember.email || '-'}</p>
+                    <p className="flex items-center gap-2 text-sm"><FaPhoneFlip /> {selectedMember.contactNumber || selectedMember.contact || 'N/A'}</p>
+                  </div>
+                  <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm leading-relaxed`}>{selectedMember.description || '-'}</p>
+                </div>
+                 
+              ) : (
+              <div className={`${theme==='dark'?'text-gray-200':'text-gray-500'} text-center mt-12 py-10 rounded-xl border border-dashed border-gray-300`}>
+                  Click a team member to view details
+                </div>
+              )}
             </div>
           </section>
           <section ref={teamRef} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 scroll-mt-24">

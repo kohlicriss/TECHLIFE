@@ -2455,148 +2455,58 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
                                         <motion.button
                                             onClick={() => handleModeChange(mode === "office" ? "home" : "office")}
                                             className="flex-1 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-colors font-semibold text-sm"
-                                            whileTap={{ scale: 0.95 }}
                                         >
                                             Confirm
                                         </motion.button>
-                                        <motion.button
-                                            onClick={() => setShowModeConfirm(false)}
-                                            className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
-                                            whileTap={{ scale: 0.95 }}
-                                        >
-                                            Cancel
-                                        </motion.button>
+                                        <motion.button onClick={() => setShowModeConfirm(false)} className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm" >Cancel</motion.button>
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
                 </div>
-
             </div>
             <div className={`grid grid-cols-1 md:grid-cols-1`}>
               <ProfileAttendance/>
 </div>  
             <div className="relative my-2 w-full flex justify-center">
-                <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <motion.div
-                        className={`w-full border-t ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'}`}
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ delay: 0.6, duration: 0.8 }}
-                        style={{ transformOrigin: "left" }}
-                    />
-                </div>
-                <span className={`px-2 text-xs font-semibold z-10 ${theme === 'dark' ? 'bg-gray-800 text-indigo-400' : 'bg-white text-indigo-600'}`}>
-                    CURRENT CLOCK
-                </span>
+                <div className="absolute inset-0 flex items-center" aria-hidden="true"><motion.div className={`w-full border-t ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'}`} /></div>
+                <span className={`px-2 text-xs font-semibold z-10 ${theme === 'dark' ? 'bg-gray-800 text-indigo-400' : 'bg-white text-indigo-600'}`}>CURRENT CLOCK</span>
             </div>
             <div className="w-full flex flex-col items-center text-center mb-4 relative z-10">
-
                 <div className="mb-4">
-                    <motion.div
-                        className="flex items-center justify-center gap-2 text-indigo-600 font-medium mb-1"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8, duration: 0.5 }}
-                    >
-                        <ClockIcon className="w-5 h-5 text-indigo-500" />
-                        <span className='text-sm'>Current Time</span>
-                    </motion.div>
-                    <motion.p
-                        className={`text-3xl md:text-3xl lg:text-3xl font-extrabold tracking-tight mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 1, duration: 0.5 }}
-                    >
-                        {formatClockTime(currentTime)}
-                    </motion.p>
-                    <motion.p
-                        className={`text-sm md:text-base font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.2, duration: 0.5 }}
-                    >
-                        {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                    </motion.p>
+                    <motion.div className="flex items-center justify-center gap-2 text-indigo-600 font-medium mb-1" ><ClockIcon className="w-5 h-5 text-indigo-500" /><span className='text-sm'>Current Time</span></motion.div>
+                    <motion.p className={`text-3xl md:text-3xl lg:text-3xl font-extrabold tracking-tight mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} >{formatClockTime(currentTime)}</motion.p>
+                    <motion.p className={`text-sm md:text-base font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} >     {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} </motion.p>
                 </div>
             {loadingTodayAttendance ? (
                 <p className="text-sm text-indigo-400 animate-pulse">Fetching today's hours...</p>
             ) : (
                 <div className="grid grid-cols-2 gap-3 w-full max-w-xs md:max-w-md">
-                    {/* EFFECTIVE HOURS */}
-                    <motion.div
-                        className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-indigo-500/50' : 'bg-indigo-50 border border-indigo-200'}`}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <div className="text-xl font-bold text-indigo-500">
-                            {effectiveHoursFormatted}
-                        </div>
-                        <div className="text-xs font-semibold mt-1 text-gray-500">
-                            Effective Hours
-                        </div>
+                    <motion.div className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-indigo-500/50' : 'bg-indigo-50 border border-indigo-200'}`} transition={{ type: "spring", stiffness: 300 }} >
+                        <div className="text-xl font-bold text-indigo-500">{effectiveHoursFormatted}</div>
+                        <div className="text-xs font-semibold mt-1 text-gray-500">Effective Hours</div>
                     </motion.div>
-                    <motion.div
-                        className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-pink-500/50' : 'bg-pink-50 border border-pink-200'}`}
-                        transition={{ type: "spring", stiffness: 300 }}
-                    >
-                        <div className="text-xl font-bold text-pink-500">
-                            {grossHoursFormatted}
-                        </div>
-                        <div className="text-xs font-semibold mt-1 text-gray-500">
-                            Gross Hours
-                        </div>
+                    <motion.div className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-pink-500/50' : 'bg-pink-50 border border-pink-200'}`} transition={{ type: "spring", stiffness: 300 }} >
+                        <div className="text-xl font-bold text-pink-500">{grossHoursFormatted}</div>
+                        <div className="text-xs font-semibold mt-1 text-gray-500">Gross Hours</div>
                     </motion.div>
                 </div> 
             )}
             </div>
             <div className="w-full flex justify-center mt-4 relative z-10">
                 {!isLoggedIn ? (
-                    <motion.button
-                        onClick={handleLogin}
-                        className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-green-700 font-bold text-lg"
-                        whileTap={{ scale: 0.95 }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <ClockIcon className="w-5 h-5 mr-1.5" /> 
-                        Clock In
-                    </motion.button>
+                    <motion.button onClick={handleLogin} className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-green-700 font-bold text-lg" ><ClockIcon className="w-5 h-5 mr-1.5" /> Clock In</motion.button>
                 ) : (
                     <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-sm"> 
                         <AnimatePresence mode="wait">
                             {isLogoutConfirmed ? (
                                 <>
-                                    <motion.button
-                                        key="confirm"
-                                        onClick={handleConfirmLogout}
-                                        // Reduced size and font
-                                        className="flex-1 items-center justify-center py-1 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm"
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        Confirm Logout
-                                    </motion.button>
-                                    <motion.button
-                                        key="cancel"
-                                        onClick={handleCancel}
-                                        className={`flex-1 items-center justify-center py-1 rounded-xl shadow-sm transition-all duration-200 font-medium text-sm 
-                                            ${theme === 'dark' ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        Cancel
-                                    </motion.button>
+                                    <motion.button key="confirm" onClick={handleConfirmLogout} className="flex-1 items-center justify-center py-1 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm" >     Confirm Logout </motion.button>
+                                    <motion.button key="cancel" onClick={handleCancel} className={`flex-1 items-center justify-center py-1 rounded-xl shadow-sm transition-all duration-200 font-medium text-sm      ${theme === 'dark' ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}     >     Cancel </motion.button>
                                 </>
                             ) : (
-                                <motion.button key="logout" onClick={handleLogout} className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-600 hover:to-red-700 font-bold text-lg" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} whileTap={{ scale: 0.95 }}>
-                                    <ClockIcon className="w-5 h-5 mr-1.5" /> 
-                                    Clock Out
-                                </motion.button>
+                                <motion.button key="logout" onClick={handleLogout} className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-600 hover:to-red-700 font-bold text-lg" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} whileTap={{ scale: 0.95 }}><ClockIcon className="w-5 h-5 mr-1.5" /> Clock Out</motion.button>
                             )}
                         </AnimatePresence>
                     </div>
@@ -2606,30 +2516,13 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
     </motion.div>
                         <App attendanceRecords={attendanceRecords} />
                     </div>
-                    
-
-                            {/* Charts Grid */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                <motion.section
-                                    className={`rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px] ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`}
-                                    initial={{ opacity: 0, x: -50 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.5, delay: 0.6 }}
-                                >
-                                    <h2 className={`text-xl sm:text-2xl font-bold  mb-4 text-center ${theme === 'dark' ? 'bg-gradient-to-br from-blue-200 to-blue-600 bg-clip-text text-transparent' : 'text-gray-800'}`}>
-                                        <ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown
-                                    </h2>
+                                <motion.section className={`rounded-xl shadow-lg p-6 border border-gray-200 flex flex-col justify-between min-h-[450px] ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-stone-100 text-gray-800'}`} >
+                                    <h2 className={`text-xl sm:text-2xl font-bold  mb-4 text-center ${theme === 'dark' ? 'bg-gradient-to-br from-blue-200 to-blue-600 bg-clip-text text-transparent' : 'text-gray-800'}`}><ChartPieIcon className="w-6 h-6 inline-block mr-2 text-indigo-600" /> Daily Activity Breakdown</h2>
                                     <div className="mb-6 flex justify-center gap-2 flex-wrap">
                                        <div className="mb-6 flex justify-center gap-2 flex-wrap">
-                                       {/* Previous Button */}
                                        {startIndex > 0 && (
-                                        <motion.button
-                                           onClick={() => setStartIndex(prev => Math.max(0, prev - datesPerPage))}
-                                           className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                                           whileHover={{ scale: 1.1 }}
-                                           whileTap={{ scale: 0.9 }}
-                                           aria-label="Previous dates"
-                                        >
+                                        <motion.button onClick={() => setStartIndex(prev => Math.max(0, prev - datesPerPage))} className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`} aria-label="Previous dates" >
                                           <ChevronLeft className="w-5 h-5" />
                                         </motion.button>
                                        )}
@@ -2639,27 +2532,13 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
                                           const dataItem = pieItem || barItem;
                                           const dateToSet = dataItem ? `${dataItem.Date}-${dataItem.Month}-${dataItem.Year}` : date;
                                           return (
-                                             <motion.button
-                                                key={date}
-                                                onClick={() => setSelectedMetricDate(dateToSet)} 
-                                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.9 }}
-                                             >
-                                                {date}
-                                             </motion.button>
+                                             <motion.button key={date} onClick={() => setSelectedMetricDate(dateToSet)}  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}  >     {date}  </motion.button>
                                           );
                                        })}
                                        
                                        {/* Next Button */}
                                        {startIndex + datesPerPage < dates.length && (
-                                           <motion.button
-                                               onClick={() => setStartIndex(prev => prev + datesPerPage)}
-                                               className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                                               whileHover={{ scale: 1.1 }}
-                                               whileTap={{ scale: 0.9 }}
-                                               aria-label="Next dates"
-                                           >
+                                           <motion.button onClick={() => setStartIndex(prev => prev + datesPerPage)} className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full text-base sm:text-sm font-small flex items-center justify-center bg-gray-200 text-gray-700 ${theme === 'dark' ? "bg-gray-400 text-gray-300" : ""} cursor-pointer hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`} aria-label="Next dates"  >
                                              <ChevronRight className="w-5 h-5" /> 
                                            </motion.button>
                                        )}
@@ -2716,49 +2595,22 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
                                     </div>
                                 </motion.section>
                             </div>
-                            {/* Attendance Records Table */}
                            <div className={`p-4 sm:p-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
-      <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2">
-         Employee Attendance Tracker
-      </h1>
+      <h1 className="text-3xl font-extrabold text-indigo-800 mb-6 border-b pb-2"> Employee Attendance Tracker</h1>
       <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
         <div className="flex flex-wrap gap-4">
-          {/* Leave dropdown removed as requested */}
-
           <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
              <option value="">Select Month: All</option>
              {months.map(m => <option key={m} value={m}>{m}</option>)}
            </select>
             <div className="flex items-center gap-2">
   <label className="text-sm">From</label>
-  <input
-    type="date"
-    value={startDateFilter}
-    max={todayISO}
-    onChange={e => setStartDateFilter(e.target.value)}
-    className="p-2 border border-gray-300 rounded-lg text-sm bg-white"
-  />
+  <input type="date" value={startDateFilter} max={todayISO} onChange={e => setStartDateFilter(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm bg-white" />
   <label className="text-sm">To</label>
-  <input
-    type="date"
-    value={endDateFilter}
-    max={todayISO}
-    onChange={e => setEndDateFilter(e.target.value)}
-    className="p-2 border border-gray-300 rounded-lg text-sm bg-white"
-  />
+  <input type="date" value={endDateFilter} max={todayISO} onChange={e => setEndDateFilter(e.target.value)} className="p-2 border border-gray-300 rounded-lg text-sm bg-white" />
 
-  <button
-    onClick={() => { setPage(1); /* triggers fetch via effect dependencies */ }}
-    className="px-3 py-1 bg-indigo-600 text-white rounded-lg"
-  >
-    Apply
-  </button>
-  <button
-    onClick={() => { setStartDateFilter(''); setEndDateFilter(''); setPage(1); }}
-    className="px-3 py-1 bg-gray-200 rounded-lg"
-  >
-    Clear
-  </button>
+  <button onClick={() => { setPage(1);}} className="px-3 py-1 bg-indigo-600 text-white rounded-lg" >Apply</button>
+  <button onClick={() => { setStartDateFilter(''); setEndDateFilter(''); setPage(1); }} className="px-3 py-1 bg-gray-200 rounded-lg" >   Clear </button>
 </div>
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
             <option value="Recantly Added">Sorted By: Recently Added</option>
@@ -2831,7 +2683,6 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
           </tbody>
         </table>
       </div>
-      {/* pagination controls */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
         <div className="flex items-center space-x-2">
