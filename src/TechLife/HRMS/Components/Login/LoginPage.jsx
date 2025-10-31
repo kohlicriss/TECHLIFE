@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
 import logo from "../assets/anasol-logo.png";
 import { Context } from "../HrmsContext";
-import { publicinfoApi } from "../../../../axiosInstance"; // Import publicinfoApi
+import { authApi, publicinfoApi } from "../../../../axiosInstance";
 
 const MAX_ATTEMPTS_PHASE1 = 5;
 const MAX_ATTEMPTS_PHASE2 = 7;
@@ -30,7 +30,6 @@ const decodeJwt = (token) => {
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
 
-  // ✅ FIX: Get setUserData from the context to update it directly
   const { theme, setTheme, setUserData, setAccessToken } = useContext(Context);
 
   const [selectedRole, setSelectedRole] = useState("Admin");
@@ -51,6 +50,7 @@ const LoginPage = ({ onLogin }) => {
   const [forgotPasswordStep, setForgotPasswordStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMobile, setForgotMobile] = useState("");
+  const [forgotUsername, setForgotUsername] = useState("");
   const [forgotOtp, setForgotOtp] = useState(["", "", "", "", "", ""]);
   const [forgotMobileOtp, setForgotMobileOtp] = useState(["", "", "", ""]);
   const [forgotPasswordMethod, setForgotPasswordMethod] = useState(null);
@@ -148,9 +148,9 @@ const LoginPage = ({ onLogin }) => {
           localStorage.setItem("emppayload", JSON.stringify(decodedPayload));
           localStorage.setItem("logedempid", decodedPayload.employeeId);
           localStorage.setItem("logedemprole", decodedPayload.roles[0]);
-          
+
           setUserData(decodedPayload);
-          
+
           employeeIdFromToken = decodedPayload.employeeId;
 
           try {
@@ -196,7 +196,7 @@ const LoginPage = ({ onLogin }) => {
       setIsLoading(false);
     }
   };
-  
+
   const handleOtpMethodSelect = (method) => {
     setOtpMethod(method);
     resetTimer();
@@ -267,12 +267,14 @@ const LoginPage = ({ onLogin }) => {
           if (forgotPasswordStep === 3) {
             setNewPassword("");
             setConfirmPassword("");
+            setForgotUsername("");
           }
         }
       } else {
         setForgotPasswordScreen(false);
         setForgotEmail("");
         setForgotMobile("");
+        setForgotUsername("");
         setForgotPasswordStep(1);
         setForgotPasswordMethod(null);
         setError("");
@@ -302,6 +304,7 @@ const LoginPage = ({ onLogin }) => {
     setOtpScreen(false);
     setForgotEmail("");
     setForgotMobile("");
+    setForgotUsername("");
     setForgotPasswordStep(1);
     setForgotPasswordMethod(null);
     setForgotOtp(["", "", "", "", "", ""]);
@@ -365,11 +368,13 @@ const LoginPage = ({ onLogin }) => {
     }, 1500);
   };
 
-  const handleUpdatePassword = (e) => {
+  // 🔑 FIXED: Corrected payload to match DTO {username:"", password:""}
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
     setError("");
-    if (!newPassword || !confirmPassword) {
-      setError("Please enter and confirm your new password.");
+
+    if (!forgotUsername.trim() || !newPassword || !confirmPassword) {
+      setError("Please enter username, new password, and confirm new password.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -380,36 +385,62 @@ const LoginPage = ({ onLogin }) => {
       setError("New password must be at least 6 characters long.");
       return;
     }
+
     setIsLoading(true);
-    setTimeout(() => {
+
+    const userId = forgotUsername.trim();
+    // 🔑 FIXED: Changed from newPassword to password to match DTO
+    const payload = {
+      username: userId,
+      password: newPassword,
+    };
+
+    try {
+      // Using authApi for authentication endpoint
+      const response = await authApi.put(`update/${userId}`, payload);
+
+      if (response.status >= 200 && response.status < 300) {
+        console.log(`Password updated successfully! API endpoint hit: update/${userId}`);
+        console.log("Payload sent:", payload);
+
+        // Reset flow on successful update
+        setForgotPasswordScreen(false);
+        setForgotEmail("");
+        setForgotMobile("");
+        setForgotPasswordStep(1);
+        setForgotPasswordMethod(null);
+        setForgotOtp(["", "", "", "", "", ""]);
+        setForgotMobileOtp(["", "", "", ""]);
+        setNewPassword("");
+        setConfirmPassword("");
+        setForgotUsername("");
+        setError("Password updated successfully! Please login with your new password.");
+      } else {
+        // Handle non-2xx response from API
+        setError(response.data?.message || "Failed to update password. Please try again.");
+      }
+    } catch (error) {
+      console.error("Password update failed:", error);
+      setError(error.response?.data?.message || "Error updating password. Please check your details.");
+    } finally {
       setIsLoading(false);
-      console.log("Password updated successfully! Please login with your new password.");
-      setForgotPasswordScreen(false);
-      setForgotEmail("");
-      setForgotMobile("");
-      setForgotPasswordStep(1);
-      setForgotPasswordMethod(null);
-      setForgotOtp(["", "", "", "", "", ""]);
-      setForgotMobileOtp(["", "", "", ""]);
-      setNewPassword("");
-      setConfirmPassword("");
-    }, 2000);
+    }
   };
 
   return (
     <div className={`flex items-center justify-center min-h-screen p-4 relative overflow-hidden transition-all duration-500 ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black' 
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black'
         : 'bg-gradient-to-br from-gray-100 via-blue-50 to-purple-100'
     }`}>
-    
+
       <div className="fixed top-6 right-6 z-50">
-        <DarkModeToggle 
-          isDark={theme === 'dark'} 
+        <DarkModeToggle
+          isDark={theme === 'dark'}
           onToggle={handleThemeToggle}
         />
       </div>
-     
+
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob ${
           theme === 'dark' ? 'bg-purple-800/60' : 'bg-purple-200/60'
@@ -421,18 +452,18 @@ const LoginPage = ({ onLogin }) => {
           theme === 'dark' ? 'bg-pink-800/50' : 'bg-pink-200/50'
         }`}></div>
       </div>
-      
+
       <div className={`relative z-10 flex w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl backdrop-blur-lg ring-1 transition-all duration-700 ease-out
           ${isMounted ? "scale-100 opacity-100" : "scale-95 opacity-0"}
           max-h-[90vh] min-h-[600px] ${
-          theme === 'dark' 
-            ? 'bg-gray-800/90 ring-gray-700' 
+          theme === 'dark'
+            ? 'bg-gray-800/90 ring-gray-700'
             : 'bg-white/80 ring-black/10'
         }`}>
-        
+
         <div className={`hidden md:flex flex-col justify-between w-1/2 text-white p-10 lg:p-14 ${
-          theme === 'dark' 
-            ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900' 
+          theme === 'dark'
+            ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900'
             : 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-800'
         }`}>
           <div className="space-y-8 mt-8">
@@ -471,8 +502,8 @@ const LoginPage = ({ onLogin }) => {
               <img src={logo} alt="Anasol Logo" className="w-24 h-auto" />
             </div>
             <h2 className={`text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r mb-6 ${
-              theme === 'dark' 
-                ? 'from-blue-400 to-purple-400' 
+              theme === 'dark'
+                ? 'from-blue-400 to-purple-400'
                 : 'from-purple-600 to-blue-600'
             }`}>
               {forgotPasswordScreen
@@ -489,7 +520,7 @@ const LoginPage = ({ onLogin }) => {
                   : "Choose OTP Method"
                 : "Login"}
             </h2>
-            
+
             <div className="w-full">
               {!forgotPasswordScreen && !otpScreen && (
                 <form onSubmit={handleLoginSubmit} className="space-y-3">
@@ -500,8 +531,8 @@ const LoginPage = ({ onLogin }) => {
                     onChange={(e) => setName(e.target.value)}
                     disabled={isLockedOut}
                     className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
-                      theme === 'dark' 
-                        ? 'border-gray-600 text-white bg-transparent' 
+                      theme === 'dark'
+                        ? 'border-gray-600 text-white bg-transparent'
                         : 'border-gray-300 text-gray-800 bg-transparent'
                     }`}
                   />
@@ -513,8 +544,8 @@ const LoginPage = ({ onLogin }) => {
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLockedOut}
                       className={`w-full border-b-2 py-3 px-2 pr-10 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
-                        theme === 'dark' 
-                          ? 'border-gray-600 text-white bg-transparent' 
+                        theme === 'dark'
+                          ? 'border-gray-600 text-white bg-transparent'
                           : 'border-gray-300 text-gray-800 bg-transparent'
                       }`}
                     />
@@ -601,8 +632,8 @@ const LoginPage = ({ onLogin }) => {
                         }
                         ref={mobileRefs[index]}
                         className={`w-12 h-12 text-center text-2xl border-2 rounded-lg focus:outline-none focus:border-blue-500 transition ${
-                          theme === 'dark' 
-                            ? 'border-gray-600 bg-gray-700 text-white' 
+                          theme === 'dark'
+                            ? 'border-gray-600 bg-gray-700 text-white'
                             : 'border-gray-300 bg-white text-gray-800'
                         }`}
                       />
@@ -666,8 +697,8 @@ const LoginPage = ({ onLogin }) => {
                         }
                         ref={emailRefs[index]}
                         className={`w-10 h-10 text-center text-xl border-2 rounded-lg focus:outline-none focus:border-purple-500 transition ${
-                          theme === 'dark' 
-                            ? 'border-gray-600 bg-gray-700 text-white' 
+                          theme === 'dark'
+                            ? 'border-gray-600 bg-gray-700 text-white'
                             : 'border-gray-300 bg-white text-gray-800'
                         }`}
                       />
@@ -728,8 +759,8 @@ const LoginPage = ({ onLogin }) => {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
-                      theme === 'dark' 
-                        ? 'border-gray-600 text-white bg-transparent' 
+                      theme === 'dark'
+                        ? 'border-gray-600 text-white bg-transparent'
                         : 'border-gray-300 text-gray-800 bg-transparent'
                     }`}
                   />
@@ -761,8 +792,8 @@ const LoginPage = ({ onLogin }) => {
                     value={forgotMobile}
                     onChange={(e) => setForgotMobile(e.target.value)}
                     className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
-                      theme === 'dark' 
-                        ? 'border-gray-600 text-white bg-transparent' 
+                      theme === 'dark'
+                        ? 'border-gray-600 text-white bg-transparent'
                         : 'border-gray-300 text-gray-800 bg-transparent'
                     }`}
                   />
@@ -817,8 +848,8 @@ const LoginPage = ({ onLogin }) => {
                         }
                         ref={forgotOtpRefs[index]}
                         className={`w-10 h-10 text-center text-xl border-2 rounded-lg focus:outline-none focus:border-purple-500 transition ${
-                          theme === 'dark' 
-                            ? 'border-gray-600 bg-gray-700 text-white' 
+                          theme === 'dark'
+                            ? 'border-gray-600 bg-gray-700 text-white'
                             : 'border-gray-300 bg-white text-gray-800'
                         }`}
                       />
@@ -887,8 +918,8 @@ const LoginPage = ({ onLogin }) => {
                         }
                         ref={forgotMobileOtpRefs[index]}
                         className={`w-12 h-12 text-center text-2xl border-2 rounded-lg focus:outline-none focus:border-blue-500 transition ${
-                          theme === 'dark' 
-                            ? 'border-gray-600 bg-gray-700 text-white' 
+                          theme === 'dark'
+                            ? 'border-gray-600 bg-gray-700 text-white'
                             : 'border-gray-300 bg-white text-gray-800'
                         }`}
                       />
@@ -928,6 +959,17 @@ const LoginPage = ({ onLogin }) => {
                   <p className={`text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                     Set your new password.
                   </p>
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    value={forgotUsername}
+                    onChange={(e) => setForgotUsername(e.target.value)}
+                    className={`w-full border-b-2 py-3 px-2 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
+                      theme === 'dark'
+                        ? 'border-gray-600 text-white bg-transparent'
+                        : 'border-gray-300 text-gray-800 bg-transparent'
+                    }`}
+                  />
                   <div className="relative">
                     <input
                       type={showNewPassword ? "text" : "password"}
@@ -935,8 +977,8 @@ const LoginPage = ({ onLogin }) => {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className={`w-full border-b-2 py-3 px-2 pr-10 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
-                        theme === 'dark' 
-                          ? 'border-gray-600 text-white bg-transparent' 
+                        theme === 'dark'
+                          ? 'border-gray-600 text-white bg-transparent'
                           : 'border-gray-300 text-gray-800 bg-transparent'
                       }`}
                     />
@@ -961,8 +1003,8 @@ const LoginPage = ({ onLogin }) => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className={`w-full border-b-2 py-3 px-2 pr-10 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition ${
-                        theme === 'dark' 
-                          ? 'border-gray-600 text-white bg-transparent' 
+                        theme === 'dark'
+                          ? 'border-gray-600 text-white bg-transparent'
                           : 'border-gray-300 text-gray-800 bg-transparent'
                       }`}
                     />
