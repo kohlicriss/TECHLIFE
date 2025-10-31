@@ -546,6 +546,7 @@ const ProjectCard = () => {
     const [showCreateOverview, setShowCreateOverview] = useState(false);
     const [overviewSubmitting, setOverviewSubmitting] = useState(false);
 
+    const [showSprintModal, setShowSprintModal] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [carouselProjects, setCarouselProjects] = useState([]);
     const [loadingCarousel, setLoadingCarousel] = useState(false);
@@ -714,23 +715,47 @@ const ProjectCard = () => {
              </motion.p>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2 ">
               <motion.div className={`p-4 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-yellow-50 to-white'}`} >
-                   <h2 className="text-xl font-bold mb-4 border-b pb-2 text-yellow-600">Key Metrics (KPIs)</h2>
-                    <dl className="space-y-3">
-                        {currentProject?.kpis && Object.keys(currentProject.kpis).length ? (
-                          Object.entries(currentProject.kpis).map(([key, value]) => (
-                            <div key={key} className="flex justify-between border-b border-gray-100 pb-2">
-                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{key}</dt>
-                                <dd className="text-md font-semibold text-gray-500 dark:text-gray-400">{value}</dd>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-sm text-gray-500">No KPI data available for this project.</div>
-                        )}
-                    </dl>
+                   <div className="relative">
+                     <button
+                       type="button"
+                       title="Open Sprints"
+                       onClick={() => setShowSprintModal(true)}
+                       className="absolute top-2 right-2 z-10 inline-flex items-center gap-2 px-2 py-1 rounded-md bg-indigo-600 text-white text-xs hover:bg-indigo-700"
+                     >
+                       Sprints
+                     </button>
+                     <h2 className="text-xl font-bold mb-4 border-b pb-2 text-yellow-600">Key Metrics (KPIs)</h2>
+                     <div className="mt-2">
+                       <dl className="space-y-3">
+                         {currentProject?.kpis && Object.keys(currentProject.kpis).length ? (
+                           Object.entries(currentProject.kpis).map(([key, value]) => (
+                             <div key={key} className="flex justify-between border-b border-gray-100 pb-2">
+                               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{key}</dt>
+                               <dd className="text-md font-semibold text-gray-500 dark:text-gray-400">{value}</dd>
+                             </div>
+                           ))
+                         ) : (
+                           <div className="text-sm text-gray-500">No KPI data available for this project.</div>
+                         )}
+                       </dl>
+                     </div>
+                   </div>
                 </motion.div>
-                {/*<div className="mt-6">
-                    <SprintTable projectId={projectId} />
-                  </div>*/}
+                {showSprintModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+                    <div className="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-auto">
+                      <div className="flex items-center justify-between p-4 border-b">
+                        <h3 className="text-lg font-semibold">Sprints for {projectId}</h3>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setShowSprintModal(false)} className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300">Close</button>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <SprintTable projectId={projectId} />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <motion.div className={`p-4 rounded-lg shadow-lg border border-gray-200 col-span-1 lg:col-span-2 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-50 to-white'} mt-6`} >
                     <div className="flex items-start justify-between border-b pb-2 mb-2">
               <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Project Overview ({projectId})</h1>
@@ -867,6 +892,7 @@ const ProjectForm = ({ onClose, editProject = null, onSuccess = () => {} }) => {
      e.preventDefault();
      setIsSubmitting(true);
      setSubmissionMessage('');
+     setRawErrorDetail(null);
      const dto = {
        title: formData.title,
        description: formData.description,
@@ -892,23 +918,29 @@ const ProjectForm = ({ onClose, editProject = null, onSuccess = () => {} }) => {
         ? `${API_ENDPOINT}/${editProject.projectId || editProject.project_id}`
         : API_ENDPOINT;
       const method = editProject ? 'PUT' : 'POST';
+            // include Accept header so backend returns JSON/text consistently
       const res = await fetch(url, {
         method,
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         body: fd,
       });
-       if (!res.ok) {
-         let errText = res.statusText;
-         let errorBody = null;
-         try { errorBody = await res.json().catch(()=>null); errText = errorBody?.message || errText; } catch {}
-         if (errorBody?.validationErrors) {
-           const ve = Object.entries(errorBody.validationErrors).map(([k,v]) => `${k}: ${v}`).join('\n');
-           setSubmissionMessage(`❌ Validation failed:\n${ve}`);
-         } else {
-           setSubmissionMessage(`❌ Submission failed (${res.status}): ${errText}`);
-         }
-       } else {
-         setSubmissionMessage(editProject ? '✅ Project updated successfully!' : '✅ Project created successfully!');
+      // read raw text then try to parse JSON (safer for non-JSON error responses)
+      const raw = await res.text().catch(() => '');
+      let errorBody = null;
+      try { errorBody = raw ? JSON.parse(raw) : null; } catch (e) { errorBody = null; }
+      if (!res.ok) {
+        // surface validationErrors if present
+        if (errorBody?.validationErrors) {
+          const ve = Object.entries(errorBody.validationErrors).map(([k,v]) => `${k}: ${v}`).join('\n');
+          setSubmissionMessage(`❌ Validation failed:\n${ve}`);
+        } else {
+          const message = errorBody?.message || raw || res.statusText || `Status ${res.status}`;
+          setSubmissionMessage(`❌ Submission failed (${res.status}): ${message}`);
+        }
+        console.error('Project submit failed', { status: res.status, body: errorBody ?? raw });
+        setRawErrorDetail(raw || JSON.stringify(errorBody) || null);
+      } else {
+        setSubmissionMessage(editProject ? '✅ Project updated successfully!' : '✅ Project created successfully!');
          setFormData({
            title: '', description: '', projectPriority: 'Medium', projectStatus: 'Not Started',
            startDate: '', endDate: '', openTask: 0, closedTask: 0, teamLeadId: [''],
@@ -922,6 +954,7 @@ const ProjectForm = ({ onClose, editProject = null, onSuccess = () => {} }) => {
          } catch (err) {
        console.error(err);
       setSubmissionMessage(`❌ An error occurred: ${err.message}`);
+      setRawErrorDetail((err && err.stack) ? String(err.stack) : String(err));
      } finally {
        setIsSubmitting(false);
      }
@@ -998,6 +1031,16 @@ const ProjectForm = ({ onClose, editProject = null, onSuccess = () => {} }) => {
         </div>
         {submissionMessage && (
           <p className={`mt-4 p-2 rounded ${submissionMessage.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{submissionMessage}</p>
+        )}
+         {rawErrorDetail && (
+          <div className="mt-3 p-3 bg-gray-50 rounded border text-xs text-gray-700">
+            <div className="font-semibold mb-1">Server debug:</div>
+            <pre className="whitespace-pre-wrap break-words">{rawErrorDetail}</pre>
+            <div className="flex gap-2 mt-3">
+              <button type="button" onClick={() => { setRawErrorDetail(null); setSubmissionMessage(''); }} className="px-3 py-1 border rounded">Dismiss</button>
+              <button type="button" onClick={submitProject} disabled={isSubmitting} className="px-3 py-1 bg-blue-600 text-white rounded">Retry</button>
+            </div>
+          </div>
         )}
       </motion.form>
     </div>
