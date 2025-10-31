@@ -66,53 +66,73 @@ try {
   try { localStorage.setItem('accessToken', token); } catch (e) { /* ignore */ }
 };
 
-const TEAM_PERF_BASE = 'https://hrms.anasolconsultancyservices.com/api/employee';
-  const MEMBER_DETAILS_BASE = 'http://192.168.0.112:8090/api/employee';
+  const TEAM_PERF_BASE = 'https://hrms.anasolconsultancyservices.com/api/employee';
+  const MEMBER_DETAILS_BASE = 'https://hrms.anasolconsultancyservices.com/api/employee';
 
-  const loadTeamPerformance = async (pid) => {
+   const loadTeamPerformance = async (pid) => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return [];
       const url = `${TEAM_PERF_BASE}/${encodeURIComponent(pid)}/team-performance`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+      const raw = await res.text().catch(() => '');
+      let arr = [];
+      try { arr = raw ? JSON.parse(raw) : []; } catch (e) { arr = []; }
+      // debug log
+      console.debug('loadTeamPerformance', { pid, url, status: res.status, bodySample: Array.isArray(arr) ? arr[0] : arr });
       if (!res.ok) return [];
-      const arr = await res.json().catch(() => []);
       return Array.isArray(arr) ? arr.map(it => ({
-        employeeId: it.employeeId,
-        name: it.employeeName || it.employeeName || it.displayName || it.employeeName,
-        percentageCompleted: typeof it.percentageCompleted === 'number' ? it.percentageCompleted : 0,
+        employeeId: it.employeeId || it.employee_id || it.id || null,
+        name: it.employeeName || it.displayName || it.name || it.employeeId || '',
+        percentageCompleted: typeof it.percentageCompleted === 'number' ? it.percentageCompleted : (it.percentageCompleted ?? 0),
         status: it.status || '',
         role: it.role || '',
-        image: it.employeeImage || null
+        // try multiple possible image fields
+        employeeImage: it.employeeImage || it.employeeImageUrl || it.image || it.avatar || it.picture || null,
+        image: it.employeeImage || it.employeeImageUrl || it.image || it.avatar || it.picture || null
       })) : [];
     } catch (e) {
       console.error('loadTeamPerformance error', e);
       return [];
     }
   };
-    const fetchMemberDetails = async (pid, empId) => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      const url = `${MEMBER_DETAILS_BASE}/${encodeURIComponent(pid)}/team-performance/${encodeURIComponent(empId)}`;
-      const headers = token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' };
-      const res = await fetch(url, { headers });
-      if (!res.ok) {
-        return { employeeId: empId, name: empId, role: '', email: '', contact: '', description: '', status: null };
+   const fetchMemberDetails = async (pid, empId) => {
+    const token = localStorage.getItem('accessToken');
+    const headers = token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' };
+    // try primary details endpoint (existing)
+    const tryUrls = [
+      `${MEMBER_DETAILS_BASE}/${encodeURIComponent(pid)}/team-performance/${encodeURIComponent(empId)}`,
+      // fallback guesses
+      `${MEMBER_DETAILS_BASE}/employee/${encodeURIComponent(empId)}`,
+      `${MEMBER_DETAILS_BASE}/${encodeURIComponent(empId)}/profile`,
+    ];
+    for (const url of tryUrls) {
+      try {
+        const res = await fetch(url, { headers });
+        const raw = await res.text().catch(() => '');
+        let body = null;
+        try { body = raw ? JSON.parse(raw) : null; } catch (e) { body = null; }
+        console.debug('fetchMemberDetails try', { url, status: res.status, sample: body && (body.employeeId || body.id || body.employeeName) });
+        if (!res.ok) continue;
+        return {
+          employeeId: body?.employeeId || body?.id || empId,
+          name: body?.employeeName || body?.displayName || body?.name || empId,
+          role: body?.role || body?.designation || '',
+          email: body?.email || body?.emailAddress || '',
+          contact: body?.contactNumber || body?.phone || '',
+          description: body?.description || body?.bio || '',
+          status: body?.status ?? null,
+          // image candidates
+          employeeImage: body?.employeeImage || body?.employeeImageUrl || body?.image || body?.avatar || body?.picture || null,
+          image: body?.image || body?.employeeImage || body?.avatar || body?.picture || null
+        };
+      } catch (err) {
+        console.warn('fetchMemberDetails attempt failed', url, err);
+        continue;
       }
-      const body = await res.json().catch(() => null);
-      return {
-        employeeId: body?.employeeId || empId,
-        name: body?.employeeName || body?.displayName || empId,
-        role: body?.role || '',
-        email: body?.email || '',
-        contact: body?.contactNumber || '',
-        description: body?.description || '',
-        status: body?.status ?? null
-      };
-    } catch (err) {
-      console.error('fetchMemberDetails error', err);
-      return { employeeId: empId, name: empId, role: '', email: '', contact: '', description: '', status: null };
     }
+    // final fallback: return minimal object
+    return { employeeId: empId, name: empId, role: '', email: '', contact: '', description: '', status: null, employeeImage: null, image: null };
   };
   const handleSelectMember = async (member) => {
     setSelectedMember(null);
@@ -266,7 +286,7 @@ useEffect(() => {
             image: m.employeeImage || m.employeeImageUrl || null,
             employeeId: m.employeeId || null
           })) : mappedProjectInfo.team;
-          mappedProjectInfo.teamLead = Array.isArray(raw.teamLeads) ? raw.teamLeads.map(t => ({
+            mappedProjectInfo.teamLead = Array.isArray(raw.teamLeads) ? raw.teamLeads.map(t => ({
             name: t.displayName || t.name || t.employeeName || t.employeeId,
             employeeImage: t.employeeImage || t.employeeImageUrl || null,
             image: t.employeeImage || t.employeeImageUrl || null,
@@ -276,7 +296,31 @@ useEffect(() => {
       }
      if (mounted) { 
         const team = await loadTeamPerformance(pid);
-        mappedProjectInfo.team = team.length ? team : mappedProjectInfo.team;
+         mappedProjectInfo.team = team.length ? team : mappedProjectInfo.team;
+        if (mappedProjectInfo.team && mappedProjectInfo.team.length) {
+          const enrichedTeam = await Promise.all(mappedProjectInfo.team.map(async (m) => {
+            try {
+              // normalize id
+              const empId = m.employeeId || m.employeeId === 0 ? m.employeeId : (m.id || null);
+              // if already have image, keep it
+              if (m.employeeImage || m.image) return { ...m, name: m.name || m.employeeName || m.displayName || m.employeeId };
+              if (!empId) return m;
+              const details = await fetchMemberDetails(pid, empId).catch(() => null);
+              const image = m.employeeImage || m.image || details?.employeeImage || details?.image || details?.avatar || null;
+              const placeholder = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || details?.name || empId)}&background=ddd&color=333&size=128`;
+              return {
+                ...m,
+                employeeImage: image || placeholder,
+                image: image || placeholder,
+                name: m.name || details?.name || m.employeeId
+              };
+            } catch (e) {
+              console.error('enrich team member error', e);
+              return m;
+            }
+          }));
+          mappedProjectInfo.team = enrichedTeam;
+        }
         setProjectData(normalizedBase);
         setProjectInfo(mappedProjectInfo);
         if (team.length) {
@@ -298,7 +342,7 @@ useEffect(() => {
 }, [project, userData]);
 const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
   const barColor = "#ADD8E6";
-  const getAvatarUrl = (index) => `https://i.pravatar.cc/40?img=${index + 1}`;
+  //const getAvatarUrl = (index) => `https://i.pravatar.cc/40?img=${index + 1}`;
   const getStatusClass = (status) => {
     switch ((status || '').toLowerCase()) {
       case 'in progress':
@@ -326,7 +370,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
-      const url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/tasks`;
+      const url = `http://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/tasks`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
       if (!res.ok) {
         console.warn('Failed to load tasks', res.status);
@@ -365,7 +409,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
 
       let url;
       if (taskId) {
-        url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/${encodeURIComponent(taskId)}/progress`;
+        url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/${encodeURIComponent("TASK005")}/progress`;
         if (empId) url += `?employeeId=${encodeURIComponent(empId)}`;
       } else if (empId) {
         url = `https://hrms.anasolconsultancyservices.com/api/employee/project/${encodeURIComponent(pid)}/employee/${encodeURIComponent(empId)}/details`;
@@ -438,6 +482,18 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
   const tasksDone = tasks.filter((task) => task.status === "Completed").length;
   const totalTasks = tasks.length;
   const mainContentPaddingClass = "pt-[160px] md:pt-[120px] "; 
+  const IMAGE_BASE = 'https://hrms.anasolconsultancyservices.com'; // adjust if your images are served from different host
+  const placeholderAvatar = (name = 'User') =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=DDDDDD&color=333333&size=256`;
+
+  const resolveImageUrl = (img, name) => {
+    if (!img) return placeholderAvatar(name || 'User');
+    const s = String(img).trim();
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^\/\//.test(s)) return window.location.protocol + s;
+    if (s.startsWith('/')) return `${IMAGE_BASE}${s}`;
+    return `${IMAGE_BASE}/${s}`;
+  };
   return (
     <div className={` ${theme==='dark'?'bg-gray-800':'bg-gray-50'}  min-h-screen relative font-sans`}>
        <div>
@@ -533,7 +589,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
           key={index}
           className={` flex items-center gap-2 p-2 rounded-full cursor-pointer ${theme === 'dark'   ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'   : 'bg-blue-50 text-gray-800 hover:bg-blue-100' } transition duration-150 ease-in-out shadow-sm `} >
           <img
-            src={member.employeeImage || member.image || getAvatarUrl(index)}
+            src={member.employeeImage || member.image}
             alt={member.name || member.employeeId || 'member'}
             className="w-9 h-9 rounded-full border-2 border-white dark:border-gray-800 object-cover flex-shrink-0"
           />
@@ -606,7 +662,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
                             <dt className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-base`}>Reported by</dt>
                             <dd className="text-right">
                               <span className="inline-flex items-center gap-2 justify-end">
-                                <img src={getAvatarUrl(index)} alt={value?.name || value?.employeeId || 'user'} className="w-8 h-8 rounded-full" />
+                                {/*<img src={getAvatarUrl(index)} alt={value?.name || value?.employeeId || 'user'} className="w-8 h-8 rounded-full" />*/}
                                 <span className={`${theme==='dark'?'text-gray-200':'text-gray-900'} font-medium`}>{value?.name || value?.employeeId || 'N/A'}</span>
                               </span>
                             </dd>
@@ -683,11 +739,17 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
                     className={`cursor-pointer ${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800  hover:bg-gray-50 '}  p-4 rounded-xl shadow-md flex items-center justify-between transition ${selectedMember === member ? 'border-2 border-indigo-500' : ''}`}
                   >
                     <div className="flex items-center gap-4">
-                      <img src={member.image || member.employeeImage || getAvatarUrl(index)} alt={member.name} className="w-12 h-12 rounded-full border object-cover" />
-                       <div>
-                         <h3 className="text-lg font-semibold">{member.name}</h3>
-                       <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'}  text-sm`}>{member.role}</p>
-                       </div>
+                        {/* show the current list member's image/name (not selectedMember) */}
+                      <img
+                        src={resolveImageUrl(member?.employeeImage || member?.image, member?.employeeName || member?.name)}
+                        alt={member?.employeeName || member?.name || 'Member'}
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = placeholderAvatar(member?.employeeName || member?.name || 'User'); }}
+                        className="w-20 h-20 rounded-full border-2 border-indigo-400 object-cover"
+                      />
+                      <div>
+                        <h3 className="text-lg font-semibold">{member?.name || member?.employeeName || member?.employeeId}</h3>
+                        <p className={`${theme==='dark'?'text-gray-200':'text-gray-500'} text-sm`}>{member?.role}</p>
+                      </div>
                      </div>
                      <div className="flex items-center gap-6">
                        <div className="text-center">
@@ -713,20 +775,21 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
                 <div className={`${theme==='dark'?'bg-gray-800 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl space-y-4`}>
                   <div className="flex items-center gap-4">
                     <img
-                      src={selectedMember.employeeImage || selectedMember.image || getAvatarUrl(projectInfo.team.indexOf(selectedMember))}
-                      alt={selectedMember.employeeName || selectedMember.name}
+                      src={resolveImageUrl(selectedMember?.employeeImage || selectedMember?.image, selectedMember?.employeeName || selectedMember?.name)}
+                      alt={selectedMember?.employeeName || selectedMember?.name || 'Member'}
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = placeholderAvatar(selectedMember?.employeeName || selectedMember?.name || 'User'); }}
                       className="w-20 h-20 rounded-full border-2 border-indigo-400 object-cover"
                     />
                     <div>
-                      <h3 className="text-2xl font-bold">{selectedMember.employeeName || selectedMember.name || selectedMember.displayName}</h3>
-                      <p className="text-indigo-600 font-medium">{selectedMember.role}</p>
+                      <h3 className="text-2xl font-bold">{selectedMember?.employeeName || selectedMember?.name || selectedMember?.displayName || 'Member'}</h3>
+                      <p className="text-indigo-600 font-medium">{selectedMember?.role || '-'}</p>
                     </div>
                   </div>
                   <div className={`space-y-2 ${theme==='dark'?'text-gray-200':'text-gray-700'}`}>
-                    <p className="flex items-center gap-2 text-sm"><MdEmail /> {selectedMember.email || '-'}</p>
-                    <p className="flex items-center gap-2 text-sm"><FaPhoneFlip /> {selectedMember.contactNumber || selectedMember.contact || 'N/A'}</p>
+                    <p className="flex items-center gap-2 text-sm"><MdEmail /> {selectedMember?.email || '-'}</p>
+                    <p className="flex items-center gap-2 text-sm"><FaPhoneFlip /> {selectedMember?.contactNumber || selectedMember?.contact || 'N/A'}</p>
                   </div>
-                  <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm leading-relaxed`}>{selectedMember.description || '-'}</p>
+                  <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-sm leading-relaxed`}>{selectedMember?.description || '-'}</p>
                 </div>
                  
               ) : (
