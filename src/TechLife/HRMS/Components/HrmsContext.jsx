@@ -3,6 +3,8 @@ import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
 import { authApi, notificationsApi } from "../../../axiosInstance";
 import notificationSound from '../Components/assets/mixkit-correct-answer-tone-2870.wav';
+import { getChatOverview } from "../../../services/apiService";
+import { transformOverviewToChatList } from "../../../services/dataTransformer";
 
 export const Context = createContext();
 export const UISidebarContext = createContext();
@@ -16,14 +18,14 @@ const HrmsContext = ({ children }) => {
     });
     const [lastSseMsgId, setLastSseMsgId] = useState(null);
     const [globalSearch,setGlobalSearch]=useState("")
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadCount, setUnreadCount] = useState(0); // Bell Icon count
     const [userprofiledata, setUserProfileData] = useState(null);
     const [userData, setUserData] = useState(null);
     const [accessToken, setAccessToken] = useState(null);
     const [refreshToken, setRefreshToken] = useState(null);
     const [isChatWindowVisible, setIsChatWindowVisible] = useState(false);
     const [matchedArray,setMatchedArray]=useState([]);
-    const [chatUnreadCount,setChatUnreadCount]=useState(0);
+    const [chatUnreadCount,setChatUnreadCount]=useState(0); // Sidebar Chat count
     const notificationAudio = new Audio(notificationSound);
     notificationAudio.preload = 'auto'; 
     notificationAudio.volume = 0.6; 
@@ -144,7 +146,41 @@ const HrmsContext = ({ children }) => {
     const decrementUnreadCount = useCallback(() => {
         setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
     }, []);
+    
+    const fetchChatUnreadCount = useCallback(async () => {
+        // user data lekapothe, wait chey
+        if (!userData?.employeeId) return; 
 
+        console.log("Fetching initial chat unread count...");
+        try {
+            // ChatApp.jsx lo laage, first page chat list ni fetch cheddam
+            const rawChatListData = await getChatOverview(userData.employeeId, 0, 10); 
+            
+            if (rawChatListData.length === 0) {
+                setChatUnreadCount(0); // Chats levu kabatti count 0
+                return;
+            }
+
+            // Data ni transform cheddam
+            const formattedChatList = transformOverviewToChatList(rawChatListData, userData.employeeId);
+            
+            // Groups mariyu private chats ni kalupudham
+            const allChats = [
+                ...formattedChatList.privateChatsWith.filter(user => user.chatId !== userData.employeeId),
+                ...formattedChatList.groups,
+            ];
+
+            // ChatApplication.jsx lo laage, unread count ni calculate cheddam
+            const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
+            
+            setChatUnreadCount(totalUnread); // Final ga count ni state lo set cheddam
+            console.log("Initial Chat Unread Count fetched:", totalUnread);
+
+        } catch (err) {
+            console.error("Error fetching initial chat unread count:", err);
+        }
+    }, [userData?.employeeId]);
+    
     const fetchNotifications = useCallback(async () => {
         // Guard clause to prevent API call if employeeId is not yet loaded
         if (!userData?.employeeId) { 
@@ -200,9 +236,6 @@ const HrmsContext = ({ children }) => {
     }, [userData?.employeeId, notificationPageNumber, notificationPageSize]);
     
     // --- NEW: Persistent SSE Connection Logic ---
-    // The previous SSE useEffect was prone to re-running if dependencies changed.
-    // We isolate the connection logic here and rely only on userData?.employeeId
-    // to establish the connection once the user is known.
     useEffect(() => {
         let eventSource;
 
@@ -215,7 +248,6 @@ const HrmsContext = ({ children }) => {
         console.log(`SSE: Setting up connection for Employee ID: ${userData.employeeId}`);
         
         // 2. Establish connection using the employeeId
-        // The URL is hardcoded, so the SSE connection will attempt to connect.
         eventSource = new EventSource(`https://hrms.anasolconsultancyservices.com/api/notification/subscribe/${userData.employeeId}`);
         
         eventSource.onopen = () => { 
@@ -227,36 +259,80 @@ const HrmsContext = ({ children }) => {
                 const incoming = JSON.parse(event.data);
                 console.log("📨 New Notification (SSE):", incoming);
 
+                // Check if the notification is a chat message based on the 'link' property
+                const isChatNotification = incoming.link && incoming.link.includes('/chat/');
+
+                // 1. Play sound (for both chat and normal notifications, as requested)
                 notificationAudio.play().catch(error => {
                     // This catch is necessary for browsers that block autoplay
                     console.warn("Could not play notification sound:", error); 
                 });
-                
-                setGdata((prev) => {
-                    const isDuplicate = prev.some((n) => n.id === incoming.id);
-                    if (isDuplicate) return prev;
-                    // Add new notification to the beginning of the list
-                    return [incoming, ...prev];
-                });
-                
-                setLastSseMsgId(incoming.id);
-                fetchUnreadCount();
-                
-                if (Notification.permission === "granted") {
-                    const notification = new Notification(incoming.subject, {
-                        body: incoming.message, 
-                        icon: logo, 
-                        data: { id: incoming.id, link: incoming.link },
-                        silent: true, // Fix for duplicate sound
+
+                if (isChatNotification) {
+                    // --- THIS IS A CHAT NOTIFICATION ---
+                    console.log("SSE: Detected Chat Notification. Routing to Sidebar.");
+
+                    // 1. Increment Sidebar Chat Count (User requirement)
+                    setChatUnreadCount(prevCount => prevCount + 1);
+
+                    // 2. Show Desktop Notification (User requirement)
+                    if (Notification.permission === "granted") {
+                        const notification = new Notification(incoming.subject, {
+                            body: incoming.message, 
+                            icon: logo, 
+                            data: { id: incoming.id, link: incoming.link },
+                            silent: true, // We already played the sound manually
+                        });
+                        
+                        // On click, navigate to the chat link
+                        notification.onclick = (e) => {
+                            e.preventDefault();
+                            if (incoming.link) { window.open(incoming.link, "_self"); }
+                            window.focus();
+                            notification.close();
+                            // We DON'T call markAsRead() here, as this isn't for the bell icon
+                        };
+                    }
+                    
+                    // 3. Stop processing here. Do not add to bell icon list or count.
+                    return; 
+
+                } else {
+                    // --- THIS IS A NORMAL NOTIFICATION (Leave, Task, etc.) ---
+                    console.log("SSE: Detected Normal Notification. Routing to Bell Icon.");
+
+                    // 1. Add to Bell Icon List (gdata)
+                    setGdata((prev) => {
+                        const isDuplicate = prev.some((n) => n.id === incoming.id);
+                        if (isDuplicate) return prev;
+                        // Add new notification to the beginning of the list
+                        return [incoming, ...prev];
                     });
                     
-                    notification.onclick = (e) => {
-                        e.preventDefault();
-                        if (incoming.link) { window.open(incoming.link, "_self"); }
-                        window.focus();
-                        markAsRead(incoming.id);
-                        notification.close();
-                    };
+                    // 2. Set Last Message ID
+                    setLastSseMsgId(incoming.id);
+
+                    // 3. Increment Bell Icon Count
+                    fetchUnreadCount();
+                    
+                    // 4. Show Desktop Notification
+                    if (Notification.permission === "granted") {
+                        const notification = new Notification(incoming.subject, {
+                            body: incoming.message, 
+                            icon: logo, 
+                            data: { id: incoming.id, link: incoming.link },
+                            silent: true, // We already played the sound manually
+                        });
+                        
+                        // On click, navigate and mark as read (since it's a bell icon notification)
+                        notification.onclick = (e) => {
+                            e.preventDefault();
+                            if (incoming.link) { window.open(incoming.link, "_self"); }
+                            window.focus();
+                            markAsRead(incoming.id); // <-- This is a bell notification, so we mark it as read
+                            notification.close();
+                        };
+                    }
                 }
             } catch (err) { console.error("⚠ Error parsing SSE data:", err); }
         });
@@ -264,7 +340,6 @@ const HrmsContext = ({ children }) => {
         eventSource.onerror = (err) => {
             // Log the error and close the connection. The cleanup function will run on unmount.
             console.error("SSE connection error:", err);
-            // Optional: You could add logic here to attempt a reconnect after a delay.
             // eventSource.close(); 
         };
         
@@ -276,7 +351,7 @@ const HrmsContext = ({ children }) => {
             }
         };
         
-    }, [userData?.employeeId, fetchUnreadCount, markAsRead]); // Dependencies are correct for connection handling
+    }, [userData?.employeeId, fetchUnreadCount, markAsRead, setChatUnreadCount]); // Added setChatUnreadCount to dependency array
 
     // --- END: Persistent SSE Connection Logic ---
     
@@ -287,16 +362,21 @@ const HrmsContext = ({ children }) => {
     }, [fetchNotifications]); 
 
     useEffect(() => {
-        // Fetch count only on initial load
+        // Fetch both counts on initial load
         if (userData?.employeeId) {
             fetchUnreadCount();
+            fetchChatUnreadCount();
         }
-    }, [userData?.employeeId, fetchUnreadCount]);
+    }, [userData?.employeeId, fetchUnreadCount, fetchChatUnreadCount]);
+
+
 
     useEffect(() => {
         localStorage.setItem("theme", theme);
         console.log(`Theme saved to localStorage: ${theme}`);
     }, [theme]);
+
+
 
     return (
         <Context.Provider
@@ -324,3 +404,4 @@ const HrmsContext = ({ children }) => {
 };
 
 export default HrmsContext;
+
