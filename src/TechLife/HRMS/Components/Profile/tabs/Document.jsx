@@ -979,70 +979,140 @@ const Document = () => {
             disabled={isDisabled}
           />
         ) : type === 'file' ? (
-          <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl ${
-            isError
-              ? 'border-red-300 bg-red-50'
-              : theme === 'dark'
-              ? 'border-gray-600 bg-gray-800'
-              : 'border-gray-300 bg-gray-50'
-          } ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={(e) => handleFileChange(name, e.target.files?.[0])}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={isDisabled}
-              accept=".jpg,.jpeg,.png,.pdf"
-            />
-            {newlySelectedFile ? (
-              <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
-                <IoDocumentText className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
-                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                }`} />
-                <p className={`text-xs sm:text-sm font-medium mb-3 truncate ${
-                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                }`} title={newlySelectedFile.name}>
-                  {newlySelectedFile.name}
-                </p>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFileChange(name, null);
-                    if(fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                    }
-                  }}
-                  className={`inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-full font-semibold ${
-                    theme === 'dark'
-                      ? 'bg-red-900/50 text-red-300'
-                      : 'bg-red-100 text-red-700'
-                  }`}
-                >
-                  {}
-                  {}
-                  <span>Remove File</span>
-                </button>
-              </div>
-            ) : (
-              <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
-                <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
-                  theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-                }`} />
-                <p className={`text-xs sm:text-sm font-medium mb-1 ${
-                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+          <>
+            <div className={`relative border-2 border-dashed rounded-lg sm:rounded-xl ${
+              isError
+                ? 'border-red-300 bg-red-50'
+                : theme === 'dark'
+                ? 'border-gray-600 bg-gray-800'
+                : 'border-gray-300 bg-gray-50'
+            } ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={(e) => handleFileChange(name, e.target.files?.[0])}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={isDisabled}
+                accept=".jpg,.jpeg,.png,.pdf"
+              />
+              {newlySelectedFile ? (
+                <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
+                  <IoDocumentText className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
+                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
+                  <p className={`text-xs sm:text-sm font-medium mb-3 truncate ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`} title={newlySelectedFile.name}>
+                    {newlySelectedFile.name}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFileChange(name, null);
+                      if(fileInputRef.current) {
+                          fileInputRef.current.value = "";
+                      }
+                    }}
+                    className={`inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-full font-semibold ${
+                      theme === 'dark'
+                        ? 'bg-red-900/50 text-red-300'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {}
+                    {}
+                    <span>Remove File</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="px-4 sm:px-6 py-6 sm:py-8 text-center">
+                  <IoCloudUpload className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 ${
+                    theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                  }`} />
+                  <p className={`text-xs sm:text-sm font-medium mb-1 ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    {editingData[name] && typeof editingData[name] === 'string' ? "Replace current file or " : "Drop your file here, or "}
+                    <span className="text-blue-600">browse</span>
+                  </p>
+                  <p className={`text-xs ${
+                    theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+                  }`}>
+                    PNG, JPG, PDF up to 10MB
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Display existing image if in edit mode and file exists as URL */}
+            {editingData[name] && typeof editingData[name] === 'string' && !newlySelectedFile && (
+              <div className={`mt-4 p-4 rounded-lg border-2 ${
+                theme === 'dark' 
+                  ? 'bg-gray-700 border-gray-600' 
+                  : 'bg-blue-50 border-blue-200'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                  }`}>
+                    Current Document
+                  </p>
+                  <a
+                    href={editingData[name]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center space-x-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+                      theme === 'dark'
+                        ? 'bg-blue-600 text-white hover:bg-blue-500'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    <IoEye className="w-3.5 h-3.5" />
+                    <span>View Full Size</span>
+                  </a>
+                </div>
+                <div className="relative overflow-hidden rounded-lg bg-white">
+                  <img
+                    src={editingData[name]}
+                    alt={`Current ${label}`}
+                    className="w-full h-auto max-h-64 object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className={`hidden w-full h-64 items-center justify-center ${
+                    theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+                  }`}>
+                    <div className="text-center">
+                      <IoDocumentText className={`mx-auto h-12 w-12 mb-2 ${
+                        theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
+                      <p className={`text-sm ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Document preview unavailable
+                      </p>
+                      <a
+                        href={editingData[name]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-sm font-medium hover:underline mt-2 inline-block"
+                      >
+                        Open in new tab
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <p className={`text-xs mt-2 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                 }`}>
-                  {editingData[name] && typeof editingData[name] === 'string' ? "Replace current file or " : "Drop your file here, or "}
-                  <span className="text-blue-600">browse</span>
-                </p>
-                <p className={`text-xs ${
-                  theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
-                }`}>
-                  PNG, JPG, PDF up to 10MB
+                  Upload a new file above to replace this document
                 </p>
               </div>
             )}
-          </div>
+          </>
         ) : type === 'textarea' ? (
           <textarea
             value={fieldValue}

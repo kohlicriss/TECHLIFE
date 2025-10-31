@@ -249,7 +249,7 @@ const credentialsFormFields = [
     { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
     { label: "Username", name: "username", type: "text", required: true, hint: "Must start with 'ACS' and match Employee ID (8-30 chars).", maxLength: 30 },
     { label: "Password", name: "password", type: "password", required: true, hint: "Temporary password (8-30 characters).", maxLength: 30 },
-    { label: "Role", name: "role", type: "text", required: true, hint: "E.g., ROLE_ADMIN, ROLE_MANAGER, ROLE_EMPLOYEE, ROLE_HR." },
+    { label: "Role", name: "role", type: "select", required: true, options: ["ROLE_HR", "ROLE_MANAGER", "ROLE_EMPLOYEE", "ROLE_ADMIN", "ROLE_TEAM_LEAD"], hint: "Select the role for the user account." },
 ];
 
 const employeeFormFields = [
@@ -1419,7 +1419,7 @@ function EmployeeApp() {
                                 <span>Clear</span>
                             </button>
 
-                            {matchedArray && matchedArray.includes("CREAT_USER") && (
+                            {matchedArray && matchedArray.includes("EMPLOYEES_ADD") && (
                                 <button
                                     onClick={() => setIsAddEmployeeModalOpen(true)}
                                     className="px-4 sm:px-5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-md sm:rounded-lg shadow-md text-xs flex items-center justify-center space-x-1.5"
@@ -1429,7 +1429,7 @@ function EmployeeApp() {
                                 </button>
                             )}
 
-                            {matchedArray && matchedArray.includes("TERMINATE_EMPLOYEES_BTN") && (
+                            {matchedArray && matchedArray.includes("EMPLOYEES_TERMINATE") && (
                                 <button
                                     onClick={handleTerminateEmployees}
                                     className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md text-xs flex items-center justify-center space-x-1.5"
@@ -1601,7 +1601,7 @@ function EmployeeApp() {
                                                                     }
                                                                     
 
-                                                                {hasAccess.includes("DELETE_USER") && (
+                                                                {matchedArray.includes("EMPLOYEES_EMPLOYEE_TERMINATE_EMPLOYEE") && (
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
@@ -1770,7 +1770,7 @@ function EmployeeApp() {
                                                                     </button>
                                                                 )}
 
-                                                                {hasAccess.includes("DELETE_USER") && (
+                                                                {matchedArray.includes("EMPLOYEES_EMPLOYEE_TERMINATE_EMPLOYEE") && (
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); handleDeleteClick(employee); }}
                                                                         disabled={isOwnProfile}
