@@ -305,7 +305,7 @@ const Profiles = () => {
     };
 
     // 🚨 NEW: Function to check if form has changes
-    const hasFormChanges = () => {
+    const hasFormChanges_ProfileOriginal = () => {
         const currentData = {
             ...editingHeaderData,
             department: selectedDepartmentValue || editingHeaderData.department
@@ -424,63 +424,95 @@ const Profiles = () => {
         setActiveTab(location.pathname);
     }, [location.pathname]);
 
-    const handleImageUpload = async e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => setProfileImagePreview(reader.result);
-        reader.readAsDataURL(file);
-        const formData = new FormData();
-        formData.append("employeeImage", file);
-        try {
-            const res = await publicinfoApi.post(
-                `employee/${profileEmployeeId}/upload`,
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
-            if (!isOwnProfile) {
-                setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
-            } else {
-                setHeaderData(prev => ({ ...prev, employeeImage: res.data.employeeImage }));
-            }
-            showNotification('success', 'Success', 'Profile picture updated successfully!');
-            setIsImageModalOpen(false);
-            setIsImageFullView(false);
-        } catch (err) {
-            console.error("Error uploading image:", err);
-            showNotification('error', 'Error', 'Failed to upload image. Please try again.');
-            setProfileImagePreview(null);
-        }
-    };
+ const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // ✅ Preview the selected image before upload
+  const reader = new FileReader();
+  reader.onloadend = () => setProfileImagePreview(reader.result);
+  reader.readAsDataURL(file);
+
+  const formData = new FormData();
+  formData.append("employeeImage", file);
+
+  try {
+    const res = await publicinfoApi.post(
+      `employee/${profileEmployeeId}/upload`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
+    // ✅ If not own profile, update viewed employee data
+    if (!isOwnProfile) {
+      setViewedEmployeeHeaderData((prev) => ({
+        ...prev,
+        employeeImage: res.data.employeeImage,
+      }));
+    } 
+    // ✅ If it’s own profile
+    else {
+      // 1️⃣ Update React header state (UI updates immediately)
+      setHeaderData((prev) => ({
+        ...prev,
+        employeeImage: res.data.employeeImage,
+      }));
+
+      // 2️⃣ Check if "loggedInUserImage" exists
+      const existingImage = localStorage.getItem("loggedInUserImage");
+
+      if (existingImage) {
+        console.log("🔁 Key exists — updating stored image address...");
+      } else {
+        console.log("🆕 Key not found — creating new key and storing image address...");
+      }
+
+      // 3️⃣ Either way, set the image (setItem creates or updates)
+      localStorage.setItem("loggedInUserImage", res.data.employeeImage);
+    }
+
+    // ✅ Show success message and close modals
+    showNotification("success", "Success", "Profile picture updated successfully!");
+    setIsImageModalOpen(false);
+    setIsImageFullView(false);
+  } catch (err) {
+    console.error("Error uploading image:", err);
+    showNotification("error", "Error", "Failed to upload image. Please try again.");
+    setProfileImagePreview(null);
+  }
+};
+
 
     const handleDeleteImage = () => {
-        showConfirmModal(
-            'Confirm Delete',
-            'Are you sure you want to delete the profile picture? This action cannot be undone.',
-            'Delete',
-            async () => {
-                setConfirmModal(prev => ({ ...prev, isConfirming: true }));
-                try {
-                    await publicinfoApi.delete(`employee/${profileEmployeeId}/deleteImage`);
-                    if (!isOwnProfile) {
-                        setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: null }));
-                    } else {
-                        setHeaderData(prev => ({ ...prev, employeeImage: null }));
-                    }
-                    setProfileImagePreview(null);
-                    closeConfirmModal();
-                    showNotification('success', 'Success', 'Profile picture deleted successfully!');
-                    setIsImageModalOpen(false);
-                    setIsImageFullView(false);
-                } catch (err) {
-                    console.error("Error deleting image:", err);
-                    closeConfirmModal();
-                    showNotification('error', 'Error', 'Failed to delete image. Please try again.');
-                }
-            },
-            'danger'
-        );
-    };
+        showConfirmModal(
+            'Confirm Delete',
+            'Are you sure you want to delete the profile picture? This action cannot be undone.',
+            'Delete',
+            async () => {
+                setConfirmModal(prev => ({ ...prev, isConfirming: true }));
+                try {
+                    await publicinfoApi.delete(`employee/${profileEmployeeId}/deleteImage`);
+                    if (!isOwnProfile) {
+                        setViewedEmployeeHeaderData(prev => ({ ...prev, employeeImage: null }));
+                    } else {
+                        setHeaderData(prev => ({ ...prev, employeeImage: null }));
+                        // 🚨 ADD THIS LINE to remove from local storage
+                        localStorage.removeItem("loggedInUserImage");
+                    }
+                    setProfileImagePreview(null);
+                    closeConfirmModal();
+                    showNotification('success', 'Success', 'Profile picture deleted successfully!');
+                    setIsImageModalOpen(false);
+                    setIsImageFullView(false);
+                } catch (err) {
+                    console.error("Error deleting image:", err);
+                    closeConfirmModal();
+                    showNotification('error', 'Error', 'Failed to delete image. Please try again.');
+                }
+            },
+            'danger'
+        );
+    };
 
     const handleEditClick = () => {
         setEmployeeData(display);
@@ -526,7 +558,7 @@ const Profiles = () => {
         }
         
         // Check if there are any changes
-        if (!hasFormChanges()) {
+        if (!hasFormChanges_ProfileOriginal()) {
             showConfirmModal(
                 'No Changes Detected',
                 'You haven\'t made any changes to the form. Please make some changes before submitting.',
@@ -725,7 +757,7 @@ const Profiles = () => {
     const renderMobile = () => (
         <div className="md:hidden">
             <div className={`relative p-4 w-full max-w-md mx-auto rounded-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-[#B7D4FF]'}`}>
-                {matchedArray.includes("UPDATE_HEADER") && (
+                {matchedArray.includes("PROFILE_EDIT_HEADER") && (
                     <button
                         onClick={handleHeaderEditClick}
                         className={`absolute top-2 right-2 p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
@@ -816,7 +848,8 @@ const Profiles = () => {
             <div className="max-w-md mx-auto p-3">
                 <Routes>
                     <Route index element={<Navigate to="profile" replace />} />
-                    <Route path="about" element={<About />} />
+                    {/* ❌ FIX APPLIED HERE */}
+                    <Route path="about" element={<About />} /> 
                     <Route path="profile" element={<Profile />} />
                     <Route path="job" element={<Job />} />
                     <Route path="documents" element={<Document />} />
@@ -829,16 +862,14 @@ const Profiles = () => {
     return (
         <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
             <div className={`hidden md:block h-auto md:h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
-                {matchedArray.includes("UPDATE_HEADER") && (
-                    <div className="absolute top-4 right-8">
-                        <button
-                            onClick={handleHeaderEditClick}
-                            className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
-                            title="Edit Header Information"
-                        >
-                            <MdEdit className="w-5 h-5" />
-                        </button>
-                    </div>
+                {matchedArray.includes("PROFILE_EDIT_HEADER") && (
+                    <button
+                        onClick={handleHeaderEditClick}
+                        className={`absolute top-4 right-8 p-2 rounded-full transition-colors ${theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
+                        title="Edit Header Information"
+                    >
+                        <MdEdit className="w-5 h-5" />
+                    </button>
                 )}
                 <div className="flex items-start pt-4 px-8">
                     <div className="relative group cursor-pointer" onClick={() => canEditHeader && setIsImageModalOpen(true)}>
@@ -974,7 +1005,7 @@ const Profiles = () => {
                                         className="absolute top-0 right-10 p-2 rounded-full transition-colors"
                                         title="Add Achievement"
                                     >
-                                        <IoAdd className="w-5 h-5" />
+                                        {/* <IoAdd className="w-5 h-5" /> */}
                                     </button>
                                 )}
                                 {matchedArray.includes("DELETE_ACHIEVEMENT") && (
@@ -983,7 +1014,7 @@ const Profiles = () => {
                                         className="absolute top-0 right-0 p-2 rounded-full transition-colors"
                                         title="Delete Achievement"
                                     >
-                                        <IoTrash className="w-5 h-5" />
+                                        {/* <IoTrash className="w-5 h-5" /> */}
                                     </button>
                                 )}
                                 <Achievements />
@@ -1066,18 +1097,21 @@ const Profiles = () => {
                                 Employee ID
                             </label>
                             <div className="relative">
-                                <input
-                                    type="text"
-                                    name="employeeId"
-                                    value={editingHeaderData.employeeId || ''}
-                                    onChange={handleHeaderInputChange}
-                                    className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 group-hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${
-                                        theme === 'dark'
-                                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                                    }`}
-                                    placeholder="Enter employee ID"
-                                />
+                               <input
+  type="text"
+  name="employeeId"
+  value={editingHeaderData.employeeId || ''}
+  onChange={handleHeaderInputChange}
+  disabled
+  className={`w-full px-4 py-4 border-2 rounded-xl text-base font-medium transition-all duration-300 
+  focus:border-blue-500 focus:ring-4 focus:ring-blue-100 pointer-events-none cursor-not-allowed opacity-70 ${
+    theme === 'dark'
+      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+      : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+  }`}
+  placeholder="Enter employee ID"
+/>
+
                             </div>
                             <p className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                 Unique identifier for the employee
@@ -1288,10 +1322,10 @@ const Profiles = () => {
                     type="button"
                     onClick={() => {
                         setIsEditingHeader(false);
-                        setSelectedDepartmentDisplay('');
-                        setSelectedDepartmentValue('');
                         setFormError(null);
                         setMobileError(null);
+                        setSelectedDepartmentDisplay('');
+                        setSelectedDepartmentValue('');
                     }}
                     disabled={isSubmitting}
                     className={`w-full sm:w-auto px-8 py-3 border-2 rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 ${
@@ -1402,7 +1436,7 @@ const Profiles = () => {
                                     )}
                                 </div>
                                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                                    {matchedArray.includes("CREATE_IMAGE") && <button
+                                    {matchedArray.includes("PROFILE_HEADER_ADD_IMAGE") && <button
                                         onClick={() => fileInputRef.current.click()}
                                         className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                                     >

@@ -8,35 +8,27 @@ import { Context } from '../HrmsContext';
 import ConfirmationModal from './ConfirmationModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Utility Hooks & Components for Inline Role Assignment ---
+// --- Utility Hooks & Components ---
 
-// Utility Hook for fetching all employees
-const useEmployeeList = () => {
-    const [employees, setEmployees] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    const fetchEmployees = useCallback(async () => {
-        if (loading) return;
-        setLoading(true);
-        try {
-            const response = await publicinfoApi.get(`employee/0/100/employeeId/asc/employees`);
-            const list = response.data.content || [];
-            setEmployees(list);
-        } catch (error) {
-            console.error('Failed to fetch employees for modal:', error);
-            setEmployees([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [loading]);
-
+// Utility Hook for Outside Click
+const useOutsideClick = (handler, ignoreRefs = []) => {
+    const ref = useRef(null);
     useEffect(() => {
-        fetchEmployees();
-    }, []);
-
-    return { employees, loading };
+        const handleClickOutside = (event) => {
+            const isIgnored = ignoreRefs.some(
+                (r) => r.current && r.current.contains(event.target)
+            );
+            if (ref.current && !ref.current.contains(event.target) && !isIgnored) {
+                handler(event);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [handler, ignoreRefs]);
+    return ref;
 };
-// --- End Utility Hooks ---
 
 // Custom Notification Component
 const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
@@ -119,7 +111,7 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
     );
 };
 
-// --- Reusable Input Field Component (Copied Styling) ---
+// --- Reusable Input Field Component ---
 const InputField = ({
     name,
     label,
@@ -207,26 +199,6 @@ const InputField = ({
 };
 // --- End Reusable Input Field Component ---
 
-// Utility Hook for Outside Click
-const useOutsideClick = (handler, ignoreRefs = []) => {
-    const ref = useRef(null);
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            const isIgnored = ignoreRefs.some(
-                (r) => r.current && r.current.contains(event.target)
-            );
-            if (ref.current && !ref.current.contains(event.target) && !isIgnored) {
-                handler(event);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [handler, ignoreRefs]);
-    return ref;
-};
-
 // Project Dropdown with Infinite Scroll
 const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -237,7 +209,6 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
     const [allDataLoaded, setAllDataLoaded] = useState(false);
     const PAGE_SIZE = 10;
 
@@ -254,8 +225,6 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
 
         try {
             console.log(`[API CALL - ProjectDropdown] Fetching projects: Page ${page}, Size ${PAGE_SIZE}`);
-            // Note: SearchTerm functionality would require adapting the backend endpoint to support search.
-            // For now, this loads pages sequentially.
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/projectId/asc/projects`);
             console.log(`[API SUCCESS - ProjectDropdown] Projects fetched for page ${page}:`, response.data);
 
@@ -265,7 +234,6 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
             setProjects(prev => append ? [...prev, ...newProjects] : newProjects);
 
             setCurrentPage(page);
-            setTotalPages(response.data?.totalPages || 1);
 
             if (response.data?.last === true || newProjects.length < PAGE_SIZE) {
                 setHasMoreData(false);
@@ -277,7 +245,6 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
             console.error('[API ERROR - ProjectDropdown] Error fetching projects:', error.response?.data || error.message);
             if (!append) {
                 setProjects([]);
-                setTotalPages(1);
             }
             setHasMoreData(false);
         } finally {
@@ -298,19 +265,21 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
         }
     }, [currentPage, hasMoreData, loading, loadProjects, searchTerm]);
 
-    // FIX: Only load initially if opened and list is empty
+    // Initial load logic
     useEffect(() => {
         if (isOpen && projects.length === 0 && !loading && !searchTerm) {
             loadProjects(0, false);
         }
     }, [isOpen, loadProjects, projects.length, loading, searchTerm]);
 
-    // FIX: Clear state when closing or starting a new search
+    // State cleanup when closing or starting a new search
     useEffect(() => {
         if (!isOpen) {
             setSearchTerm('');
             setProjects([]);
             setAllDataLoaded(false);
+            setHasMoreData(true);
+            setCurrentPage(0);
         }
     }, [isOpen]);
 
@@ -431,8 +400,10 @@ const ProjectDropdown = ({ value, onChange, theme, error, disabled }) => {
     );
 };
 
-// Employee Dropdown is left here but no longer used in renderCreateTeamModal
-const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = false, placeholder }) => {
+// ----------------------------------------------------------------------------------------------------------------------
+// REVISED: Multi-Select Employee Dropdown with WORKING Infinite Scroll and Inline Role Input
+// ----------------------------------------------------------------------------------------------------------------------
+const EmployeeMultiSelectRoleDropdown = ({ employeeRoles, onSelectionChange, onRoleChange, theme, error, disabled, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [employees, setEmployees] = useState([]);
@@ -441,35 +412,46 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
     const [allDataLoaded, setAllDataLoaded] = useState(false);
-    const PAGE_SIZE = 15;
+    const PAGE_SIZE = 6;
 
     const isFetchingRef = useRef(false);
     const scrollAreaRef = useRef(null);
-    const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef]);
+    // Use an array of refs for the outside click to ignore individual role inputs within the dropdown
+    const roleInputRefs = useRef([]);
+    const dropdownRef = useOutsideClick(() => setIsOpen(false), [scrollAreaRef, ...roleInputRefs.current]);
 
     // Load employees for the current page
     const loadEmployees = useCallback(async (page = 0, append = false) => {
-        if (isFetchingRef.current || (page > 0 && !hasMoreData && !searchTerm)) return;
+        // Prevent fetching if already fetching or if no more data is expected on subsequent pages
+        if (isFetchingRef.current || (page > 0 && !hasMoreData)) return;
 
         isFetchingRef.current = true;
         setLoading(true);
 
+        // Reset data if it's an initial load
+        if (!append) {
+            // Only reset the visual state, keep search term
+            setEmployees([]);
+            setHasMoreData(true);
+            setAllDataLoaded(false);
+        }
+
         try {
-            console.log(`[API CALL - EmployeeDropdown] Fetching employees: Page ${page}, Size ${PAGE_SIZE}`);
-            // For now, this loads pages sequentially.
+            console.log(`[API CALL - EmployeeMultiSelectRoleDropdown] Fetching employees: Page ${page}, Size ${PAGE_SIZE}`);
+            
+            // Note: Since server-side search isn't available for this endpoint, search is local on loaded data.
+            // When searchTerm is active, we prevent infinite scroll, but we still need to load the initial data.
+
             const response = await publicinfoApi.get(`employee/${page}/${PAGE_SIZE}/employeeId/asc/employees`);
-            console.log(`[API SUCCESS - EmployeeDropdown] Employees fetched for page ${page}:`, response.data);
+            console.log(`[API SUCCESS - EmployeeMultiSelectRoleDropdown] Employees fetched for page ${page}:`, response.data);
 
             const responseData = response.data || {};
             const fetchedEmployees = responseData.content || [];
             const newEmployees = Array.isArray(fetchedEmployees) ? fetchedEmployees : [];
 
             setEmployees(prev => append ? [...prev, ...newEmployees] : newEmployees);
-
             setCurrentPage(page);
-            setTotalPages(responseData.totalPages || 1);
 
             // Check if we've reached the end using responseData.last
             if (responseData.last === true || newEmployees.length < PAGE_SIZE) {
@@ -479,68 +461,61 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                 setHasMoreData(true);
             }
         } catch (error) {
-            console.error('[API ERROR - EmployeeDropdown] Error fetching employees:', error.response?.data || error.message);
-            if (!append) {
-                setEmployees([]);
-                setTotalPages(1);
-            }
+            console.error('[API ERROR - EmployeeMultiSelectRoleDropdown] Error fetching employees:', error.response?.data || error.message);
             setHasMoreData(false);
         } finally {
             setLoading(false);
             isFetchingRef.current = false;
         }
-    }, [hasMoreData, searchTerm]);
+    }, [hasMoreData]); // Dependencies are stable/managed
 
     // Handle scroll event for infinite loading
     const handleScroll = useCallback((e) => {
         const { scrollTop, scrollHeight, clientHeight } = e.target;
 
         // Check if user scrolled near bottom (within 50px)
-        if (scrollHeight - scrollTop <= clientHeight + 50) {
+        // Ensure scrollHeight is greater than clientHeight to confirm scrollability
+        if (scrollHeight > clientHeight && scrollHeight - scrollTop <= clientHeight + 50) {
+            // Only load more if there's no active search term AND we have more data
             if (hasMoreData && !loading && !isFetchingRef.current && !searchTerm) {
                 loadEmployees(currentPage + 1, true);
             }
         }
-    }, [currentPage, hasMoreData, loading, loadEmployees, searchTerm]);
+    }, [currentPage, hasMoreData, loading, searchTerm, loadEmployees]);
 
-    // FIX: Only load initially if opened and list is empty
+    // Initial load when dropdown opens (only if list is empty, and only once)
     useEffect(() => {
         if (isOpen && employees.length === 0 && !loading && !searchTerm) {
             loadEmployees(0, false);
         }
     }, [isOpen, loadEmployees, employees.length, loading, searchTerm]);
 
-    // FIX: Clear state when closing or starting a new search
+    // State cleanup when closing
     useEffect(() => {
         if (!isOpen) {
             setSearchTerm('');
             setEmployees([]);
+            setCurrentPage(0);
             setAllDataLoaded(false);
+            setHasMoreData(true);
         }
     }, [isOpen]);
-
-    const handleSelect = (employee) => {
-        const employeeLabel = `${employee.displayName || employee.firstName + ' ' + employee.lastName} (${employee.employeeId})`;
-        if (isMulti) {
-            const currentValues = Array.isArray(value) ? value : [];
-            const isSelected = currentValues.some(item => item.value === employee.employeeId);
-            if (isSelected) {
-                onChange(currentValues.filter(item => item.value !== employee.employeeId));
-            } else {
-                onChange([...currentValues, { value: employee.employeeId, label: employeeLabel }]);
-            }
-        } else {
-            onChange({ value: employee.employeeId, label: employeeLabel });
-            setIsOpen(false);
-        }
-    };
 
     const toggleDropdown = () => {
         if (!disabled) setIsOpen(!isOpen);
     };
 
+    const toggleSelection = (employeeId) => {
+        onSelectionChange(employeeId);
+    };
+
+    const handleInternalRoleChange = (employeeId, role) => {
+        onRoleChange(employeeId, role);
+    };
+
     const safeEmployees = Array.isArray(employees) ? employees : [];
 
+    // Filter logic runs on already loaded data
     const filteredEmployees = safeEmployees.filter(emp => {
         const displayName = emp.displayName || (emp.firstName + ' ' + emp.lastName);
         return (
@@ -549,40 +524,42 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
         );
     });
 
-    const renderSelectedValue = () => {
-        const defaultPlaceholder = placeholder || (isMulti ? 'Select team members...' : 'Select an employee...');
+    const selectedEmployeeIds = Object.keys(employeeRoles);
+    const selectedEmployees = selectedEmployeeIds.map(id => {
+        const emp = safeEmployees.find(e => e.employeeId === id);
+        return emp ? { ...emp, role: employeeRoles[id] } : null;
+    }).filter(e => e !== null);
 
-        if (isMulti) {
-            const currentValues = Array.isArray(value) ? value : [];
-            if (currentValues.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
-            return (
-                <div className="flex flex-wrap gap-1">
-                    {currentValues.map(item => (
-                        <div key={item.value} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
-                            {item.label}
+    const renderSelectedTags = () => {
+        if (selectedEmployees.length === 0) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{placeholder || 'Select team members...'}</span>;
+        
+        return (
+            <div className="flex flex-wrap gap-1">
+                {selectedEmployees.map(item => {
+                    const displayName = item.displayName || (item.firstName + ' ' + item.lastName);
+                    return (
+                        <div key={item.employeeId} className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
+                            {displayName} ({item.role || 'No Role'})
                         </div>
-                    ))}
-                </div>
-            );
-        } else {
-            if (!value) return <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>{defaultPlaceholder}</span>;
-            return <span>{value.label}</span>;
-        }
+                    );
+                })}
+            </div>
+        );
     };
 
     return (
         <div className="relative" ref={dropdownRef}>
             <div onClick={toggleDropdown}
                 // Adjusted styling to match InputField
-                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-between text-sm
+                className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-between text-sm min-h-[46px]
                     focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
                     error ? 'border-red-300 bg-red-50' : (theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' : 'border-gray-200 bg-white hover:border-gray-300')
                 } ${disabled ? 'opacity-50' : ''}`}
             >
-                <div className="flex-1">{renderSelectedValue()}</div>
-                <FaChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                <div className="flex-1 min-w-0 pr-2 overflow-hidden">{renderSelectedTags()}</div>
+                <FaChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
-             {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             <AnimatePresence>
                 {isOpen && !disabled && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute top-full left-0 right-0 mt-2 border rounded-lg shadow-lg z-50 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
@@ -593,27 +570,49 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                             </div>
                         </div>
                         <div
-                            className="max-h-60 overflow-y-auto"
+                            className="max-h-80 overflow-y-auto" // Adjusted height for better scroll visibility
                             ref={scrollAreaRef}
                             onScroll={handleScroll}
                         >
                             {filteredEmployees.length > 0 ? (
-                                filteredEmployees.map(employee => {
-                                    const isSelected = isMulti ? (Array.isArray(value) && value.some(item => item.value === employee.employeeId)) : value?.value === employee.employeeId;
+                                filteredEmployees.map((employee, index) => {
+                                    const isSelected = employeeRoles.hasOwnProperty(employee.employeeId);
                                     const displayName = employee.displayName || (employee.firstName + ' ' + employee.lastName);
                                     return (
-                                        <div key={employee.employeeId} onClick={() => handleSelect(employee)} className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
-                                            <div className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
-                                                <div className="font-medium text-sm">{displayName}</div>
-                                                <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
+                                        <div key={employee.employeeId} className={`p-3 border-b cursor-pointer ${theme === 'dark' ? 'border-gray-600' : 'border-gray-100'} ${isSelected ? 'bg-blue-50 dark:bg-blue-900/50' : `hover:${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-50'}`}`}>
+                                            <div className="flex items-start">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => toggleSelection(employee.employeeId)}
+                                                    className="mt-1 mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500 flex-shrink-0"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={`font-medium text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{displayName}</div>
+                                                    <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{employee.employeeId}</div>
+                                                    {isSelected && (
+                                                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                                                            <input
+                                                                type="text"
+                                                                value={employeeRoles[employee.employeeId] || ''}
+                                                                onChange={(e) => handleInternalRoleChange(employee.employeeId, e.target.value)}
+                                                                placeholder="Enter role (e.g., Backend, Lead, QA)"
+                                                                className={`w-full px-3 py-1.5 text-sm border rounded-lg
+                                                                    ${theme === 'dark'
+                                                                        ? 'bg-gray-800 border-gray-600 text-white'
+                                                                        : 'bg-white border-gray-300 text-gray-800'}
+                                                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none`}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {isSelected && <IoCheckmarkCircle className="w-5 h-5 text-blue-500" />}
                                         </div>
                                     );
                                 })
                             ) : searchTerm ? (
                                 <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                                    No employees matching "{searchTerm}"
+                                    No employees matching "{searchTerm}" in loaded list.
                                 </div>
                             ) : loading && employees.length === 0 ? (
                                 <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -625,6 +624,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
                                 </div>
                             )}
 
+                            {/* Loading indicator for infinite scroll */}
                             {loading && employees.length > 0 && (
                                 <div className={`p-2 text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                     Loading more employees...
@@ -634,7 +634,7 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
 
                         {allDataLoaded && employees.length > 0 && (
                             <div className={`p-2 border-t text-center text-xs font-medium ${theme === 'dark' ? 'text-gray-500 border-gray-600' : 'text-gray-400 border-gray-200'}`}>
-                                👥 All employees loaded
+                                👥 All {employees.length} employees loaded
                             </div>
                         )}
                     </motion.div>
@@ -643,6 +643,8 @@ const EmployeeDropdown = ({ value, onChange, theme, error, disabled, isMulti = f
         </div>
     );
 };
+// ----------------------------------------------------------------------------------------------------------------------
+
 
 // Loading and Error Components
 const LoadingSpinner = () => (
@@ -679,9 +681,6 @@ const AllTeams = () => {
     const [selectedProject, setSelectedProject] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formErrors, setFormErrors] = useState({});
-
-    // Fetch employee list once for the modal
-    const { employees: allEmployees, loading: employeesLoading } = useEmployeeList();
 
     // Notification state
     const [notification, setNotification] = useState({
@@ -761,7 +760,7 @@ const AllTeams = () => {
     };
 
     const fetchAdminAllTeams = async () => {
-        if (!matchedArray || !matchedArray.includes("ADMIN_FETCHING_ALLTEAMS")) {
+        if (!matchedArray || !matchedArray.includes("MY_TEAM_MY_TEAMS_ALL_TEAMS")) {
             setAdminAllTeams([]);
             setLoading(false);
             return;
@@ -834,7 +833,7 @@ const AllTeams = () => {
         return Object.keys(errors).length === 0;
     };
 
-    // New handlers for inline role assignment
+    // Handlers for inline role assignment in the new dropdown
     const toggleEmployeeSelection = (employeeId) => {
         setEmployeeRoles(prev => {
             const newRoles = { ...prev };
@@ -945,9 +944,7 @@ const AllTeams = () => {
 
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[200] p-2 sm:p-4">
-                <div className={`rounded-2xl sm:rounded-3xl w-full max-w-sm sm:max-w-md lg:max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col ${
-                    theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                }`}>
+                <div className="flex flex-col rounded-2xl sm:rounded-3xl w-full max-w-sm sm:max-w-md lg:max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl">
                     <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-500 to-indigo-700 text-white relative">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
@@ -965,7 +962,7 @@ const AllTeams = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-y-auto flex-grow">
+                    <div className={`overflow-y-auto flex-grow ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                         <form className="p-4 sm:p-6 md:p-8" onSubmit={handleCreateTeam}>
                             <div className="grid grid-cols-1 gap-4 sm:gap-6">
 
@@ -995,69 +992,20 @@ const AllTeams = () => {
                                         theme={theme}
                                         error={formErrors.selectedProject}
                                     />
-                                    {formErrors.selectedProject && <p className="text-red-500 text-xs mt-1">{formErrors.selectedProject}</p>}
                                 </div>
 
-                                {/* Team Members with Inline Role Inputs */}
+                                {/* Team Members with Scroll Pagination and Inline Role Inputs */}
                                 <div>
                                     <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
                                         Team Members <span className="text-red-500">*</span>
                                     </label>
-
-                                    <div className={`max-h-80 overflow-y-auto p-2 border-2 rounded-lg sm:rounded-xl
-                                        ${theme === 'dark' ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
-                                        {employeesLoading ? (
-                                            <div className="text-center py-3 text-sm text-gray-500">Loading employees...</div>
-                                        ) : allEmployees.length === 0 ? (
-                                            <div className="text-center py-3 text-sm text-gray-500">No employees found.</div>
-                                        ) : (
-                                            allEmployees.map(emp => {
-                                                const isSelected = employeeRoles.hasOwnProperty(emp.employeeId);
-                                                return (
-                                                    <div key={emp.employeeId} className="py-2 border-b border-gray-200 dark:border-gray-600 last:border-0">
-                                                        <label className="flex items-start cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isSelected}
-                                                                onChange={() => toggleEmployeeSelection(emp.employeeId)}
-                                                                className="mt-1 mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
-                                                            />
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className={`font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
-                                                                    {emp.displayName || (emp.firstName + ' ' + emp.lastName)}
-                                                                </div>
-                                                                <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                                    {emp.employeeId}
-                                                                </div>
-                                                                {isSelected && (
-                                                                    <div className="mt-2">
-                                                                        <input
-                                                                            type="text"
-                                                                            value={employeeRoles[emp.employeeId] || ''}
-                                                                            onChange={(e) => handleRoleChange(emp.employeeId, e.target.value)}
-                                                                            placeholder="Enter role (e.g., Backend, Lead, QA)"
-                                                                            className={`w-full px-3 py-1.5 text-sm border rounded-lg
-                                                                                ${theme === 'dark'
-                                                                                    ? 'bg-gray-600 border-gray-500 text-white'
-                                                                                    : 'bg-white border-gray-300 text-gray-800'}
-                                                                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none`}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </label>
-                                                    </div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-
-                                    {formErrors.teamMembers && (
-                                        <div className="mt-2 flex items-center space-x-2 text-red-600">
-                                            <IoWarning className="w-4 h-4 flex-shrink-0" />
-                                            <p className="text-xs sm:text-sm font-medium">{formErrors.teamMembers}</p>
-                                        </div>
-                                    )}
+                                    <EmployeeMultiSelectRoleDropdown
+                                        employeeRoles={employeeRoles}
+                                        onSelectionChange={toggleEmployeeSelection}
+                                        onRoleChange={handleRoleChange}
+                                        theme={theme}
+                                        error={formErrors.teamMembers}
+                                    />
                                 </div>
                             </div>
 
@@ -1177,18 +1125,12 @@ const AllTeams = () => {
                                             <h2 className={`text-lg sm:text-xl font-bold break-words ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                                 {team.teamName}
                                             </h2>
-                                            {leadOrManager && (
-                                                <div className={`flex items-center text-sm sm:text-md mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                                                    <FaUserShield className="mr-2 text-green-500 flex-shrink-0" />
-                                                    <strong>{leadOrManager.jobTitlePrimary}:</strong><span className="ml-1 break-words">{leadOrManager.displayName || leadOrManager.firstName + ' ' + leadOrManager.lastName}</span>
-                                                </div>
-                                            )}
                                         </div>
                                         <div className="flex space-x-2 flex-shrink-0">
                                             <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
                                                 <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
                                             </Link>
-                                            {matchedArray?.includes("TEAM_DELETE_BTN") && !fromContextMenu && (
+                                            {matchedArray?.includes("MY_TEAM_MY_TEAMS_DELETE_TEAM") && !fromContextMenu && (
                                                 <button onClick={() => handleDeleteClick(team)} title="Delete Team" className="p-2 text-gray-500 hover:text-red-500 transition-colors">
                                                     <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
                                                 </button>
@@ -1231,9 +1173,9 @@ const AllTeams = () => {
                                                 className="flex items-center space-x-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
                                             >
                                                 {isExpanded ? (
-                                                    <><span>Show Less</span><FaChevronUp className="w-3 h-3" /></>
+                                                    <><FaChevronUp className="w-3 h-3" /><span>Show Less</span></>
                                                 ) : (
-                                                    <><span>+{otherMembers.length - 4} more</span><FaChevronDown className="w-3 h-3" /></>
+                                                    <><FaChevronDown className="w-3 h-3" /><span>+{otherMembers.length - 4} more</span></>
                                                 )}
                                             </button>
                                         )}
@@ -1247,7 +1189,7 @@ const AllTeams = () => {
         );
     };
 
-    const hasAdminPermissions = matchedArray && matchedArray.includes("ADMIN_FETCHING_ALLTEAMS");
+    const hasAdminPermissions = matchedArray && matchedArray.includes("MY_TEAM_MY_TEAMS_ALL_TEAMS");
 
     return (
         <div className={`relative flex min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -1290,7 +1232,7 @@ const AllTeams = () => {
                                 />
                                 <FaSearch className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
                             </div>
-                            {matchedArray?.includes("CREATE_TEAM") && !fromContextMenu && (
+                            {matchedArray?.includes("MY_TEAM_MY_TEAMS_CREATE_TEAM") && !fromContextMenu && (
                                 <button
                                     onClick={() => setIsCreateModalOpen(true)}
                                     className="w-full sm:w-auto bg-black text-white px-4 sm:px-5 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center shadow-md text-sm"

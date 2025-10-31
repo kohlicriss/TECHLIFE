@@ -6,12 +6,11 @@ import {
     FaMicrophone, FaPaperclip, FaSmile, FaPaperPlane, FaArrowLeft, FaStop,
     FaFileAlt, FaDownload, FaPlay, FaPause, FaReply, FaEdit, FaThumbtack, FaShare, FaTrash, FaTimes, FaCheck,
     FaChevronDown, FaImage, FaFileAudio, FaAngleDoubleRight, FaUsers, FaUser,
-    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp
+    FaFilePdf, FaFileWord, FaFilePowerpoint, FaFileExcel, FaFileArchive, FaChevronUp, FaCheckDouble, FaEye
 } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import EmojiPicker from 'emoji-picker-react';
 import {
-    chatApi,
     getMessages,
     deleteMessageForMe,
     deleteMessageForEveryone,
@@ -29,7 +28,9 @@ import {
     searchChatOverview
 } from '../../../../services/apiService';
 import { transformMessageDTOToUIMessage, generateChatListPreview, transformOverviewToChatList } from '../../../../services/dataTransformer';
+import { chatApi } from '../../../../axiosInstance';
 
+// Utility function to convert file size from bytes to a human-readable string (KB, MB, GB, etc.)
 const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -38,6 +39,7 @@ const formatFileSize = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+// Component to display the correct icon based on the file extension (PDF, Word, Image, etc.)
 const FileIcon = ({ fileName, className = "text-3xl" }) => {
     const extension = fileName?.split('.').pop()?.toLowerCase();
     if (['pdf'].includes(extension)) return <FaFilePdf className={`text-red-500 ${className}`} />;
@@ -50,8 +52,33 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
     return <FaFileAlt className={`text-gray-500 ${className}`} />;
 };
 
+// Component to render a non-image file message (document, zip, etc.) with a download button
 const FileMessage = ({ msg, isMyMessage, theme }) => {
     const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
+
+    const handleDownloadClick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            const response = await fetch(downloadUrl);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', msg.fileName || 'download');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed:', error);
+            window.open(downloadUrl, '_blank');
+        }
+    };
 
     const content = (
         <div className={`flex items-center gap-3 p-2 rounded-lg max-w-xs md:max-w-sm ${isMyMessage ? 'bg-blue-600' : (theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200')}`}>
@@ -63,11 +90,7 @@ const FileMessage = ({ msg, isMyMessage, theme }) => {
                 <p className={`text-sm ${isMyMessage ? 'text-blue-200' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}`}>{formatFileSize(msg.fileSize)}</p>
             </div>
             <div
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.open(downloadUrl, '_blank');
-                }}
+                onClick={handleDownloadClick}
                 className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors cursor-pointer"
             >
                 <FaDownload size={18} />
@@ -77,6 +100,7 @@ const FileMessage = ({ msg, isMyMessage, theme }) => {
     return !isMyMessage ? <div onClick={() => window.open(downloadUrl, '_blank')} className="cursor-pointer">{content}</div> : content;
 };
 
+// Component to handle playback, progress, and download of audio/voice messages. It fetches the audio blob on demand if a local source isn't present.
 const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0, theme }) => {
     const audioRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -185,6 +209,7 @@ const AudioPlayer = ({ src, fileUrl, isSender, initialDuration = 0, fileSize = 0
         </div>
     );
 };
+// Component for displaying animated loading states (skeletons) for messages while content is fetched.
 const MessageSkeleton = ({ theme }) => (
     <div className="space-y-4 p-4">
         <div className="flex items-end gap-2 justify-start">
@@ -207,9 +232,42 @@ const MessageSkeleton = ({ theme }) => (
             <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
             <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-32`}></div>
         </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-48`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className={`h-12 rounded-lg ${theme === 'dark' ? 'bg-blue-700' : 'bg-blue-200'} animate-pulse w-32`}></div>
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-16 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-64`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-blue-700' : 'bg-blue-200'} animate-pulse w-40`}></div>
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-32`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-10 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-48`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-end">
+            <div className={`h-12 rounded-lg ${theme === 'dark' ? 'bg-blue-700' : 'bg-blue-200'} animate-pulse w-32`}></div>
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+        </div>
+        <div className="flex items-end gap-2 justify-start">
+            <div className={`w-8 h-8 rounded-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse flex-shrink-0`}></div>
+            <div className={`h-16 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} animate-pulse w-64`}></div>
+        </div>
     </div>
 );
 
+// Utility function using Web Audio API to calculate the duration of an audio Blob before upload.
 const getAudioDuration = (audioBlob) =>
     new Promise((resolve) => {
         const reader = new FileReader();
@@ -238,6 +296,7 @@ const getAudioDuration = (audioBlob) =>
         reader.readAsArrayBuffer(audioBlob);
     });
 
+// Modal component for displaying a contact's profile picture in full view on mobile devices.
 const ContactProfileModal = ({ chat, onClose, theme }) => {
     const [isZoomed, setIsZoomed] = useState(false);
 
@@ -367,17 +426,18 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const subscriptions = useRef({});
 
     const chatIdFromUrl = useMemo(() => {
-        if (typeof window !== 'undefined' && window.location.pathname.includes('/with')) {
-            const params = new URLSearchParams(window.location.search);
+        if (location.pathname.includes('/with')) {
+            const params = new URLSearchParams(location.search);
             return params.get('id');
         }
         return null;
-    }, []);
+    }, [location.pathname, location.search]);
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
     };
 
+    // Debounced effect to trigger message search in the currently selected chat on search query change
     useEffect(() => {
         if (searchQuery.trim() === '') {
             setSearchResults([]);
@@ -397,6 +457,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return () => clearTimeout(timerId);
     }, [searchQuery, selectedChat, currentUser.id]);
 
+    // Handlers to navigate between search results within the chat view
     const handleNextResult = () => {
         if (currentResultIndex < searchResults.length - 1) {
             setCurrentResultIndex(prev => prev + 1);
@@ -409,6 +470,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Effect to scroll the chat container to the highlighted search result
     useEffect(() => {
         if (currentResultIndex !== -1 && searchResults[currentResultIndex]) {
             const messageId = searchResults[currentResultIndex].messageId;
@@ -419,6 +481,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [currentResultIndex, searchResults]);
 
+    // Fetches a block of messages around a specific search result and scrolls to it, highlighting the message.
     const handleJumpToMessage = async (message) => {
         setIsSearchVisible(false);
         setSearchQuery('');
@@ -446,6 +509,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Logic for infinite scrolling in the chat sidebar to load more chat previews/overviews.
     const handleSidebarScroll = () => {
         const container = sidebarScrollRef.current;
         if (container) {
@@ -459,6 +523,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Logic for infinite scrolling in the chat container to load older messages when scrolled to the top.
     const handleChatScroll = () => {
         const container = chatContainerRef.current;
         if (!container) return;
@@ -474,7 +539,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         }
 
-        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 400;
+        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 200;
         if (isScrolledUp !== showScrollToBottom) {
             setShowScrollToBottom(isScrolledUp);
             if (!isScrolledUp) {
@@ -483,6 +548,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Function to smoothly scroll the message container to the most recent message and reset the new message count.
     const scrollToBottom = (behavior = 'smooth') => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTo({
@@ -493,6 +559,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setNewMessagesCount(0);
     };
 
+    // Debounced effect to search through all chat overviews (sidebar chat list).
     useEffect(() => {
         if (searchTerm.trim() === '') {
             setSearchChatResults(null);
@@ -534,6 +601,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [initialChats, chatIdFromUrl]);
 
+    // Core function to fetch historical messages for a specific chat, handling pagination (page load = 0, scroll load > 0).
     const loadMoreMessages = useCallback(async (chatId, pageNum) => {
         if ((pageNum > 0 && isFetchingMoreMessages) || (pageNum === 0 && isMessagesLoading)) {
             return;
@@ -591,6 +659,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             }
         }
     }, [currentUser.id, isFetchingMoreMessages, isMessagesLoading, getMessages]);
+
     useEffect(() => {
         if (!selectedChat) return;
 
@@ -644,6 +713,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         });
     }, [currentUser.id, selectedChat]);
 
+    // Central handler for all incoming WebSocket messages (new message, status updates, pin/unpin, delete, edit).
     const onMessageReceived = useCallback((payload) => {
         const container = chatContainerRef.current;
         const shouldScrollOnReceive = container
@@ -838,7 +908,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         ...chatData.groups,
     ].sort((a, b) => new Date(b.lastMessageTimestamp) - new Date(a.lastMessageTimestamp)), [chatData, currentUser.id]);
 
-
     useEffect(() => {
         const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
         setChatUnreadCount(totalUnread);
@@ -878,6 +947,23 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         });
     }, [currentUser.id, allChats]);
 
+    const onSidebarUpdate = useCallback((payload) => {
+        const updatedChatList = JSON.parse(payload.body);
+        const { privateChatsWith: updatedPrivate, groups: updatedGroups } = transformOverviewToChatList(updatedChatList, currentUser.id);
+
+        setChatData(prev => ({
+            ...prev,
+            privateChatsWith: prev.privateChatsWith.map(pc => {
+                const update = updatedPrivate.find(upc => upc.chatId === pc.chatId);
+                return update ? { ...pc, ...update } : pc;
+            }),
+            groups: prev.groups.map(g => {
+                const update = updatedGroups.find(ug => ug.chatId === g.chatId);
+                return update ? { ...g, ...update } : g;
+            })
+        }));
+    }, [currentUser.id]);
+
     useEffect(() => {
         onMessageReceivedRef.current = onMessageReceived;
     });
@@ -888,6 +974,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [isMessagesLoading, selectedChat]);
 
+    // Initializes and manages the STOMP WebSocket client connection, subscribes to global and private queues, and handles lifecycle.
     useEffect(() => {
         if (!currentUser?.id || !isChatDataReady) return;
 
@@ -895,7 +982,8 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             return;
         }
 
-        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}`;
+        const token = localStorage.getItem('accessToken');
+        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}&token=${token}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -921,10 +1009,10 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         return { ...prev, privateChatsWith: newPrivateChats };
                     });
                 };
-
+                subscriptions.current['sidebar'] = client.subscribe(`/user/queue/sidebar`, onSidebarUpdate);
                 subscriptions.current['private'] = client.subscribe(`/user/queue/private`, messageHandler);
                 subscriptions.current['private-ack'] = client.subscribe(`/user/queue/private-ack`, messageHandler);
-                subscriptions.current['group-ack'] = client.subscribe(`/user/queue/group-ack`, messageHandler);
+                subscriptions.current['group-ack'] = client.subscribe(`user/queue/group-ack`, messageHandler);
                 subscriptions.current['presence'] = client.subscribe('/topic/presence', presenceHandler);
                 subscriptions.current['typing'] = client.subscribe('/user/queue/typing-status', handleTypingEvent);
             },
@@ -939,17 +1027,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         stompClient.current = client;
 
         return () => {
+            if (selectedChat && stompClient.current?.active) {
+                const destination = `/app/presence/close/${selectedChat.chatId}`;
+                stompClient.current.publish({ destination, body: "{}" });
+                console.log(`Sent CLOSE presence for ${selectedChat.chatId} on component unmount.`);
+            }
+
             if (stompClient.current?.active) {
                 stompClient.current.deactivate();
                 stompClient.current = null;
+                console.log("STOMP client deactivated on component unmount.");
             }
         };
-    }, [currentUser?.id, isChatDataReady]);
+    }, [currentUser?.id, isChatDataReady, selectedChat]);
 
     const groupIds = useMemo(() => {
         return (chatData.groups || []).map(g => g.chatId).sort().join(',');
     }, [chatData.groups]);
 
+    // Dynamically subscribes/unsubscribes to group message topics as the user's group list changes.
     useEffect(() => {
         if (!isConnected || !stompClient.current?.active) return;
 
@@ -984,6 +1080,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [isConnected, groupIds, chatData.groups, groupMembers, currentUser.id]);
 
+    // Opens a selected chat, sends a 'presence/open' status to the server, and fetches initial group data (members).
     const openChat = useCallback(async (targetChat) => {
         if (!currentUser?.id || !stompClient.current?.active) {
             return;
@@ -1018,6 +1115,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     }, [currentUser.id, groupMembersCache]);
 
+    // Closes the current chat view, sends a 'presence/close' status, and navigates the URL
     const closeChat = useCallback(() => {
         isManuallyClosing.current = true;
 
@@ -1033,37 +1131,41 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
         setSelectedChat(null);
         setIsChatOpen(false);
+        setShowScrollToBottom(false);
+        setNewMessagesCount(0);
 
         const newUrl = `/chat/${currentUser.id}`;
         navigate(newUrl);
 
     }, [selectedChat, currentUser.id, navigate]);
 
+    // Handles click on a chat in the sidebar: clears unread count and calls openChat.
     const handleChatSelect = useCallback((chat) => {
-        setChatData(prev => {
-            const isGroup = chat.type === 'group';
-            const list = isGroup ? prev.groups : prev.privateChatsWith;
-            const exists = list.some(c => c.chatId === chat.chatId);
+        if (selectedChat && selectedChat.chatId !== chat.chatId && stompClient.current?.active) {
+            const destination = `/app/presence/close/${selectedChat.chatId}`;
+            stompClient.current.publish({ destination, body: "{}" });
+            console.log(`Sent CLOSE presence for previous chat: ${selectedChat.chatId}`);
+        }
 
-            if (exists) {
+        if (chat.unreadMessageCount > 0) {
+            setChatData(prev => {
+                const isGroup = chat.type === 'group';
+                const list = isGroup ? prev.groups : prev.privateChatsWith;
                 const updatedList = list.map(c =>
                     c.chatId === chat.chatId ? { ...c, unreadMessageCount: 0 } : c
                 );
                 return isGroup
                     ? { ...prev, groups: updatedList }
                     : { ...prev, privateChatsWith: updatedList };
-            }
-            else {
-                const newChat = { ...chat, unreadMessageCount: 0 };
-                return isGroup
-                    ? { ...prev, groups: [newChat, ...prev.groups] }
-                    : { ...prev, privateChatsWith: [newChat, ...prev.privateChatsWith] };
-            }
-        });
+            });
+        }
+
         openChat(chat);
         setSearchTerm('');
 
-    }, [openChat]);
+    }, [openChat, selectedChat]);
+
+
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -1122,6 +1224,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showEmojiPicker, showChatMenu, contextMenu.visible, showPinnedMenu]);
 
+    // Publishes a STOMP message to inform other chat participants of the current user's typing status.
     const sendTypingStatus = (isTyping) => {
         if (!stompClient.current?.active || !selectedChat) return;
 
@@ -1139,6 +1242,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         });
     };
 
+    // Sends a new text or reply message via STOMP, creating an optimistic message view first.
     const handleSendMessage = () => {
         if (!message.trim() || !selectedChat) return;
 
@@ -1206,6 +1310,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     const onEmojiClick = (emojiObject) => setMessage(prev => prev + emojiObject.emoji);
     const handleFileButtonClick = () => fileInputRef.current.click();
 
+    // Handles file selection, uploads the file via API, and creates an optimistic 'sending' file message in the chat.
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file || !selectedChat) return;
@@ -1269,7 +1374,9 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
+    // Toggles the voice recording state and captures the microphone input.
     const handleMicButtonClick = () => { if (isRecording) stopRecording(); else startRecording(); };
+    // Detailed logic for starting, capturing data, stopping, and uploading a voice message as an audio blob/file.
     const startRecording = () => {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
@@ -1357,6 +1464,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setIsRecording(false);
     };
 
+    // Clears all messages in the current chat and updates the last message display.
     const handleConfirmClearChat = async () => {
         if (!selectedChat) return;
         try {
@@ -1370,11 +1478,37 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
-    const handleMediaDownload = (src, fileName) => { const link = document.createElement('a'); link.href = src; link.setAttribute('download', fileName || 'download'); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+    const handleMediaDownload = useCallback(async (src, fileName, event) => {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        try {
+            const response = await fetch(src);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.setAttribute('download', fileName || 'download');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed:', error);
+            window.open(src, '_blank');
+        }
+    }, []);
+
+    // Displays the right-click context menu (reply, edit, delete, pin) at the click coordinates.
     const handleContextMenu = (event, message, index) => { event.preventDefault(); event.stopPropagation(); const menuWidth = 180; const menuHeight = 250; let x = event.pageX; let y = event.pageY; if (x + menuWidth > window.innerWidth) x -= menuWidth; if (y + menuHeight > window.innerHeight) y -= menuHeight; setContextMenu({ visible: true, x, y, message, index }); };
     const handleReply = () => { setReplyingTo(contextMenu.message); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
     const handleEdit = () => { setEditingInfo({ index: contextMenu.index, originalContent: contextMenu.message.content }); setMessage(contextMenu.message.content); setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null }); messageInputRef.current.focus(); };
 
+    // Updates the message content optimistically, publishes the edit event to STOMP, and cleans up the editing state.
     const handleSaveEdit = () => {
         const updatedContent = message.trim();
 
@@ -1430,6 +1564,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const cancelEdit = () => { setEditingInfo({ index: null, originalContent: '' }); setMessage(''); };
 
+    // Deletes a message for the current user or for everyone based on the context menu selection.
     const handleDelete = async (forEveryone) => {
         const chatId = selectedChat.chatId;
         const currentMessages = [...(messages[chatId] || [])];
@@ -1460,6 +1595,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     const handleUndoDelete = () => { if (!lastDeleted) return; const currentMessages = [...messages[selectedChat.chatId]]; currentMessages[lastDeleted.index] = lastDeleted.message; setMessages(prev => ({ ...prev, [selectedChat.chatId]: currentMessages })); setLastDeleted(null); };
+    // Handlers to pin or unpin a message, communicating with the server API.   
     const handlePin = async () => {
         if (!contextMenu.message?.messageId) return;
 
@@ -1508,6 +1644,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setContextMenu({ visible: false, x: 0, y: 0, message: null, index: null });
     };
 
+    // Sends the selected message to multiple recipients via API and updates the local last message for each recipient.
     const handleConfirmForward = async () => {
         const originalMsg = forwardingInfo.message;
         if (!originalMsg || forwardRecipients.length === 0) {
@@ -1549,17 +1686,19 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
     const chatsToDisplay = searchChatResults !== null ? searchChatResults : allChats;
 
+    // Syncs the currently selected chat with the URL parameter on load or chat list change.
     useEffect(() => {
-        if (isManuallyClosing.current) {
-            isManuallyClosing.current = false;
-            return;
-        }
-
         if (chatIdFromUrl && allChats.length > 0 && isConnected && !selectedChat) {
+            if (isManuallyClosing.current) {
+                return;
+            }
+
             const chatToSelect = allChats.find(c => c.chatId.toString() === chatIdFromUrl);
             if (chatToSelect) {
                 handleChatSelect(chatToSelect);
             }
+        } else if (!chatIdFromUrl) {
+            isManuallyClosing.current = false;
         }
     }, [allChats, chatIdFromUrl, selectedChat, handleChatSelect, isConnected]);
 
@@ -1624,17 +1763,6 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return `last seen on ${date.toLocaleDateString()}`;
     };
 
-    const getStatusRingColor = (status) => {
-        switch (status) {
-            case 'sending': return 'ring-yellow-400';
-            case 'sent': return 'ring-gray-400';
-            case 'delivered': return 'ring-blue-500';
-            case 'seen': return 'ring-green-500';
-            case 'failed': return 'ring-red-500';
-            default: return 'ring-transparent';
-        }
-    };
-
     let lastMessageDate = null;
 
     const currentChatInfo = selectedChat ? allChats.find(c => c.chatId === selectedChat.chatId) : null;
@@ -1679,10 +1807,15 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
     };
 
     return (
+        // Main Chat Application Container
         <div className={`w-full h-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} font-sans`}>
+            {/* Content Area: Sidebar (30%) and Chat Window (70%) */}
             <div className="flex w-full h-full p-0 md:p-4 md:gap-4">
+                {/* Sidebar / Chat List Container */}
                 <div className={`relative w-full md:w-[30%] h-full p-4 flex flex-col shadow-xl md:rounded-lg ${isChatOpen ? 'hidden md:flex' : 'flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                    {/* Chat List Search Input */}
                     <div className="mb-4 flex-shrink-0"><input type="text" placeholder="Search chats users..." className={`w-full p-3 rounded-lg border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-50 border-gray-300'}`} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                    {/* Chat List Scrollable Area */}
                     <div ref={sidebarScrollRef} onScroll={handleSidebarScroll} className="flex-grow space-y-2 pr-2 overflow-y-auto custom-scrollbar">
                         {isSearching ? (
                             <div className="text-center p-4 text-gray-500">Searching...</div>
@@ -1729,7 +1862,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         )}
                     </div>
                 </div>
-
+                {/* Chat Window Container (Messages, Header, Input) */}
                 <div className={`flex-col shadow-xl fixed inset-0 z-[100] overflow-hidden md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
@@ -1772,8 +1905,11 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                             <p className={`font-bold text-lg truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{currentChatInfo.name}</p>
                                         </button>
                                         {currentChatInfo.type === 'private' ? (
-                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{currentChatInfo.isOnline ? 'Online' : formatLastSeen(currentChatInfo.lastMessageTimestamp)}</p>
-                                        ) : (
+                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {currentChatInfo.isOnline
+                                                    ? 'Online'
+                                                    : (currentChatInfo.userLastSeen ? formatLastSeen(currentChatInfo.userLastSeen) : 'Offline')}
+                                            </p>) : (
                                             <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{currentChatInfo.memberCount || 0} members</p>
                                         )}
                                     </div>
@@ -1931,11 +2067,16 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
 
                                                                             {msg.type === 'image' ? (
                                                                                 <div className="relative">
-                                                                                    <button onClick={() => setImageInView(fileUrl)}>
+                                                                                    <button onClick={() => setImageInView(fileUrl)} className="cursor-pointer">
                                                                                         <img src={fileUrl} alt={msg.fileName || 'image'} className="rounded-md max-w-full" style={{ maxHeight: '300px' }} />
                                                                                     </button>
                                                                                     {!isMyMessage && (
-                                                                                        <a href={fileUrl} download={msg.fileName} onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                        <a
+                                                                                            href={fileUrl}
+                                                                                            download={msg.fileName}
+                                                                                            onClick={(e) => handleMediaDownload(fileUrl, msg.fileName, e)}
+                                                                                            className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                        >
                                                                                             <FaDownload />
                                                                                         </a>
                                                                                     )}
@@ -1952,11 +2093,25 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                                                         </>
                                                                     )}
                                                                 </div>
-                                                                <span className={`text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)} {msg.isEdited ? '(edited)' : ''}</span>
+                                                                <span className={`flex items-center justify-end gap-1 text-xs mt-1 px-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                                    <span className="leading-none">
+                                                                        {msg.status === 'sending' ? 'Sending...' : msg.status === 'failed' ? 'Failed' : formatTimestamp(msg.timestamp)}
+                                                                    </span>
+
+                                                                    {msg.isEdited ? <span className="leading-none">(edited)</span> : ''}
+
+                                                                    {isMyMessage && msg.status !== 'sending' && msg.status !== 'failed' && (
+                                                                        <span className="flex-shrink-0">
+                                                                            {msg.status === 'sent' && <FaCheck size={14} className={`${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />}
+                                                                            {msg.status === 'delivered' && <FaCheckDouble size={14} className="text-blue-500" />}
+                                                                            {msg.status === 'seen' && <FaEye size={14} className="text-blue-500" />}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
                                                             </div>
                                                             {isMyMessage && (
                                                                 <div className={`relative w-8 h-8 self-start flex-shrink-0`}>
-                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className={`w-full h-full rounded-full object-cover ring-2 ${getStatusRingColor(msg.status)}`} />
+                                                                    <img src={currentUser?.profile || 'https://placehold.co/100x100/E2E8F0/4A5568?text=Me'} alt="current user" className="w-full h-full rounded-full object-cover" />
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1984,7 +2139,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                     )
                                 )}
                             </div>
-
+                            {/* Message Input Area Container */}
                             <div className={`flex-shrink-0 flex flex-col p-4 border-t ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                                 {replyingTo && (
                                     <div className={`p-2 rounded-t-lg flex justify-between items-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
@@ -2032,7 +2187,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                 {showScrollToBottom && (
                     <button
                         onClick={() => scrollToBottom()}
-                        className="absolute bottom-24 right-8 z-10 bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
+                        className="absolute bottom-24 right-8 z-[110] bg-blue-600/80 backdrop-blur-sm text-white rounded-full p-3 shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-110 animate-fade-in"
                         aria-label="Scroll to bottom"
                     >
                         {newMessagesCount > 0 && (
@@ -2054,7 +2209,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
             )}
 
             {contextMenu.visible && (
-                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-50 text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <div ref={contextMenuRef} style={{ top: contextMenu.y, left: contextMenu.x }} className={`absolute rounded-md shadow-lg z-[110] text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                     <ul className="py-1">
                         {contextMenu.message.type === 'deleted' ? (
                             <li onClick={() => handleDelete(false)} className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 text-red-600 ${theme === 'dark' ? 'text-red-400 hover:bg-gray-700' : ''}`}><FaTrash /> Delete for me</li>
@@ -2129,14 +2284,20 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         <p className="text-center text-gray-500">Loading members...</p>
                                     ) : (
                                         groupMembers.map((member, i) => (
-                                            <div key={member.employeeId || i} className={`flex items-center gap-4 p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
-                                                {member.employeeImage ? (
-                                                    <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
-                                                ) : (
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                        <FaUser className={`text-gray-500`} size={20} />
-                                                    </div>
-                                                )}
+                                            <div
+                                                key={member.employeeId || i}
+                                                className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                                                onClick={() => {
+                                                    setIsGroupInfoModalOpen(false); 
+                                                    navigate(`/employees/${currentUser.id}/public/${member.employeeId}`); 
+                                                }}
+                                            >                                                {member.employeeImage ? (
+                                                <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
+                                            ) : (
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                    <FaUser className={`text-gray-500`} size={20} />
+                                                </div>
+                                            )}
                                                 <div>
                                                     <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{member.displayName}</span>
                                                     {member.jobTitlePrimary && <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{member.jobTitlePrimary}</p>}

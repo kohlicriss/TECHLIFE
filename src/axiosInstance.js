@@ -118,3 +118,4 @@ export const notificationsApi = createAxiosInstance('https://hrms.anasolconsulta
 export const ticketsApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/ticket')
 export const authApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/auth')
 export const dashboardApi=createAxiosInstance('hrms.anasolconsultancyservices.com/api/attendance')
+export const payrollApi=createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/payroll')

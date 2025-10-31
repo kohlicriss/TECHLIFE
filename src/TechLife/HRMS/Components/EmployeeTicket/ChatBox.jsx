@@ -68,7 +68,7 @@ const fetchMessages = async (pageToFetch = 0) => {
     );
 
     if (res.status === 403) {
-      console.error(" Forbidden: VIEW_TICKET_REPLIES missing on backend");
+      //console.error(" Forbidden: VIEW_TICKET_REPLIES missing on backend");
       setMessages([]);
       setHasMore(false);
       return;
@@ -113,11 +113,31 @@ const formatChatTimeIST = (dateString) => {
   }
   const token = localStorage.getItem("accessToken");
 
-  const ws = new WebSocket(
-    `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticketId}?token=${token}`
+ 
+const ws = new WebSocket(
+  `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticketId}&token=${token}`
+);
+
+
+
+ws.onopen = () => {
+  console.log("✅ WebSocket connected");
+
+  
+  ws.send(
+    JSON.stringify({
+      action: "subscribe",
+      ticketId: ticketId
+    })
   );
 
-  ws.onopen = () => console.log("✅ WebSocket connected");
+  console.log("📡 Subscribed to ticket:", ticketId);
+};
+console.log(
+  "🔗 Connecting to:",
+  `wss://hrms.anasolconsultancyservices.com/api/ticket/ws?ticketId=${ticketId}&token=${token}`
+);
+
 
   ws.onmessage = (event) => {
     try {
@@ -168,7 +188,7 @@ const sendMessage = async () => {
       }
     );
 
-    setMessages(prev => dedupeMessages([...prev, messageToSend]));
+   // setMessages(prev => dedupeMessages([...prev, messageToSend]));
   } catch (err) {
     console.error("❌ Send failed:", err);
   } finally {
@@ -307,7 +327,7 @@ useEffect(() => {
         />
           <button
   onClick={sendMessage}
-  disabled={isResolved || !(matchedArray?.includes("SEND_TICKET_REPLIES"))}
+ // disabled={isResolved || !(matchedArray?.includes("SEND_TICKET_REPLIES"))}
   className={`px-4 py-2 rounded text-white transition ${
     isResolved
       ? "bg-gray-400 cursor-not-allowed"

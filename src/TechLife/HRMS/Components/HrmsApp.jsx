@@ -8,14 +8,15 @@ import {
     Outlet,
 } from "react-router-dom";
 import logo from "./assets/anasol-logo.png";
-
-// FIX: UISidebarContext మరియు HrmsContext నుండి Context, UISidebarContext రెండింటినీ ఇంపోర్ట్ చేయండి
 import HrmsContext, { Context, UISidebarContext } from "./HrmsContext"; 
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
 import LoginPage from "./Login/LoginPage";
 import ProtectedRoute from "../../../ProtectedRoute";
 import ProjectDetails from "./Projects/ProjectDetails";
+import Department from "./Departments/Department";
+import Departmentspage from "./Departments/Departmentspage";
+import HomePayRoll from "./PayRoll/HomePayRoll";
 
 // Lazy imports with error handling
 const NotificationSystem = lazy(() => 
@@ -88,6 +89,17 @@ const EmployeeProfile = lazy(() =>
         default: () => <div className="p-8 text-center text-red-600">Failed to load Employee Profile. Please refresh.</div>
     }))
 );
+
+const PayRollPage = lazy(() => 
+    import("./PayRoll/PayRollPage").catch(() => ({
+        default: () => <div className="p-8 text-center text-red-600">Failed to load Employee PayRoll. Please refresh.</div>
+    }))
+);
+const EmployeePayRoll=lazy(()=>
+    import("./PayRoll/EmployeePayRoll").catch(()=>({
+        default : () => <div className="p-8 text-center text-red-600">Failed to load Employee PayRoll. Please refresh.</div>
+    }))
+);
 const Permissions = lazy(() => 
     import("./Permissions/PermissionsPage").catch(() => ({
         default: () => <div className="p-8 text-center text-red-600">Failed to load Permissions. Please refresh.</div>
@@ -114,8 +126,10 @@ const FullPageSpinner = () => {
 
 // --- Module Spinner with Bouncing Animation ---
 const ModuleSpinner = () => {
+    const { theme } = useContext(Context);
+    
     return (
-        <div className="flex flex-col items-center justify-center min-h-full h-full w-full bg-gray-50">
+        <div className={`flex flex-col items-center justify-center min-h-full h-full w-full ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
             <div className="mb-8">
                 <img 
                     src={logo} 
@@ -130,12 +144,11 @@ const ModuleSpinner = () => {
                 <div className="bouncing-dot" style={{ animationDelay: '0.4s' }}></div>
             </div>
             
-          
             <style jsx>{`
                 .bouncing-dot {
                     width: 12px;
                     height: 12px;
-                    background-color: #3b82f6;
+                    background-color: ${theme === 'dark' ? '#60a5fa' : '#3b82f6'};
                     border-radius: 50%;
                     animation: bouncing-loader 1.4s infinite ease-in-out;
                 }
@@ -148,13 +161,14 @@ const ModuleSpinner = () => {
                     40% {
                         transform: scale(1.2) translateY(-15px);
                         opacity: 1;
-                        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+                        box-shadow: 0 8px 20px ${theme === 'dark' ? 'rgba(96, 165, 250, 0.3)' : 'rgba(59, 130, 246, 0.3)'};
                     }
                 }
             `}</style>
         </div>
     );
 };
+
 
 // --- Error fallback component for individual modules ---
 const ModuleErrorFallback = ({ moduleName, error, resetError }) => (
@@ -509,7 +523,7 @@ const HrmsApp = () => {
                                             <Route 
                                                 path="/tickets/:empID/*" 
                                                 element={
-                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'TEAM_LEAD']}>
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
                                                         <RouteWrapper moduleName="Admin Tickets">
                                                             <Tickets />
                                                         </RouteWrapper>
@@ -568,6 +582,18 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
+
+                                            <Route 
+                                                path="/departments/:empID/*" 
+                                                element={
+                                                    <ProtectedRoute>
+                                                        <RouteWrapper moduleName="Teams">
+                                                            <Department />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+
                                             <Route 
                                                 path="/teams/:teamId" 
                                                 element={
@@ -577,7 +603,38 @@ const HrmsApp = () => {
                                                         </RouteWrapper>
                                                     </ProtectedRoute>
                                                 } 
-                                            />
+                                             />
+     {/* Payroll Routes with Role-Based Access */}
+<Route 
+  path="/payroll/home/:empId" 
+  element={
+    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+      <RouteWrapper moduleName="Home PayRoll">
+        <HomePayRoll />
+      </RouteWrapper>
+    </ProtectedRoute>
+  } 
+/>
+<Route 
+  path="/payroll/:empId" 
+  element={
+    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+      <RouteWrapper moduleName="Pay Roll">
+        <PayRollPage />
+      </RouteWrapper>
+    </ProtectedRoute>
+  } 
+/>
+<Route 
+  path="/payroll/employee/:empId" 
+  element={
+    <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN', 'HR', 'MANAGER','TEAM_LEAD']}>
+      <RouteWrapper moduleName="Employee PayRoll">
+        <EmployeePayRoll />
+      </RouteWrapper>
+    </ProtectedRoute>
+  } 
+/>
                                             
                                             {/* Admin/Management Routes */}
                                             <Route 
