@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Context } from "../HrmsContext";
@@ -8,8 +8,50 @@ import {
   IoAddCircleOutline,
   IoCalendarOutline,
   IoSearchOutline,
-
+  IoBusinessOutline,
+  IoPeopleOutline,
+  IoChevronUpOutline,
+  IoChevronDownOutline
 } from 'react-icons/io5';
+
+// Move SearchInput outside as a separate memoized component
+const SearchInput = React.memo(({ searchTerm, setSearchTerm, isDark }) => {
+  return (
+    <div className="flex-1">
+      <label htmlFor="search-input" className={`block text-sm font-medium mb-2 ${
+        isDark ? 'text-gray-300' : 'text-gray-700'
+      }`}>
+        Search Employees
+      </label>
+      <div className="relative">
+        <IoSearchOutline className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+          isDark ? 'text-gray-400' : 'text-gray-500'
+        } w-5 h-5`} />
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search by name, role, or employee ID"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-800'
+          }`}
+        />
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+              isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <IoClose className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
 
 const HomePayRoll = () => {
   const [employees, setEmployees] = useState([]);
@@ -24,7 +66,7 @@ const HomePayRoll = () => {
   const token = localStorage.getItem("accessToken");
   const { theme } = useContext(Context);
   const isDark = theme === "dark";
-  const [matchedArray,setMatchedArray]=useState([]);
+  const [matchedArray, setMatchedArray] = useState([]);
 
   const formDataRef = useRef({
     employeeId: '',
@@ -58,15 +100,12 @@ const HomePayRoll = () => {
 
     try {
       setLoading(true);
-
       const response = await axios.get(
         'https://hrms.anasolconsultancyservices.com/api/payroll/jobdetails/getall',
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      console.log('API Response:', response.data);
 
       if (response.data && response.data.success) {
         setEmployees(response.data.data || []);
@@ -113,8 +152,6 @@ const HomePayRoll = () => {
         uanNumber: formDataRef.current.uanNumber
       };
 
-      console.log('Sending employee data:', employeeData);
-
       const response = await axios.post(
         'https://hrms.anasolconsultancyservices.com/api/payroll/jobdetails/create',
         employeeData,
@@ -126,7 +163,6 @@ const HomePayRoll = () => {
       if (response.data && response.data.success) {
         alert('Employee created successfully!');
         setShowCreateForm(false);
-        // Reset form data
         formDataRef.current = {
           employeeId: '',
           empName: '',
@@ -154,7 +190,6 @@ const HomePayRoll = () => {
     } catch (err) {
       console.error('Error creating employee:', err);
       const errorMessage = err.response?.data?.message || err.message;
-
       if (errorMessage.includes('already exists')) {
         alert(`Employee ID ${formDataRef.current.employeeId} already exists. Please use a different ID.`);
       } else {
@@ -168,29 +203,24 @@ const HomePayRoll = () => {
     formDataRef.current[name] = value;
   };
 
-   const handleCreateEmployeeClick = () => {
+  const handleCreateEmployeeClick = () => {
     setShowCreateForm(true);
     setIsMobileMenuOpen(false);
   };
 
-   const MobileSidebar = () => {
+  const MobileSidebar = () => {
     if (!isMobileMenuOpen) return null;
 
     return (
-      <div className={`fixed inset-0 z-50 lg:hidden ${
-          isDark ? 'bg-gray-800' : 'bg-white'
-        }`}>
-        {/* Backdrop */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
         <div 
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        {/* Sidebar */}
         <div className={`absolute right-0 top-0 h-full w-80 max-w-[85vw] transform transition-transform duration-300 ${
           isDark ? 'bg-gray-800' : 'bg-white'
         } shadow-2xl`}>
-          {/* Header */}
           <div className={`flex items-center justify-between p-6 border-b ${
             isDark ? 'border-gray-700' : 'border-gray-200'
           }`}>
@@ -207,41 +237,34 @@ const HomePayRoll = () => {
             </button>
           </div>
 
-          {/* Action Buttons */}
           <div className="p-6 space-y-4">
-                 {matchedArray.includes("GET_PAYROLL_MONTHLY") && (
-                
-           
-            <button
-              onClick={handleViewMonthly}
-              className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl font-semibold transition-all duration-200 ${
-                isDark 
-                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
-                  : 'bg-green-500 hover:bg-green-600 text-white shadow-md'
-              } transform hover:scale-105`}
-            >
-              
-              <IoCalendarOutline className="w-5 h-5" />
-              <span>View Monthly</span>
-            </button>
+            {matchedArray.includes("GET_PAYROLL_MONTHLY") && (
+              <button
+                onClick={handleViewMonthly}
+                className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl font-semibold transition-all duration-200 ${
+                  isDark 
+                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
+                    : 'bg-green-500 hover:bg-green-600 text-white shadow-md'
+                } transform hover:scale-105`}
+              >
+                <IoCalendarOutline className="w-5 h-5" />
+                <span>View Monthly</span>
+              </button>
+            )}
 
-                 )}
-
-{matchedArray.includes("CREATE_PAYROLL") && (
-            <button
-              onClick={handleCreateEmployeeClick}
-              className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl font-semibold transition-all duration-200 ${
-                isDark 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'
-              } transform hover:scale-105`}
-            >
-              <IoAddCircleOutline className="w-5 h-5" />
-              <span>Create Employee</span>
-            </button>
-)}
-
-           
+            {matchedArray.includes("CREATE_PAYROLL") && (
+              <button
+                onClick={handleCreateEmployeeClick}
+                className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl font-semibold transition-all duration-200 ${
+                  isDark 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'
+                } transform hover:scale-105`}
+              >
+                <IoAddCircleOutline className="w-5 h-5" />
+                <span>Create Employee</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -272,9 +295,9 @@ const HomePayRoll = () => {
     }
   };
 
-  const groupEmployeesByDepartment = () => {
+  // Memoized functions to prevent unnecessary re-renders
+  const groupEmployeesByDepartment = useCallback(() => {
     const grouped = {};
-
     employees.forEach(employee => {
       const dept = employee.department || 'Unassigned';
       if (!grouped[dept]) {
@@ -282,40 +305,63 @@ const HomePayRoll = () => {
       }
       grouped[dept].push(employee);
     });
-
     return grouped;
-  };
+  }, [employees]);
 
-  const getSeniorEmployees = (departmentEmployees) => {
+  const getSeniorEmployees = useCallback((departmentEmployees) => {
     const sorted = departmentEmployees.sort((a, b) => {
       const levelOrder = { 'Senior': 3, 'Mid-Level': 2, 'Junior': 1, 'Lead': 4, 'Manager': 5 };
       return (levelOrder[b.level] || 0) - (levelOrder[a.level] || 0);
     });
-
     return sorted.slice(0, 6);
-  };
+  }, []);
 
-  const toggleDepartmentExpansion = (department) => {
+  const toggleDepartmentExpansion = useCallback((department) => {
     setExpandedDepartments(prev => ({
       ...prev,
       [department]: !prev[department]
     }));
-  };
+  }, []);
 
-  const departments = ['All', ...new Set(employees.map(emp => emp.department))];
-  const groupedEmployees = groupEmployeesByDepartment();
+  // Memoized values
+  const departments = useMemo(() => 
+    ['All', ...new Set(employees.map(emp => emp.department))], 
+    [employees]
+  );
 
-  const filteredEmployees = employees.filter(emp => {
-    const matchesDepartment = selectedDepartment === 'All' || emp.department === selectedDepartment;
-    const matchesSearch = searchTerm === '' ||
-      emp.empName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(emp => {
+      if (!emp) return false;
+      
+      const matchesDepartment = selectedDepartment === 'All' || emp.department === selectedDepartment;
+      
+      if (searchTerm.trim() === '') {
+        return matchesDepartment;
+      }
+      
+      const searchLower = searchTerm.toLowerCase().trim();
+      const matchesSearch = 
+        (emp.empName?.toLowerCase().includes(searchLower) || false) ||
+        (emp.designation?.toLowerCase().includes(searchLower) || false) ||
+        (emp.employeeId?.toLowerCase().includes(searchLower) || false);
 
-    return matchesDepartment && matchesSearch;
-  });
+      return matchesDepartment && matchesSearch;
+    });
+  }, [employees, selectedDepartment, searchTerm]);
 
-  const getLevelColor = (level) => {
+  const groupedEmployeesWithSearch = useMemo(() => {
+    const grouped = {};
+    filteredEmployees.forEach(employee => {
+      const dept = employee.department || 'Unassigned';
+      if (!grouped[dept]) {
+        grouped[dept] = [];
+      }
+      grouped[dept].push(employee);
+    });
+    return grouped;
+  }, [filteredEmployees]);
+
+  const getLevelColor = useCallback((level) => {
     switch (level) {
       case 'Senior': return 'bg-red-500';
       case 'Mid-Level': return 'bg-yellow-500';
@@ -324,9 +370,9 @@ const HomePayRoll = () => {
       case 'Manager': return 'bg-indigo-500';
       default: return 'bg-gray-500';
     }
-  };
+  }, []);
 
-   const EmployeeCard = ({ employee, onDelete, onViewPayroll }) => {
+  const EmployeeCard = useCallback(({ employee, onDelete, onViewPayroll }) => {
     return (
       <div className={`rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative ${
         isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200 text-gray-800'
@@ -376,43 +422,74 @@ const HomePayRoll = () => {
         </div>
       </div>
     );
-  };
+  }, [isDark, getLevelColor]);
+
   // Department Section Component
-  const DepartmentSection = ({ department, employees }) => {
+  const DepartmentSection = useCallback(({ department, employees }) => {
     const isExpanded = expandedDepartments[department];
     const displayEmployees = isExpanded ? employees : getSeniorEmployees(employees);
 
-return (
-      <div className="mb-6 sm:mb-8">
-        <div className="flex justify-between items-center mb-4 p-3 sm:p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold">{department} Department</h2>
-            <p className="text-blue-100 text-sm">
-              {employees.length} employees • {employees.filter(e => e.level === 'Senior').length} Seniors
-            </p>
+    return (
+      <div className="mb-8">
+        <div className="border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-slate-800 rounded-r-lg shadow-sm mb-6 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg">
+                <IoBusinessOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  {department}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {employees.length} employees • {employees.filter(e => e.level === 'Senior').length} senior
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-right">
+              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Department</div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Active
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
           {displayEmployees.map(employee => (
-            <EmployeeCard key={employee.employeeId} employee={employee} onDelete={handleDeleteEmployee}
-              onViewPayroll={handleViewPayroll} />
+            <EmployeeCard 
+              key={employee.employeeId} 
+              employee={employee} 
+              onDelete={handleDeleteEmployee}
+              onViewPayroll={handleViewPayroll} 
+            />
           ))}
         </div>
 
         {employees.length > 6 && (
-          <div className="text-center mt-4 sm:mt-6">
+          <div className="text-center border-t dark:border-gray-700 pt-4">
             <button
               onClick={() => toggleDepartmentExpansion(department)}
-              className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg shadow-sm hover:shadow-md"
             >
-              {isExpanded ? 'Show Less' : `View All ${employees.length} Employees`}
+              {isExpanded ? (
+                <>
+                  <IoChevronUpOutline className="w-4 h-4" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  View All {employees.length} Employees
+                  <IoChevronDownOutline className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         )}
       </div>
     );
-  };
+  }, [expandedDepartments, getSeniorEmployees, toggleDepartmentExpansion, EmployeeCard]);
 
   // Create Employee Form Component
   const CreateEmployeeForm = () => {
@@ -693,8 +770,9 @@ return (
       </div>
     );
   };
+  
 
-  const Directory = () => {
+const Directory = () => {
     if (loading) {
       return (
         <div className="max-w-7xl mx-auto p-4 sm:p-6">
@@ -726,6 +804,7 @@ return (
               </h1>
               <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                 {filteredEmployees.length} employees in {selectedDepartment}
+                {searchTerm && ` matching "${searchTerm}"`}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -748,66 +827,25 @@ return (
               />
             ))}
           </div>
+
+          {filteredEmployees.length === 0 && searchTerm && (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                No employees found
+              </h3>
+              <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>
+                No employees in {selectedDepartment} match "{searchTerm}"
+              </p>
+            </div>
+          )}
         </div>
       );
     }
-    // Search Input Component
-const SearchInput = React.memo(({ searchTerm, setSearchTerm, isDark }) => {
-  const [localValue, setLocalValue] = useState(searchTerm);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => {
-    if (searchTerm !== localValue) {
-      setLocalValue(searchTerm);
-    }
-  }, [searchTerm]);
-
-  const handleChange = (e) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      setSearchTerm(newValue);
-    }, 3000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div className="flex-1">
-      <label htmlFor="search-input" className={`block text-sm font-medium mb-2 ${
-        isDark ? 'text-gray-300' : 'text-gray-700'
-      }`}>
-        Search Employees
-      </label>
-      <div className="relative">
-        <IoSearchOutline className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
-          isDark ? 'text-gray-400' : 'text-gray-500'
-        } w-4 h-4 sm:w-5 sm:h-5`} />
-        <input
-          id="search-input"
-          type="text"
-          placeholder="Search by name, role, or employee ID"
-          value={localValue}
-          onChange={handleChange}
-          className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base ${
-            isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-800'
-          }`}
-        />
-      </div>
-    </div>
-  );
-});
 
     return (
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
@@ -818,7 +856,8 @@ const SearchInput = React.memo(({ searchTerm, setSearchTerm, isDark }) => {
               Employee Directory
             </h1>
             <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-              Employees across all departments
+              {employees.length} employees across all departments
+              {searchTerm && ` • ${filteredEmployees.length} matching "${searchTerm}"`}
             </p>
           </div>
           
@@ -850,43 +889,44 @@ const SearchInput = React.memo(({ searchTerm, setSearchTerm, isDark }) => {
         </div>
 
         {/* Filters */}
-<div className={`flex flex-col lg:flex-row gap-4 mb-6 sm:mb-8 p-4 sm:p-6 rounded-lg shadow-lg ${
-  isDark ? 'bg-gray-800' : 'bg-white'
-}`}>
-  <div className="flex-1">
-    <label htmlFor="department-select" className={`block text-sm font-medium mb-2 ${
-      isDark ? 'text-gray-300' : 'text-gray-700'
-    }`}>
-      Filter by Department
-    </label>
-    <select
-      id="department-select"
-      value={selectedDepartment}
-      onChange={(e) => setSelectedDepartment(e.target.value)}
-      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base ${
-        isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-800'
-      }`}
-    >
-      {departments.map(dept => (
-        <option key={dept} value={dept}>{dept}</option>
-      ))}
-    </select>
-  </div>
+        <div className={`flex flex-col lg:flex-row gap-4 mb-6 sm:mb-8 p-4 sm:p-6 rounded-lg shadow-lg ${
+          isDark ? 'bg-gray-800' : 'bg-white'
+        }`}>
+          <div className="flex-1">
+            <label htmlFor="department-select" className={`block text-sm font-medium mb-2 ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Filter by Department
+            </label>
+            <select
+              id="department-select"
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base ${
+                isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-800'
+              }`}
+            >
+              {departments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
 
-  {/* Use the separate SearchInput component */}
-  <SearchInput 
-    searchTerm={searchTerm} 
-    setSearchTerm={setSearchTerm} 
-    isDark={isDark} 
-  />
-</div>
+          {/* Use the memoized SearchInput component */}
+          <SearchInput 
+            searchTerm={searchTerm} 
+            setSearchTerm={setSearchTerm} 
+            isDark={isDark} 
+          />
+        </div>
 
-        {Object.keys(groupedEmployees).length > 0 ? (
-          Object.keys(groupedEmployees).map(department => (
+        {/* Show departments with filtered employees */}
+        {Object.keys(groupedEmployeesWithSearch).length > 0 ? (
+          Object.keys(groupedEmployeesWithSearch).map(department => (
             <DepartmentSection
               key={department}
               department={department}
-              employees={groupedEmployees[department]}
+              employees={groupedEmployeesWithSearch[department]}
             />
           ))
         ) : (
@@ -900,8 +940,16 @@ const SearchInput = React.memo(({ searchTerm, setSearchTerm, isDark }) => {
               No employees found
             </h3>
             <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>
-              Try adjusting your search or filter criteria
+              {searchTerm ? `No employees match "${searchTerm}"` : 'Try adjusting your search or filter criteria'}
             </p>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Clear Search
+              </button>
+            )}
           </div>
         )}
       </div>

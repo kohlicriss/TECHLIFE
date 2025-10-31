@@ -39,13 +39,17 @@ const [totalCount, setTotalCount] = useState(0);
 
   const token = localStorage.getItem("accessToken");
    const isDark = theme === "dark";
-   
- 
   
-  const sidebarItems = [
-  ...(matchedArray?.includes("VIEW_MY_TICKETS") ? [{ tab: "My Tickets", icon: Ticket }] : []),
-  ...(matchedArray?.includes("VIEW_ASSIGNED")&&normalizedRole !== "ROLE_EMPLOYEE" ? [{ tab: "Assigned Tickets", icon: Ticket }] : [])
+ 
+const sidebarItems = [
+  { tab: "My Tickets", icon: Ticket, key: "my-tickets" },
+  ...(normalizedRole === "ADMIN" || normalizedRole === "HR" || normalizedRole === "MANAGER" 
+    ? [{ tab: "Assigned Tickets", icon: Ticket, key: "assigned-tickets" }] 
+    : [])
 ];
+
+console.log('Working sidebarItems:', sidebarItems);
+
 
  
   const statusLabels = { all: "All", resolved: "Resolved" };
@@ -183,6 +187,7 @@ const handleFormSubmit = async (data) => {
   };
  
  
+ 
 const applyFilters = () => {
   let filtered = [...tickets];
 
@@ -272,6 +277,8 @@ const normalizeStatus = (status) => (status || "").trim().toLowerCase();
 const total = totalCount;
 const resolved = filteredTickets.filter(t => normalizeStatus(t.status) === "resolved").length;
 const unsolved = total - resolved;
+
+
 
 
   return (
@@ -421,6 +428,18 @@ const unsolved = total - resolved;
                   </motion.button>
                 ))}
               </div>
+                <button
+  onClick={() => {
+    setSearchTerm('');
+    setDateFilter('All');
+    setFromDate('');
+    setToDate('');
+    setStatusFilter('all');
+  }}
+  className="px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+>
+  Clear Filters
+</button>
             </div>
           </div>
            <div className="sm:hidden flex gap-2 overflow-x-auto py-2 px-1">
@@ -502,14 +521,14 @@ const unsolved = total - resolved;
           >
             Ticket History
           </h2>
-           {matchedArray.includes("CREATE_TICKET") && (
+          
                 <button
                   onClick={() => setView('form')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-xl shadow hover:scale-105 transition"
                 >
                   +
                 </button>
-           )}
+           
               </div>
  
               <div className={`${isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"} p-6 rounded-2xl shadow-lg`}>

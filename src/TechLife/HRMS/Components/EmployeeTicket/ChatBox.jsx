@@ -188,7 +188,7 @@ const sendMessage = async () => {
       }
     );
 
-    setMessages(prev => dedupeMessages([...prev, messageToSend]));
+   // setMessages(prev => dedupeMessages([...prev, messageToSend]));
   } catch (err) {
     console.error("❌ Send failed:", err);
   } finally {

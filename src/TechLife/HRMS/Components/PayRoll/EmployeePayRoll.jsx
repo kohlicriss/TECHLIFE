@@ -214,7 +214,7 @@ const EmployeePayRoll = () => {
     setIsModalOpen(true);
   };
 
-  const handleDownloadPayslip = async (payslip) => {
+const handleDownloadPayslip = async (payslip) => {
     try {
       if (!employee) {
         alert('Employee data not available');
@@ -225,8 +225,9 @@ const EmployeePayRoll = () => {
       payslipElement.style.position = 'absolute';
       payslipElement.style.left = '-9999px';
       payslipElement.style.width = '800px';
-      payslipElement.style.padding = '10px'; 
+      payslipElement.style.padding = '20px'; // Reduced padding
       payslipElement.style.backgroundColor = 'white';
+      payslipElement.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
       
       const grossEarnings = (payslip.basicSalary || 0) + 
                            (payslip.hraAmount || 0) + 
@@ -241,172 +242,173 @@ const EmployeePayRoll = () => {
 
       const netSalary = payslip.netSalary || (grossEarnings - totalDeductions);
 
-      // Helper function to format numbers - remove .0 when not needed
-const formatNumber = (value, decimals = 1) => {
-  const num = Number(value);
-  if (isNaN(num)) return '0';
-  
-  // If it's a whole number, don't show decimals
-  if (num % 1 === 0) {
-    return num.toString();
-  }
-  
-  // Otherwise show specified decimals
-  return num.toFixed(decimals);
-};
-payslipElement.innerHTML = `
-  <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
-    <!-- Company Header -->
-    <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-      <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
-      <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
-      <div style="background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold;">
-        ${formatPayPeriod(payslip)}
-      </div>
-    </div>
+      // Helper function to format numbers
+      const formatNumber = (value, decimals = 1) => {
+        const num = Number(value);
+        if (isNaN(num)) return '0';
+        
+        if (num % 1 === 0) {
+          return num.toString();
+        }
+        
+        return num.toFixed(decimals);
+      };
 
-          <!-- Employee Information -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">Employee Name:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.empName}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">Employee ID:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.employeeId}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">Designation:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.designation || 'N/A'}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">Department:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.department || 'N/A'}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                <span style="font-weight: 600; color: #4b5563;">Phone No:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.phoneNumber || 'N/A'}</span>
-              </div>
-            </div>
+      // Format currency function
+      const formatCurrency = (amount) => {
+        return '₹' + (amount || 0).toLocaleString('en-IN');
+      };
 
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">Bank A/C Name:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.empName}</span>
+      payslipElement.innerHTML = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; color: #333; line-height: 1.3; font-size: 20px;">
+          <!-- Company Header -->
+          <div style="border-bottom: 2px solid #2c5aa0; padding: 20px 0 10px 0; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div>
+                <div style="font-size: 20px; font-weight: 600; color: #2c5aa0; letter-spacing: 0.5px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
+                <div style="font-size: 12px; color: #666; margin-top: 3px;">
+                  #1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039
+                </div>
               </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">PAN No:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.panNumber || 'N/A'}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">PF No:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.pfnum || 'N/A'}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                <span style="font-weight: 600; color: #4b5563;">IFSC Code:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.ifsccode || 'N/A'}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                <span style="font-weight: 600; color: #4b5563;">Email:</span>
-                <span style="font-weight: 500; color: #1f2937;">${employee.email || 'N/A'}</span>
+              <div style="text-align: right;">
+                <div style="font-size: 10px; font-weight: 600; color: #2c5aa0; margin-bottom: 3px;">SALARY SLIP</div>
+                <div style="font-size: 12px; color: #d9534f; font-weight: 500; background: #f8f9fa; padding: 3px 10px; border-radius: 3px; display: inline-block;">
+                  ${formatPayPeriod(payslip)}
+                </div>
               </div>
             </div>
           </div>
-             <!-- Attendance Information -->
-    <div style="margin: 20px 0;">
-      <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ATTENDANCE INFORMATION</div>
-      <div style="padding: 0 30px;">
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <thead>
-            <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-              <th style="padding: 12px; text-align: center; font-weight: 600;">Total Working Days</th>
-              <th style="padding: 12px; text-align: center; font-weight: 600;">Days Present</th>
-              <th style="padding: 12px; text-align: center; font-weight: 600;">Paid Days</th>
-              <th style="padding: 12px; text-align: center; font-weight: 600;">Loss of Pay Days</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.totalWorkingDays || 0)}</td>
-              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.daysPresent || 0)}</td>
-              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.paidDays || 0)}</td>
-              <td style="padding: 12px; text-align: center; background: white;">${formatNumber(payslip.lossOfPayDays || 0)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
 
-    <!-- Bonus Information - Only show if bonus exists -->
-    ${payslip.bonusAmount > 0 ? `
-    <div style="margin: 20px 0;">
-      <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ADDITIONAL COMPENSATION</div>
-      <div style="padding: 0 30px;">
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <thead>
-            <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-              <th style="padding: 12px; text-align: center; font-weight: 600;">Bonus Amount</th>
-              <th style="padding: 12px; text-align: center; font-weight: 600;">Hike Percentage</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding: 12px; text-align: center; background: white; font-weight: bold; color: #059669;">₹${(payslip.bonusAmount || 0).toLocaleString()}</td>
-              <td style="padding: 12px; text-align: center; background: white; font-weight: bold; color: #059669;">${payslip.hikePercentage || 0}%</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    ` : ''}
-  
+          <!-- Employee Information -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">EMPLOYEE DETAILS</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555; width: 40%;">Employee Name:</td>
+                  <td style="padding: 6px 0; font-weight: 600;">${employee.empName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555;">Employee ID:</td>
+                  <td style="padding: 6px 0;">${employee.employeeId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555;">Designation:</td>
+                  <td style="padding: 6px 0;">${employee.designation || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555;">Department:</td>
+                  <td style="padding: 6px 0;">${employee.department || 'N/A'}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div>
+              <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">BANK & STATUTORY DETAILS</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555; width: 40%;">Bank A/C Name:</td>
+                  <td style="padding: 6px 0;">${employee.bankName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555;">PAN No:</td>
+                  <td style="padding: 6px 0;">${employee.panNumber || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555;">PF No:</td>
+                  <td style="padding: 6px 0;">${employee.pfnum || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-weight: 500; color: #555;">IFSC Code:</td>
+                  <td style="padding: 6px 0;">${employee.ifsccode || 'N/A'}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Attendance Information -->
+          <div style="margin: 20px 0;">
+            <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">ATTENDANCE SUMMARY</div>
+            <table style="width: 100%; border-collapse: collapse; background: #f8f9fa; border-radius: 4px; overflow: hidden; font-size: 12px;">
+              <thead>
+                <tr style="background: #2c5aa0; color: white;">
+                  <th style="padding: 10px; text-align: center; font-weight: 600;">Total Working Days</th>
+                  <th style="padding: 10px; text-align: center; font-weight: 600;">Days Present</th>
+                  <th style="padding: 10px; text-align: center; font-weight: 600;">Paid Days</th>
+                  <th style="padding: 10px; text-align: center; font-weight: 600;">Loss of Pay Days</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(payslip.totalWorkingDays || 0)}</td>
+                  <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(payslip.daysPresent || 0)}</td>
+                  <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(payslip.paidDays || 0)}</td>
+                  <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(payslip.lossOfPayDays || 0)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bonus Information - Only show if bonus exists -->
+          ${payslip.bonusAmount > 0 ? `
+          <div style="margin: 12px 0;">
+            <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">ADDITIONAL COMPENSATION</div>
+            <table style="width: 100%; border-collapse: collapse; background: #f8f9fa; border-radius: 4px; overflow: hidden; font-size: 12px;">
+              <thead>
+                <tr style="background: #28a745; color: white;">
+                  <th style="padding: 10px; text-align: center; font-weight: 600;">Bonus Amount</th>
+                  <th style="padding: 10px; text-align: center; font-weight: 600;">Hike Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0; font-weight: 600; color: #28a745;">${formatCurrency(payslip.bonusAmount || 0)}</td>
+                  <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0; font-weight: 600; color: #28a745;">${payslip.hikePercentage || 0}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          ` : ''}
 
           <!-- Salary Details -->
           <div style="margin: 20px 0;">
-            <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">SALARY DETAILS</div>
+            <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">SALARY BREAKUP</div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
               <!-- Earnings -->
               <div>
-                <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">EARNINGS</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                  <thead>
-                    <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                      <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                      <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
-                    </tr>
-                  </thead>
+                <div style="font-size: 20px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; background: #f8f9fa; padding: 6px 10px; border-radius: 3px;">EARNINGS</div>
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; font-size: 12px;">
                   <tbody>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Basic Salary</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.basicSalary || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Basic Salary</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.basicSalary || 0)}</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">HRA</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.hraAmount || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">HRA</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.hraAmount || 0)}</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Conveyance Allowance</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.conveyanceAllowance || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Conveyance Allowance</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.conveyanceAllowance || 0)}</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Medical Allowance</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.medicalAllowance || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Medical Allowance</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.medicalAllowance || 0)}</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Special Allowance</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.specialAllowance || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Special Allowance</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.specialAllowance || 0)}</td>
                     </tr>
                     ${payslip.bonusAmount > 0 ? `
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Bonus</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.bonusAmount || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Bonus</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.bonusAmount || 0)}</td>
                     </tr>
                     ` : ''}
-                    <tr style="background: #dbeafe; font-weight: bold;">
-                      <td style="padding: 12px;"><strong>GROSS EARNINGS</strong></td>
-                      <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(grossEarnings)}</strong></td>
+                    <tr style="background: #e9ecef; font-weight: 600;">
+                      <td style="padding: 10px;">Gross Earnings</td>
+                      <td style="padding: 10px; text-align: right;">${formatCurrency(grossEarnings)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -414,34 +416,28 @@ payslipElement.innerHTML = `
 
               <!-- Deductions -->
               <div>
-                <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">DEDUCTIONS</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                  <thead>
-                    <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                      <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                      <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
-                    </tr>
-                  </thead>
+                <div style="font-size: 20px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; background: #f8f9fa; padding: 6px 10px; border-radius: 3px;">DEDUCTIONS</div>
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; font-size: 12px;">
                   <tbody>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Provident Fund</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.providentFund || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Provident Fund</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.providentFund || 0)}</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Professional Tax</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.professionalTax || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Professional Tax</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.professionalTax || 0)}</td>
                     </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                      <td style="padding: 12px;">Income Tax</td>
-                      <td style="padding: 12px; text-align: right;">${formatCurrency(payslip.incomeTax || 0)}</td>
+                    <tr>
+                      <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Income Tax</td>
+                      <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(payslip.incomeTax || 0)}</td>
                     </tr>
-                    <tr style="background: #dbeafe; font-weight: bold;">
-                      <td style="padding: 12px;"><strong>TOTAL DEDUCTIONS</strong></td>
-                      <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(totalDeductions)}</strong></td>
+                    <tr style="background: #e9ecef; font-weight: 600;">
+                      <td style="padding: 10px;">Total Deductions</td>
+                      <td style="padding: 10px; text-align: right;">${formatCurrency(totalDeductions)}</td>
                     </tr>
-                    <tr style="background: #dcfce7; font-weight: bold; color: #166534; font-size: 18px;">
-                      <td style="padding: 12px;"><strong>NET SALARY</strong></td>
-                      <td style="padding: 12px; text-align: right;"><strong>${formatCurrency(netSalary)}</strong></td>
+                    <tr style="background: #d4edda; font-weight: 700; color: #155724; border: 2px solid #c3e6cb;">
+                      <td style="padding: 12px 10px; font-size: 20px;">NET SALARY PAYABLE</td>
+                      <td style="padding: 12px 10px; text-align: right; font-size: 20px;">${formatCurrency(netSalary)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -450,23 +446,26 @@ payslipElement.innerHTML = `
           </div>
 
           <!-- Footer -->
-          <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px;">
-            <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039</p>
-            <p>Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com</p>
-            <p style="margin-top: 8px; color: #9ca3af; font-style: italic;">
-              This is a computer-generated document and does not require a signature
-            </p>
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 11px;">
+            <div style="margin-bottom: 5px;">
+              <strong>ANASOL CONSULTANCY SERVICES PVT LTD</strong> | 
+              #1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039 |
+              Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com
+            </div>
+            <div style="color: #999; font-style: italic;">
+              This is a system generated document and does not require signature
+            </div>
           </div>
         </div>
       `;
-                    
 
       document.body.appendChild(payslipElement);
 
       const canvas = await html2canvas(payslipElement, {
         scale: 2,
         useCORS: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff'
       });
 
       document.body.removeChild(payslipElement);
@@ -1204,7 +1203,7 @@ const formatNumber = (value, decimals = 1) => {
                 }`}>Bank A/C Name:</span>
                 <span className={`font-semibold ${
                   isDark ? 'text-white' : 'text-gray-800'
-                }`}>{employee.empName}</span>
+                }`}>{employee.bankName}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className={`font-medium ${

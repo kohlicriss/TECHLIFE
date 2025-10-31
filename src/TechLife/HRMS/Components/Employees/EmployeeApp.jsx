@@ -620,6 +620,7 @@ function EmployeeApp() {
             setFlippedCard(null);
         }
     };
+    
    const handlePayRollClick = (employee) => {
     if (employee) {
     

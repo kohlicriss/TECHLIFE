@@ -482,328 +482,328 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const AddEmployeeForm = ({ isAdding, newEmployee, onEmployeeChange, onSave, onCancel, loading }) => { 
-  const { theme } = useContext(Context);
-  const isDark = theme === "dark";
+// const AddEmployeeForm = ({ isAdding, newEmployee, onEmployeeChange, onSave, onCancel, loading }) => { 
+//   const { theme } = useContext(Context);
+//   const isDark = theme === "dark";
 
-  if (!isAdding) return null;
+//   if (!isAdding) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className={`rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
-        isDark ? 'bg-gray-800' : 'bg-white'
-      }`}>
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
-          <h2 className="text-2xl font-bold">Add New Employee</h2>
-          <p className="opacity-90">Fill in the employee details below</p>
-        </div>
+//   return (
+//     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+//       <div className={`rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
+//         isDark ? 'bg-gray-800' : 'bg-white'
+//       }`}>
+//         <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
+//           <h2 className="text-2xl font-bold">Add New Employee</h2>
+//           <p className="opacity-90">Fill in the employee details below</p>
+//         </div>
         
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <div className="md:col-span-2">
-              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
-                isDark ? 'text-white' : 'text-gray-800'
-              }`}>Personal Information</h3>
-            </div>
+//         <div className="p-6">
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//             {/* Personal Information */}
+//             <div className="md:col-span-2">
+//               <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+//                 isDark ? 'text-white' : 'text-gray-800'
+//               }`}>Personal Information</h3>
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Employee ID *</label>
-              <input
-                type="text"
-                value={newEmployee.employeeId}
-                onChange={(e) => onEmployeeChange('employeeId', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="e.g., ACS00000001"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Employee ID *</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.employeeId}
+//                 onChange={(e) => onEmployeeChange('employeeId', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="e.g., ACS00000001"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Employee Name *</label>
-              <input
-                type="text"
-                value={newEmployee.employeeName}
-                onChange={(e) => onEmployeeChange('employeeName', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="Full name"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Employee Name *</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.employeeName}
+//                 onChange={(e) => onEmployeeChange('employeeName', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="Full name"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Email *</label>
-              <input
-                type="email"
-                value={newEmployee.email}
-                onChange={(e) => onEmployeeChange('email', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="email@company.com"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Email *</label>
+//               <input
+//                 type="email"
+//                 value={newEmployee.email}
+//                 onChange={(e) => onEmployeeChange('email', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="email@company.com"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Phone Number</label>
-              <input
-                type="tel"
-                value={newEmployee.phoneNumber}
-                onChange={(e) => onEmployeeChange('phoneNumber', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="9876543210"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Phone Number</label>
+//               <input
+//                 type="tel"
+//                 value={newEmployee.phoneNumber}
+//                 onChange={(e) => onEmployeeChange('phoneNumber', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="9876543210"
+//               />
+//             </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Designation</label>
-              <input
-                type="text"
-                value={newEmployee.designation}
-                onChange={(e) => onEmployeeChange('designation', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="e.g., Software Engineer"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Designation</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.designation}
+//                 onChange={(e) => onEmployeeChange('designation', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="e.g., Software Engineer"
+//               />
+//             </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Department</label>
-              <input
-                type="text"
-                value={newEmployee.department}
-                onChange={(e) => onEmployeeChange('department', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="e.g., Engineering"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Department</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.department}
+//                 onChange={(e) => onEmployeeChange('department', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="e.g., Engineering"
+//               />
+//             </div>
 
-            {/* Salary Information */}
-            <div className="md:col-span-2">
-              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
-                isDark ? 'text-white' : 'text-gray-800'
-              }`}>Salary Information</h3>
-            </div>
+//             {/* Salary Information */}
+//             <div className="md:col-span-2">
+//               <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+//                 isDark ? 'text-white' : 'text-gray-800'
+//               }`}>Salary Information</h3>
+//             </div>
             
-            <div className="md:col-span-2">
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Annual Salary (LPA)</label>
-              <input
-                type="number"
-                value={newEmployee.annualSalary}
-                onChange={(e) => onEmployeeChange('annualSalary', e.target.value === '' ? '' : Number(e.target.value))}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="6.0"
-                step="0.1"
-                min="0"
-              />
-            </div>
+//             <div className="md:col-span-2">
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Annual Salary (LPA)</label>
+//               <input
+//                 type="number"
+//                 value={newEmployee.annualSalary}
+//                 onChange={(e) => onEmployeeChange('annualSalary', e.target.value === '' ? '' : Number(e.target.value))}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="6.0"
+//                 step="0.1"
+//                 min="0"
+//               />
+//             </div>
 
-            {/* Bank Details */}
-            <div className="md:col-span-2">
-              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
-                isDark ? 'text-white' : 'text-gray-800'
-              }`}>Bank Details</h3>
-            </div>
+//             {/* Bank Details */}
+//             <div className="md:col-span-2">
+//               <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+//                 isDark ? 'text-white' : 'text-gray-800'
+//               }`}>Bank Details</h3>
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Account Number</label>
-              <input
-                type="text"
-                value={newEmployee.accountNumber}
-                onChange={(e) => onEmployeeChange('accountNumber', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="9861376290"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Account Number</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.accountNumber}
+//                 onChange={(e) => onEmployeeChange('accountNumber', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="9861376290"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>IFSC Code</label>
-              <input
-                type="text"
-                value={newEmployee.ifsccode}
-                onChange={(e) => onEmployeeChange('ifsccode', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="SBIN0001234"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>IFSC Code</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.ifsccode}
+//                 onChange={(e) => onEmployeeChange('ifsccode', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="SBIN0001234"
+//               />
+//             </div>
             
-            <div className="md:col-span-2">
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Bank Name</label>
-              <input
-                type="text"
-                value={newEmployee.bankName}
-                onChange={(e) => onEmployeeChange('bankName', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="State Bank of India"
-              />
-            </div>
+//             <div className="md:col-span-2">
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Bank Name</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.bankName}
+//                 onChange={(e) => onEmployeeChange('bankName', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="State Bank of India"
+//               />
+//             </div>
 
-            {/* Government Identifiers */}
-            <div className="md:col-span-2">
-              <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
-                isDark ? 'text-white' : 'text-gray-800'
-              }`}>Government Identifiers</h3>
-            </div>
+//             {/* Government Identifiers */}
+//             <div className="md:col-span-2">
+//               <h3 className={`text-lg font-semibold mb-4 border-l-4 border-green-500 pl-3 ${
+//                 isDark ? 'text-white' : 'text-gray-800'
+//               }`}>Government Identifiers</h3>
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>PF Number</label>
-              <input
-                type="text"
-                value={newEmployee.pfnum}
-                onChange={(e) => onEmployeeChange('pfnum', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="PF123456"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>PF Number</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.pfnum}
+//                 onChange={(e) => onEmployeeChange('pfnum', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="PF123456"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>PAN Number</label>
-              <input
-                type="text"
-                value={newEmployee.panNumber}
-                onChange={(e) => onEmployeeChange('panNumber', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="ABCDE1234F"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>PAN Number</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.panNumber}
+//                 onChange={(e) => onEmployeeChange('panNumber', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="ABCDE1234F"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>Aadhar Number</label>
-              <input
-                type="text"
-                value={newEmployee.aadharNumber}
-                onChange={(e) => onEmployeeChange('aadharNumber', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="123412341234"
-              />
-            </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>Aadhar Number</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.aadharNumber}
+//                 onChange={(e) => onEmployeeChange('aadharNumber', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="123412341234"
+//               />
+//             </div>
             
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>UAN Number</label>
-              <input
-                type="text"
-                value={newEmployee.uanNumber}
-                onChange={(e) => onEmployeeChange('uanNumber', e.target.value)}
-                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800'
-                }`}
-                placeholder="UAN123456789"
-              />
-            </div>
-          </div>
+//             <div>
+//               <label className={`block text-sm font-medium mb-2 ${
+//                 isDark ? 'text-gray-300' : 'text-gray-700'
+//               }`}>UAN Number</label>
+//               <input
+//                 type="text"
+//                 value={newEmployee.uanNumber}
+//                 onChange={(e) => onEmployeeChange('uanNumber', e.target.value)}
+//                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
+//                   isDark 
+//                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+//                     : 'bg-white border-gray-300 text-gray-800'
+//                 }`}
+//                 placeholder="UAN123456789"
+//               />
+//             </div>
+//           </div>
 
-          {/* Action Buttons */}
-          <div className={`flex gap-4 justify-end pt-6 mt-6 border-t ${
-            isDark ? 'border-gray-700' : 'border-gray-200'
-          }`}>
-            <button
-              onClick={onCancel}
-              disabled={loading}
-              className={`px-6 py-2 border rounded-lg transition-colors font-medium disabled:opacity-50 ${
-                isDark 
-                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onSave}
-              disabled={loading}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Adding...
-                </>
-              ) : (
-                'Add Employee'
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+//           {/* Action Buttons */}
+//           <div className={`flex gap-4 justify-end pt-6 mt-6 border-t ${
+//             isDark ? 'border-gray-700' : 'border-gray-200'
+//           }`}>
+//             <button
+//               onClick={onCancel}
+//               disabled={loading}
+//               className={`px-6 py-2 border rounded-lg transition-colors font-medium disabled:opacity-50 ${
+//                 isDark 
+//                   ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+//                   : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+//               }`}
+//             >
+//               Cancel
+//             </button>
+//             <button
+//               onClick={onSave}
+//               disabled={loading}
+//               className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+//             >
+//               {loading ? (
+//                 <>
+//                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+//                   Adding...
+//                 </>
+//               ) : (
+//                 'Add Employee'
+//               )}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
 // Edit Form Component
 const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancelEdit, loading }) => {
@@ -813,7 +813,7 @@ const EditEmployeeForm = ({ editingEmployee, onInputChange, onSaveEdit, onCancel
   if (!editingEmployee) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+   <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className={`rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto ${
         isDark ? 'bg-gray-800' : 'bg-white'
       }`}>
@@ -1149,19 +1149,7 @@ const [newEmployee, setNewEmployee] = useState({
                   'July', 'August', 'September', 'October', 'November', 'December'];
   const years = ['2023', '2024', '2025'];
 
-const filteredEmployees = employees.filter(emp => {
-  if (!emp) return false;
 
-
-  const searchLower = searchTerm.toLowerCase().trim();
-  
-  const matchesSearch = 
-    (emp.empName?.toLowerCase().includes(searchLower) || false) ||
-    (emp.designation?.toLowerCase().includes(searchLower) || false) ||
-    (emp.employeeId?.toLowerCase().includes(searchLower) || false) ||
-    (emp.email?.toLowerCase().includes(searchLower) || false);
-;
-});
 
 
 
@@ -1385,213 +1373,164 @@ const handleDownloadPayslip = async (employee, data = {}) => {
       payrollData = null;
     }
 
-    // Create a combined data object for transformation
-  // Extract attendance data from different possible locations
-let attendanceData = {};
+    // Use payroll data if available, otherwise use employee data with calculations
+    const finalData = payrollData ? {
+      ...employee,
+      ...payrollData
+    } : employee;
 
-if (payrollData) {
-  console.log('=== PAYROLL DATA DEBUG ===');
-  console.log('Full payroll data:', payrollData);
-  console.log('Available keys:', Object.keys(payrollData));
-  
-  // Check for attendance data in different structures
-  if (payrollData.attendance) {
-    console.log('Attendance object found:', payrollData.attendance);
-    console.log('Attendance keys:', Object.keys(payrollData.attendance));
-  }
-  
-  if (payrollData.attendanceDetails) {
-    console.log('AttendanceDetails object found:', payrollData.attendanceDetails);
-    console.log('AttendanceDetails keys:', Object.keys(payrollData.attendanceDetails));
-  }
-  
-  // Log all numeric fields that might contain attendance data
-  const numericFields = {};
-  Object.keys(payrollData).forEach(key => {
-    const value = payrollData[key];
-    if (typeof value === 'number') {
-      numericFields[key] = value;
-    }
-  });
-  console.log('All numeric fields:', numericFields);
-  
-  // Try multiple possible locations for attendance data
-  attendanceData = {
-    standardDays: Number(payrollData.standardDays) || 
-                  Number(payrollData.totalWorkingDays) || 
-                  Number(payrollData.workingDays) ||
-                  Number(payrollData.attendance?.standardDays) ||
-                  Number(payrollData.attendanceDetails?.standardDays) || 
-                  26,
-    payableDays: Number(payrollData.payableDays) || 
-                 Number(payrollData.paidDays) || 
-                 Number(payrollData.attendance?.payableDays) ||
-                 Number(payrollData.attendanceDetails?.payableDays) || 
-                 26,
-    lossOfPayDays: Number(payrollData.lossOfPayDays) || 
-                   Number(payrollData.lopDays) ||
-                   Number(payrollData.attendance?.lossOfPayDays) ||
-                   Number(payrollData.attendanceDetails?.lossOfPayDays) || 
-                   0,
-    lopReversalDays: Number(payrollData.lopReversalDays) || 
-                     Number(payrollData.attendance?.lopReversalDays) ||
-                     Number(payrollData.attendanceDetails?.lopReversalDays) || 
-                     0,
-    arrearDays: Number(payrollData.arrearDays) || 
-                Number(payrollData.attendance?.arrearDays) ||
-                Number(payrollData.attendanceDetails?.arrearDays) || 
-                0,
-    hike: Number(payrollData.hike) || Number(payrollData.hikePercentage) || 0
-  };
-  
-  console.log('=== EXTRACTED ATTENDANCE DATA ===');
-  console.log('Final attendance data:', attendanceData);
-  console.log('Standard Days (raw):', payrollData.standardDays);
-  console.log('Payable Days (raw):', payrollData.payableDays);
-  console.log('Loss of Pay Days (raw):', payrollData.lossOfPayDays);
-} else {
-  console.log('No payroll data found, using defaults');
-  attendanceData = {
-    standardDays: 26,
-    payableDays: 26,
-    lossOfPayDays: 0,
-    lopReversalDays: 0,
-    arrearDays: 0,
-    hike: 0
-  };
-}
+    console.log('Final data for payslip:', finalData);
 
-    // Transform the data to ensure we have proper structure
-    const transformedData = transformEmployeeToFrontend(attendanceData);
-
-    // Use the transformed data for generating payslip
-    const grossEarnings = transformedData.grossEarnings || 0;
-    const totalDeductions = transformedData.totalDeductions || 0;
-    const bonusAmount = transformedData.bonus || 0;
-    const netSalary = transformedData.netSalary || (grossEarnings - totalDeductions + bonusAmount);
-
-    // Extract individual components
-    const basicSalary = transformedData.earnings?.find(e => e.name === 'BASIC')?.total || 0;
-    const hraAmount = transformedData.earnings?.find(e => e.name === 'HRA')?.total || 0;
-    const conveyanceAllowance = transformedData.earnings?.find(e => e.name === 'CONVEYANCE')?.total || 0;
-    const medicalAllowance = transformedData.earnings?.find(e => e.name === 'MEDICAL')?.total || 0;
-    const specialAllowance = transformedData.earnings?.find(e => e.name === 'SPECIAL ALLOWANCE')?.total || 0;
+   
+    const basicSalary = finalData.basicSalary || 0;
+    const hraAmount = finalData.hraAmount || finalData.hra || 0;
+    const conveyanceAllowance = finalData.conveyanceAllowance || 0;
+    const medicalAllowance = finalData.medicalAllowance || 0;
+    const specialAllowance = finalData.specialAllowance || 0;
     
-    const providentFund = transformedData.deductions?.find(d => d.name === 'PROVIDENT FUND')?.amount || 0;
-    const professionalTax = transformedData.deductions?.find(d => d.name === 'PROFESSIONAL TAX')?.amount || 0;
-    const incomeTax = transformedData.deductions?.find(d => d.name === 'INCOME TAX')?.amount || 0;
+    const providentFund = finalData.providentFund || 0;
+    const professionalTax = finalData.professionalTax || 0;
+    const incomeTax = finalData.incomeTax || 0;
+
+    const bonusAmount = finalData.bonusAmount || finalData.bonus || 0;
+    const hikePercentage = finalData.hikePercentage || finalData.hike || 0;
+
+    // Attendance data
+    const totalWorkingDays = finalData.totalWorkingDays || finalData.standardDays || 23;
+    const daysPresent = finalData.daysPresent || finalData.payableDays || 20;
+    const paidDays = finalData.paidDays || finalData.payableDays || 20;
+    const lossOfPayDays = finalData.lossOfPayDays || finalData.lopDays || 2;
+
+    // Calculate totals
+    const grossEarnings = basicSalary + hraAmount + conveyanceAllowance + medicalAllowance + specialAllowance + bonusAmount;
+    const totalDeductions = providentFund + professionalTax + incomeTax;
+    const netSalary = grossEarnings - totalDeductions;
+
+    console.log('Calculated values for PDF:', {
+      basicSalary, hraAmount, conveyanceAllowance, medicalAllowance, specialAllowance,
+      providentFund, professionalTax, incomeTax, bonusAmount, grossEarnings, totalDeductions, netSalary
+    });
+
+    // Helper function for pay period formatting
+    const formatPayPeriod = () => {
+      return `${selectedMonth} ${selectedYear}`;
+    };
 
     // Create a temporary div to render the payslip HTML for PDF conversion
     const payslipElement = document.createElement('div');
     payslipElement.style.position = 'absolute';
     payslipElement.style.left = '-9999px';
     payslipElement.style.width = '800px';
-    payslipElement.style.padding = '10px';
+    payslipElement.style.padding = '20px';
     payslipElement.style.backgroundColor = 'white';
-    payslipElement.style.fontFamily = 'Arial, sans-serif';
+    payslipElement.style.fontFamily = 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
 
-    // Set the HTML content - Use the actual data from attendanceData
+    // Use your EXACT styling template
     payslipElement.innerHTML = `
-      <div style="font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto;">
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; color: #333; line-height: 1.3; font-size: 20px;">
         <!-- Company Header -->
-        <div style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
-          <div style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
-          <div style="font-size: 22px; opacity: 0.9; margin-bottom: 12px;">SALARY SLIP</div>
-          <div style="background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold;">
-            ${selectedMonth} ${selectedYear}
+        <div style="border-bottom: 2px solid #2c5aa0; padding: 20px 0 10px 0; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div>
+              <div style="font-size: 20px; font-weight: 600; color: #2c5aa0; letter-spacing: 0.5px;">ANASOL CONSULTANCY SERVICES PVT LTD</div>
+              <div style="font-size: 12px; color: #666; margin-top: 3px;">
+                #1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 10px; font-weight: 600; color: #2c5aa0; margin-bottom: 3px;">SALARY SLIP</div>
+              <div style="font-size: 12px; color: #d9534f; font-weight: 500; background: #f8f9fa; padding: 3px 10px; border-radius: 3px; display: inline-block;">
+                ${formatPayPeriod()}
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Employee Information -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Employee Name:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.employeeName}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Employee ID:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.employeeId}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Designation:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.designation || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Department:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.department || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-              <span style="font-weight: 600; color: #4b5563;">Phone No:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.phoneNo || transformedData.phoneNumber || 'N/A'}</span>
-            </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">EMPLOYEE DETAILS</div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555; width: 40%;">Employee Name:</td>
+                <td style="padding: 6px 0; font-weight: 600;">${finalData.employeeName || finalData.empName || ''}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555;">Employee ID:</td>
+                <td style="padding: 6px 0;">${finalData.employeeId || ''}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555;">Designation:</td>
+                <td style="padding: 6px 0;">${finalData.designation || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555;">Department:</td>
+                <td style="padding: 6px 0;">${finalData.department || 'N/A'}</td>
+              </tr>
+            </table>
           </div>
 
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">Bank A/C Name:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.bankAccountName || transformedData.employeeName}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">PAN No:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.panNo || transformedData.panNumber || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">PF No:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.pfNo || transformedData.pfnum || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <span style="font-weight: 600; color: #4b5563;">IFSC Code:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.ifsccode || 'N/A'}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-              <span style="font-weight: 600; color: #4b5563;">Email:</span>
-              <span style="font-weight: 500; color: #1f2937;">${transformedData.email || 'N/A'}</span>
-            </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">BANK & STATUTORY DETAILS</div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555; width: 40%;">Bank A/C Name:</td>
+                <td style="padding: 6px 0;">${finalData.employeeName || finalData.empName || ''}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555;">PAN No:</td>
+                <td style="padding: 6px 0;">${finalData.panNumber || finalData.panNo || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555;">PF No:</td>
+                <td style="padding: 6px 0;">${finalData.pfnum || finalData.pfNo || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; font-weight: 500; color: #555;">IFSC Code:</td>
+                <td style="padding: 6px 0;">${finalData.ifsccode || 'N/A'}</td>
+              </tr>
+            </table>
           </div>
         </div>
 
-        <!-- Attendance Information - Use attendanceData instead of data -->
-        // Attendance Information - Use attendanceData instead of data
-<div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ATTENDANCE INFORMATION</div>
-<div style="padding: 0 30px;">
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <thead>
-      <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-        <th style="padding: 12px; text-align: center; font-weight: 600;">Standard Days</th>
-        <th style="padding: 12px; text-align: center; font-weight: 600;">Payable Days</th>
-        <th style="padding: 12px; text-align: center; font-weight: 600;">Loss of Pay Days</th>
-        <th style="padding: 12px; text-align: center; font-weight: 600;">LOP Reversal Days</th>
-        <th style="padding: 12px; text-align: center; font-weight: 600;">Arrear Days</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.standardDays)}</td>
-        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.payableDays)}</td>
-        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.lossOfPayDays)}</td>
-        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.lopReversalDays)}</td>
-        <td style="padding: 12px; text-align: center; background: white;">${formatNumber(attendanceData.arrearDays)}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-        <!-- Bonus Information -->
-        ${bonusAmount > 0 ? `
-        <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">ADDITIONAL COMPENSATION</div>
-        <div style="padding: 0 30px;">
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <!-- Attendance Information -->
+        <div style="margin: 20px 0;">
+          <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">ATTENDANCE SUMMARY</div>
+          <table style="width: 100%; border-collapse: collapse; background: #f8f9fa; border-radius: 4px; overflow: hidden; font-size: 12px;">
             <thead>
-              <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                <th style="padding: 12px; text-align: center; font-weight: 600;">Bonus Amount</th>
-                <th style="padding: 12px; text-align: center; font-weight: 600;">Hike Percentage</th>
+              <tr style="background: #2c5aa0; color: white;">
+                <th style="padding: 10px; text-align: center; font-weight: 600;">Total Working Days</th>
+                <th style="padding: 10px; text-align: center; font-weight: 600;">Days Present</th>
+                <th style="padding: 10px; text-align: center; font-weight: 600;">Paid Days</th>
+                <th style="padding: 10px; text-align: center; font-weight: 600;">Loss of Pay Days</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td style="padding: 12px; text-align: center; background: white;">₹${bonusAmount.toLocaleString()}</td>
-                <td style="padding: 12px; text-align: center; background: white;">${attendanceData.hike}%</td>
+                <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(totalWorkingDays)}</td>
+                <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(daysPresent)}</td>
+                <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(paidDays)}</td>
+                <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0;">${formatNumber(lossOfPayDays)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Bonus Information - Only show if bonus exists -->
+        ${bonusAmount > 0 ? `
+        <div style="margin: 12px 0;">
+          <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">ADDITIONAL COMPENSATION</div>
+          <table style="width: 100%; border-collapse: collapse; background: #f8f9fa; border-radius: 4px; overflow: hidden; font-size: 12px;">
+            <thead>
+              <tr style="background: #28a745; color: white;">
+                <th style="padding: 10px; text-align: center; font-weight: 600;">Bonus Amount</th>
+                <th style="padding: 10px; text-align: center; font-weight: 600;">Hike Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0; font-weight: 600; color: #28a745;">${formatCurrency(bonusAmount)}</td>
+                <td style="padding: 10px; text-align: center; background: white; border: 1px solid #e0e0e0; font-weight: 600; color: #28a745;">${hikePercentage}%</td>
               </tr>
             </tbody>
           </table>
@@ -1600,49 +1539,43 @@ if (payrollData) {
 
         <!-- Salary Details -->
         <div style="margin: 20px 0;">
-          <div style="font-size: 18px; font-weight: bold; color: #1e40af; margin-bottom: 12px; border-left: 4px solid #1e40af; padding-left: 10px;">SALARY DETAILS</div>
+          <div style="font-size: 14px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e0e0e0;">SALARY BREAKUP</div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <!-- Earnings -->
             <div>
-              <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">EARNINGS</div>
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                <thead>
-                  <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                    <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
-                  </tr>
-                </thead>
+              <div style="font-size: 20px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; background: #f8f9fa; padding: 6px 10px; border-radius: 3px;">EARNINGS</div>
+              <table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; font-size: 12px;">
                 <tbody>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Basic Salary</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(basicSalary)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Basic Salary</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(basicSalary)}</td>
                   </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">HRA</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(hraAmount)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">HRA</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(hraAmount)}</td>
                   </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Conveyance Allowance</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(conveyanceAllowance)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Conveyance Allowance</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(conveyanceAllowance)}</td>
                   </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Medical Allowance</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(medicalAllowance)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Medical Allowance</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(medicalAllowance)}</td>
                   </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Special Allowance</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(specialAllowance)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Special Allowance</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(specialAllowance)}</td>
                   </tr>
                   ${bonusAmount > 0 ? `
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Bonus</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(bonusAmount)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Bonus</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(bonusAmount)}</td>
                   </tr>
                   ` : ''}
-                  <tr style="background: #dbeafe; font-weight: bold;">
-                    <td style="padding: 12px;"><strong>GROSS EARNINGS</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>₹${formatCurrency(grossEarnings)}</strong></td>
+                  <tr style="background: #e9ecef; font-weight: 600;">
+                    <td style="padding: 10px;">Gross Earnings</td>
+                    <td style="padding: 10px; text-align: right;">${formatCurrency(grossEarnings)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1650,34 +1583,28 @@ if (payrollData) {
 
             <!-- Deductions -->
             <div>
-              <div style="font-size: 16px; font-weight: bold; color: #1e40af; margin-bottom: 8px; border-left: 4px solid #1e40af; padding-left: 10px;">DEDUCTIONS</div>
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                <thead>
-                  <tr style="background: linear-gradient(135deg, #1e40af, #3730a3); color: white;">
-                    <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
-                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount (₹)</th>
-                  </tr>
-                </thead>
+              <div style="font-size: 20px; font-weight: 600; color: #2c5aa0; margin-bottom: 10px; background: #f8f9fa; padding: 6px 10px; border-radius: 3px;">DEDUCTIONS</div>
+              <table style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; font-size: 12px;">
                 <tbody>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Provident Fund</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(providentFund)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Provident Fund</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(providentFund)}</td>
                   </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Professional Tax</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(professionalTax)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Professional Tax</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(professionalTax)}</td>
                   </tr>
-                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Income Tax</td>
-                    <td style="padding: 12px; text-align: right;">₹${formatCurrency(incomeTax)}</td>
+                  <tr>
+                    <td style="padding: 10px 10px; border-bottom: 1px solid #e0e0e0;">Income Tax</td>
+                    <td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #e0e0e0;">${formatCurrency(incomeTax)}</td>
                   </tr>
-                  <tr style="background: #dbeafe; font-weight: bold;">
-                    <td style="padding: 12px;"><strong>TOTAL DEDUCTIONS</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>₹${formatCurrency(totalDeductions)}</strong></td>
+                  <tr style="background: #e9ecef; font-weight: 600;">
+                    <td style="padding: 10px;">Total Deductions</td>
+                    <td style="padding: 10px; text-align: right;">${formatCurrency(totalDeductions)}</td>
                   </tr>
-                  <tr style="background: #dcfce7; font-weight: bold; color: #166534; font-size: 18px;">
-                    <td style="padding: 12px;"><strong>NET SALARY</strong></td>
-                    <td style="padding: 12px; text-align: right;"><strong>₹${formatCurrency(netSalary)}</strong></td>
+                  <tr style="background: #d4edda; font-weight: 700; color: #155724; border: 2px solid #c3e6cb;">
+                    <td style="padding: 12px 10px; font-size: 20px;">NET SALARY PAYABLE</td>
+                    <td style="padding: 12px 10px; text-align: right; font-size: 20px;">${formatCurrency(netSalary)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1686,12 +1613,15 @@ if (payrollData) {
         </div>
 
         <!-- Footer -->
-        <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px;">
-          <p>#1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039</p>
-          <p>Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com</p>
-          <p style="margin-top: 8px; color: #9ca3af; font-style: italic;">
-            This is a computer-generated document and does not require a signature
-          </p>
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #666; font-size: 11px;">
+          <div style="margin-bottom: 5px;">
+            <strong>ANASOL CONSULTANCY SERVICES PVT LTD</strong> | 
+            #1016, 11th Floor, DSL Abacus IT Park, Uppal Hyderabad-500039 |
+            Ph: 9632091726 | Email: hr@anasolconsultancy.com | www.anasol.com
+          </div>
+          <div style="color: #999; font-style: italic;">
+            This is a system generated document and does not require signature
+          </div>
         </div>
       </div>
     `;
@@ -1703,7 +1633,9 @@ if (payrollData) {
     const canvas = await html2canvas(payslipElement, {
       scale: 2, // Higher quality
       useCORS: true,
-      logging: false
+      logging: false,
+      width: payslipElement.offsetWidth,
+      height: payslipElement.offsetHeight
     });
 
     // Remove temporary element
@@ -1714,13 +1646,25 @@ if (payrollData) {
     // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
     const imgWidth = 210; 
+    const pageHeight = 297;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
-    // Fit to single page
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // Add new pages if needed
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
 
     // Save PDF
-    const fileName = `Payslip_${transformedData.employeeName}_${selectedMonth}_${selectedYear}.pdf`;
+    const fileName = `Payslip_${finalData.employeeName || finalData.empName}_${selectedMonth}_${selectedYear}.pdf`;
     pdf.save(fileName);
     
     console.log('PDF payslip downloaded successfully:', fileName);
@@ -1732,6 +1676,7 @@ if (payrollData) {
   }
 };
 
+
 // Helper function to format numbers with optional decimals
 const formatNumber = (value, decimals = 1) => {
   const num = Number(value);
@@ -1740,12 +1685,15 @@ const formatNumber = (value, decimals = 1) => {
 
 
 
-// Currency formatting function with Yen symbol and 2 decimal places
+// Currency formatting function with proper Indian formatting
 const formatCurrency = (amount) => {
+  const num = Number(amount);
+  if (isNaN(num)) return '0.00';
+  
   return new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(amount);
+  }).format(num);
 };
 
 
@@ -2395,6 +2343,19 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
   };
 });
 
+const filteredEmployeesWithSalary = employeesWithSalary.filter(employee => {
+  if (!searchTerm.trim()) return true; 
+  const searchLower = searchTerm.toLowerCase().trim();
+  
+  return (
+    (employee.employeeName?.toLowerCase().includes(searchLower) || false) ||
+    (employee.designation?.toLowerCase().includes(searchLower) || false) ||
+    (employee.employeeId?.toLowerCase().includes(searchLower) || false) ||
+    (employee.email?.toLowerCase().includes(searchLower) || false) ||
+    (employee.department?.toLowerCase().includes(searchLower) || false)
+  );
+});
+
   // If an employee is selected, show their payslip
   if (selectedEmployee && !isEditing) {
     const paySlipData = selectedEmployee;
@@ -2832,14 +2793,14 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
       {/* Add Employee Form Modal */}
-      <AddEmployeeForm
+      {/* <AddEmployeeForm
         isAdding={isAdding}
         newEmployee={newEmployee}
         onEmployeeChange={handleNewEmployeeChange}
         onSave={handleSaveNewEmployee}
         onCancel={handleCancelAdd}
         loading={loading}
-      />
+      /> */}
       
       {/* Edit Form Modal */}
       {isEditing && (
@@ -2950,7 +2911,7 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
       </div>
     </div>
     <div className="flex gap-4">
-      <button 
+      {/* <button 
         onClick={handleAddEmployee}
         className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg font-medium flex items-center gap-2"
       >
@@ -2958,7 +2919,7 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
         Add Employee
-      </button>
+      </button> */}
       <button 
         onClick={handleDownloadExcel}
         className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg font-medium"
@@ -3026,8 +2987,8 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
           </tr>
         </thead>
         <tbody>
-          {employeesWithSalary.length > 0 ? (
-            employeesWithSalary.map(employee => (
+          {filteredEmployeesWithSalary.length > 0 ? (
+    filteredEmployeesWithSalary.map(employee => (
               <tr key={employee.id} className={`transition-colors ${
                 isDark ? 'hover:bg-gray-700' : 'hover:bg-blue-50'
               }`}>
@@ -3073,12 +3034,14 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
                     >
                       View
                     </button>
+                     
                     <button 
                       onClick={() => handleEdit(employee)}
                       className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium text-sm"
                     >
                       Edit
                     </button>
+                     
                     <button 
                       onClick={() => handleDownloadPayslip(employee)}
                       className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-colors font-medium text-sm"
@@ -3090,13 +3053,13 @@ const employeesWithSalary = (employeesData || []).map((employee, index) => {
               </tr>
             ))
           ) : (
-            <tr>
-              <td colSpan="9" className={`px-6 py-8 text-center ${
-                isDark ? 'text-gray-400' : 'text-gray-500'
-              }`}>
-                {apiLoading ? 'Loading employees...' : 'No employees found. Add some employees to get started.'}
-              </td>
-            </tr>
+             <tr>
+      <td colSpan="9" className={`px-6 py-8 text-center ${
+        isDark ? 'text-gray-400' : 'text-gray-500'
+      }`}>
+        {searchTerm ? `No employees found matching "${searchTerm}"` : 'No employees found. Add some employees to get started.'}
+      </td>
+    </tr>
           )}
         </tbody>
       </table>
