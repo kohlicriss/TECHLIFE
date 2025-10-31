@@ -173,21 +173,14 @@ const parseToISTDate = (timeStr, dateRef = null) => {
 const toISTTimeDisplay = (timeStr, dateRef = null) => {
   if (!timeStr) return 'N/A';
   const raw = String(timeStr).trim();
-
-  // If it's a plain time like "HH:mm" -> compute by string arithmetic and format
   const hhmm = tryNormalizeTo24(raw);
   if (hhmm && !/[TtZz]/.test(raw)) {
-    // addMinutesToTimeString returns HH:MM after adding IST_OFFSET_MINUTES
     const shifted = addMinutesToTimeString(hhmm, IST_OFFSET_MINUTES);
     return formatHHMMTo12h(shifted);
   }
-
-  // Otherwise try parsing as Date and format in Asia/Kolkata timezone
   const parsed = parseToDateSafe(raw, dateRef);
   if (!parsed) return raw;
-
   try {
-    // Use Intl to force India timezone display regardless of user's browser TZ
     return new Intl.DateTimeFormat('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -195,19 +188,13 @@ const toISTTimeDisplay = (timeStr, dateRef = null) => {
       timeZone: 'Asia/Kolkata'
     }).format(parsed);
   } catch {
-    // Fallback to local formatting (should rarely happen)
     return parsed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 };
-
-// convert gross/effective value to display string (HH:MM)
 const toHHMMDisplay = (value) => {
   const minutes = parseEffectiveHours(value || '');
   return minutes > 0 ? formatMinutesToHHMM(minutes) : 'N/A';
 };
-
-// GraphQL endpoint & query (kept as-is)
-
 const DETAILS_QUERY = `
   query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
     getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
@@ -222,14 +209,6 @@ const DETAILS_QUERY = `
     }
   }
 `;
-// Mock Data
-const ATTENDANCE_DATA = [
-    { date: '17-10-2025', employeeId: 'EMP001', effectiveHour: '8.5', isPresent: 'Present', login: '09:00', logout: '17:30' },
-    { date: '16-10-2025', employeeId: 'EMP001', effectiveHour: 'N/A', isPresent: 'Absent', login: 'N/A', logout: 'N/A' },
-    { date: '15-10-2025', employeeId: 'EMP001', effectiveHour: 'N/A', isPresent: 'Holiday', login: 'N/A', logout: 'N/A' },
-];
-
-
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -249,7 +228,6 @@ const toIsoDate = (dateString) => {
 const toStandardDate = (isoDateString) => {
     if (!isoDateString) return '';
     const parts = isoDateString.split('-');
-    // Converts YYYY-MM-DD to DD-MM-YYYY for display/storage
     if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
@@ -257,10 +235,9 @@ const toStandardDate = (isoDateString) => {
 };
 
 /**
- * Common GraphQL Fetch Utility
- * @param {string} query - The GraphQL query or mutation string.
- * @param {object} variables - The variables object.
- * @returns {Promise<object>} - The data object from the GraphQL response.
+ * @param {string} query
+ * @param {object} variables 
+ * @returns {Promise<object>}
  */
 const executeGraphQL = async (query, variables = {}) => {
     try {
@@ -277,30 +254,22 @@ const executeGraphQL = async (query, variables = {}) => {
         }
         return resp?.data?.data ?? null;
     } catch (err) {
-        // surface helpful debug info
         console.error("executeGraphQL error:", err?.message || err, err?.response?.data || err);
         throw err;
     }
 };
-
 const GRAPHQL_URL = process.env.REACT_APP_HRMS_GRAPHQL_URL || "https://hrms.anasolconsultancyservices.com/api/attendance/graphql";
 const graphqlRequest = async (query, variables = {}) => {
   const url = GRAPHQL_URL;
   try {
-    // Choose client that likely has auth headers
     const client = (dashboardApi && typeof dashboardApi.post === "function") ? dashboardApi : axios;
-
-    // Build headers and ensure Authorization is provided from localStorage (Bearer token)
     const token = (() => {
       try { return localStorage.getItem('accessToken'); } catch { return null; }
     })();
     const headers = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    // Use absolute URL so axios does not mix baseURL/proxy paths
     const resp = await client.post(url, { query, variables }, { headers });
-
-    // GraphQL-level errors
     if (resp?.data?.errors && resp.data.errors.length) {
       const msg = resp.data.errors.map(e => e.message).join("; ");
       const err = new Error(msg);
@@ -308,7 +277,6 @@ const graphqlRequest = async (query, variables = {}) => {
       console.error("GraphQL response errors:", resp.data.errors);
       throw err;
     }
-
     return resp?.data?.data ?? null;
   } catch (err) {
     console.error("Error executing GraphQL operation:", err?.message || err, {
@@ -321,1698 +289,755 @@ const graphqlRequest = async (query, variables = {}) => {
   }
 };
 const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose }) => {
-
   const { userData } = useContext(Context);
-
   const employeeId = userData?.employeeId;
-
   const [attendanceData, setAttendanceData] = useState(null);
-
   const [eventsOnThisDay, setEventsOnThisDay] = useState(propEvents);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState(null);
-
-
 
   const dateString = dayData?.dateString || '';
 
-
-
   // helper: add IST offset (5:30) to an effectiveHours value and return HH:MM string
-
   const addIstToEffective = (effValue) => {
-
     try {
-
       const baseMinutes = parseEffectiveHours(effValue || '');
-
       if (!baseMinutes) return 'N/A';
-
       const adjusted = baseMinutes; 
-
       return formatMinutesToHHMM(adjusted);
-
     } catch {
-
       return 'N/A';
-
     }
-
   };
-
-
 
   // NEW helper: shift given time by IST_OFFSET_MINUTES and return localized 12-hour string
-
   // *** REPLACED WITH CORRECTED LOGIC ***
-
   const shiftTimeToISTDisplay = (timeStr, dateIso = null) => {
-
     if (!timeStr || timeStr === 'N/A') return 'N/A';
-
     
-
     const baseDateString = dateIso || new Date().toISOString().slice(0, 10); 
-
     let d = new Date(`${baseDateString}T${timeStr}`); 
-
     
-
     if (isNaN(d.getTime())) {
-
       try {
-
         const parts = timeStr.split(':');
-
         let h = parseInt(parts[0], 10) || 0;
-
         let m = parseInt(parts[1], 10) || 0;
-
         
-
         d = new Date(baseDateString);
-
         d.setHours(h, m, 0, 0);
-
       } catch {
-
         return timeStr;
-
       }
-
     }
-
-
 
     // Explicitly add 330 minutes (5 hours 30 minutes) as requested
-
     d.setMinutes(d.getMinutes() + IST_OFFSET_MINUTES); 
-
     
-
     // Format to 12-hour IST display
-
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
   };
-
   // *** END OF REPLACEMENT ***
 
-
-
   useEffect(() => {
-
     let mounted = true;
-
     if (!dateString || !employeeId) {
-
       // when using passed-in attendance, also convert times to IST and adjust effective hour
-
       const src = dayData?.attendance ?? null;
-
       if (src) {
-
         const dateIso = toIsoDate(dateString) || undefined;
-
         // USE shiftTimeToISTDisplay so times are explicitly +5:30
-
         const loginIst = shiftTimeToISTDisplay(src.login ?? src.loginTime ?? 'N/A', dateIso);
-
         const logoutIst = shiftTimeToISTDisplay(src.logout ?? src.logoutTime ?? 'N/A', dateIso);
-
         const effAdj = addIstToEffective(src.effectiveHour ?? src.effectiveHours ?? src.effectiveHour);
-
         setAttendanceData({
-
           ...src,
-
           login: loginIst,
-
           logout: logoutIst,
-
           effectiveHour: effAdj
-
         });
-
       } else {
-
         setAttendanceData(null);
-
       }
-
       setEventsOnThisDay(propEvents || []);
-
       setLoading(false);
-
       return;
-
     }
-
-
-
     const QUERY = `
-
      query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
-
         getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
-
           date
-
           event
-
           description
-
           employeeId
-
           isPresent
-
           login
-
           logout
-
           effectiveHours
-
           grossHours
-
           holiday
-
           mode
-
         }
-
       }
-
     `;
-
-
-
     const load = async () => {
-
       setLoading(true);
-
       try {
-
         const iso = toIsoDate(dateString);
-
         const variables = { employeeId, startDate: iso, endDate: iso };
-
         const data = await graphqlRequest(QUERY, variables);
-
         if (!mounted) return;
-
         const items = data?.getDetailsBetweenDates || [];
-
         const dayItem = items.find(i => i.date === dateString || i.date === iso) || null;
-
      if (dayItem) {
-
           const loginIst = shiftTimeToISTDisplay(dayItem.login ?? 'N/A', iso);
-
           const logoutIst = shiftTimeToISTDisplay(dayItem.logout ?? 'N/A', iso);
-
           const effAdj = addIstToEffective(dayItem.effectiveHours ?? dayItem.effectiveHour);
-
           setAttendanceData({
-
             employeeId: dayItem.employeeId || employeeId,
-
             date: dayItem.date || dateString,
-
             effectiveHour: effAdj,
-
             isPresent: dayItem.isPresent ?? 'N/A',
-
             login: loginIst,
-
             logout: logoutIst,
-
             holiday: dayItem.holiday ?? false,
-
             mode: dayItem.mode ?? null
-
           });
-
         } else {
-
-          // fallback to provided dayData attendance (also convert)
-
           const src = dayData?.attendance ?? { isPresent: 'N/A', login: 'N/A', logout: 'N/A', date: dateString };
-
           const srcIso = toIsoDate(src.date || dateString);
-
           setAttendanceData({
-
             ...src,
-
             login: shiftTimeToISTDisplay(src.login ?? 'N/A', srcIso),
-
             logout: shiftTimeToISTDisplay(src.logout ?? 'N/A', srcIso),
-
             effectiveHour: addIstToEffective(src.effectiveHour ?? src.effectiveHours),
-
             holiday: src.holiday ?? false
-
           });
-
         }
-
         const mappedEvents = items
-
           .filter(it => it.event || it.description || (typeof it.holiday !== 'undefined'))
-
           .map(it => ({
-
             event: it.event || 'Event',
-
             description: it.description || '',
-
             startDate: it.startDate || it.date,
-
             endDate: it.endDate || it.date,
-
             holiday: Boolean(it.holiday)
-
           }));
-
-        // If any event (backend or propEvents) marks this day as holiday, make sure attendanceData reflects that
-
         const propEventsList = propEvents || [];
-
-        const anyHolidayFromMapped = mappedEvents.some(ev => ev.holiday);
-
+        const anyHolidayFromMapped = mappedEvents.some(ev => ev.holiday)
         const anyHolidayFromProp = propEventsList.some(ev => ev && (ev.holiday === true || String(ev.holiday).toLowerCase() === 'true'));
-
         const anyHoliday = anyHolidayFromMapped || anyHolidayFromProp;
-
-        // If attendanceData exists and we detected a holiday override it; otherwise set it when building fallback
-
         if (anyHoliday) {
-
           setEventsOnThisDay(mappedEvents.length ? mappedEvents : propEventsList);
-
           setAttendanceData(prev => ({
-
             ...(prev || {}),
-
             holiday: true,
-
-            // prefer backend isPresent if provided, otherwise mark as 'Holiday'
-
             isPresent: prev && prev.isPresent ? prev.isPresent : 'Holiday'
-
           }));
-
         } else {
-
           setEventsOnThisDay(mappedEvents.length ? mappedEvents : propEventsList);
-
         }
-
-
-
-        
-
          setError(null);
-
       } catch (err) {
-
         console.error("DayDetailsModal fetch failed:", err);
-
         setError(err.message || "Failed to load details");
-
         const src = dayData?.attendance ?? null;
-
         if (src) {
-
           const srcIso = toIsoDate(src.date || dateString);
-
           setAttendanceData({
-
             ...src,
-
             login: shiftTimeToISTDisplay(src.login ?? 'N/A', srcIso),
-
             logout: shiftTimeToISTDisplay(src.logout ?? 'N/A', srcIso),
-
             effectiveHour: addIstToEffective(src.effectiveHour ?? src.effectiveHours)
-
           });
-
         } else {
-
           setAttendanceData(null);
-
         }
-
         setEventsOnThisDay(propEvents || []);
-
       } finally {
-
         if (mounted) setLoading(false);
-
       }
-
     };
-
-
-
     load();
-
     return () => { mounted = false; };
-
   }, [dateString, userData?.employeeId]);
-
   if (!dayData || dayData.type === 'blank') return null;
-
   if (loading) {
-
     return (
-
       <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
         <div className="bg-white/90 px-6 py-4 rounded-lg shadow-lg text-indigo-700 font-semibold">Loading Day Details…</div>
-
       </div>
-
     );
-
   }
-
   const displayAttendance = attendanceData || (dayData?.attendance ?? { isPresent: 'N/A', login: 'N/A', logout: 'N/A', date: dateString });
-
   return (
-
     <div
-
       role="dialog"
-
       aria-modal="true"
-
       aria-label={`Details for ${displayAttendance?.date || dateString}`}
-
       className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"
-
     >
-
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-
-
-
       <div className="relative w-full max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-0">
-
-        {/* Header */}
-
         <div className="md:col-span-2 flex items-center justify-between px-5 py-4 border-b">
-
           <div className="flex items-center gap-3">
-
             <Calendar className="w-6 h-6 text-indigo-600" />
-
             <div>
-
               <h3 className="text-lg font-bold text-indigo-700">Details — {MONTHS ? MONTHS[new Date().getMonth()] : ''} <span className="text-base font-medium text-gray-600"> {displayAttendance?.date || dateString}</span></h3>
-
               <p className="text-xs text-gray-500">Employee: <span className="font-medium text-gray-700">{displayAttendance?.employeeId || employeeId || "N/A"}</span></p>
-
             </div>
-
           </div>
-
           <button onClick={onClose} aria-label="Close details" className="p-2 rounded-full hover:bg-gray-100">
-
             <X className="w-5 h-5 text-gray-600" />
-
           </button>
-
         </div>
-
-
-
         {/* Left: Attendance summary */}
-
         <section className="p-5 border-r md:border-r md:border-gray-100 bg-white">
-
           <h4 className="text-sm font-semibold text-indigo-600 mb-3">Attendance</h4>
-
           <div className="space-y-3 text-sm text-gray-700">
-
            <div className="flex justify-between items-center">
-
               <span className="text-gray-500">Status</span>
-
               {(() => {
-
                 const raw = displayAttendance?.isPresent;
-
                 const holidayFlag = displayAttendance?.holiday === true || String(raw || '').toLowerCase().includes('holiday');
-
                 const s = String(raw || '').trim().toLowerCase();
-
                 const isPresent = ['present', 'p', 'yes', 'true', '1'].includes(s);
-
                 const isAbsent = ['absent', 'a', 'no', 'false', '0'].includes(s);
-
                 const badgeClass = holidayFlag
-
                   ? 'bg-yellow-100 text-yellow-800'
-
                   : isPresent
-
                     ? 'bg-green-100 text-green-800'
-
                     : isAbsent
-
                       ? 'bg-red-100 text-red-800'
-
                       : 'bg-gray-100 text-gray-800';
-
                 const label = holidayFlag ? 'Holiday' : (isPresent ? 'Present' : (isAbsent ? 'Absent' : (displayAttendance?.isPresent || 'N/A')));
-
                 return <span className={`ml-2 font-semibold px-2 py-0.5 rounded-full text-xs ${badgeClass}`}>{label}</span>;
-
               })()}
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Login</span>
-
               <span className="font-medium">{displayAttendance?.login || 'N/A'}</span>
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Logout</span>
-
               <span className="font-medium">{displayAttendance?.logout || 'N/A'}</span>
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Effective Hours</span>
-
               <span className="font-medium">{displayAttendance?.effectiveHour || 'N/A'}</span>
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Mode</span>
-
               <span className="font-medium">{displayAttendance?.mode || '-'}</span>
-
             </div>
-
-
-
             <div className="mt-2">
-
               <p className="text-xs text-gray-500">Notes</p>
-
               {error ? (
-
                 <p className="text-xs text-red-600 mt-1">{error}</p>
-
               ) : (
-
                 <p className="text-xs text-gray-600 mt-1">This view shows converted IST times and any event notes for the selected day.</p>
-
               )}
-
             </div>
-
           </div>
-
-
-
           <div className="mt-6">
-
             <button onClick={onClose} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
-
               Got it
-
             </button>
-
           </div>
-
         </section>
-
-
-
-        {/* Right: Events */}
-
         <aside className="p-5 bg-gray-50">
-
           <div className="flex items-center justify-between mb-3">
-
             <h4 className="text-sm font-semibold text-teal-700">Events ({eventsOnThisDay.length})</h4>
-
             <span className="text-xs text-gray-500">{eventsOnThisDay.length > 0 ? `${Math.min(eventsOnThisDay.length, 99)}` : '—'}</span>
-
           </div>
-
-
-
           {eventsOnThisDay.length === 0 ? (
-
             <div className="flex flex-col items-center justify-center h-full text-center py-6">
-
               <p className="text-sm text-gray-500 italic">No events scheduled for this day.</p>
-
               <p className="text-xs text-gray-400 mt-2">You can add events from the calendar.</p>
-
             </div>
-
           ) : (
-
             <ul className="space-y-3 max-h-[260px] overflow-y-auto pr-2">
-
               {eventsOnThisDay.map((event, idx) => (
-
                 <li key={idx} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-
                   <div className="flex items-start justify-between gap-3">
-
                     <div className="flex-1">
-
                       <div className="flex items-center gap-2">
-
                         <span className="text-sm font-semibold text-gray-800">{event.event}</span>
-
                         {event.holiday && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Holiday</span>}
-
                       </div>
-
                       <p className="text-xs text-gray-500 mt-1 truncate">{event.description || 'No description'}</p>
-
                       {event.startDate !== event.endDate && (
-
                         <p className="text-xs text-teal-600 mt-2">Multi-day: {event.startDate} — {event.endDate}</p>
-
                       )}
-
                     </div>
-
                     <div className="flex-shrink-0 text-xs text-gray-400 ml-3">
-
                       <span>{event.startDate}</span>
-
                     </div>
-
                   </div>
-
                 </li>
-
               ))}
-
             </ul>
-
           )}
-
         </aside>
-
       </div>
-
     </div>
-
   );
-
 };
-
-// --- Updated EventFormModal (sends mutation to GraphQL) ---
-
 const EventFormModal = ({ onSubmit, selectedDate, onClose }) => {
-
   const { userData } = useContext(Context);
-
   const employeeId = userData?.employeeId;
-
   const [eventTitle, setEventTitle] = useState('');
-
   const [description, setDescription] = useState('');
-
   const [startDate, setStartDate] = useState(toIsoDate(selectedDate.start) || '');
-
   const [endDate, setEndDate] = useState(toIsoDate(selectedDate.end) || '');
-
   const [isHalfDay, setIsHalfDay] = useState(false);
-
   const [loading, setLoading] = useState(false);
-
-
-
-  const MUTATION = `
-
-    mutation AddCalendarEntries($input: CalendarInput!) {
-
-      addCalendarEntries(input: $input) {
-
-        date
-
-        description
-
-        holiday
-
-      }
-
-    }
-
-  `;
-
-
-
+  const MUTATION = `mutation AddCalendarEntries($input: CalendarInput!) {addCalendarEntries(input: $input) {datedescriptionholiday}}`;
    const handleSubmit = async (e) => {
-
     e.preventDefault();
-
     setLoading(true);
-
     try {
-
       const input = {
-
         startDate: startDate, // YYYY-MM-DD
-
         endDate: endDate,
-
         event: eventTitle,
-
         description,
-
         holiday: !!isHalfDay
-
-        // removed employeeId — backend CalendarInput does not accept this field
-
       };
-
       const variables = { input };
-
       const data = await graphqlRequest(MUTATION, variables);
-
       const added = data?.addCalendarEntries || [];
-
-      // convert returned dates if needed; send to parent as DD-MM-YYYY
-
       const newEvents = added.map(a => ({
-
         event: eventTitle,
-
         description: a.description || description,
-
         startDate: toStandardDate(a.date || startDate),
-
         endDate: toStandardDate(a.date || endDate),
-
         holiday: a.holiday ?? isHalfDay
-
       }));
-
-      // notify parent
-
       onSubmit(newEvents.length ? newEvents[0] : {
-
         event: eventTitle,
-
         description,
-
         startDate: toStandardDate(startDate),
-
         endDate: toStandardDate(endDate),
-
         holiday: isHalfDay
-
       });
-
       onClose();
-
     } catch (err) {
-
       console.error("EventFormModal mutation failed:", err);
-
-      // Prefer GraphQL message if available
-
       const graphqlMessage = err?.graphql?.length ? err.graphql.map(g => g.message).join("; ") : null;
-
       const serverMessage = err?.response?.data?.message || err?.message;
-
       alert("Failed to save event: " + (graphqlMessage || serverMessage || "Unknown error"));
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
-
-
   return (
-
     <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
       <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
-
         <h2 className="text-2xl font-bold text-indigo-700 mb-3 border-b pb-2 flex items-center">
-
           <Calendar className="mr-2" /> {loading ? 'Saving...' : 'Add/Edit Event'}
-
         </h2>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
           <div className="mb-2">
-
             <label className="block text-gray-700 font-medium mb-2" htmlFor="startDate">Start Date</label>
-
             <input id="startDate" name="startDate" type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-
           </div>
-
           <div className="mb-2">
-
             <label className="block text-gray-700 font-medium mb-2" htmlFor="endDate">End Date</label>
-
             <input id="endDate" name="endDate" type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-
           </div>
-
         </div>
-
-
-
         <div className="mb-2">
-
           <label className="block text-gray-700 font-medium mb-2" htmlFor="eventTitle">Event Title</label>
-
           <input id="eventTitle" name="event" type="text" placeholder="e.g., Team Meeting" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-
         </div>
-
-
-
         <div className="flex items-center pt-6 mb-2">
-
           <input id="holiday" type="checkbox" checked={isHalfDay} onChange={e => setIsHalfDay(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-blue-600" />
-
           <label htmlFor="holiday" className="ml-2 block text-sm font-medium cursor-pointer">Is Holiday?</label>
-
         </div>
-
-
-
         <div className="mb-3">
-
           <label className="block text-gray-700 font-medium mb-2" htmlFor="description">Description</label>
-
           <textarea id="description" name="description" rows="3" placeholder="Details about the event..." value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
-
         </div>
-
-
-
         <div className="flex justify-end space-x-4">
-
           <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">Cancel</button>
-
           <button type="submit" className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg">{loading ? 'Submitting...' : 'Submit'}</button>
-
         </div>
-
       </form>
-
     </div>
-
   );
-
 };
-
-
-
-// --- Updated EventListModal (fetches month range via GraphQL) ---
-
 const EventListModal = ({ currentYear, currentMonth, onClose }) => {
-
   const { userData } = useContext(Context);
-
   const employeeId = userData?.employeeId;
-
   const [eventsList, setEventsList] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState(null);
-
-
-
-  const QUERY = `
-
-     query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
-
-       getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
-
-         date
-
-         description
-
-         holiday
-
-         event
-
-       }
-
-     }
-
-  `;
-
-
-
-  // pagination state (3 rows per page)
-
+  const QUERY = ` query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) { getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) { date description holiday event } }`;
   const ROWS_PER_PAGE = 3;
-
   const [page, setPage] = useState(1);
-
-
-
   useEffect(() => {
-
     let mounted = true;
-
     const fetchMonthlyEvents = async () => {
-
       setLoading(true);
-
       try {
-
         const start = new Date(currentYear, currentMonth, 1);
-
         const end = new Date(currentYear, currentMonth + 1, 0);
-
         const startISO = start.toISOString().slice(0, 10);
-
         const endISO = end.toISOString().slice(0, 10);
-
         const variables = { employeeId, startDate: startISO, endDate: endISO };
-
         const data = await graphqlRequest(QUERY, variables);
-
         if (!mounted) return;
-
         const fetched = data?.getDetailsBetweenDates || [];
-
         const mapped = fetched.map(f => ({
-
           event: f.event || 'Event',
-
           description: f.description || '',
-
           startDate: f.startDate || f.date,
-
           endDate: f.endDate || f.date,
-
           holiday: f.holiday ?? false
-
         }));
-
         setEventsList(mapped);
-
         setError(null);
-
-        setPage(1); // reset to first page when new data arrives
-
-      } catch (err) {
-
+        setPage(1); 
+       } catch (err) {
         console.error("EventListModal fetch failed:", err);
-
         setError(err.message || "Failed to fetch event list");
-
         setEventsList([]);
-
       } finally {
-
         if (mounted) setLoading(false);
-
       }
-
     };
-
     fetchMonthlyEvents();
-
     return () => { mounted = false; };
-
   }, [currentYear, currentMonth, userData?.employeeId]);
-
-
-
   const totalPages = Math.max(1, Math.ceil(eventsList.length / ROWS_PER_PAGE));
-
   const startIndex = (page - 1) * ROWS_PER_PAGE;
-
   const pageItems = eventsList.slice(startIndex, startIndex + ROWS_PER_PAGE);
-
-
-
   if (loading) {
-
     return (
-
       <div className="p-4 absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
         <div className="text-center py-6">
-
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-teal-400 border-t-transparent mx-auto mb-3"></div>
-
           <div className="text-lg font-semibold text-teal-700">Loading Events...</div>
-
         </div>
-
       </div>
-
     );
-
   }
-
-
-
   return (
-
     // Non-overlay modal: render inline so it stays inside App layout
-
     <div className=" absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
       <div className="bg-white max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-4 sm:p-6 relative ">
-
         <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-4">
-
           <h2 className="text-2xl font-extrabold text-teal-600 flex items-center">
-
             <Calendar className="mr-3 w-6 h-6" /> Events for {MONTHS[currentMonth]} {currentYear}
-
           </h2>
-
           <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
-
             <X className="w-6 h-6" />
-
           </button>
-
         </div>
-
-
-
         {error ? (
-
           <p className="text-red-600 text-center py-6">{error}</p>
-
         ) : eventsList.length === 0 ? (
-
           <p className="text-gray-500 text-lg text-center py-10">No events added for this month yet. 🎉</p>
-
         ) : (
-
           <div className="space-y-4">
-
             {pageItems.map((event, index) => (
-
               <div key={`${event.startDate}-${startIndex + index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
-
                 <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
-
                   <Clock className="inline w-4 h-4 mr-2" />
-
                   Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
-
                 </p>
-
                 <p className="text-xl font-semibold text-gray-800 mb-2">{event.event}</p>
-
                 <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.description}</p>
-
               </div>
-
             ))}
-
-
-
             {/* pagination controls */}
-
             <div className="flex items-center justify-between mt-4">
-
               <div className="text-sm text-gray-600">
-
                 Showing {startIndex + 1} - {Math.min(startIndex + ROWS_PER_PAGE, eventsList.length)} of {eventsList.length}
-
               </div>
-
               <div className="flex items-center gap-2">
-
                 <button
-
                   onClick={() => setPage(p => Math.max(1, p - 1))}
-
                   disabled={page <= 1}
-
                   className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-
                 >
-
                   Prev
-
                 </button>
-
                 <span className="text-sm">Page {page} / {totalPages}</span>
-
                 <button
-
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-
                   disabled={page >= totalPages}
-
                   className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-
                 >
-
                   Next
-
                 </button>
-
               </div>
-
             </div>
-
           </div>
-
         )}
-
-
-
         <div className="flex justify-end mt-6">
-
           <button onClick={onClose} className="px-6 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-150">
-
             Close
-
           </button>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 };
-
  function App({ attendanceRecords: externalAttendanceRecords = [] }) {
-
     const [currentDate, setCurrentDate] = useState(new Date());
-
     const [events, setEvents] = useState([]); 
-
     const [selectedDateForForm, setSelectedDateForForm] = useState({ start: null, end: null });
-
     const [showEventForm, setShowEventForm] = useState(false);
-
     const [showEventsList, setShowEventsList] = useState(false);
-
     const [showDayDetails, setShowDayDetails] = useState(null);
-
     const [isEditing, setIsEditing] = useState(false);
-
-
-
     const currentYear = currentDate.getFullYear();
-
     const currentMonth = currentDate.getMonth();
-
-
-
     const getEventsForDate = useCallback((dateString) => {
-
         const targetDate = new Date(dateString.split('-').reverse().join('-'));
-
         targetDate.setHours(0, 0, 0, 0);
-
-
-
         return events.filter(event => {
-
             const eventStart = new Date(event.startDate.split('-').reverse().join('-'));
-
             const eventEnd = new Date(event.endDate.split('-').reverse().join('-'));
-
-            
-
             eventStart.setHours(0, 0, 0, 0);
-
             eventEnd.setHours(0, 0, 0, 0);
-
-
-
             return targetDate >= eventStart && targetDate <= eventEnd;
-
         });
-
     }, [events]); 
-
-
-
      const calendarDays = useMemo(() => {
-
         const totalDays = getDaysInMonth(currentYear, currentMonth);
-
         const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
-
         const days = [];
-
-
-
         for (let i = 0; i < firstDay; i++) {
-
             days.push({ key: `blank-${i}`, type: 'blank' });
-
         }
-
-
-
         for (let day = 1; day <= totalDays; day++) {
-
             const dateString = `${String(day).padStart(2, '0')}-${String(currentMonth + 1).padStart(2, '0')}-${currentYear}`;
-
              const matchedRecord = (externalAttendanceRecords || []).find(r => {
-
                 if (!r || !r.date) return false;
-
-
-
                 if (/^\d{2}-\d{2}-\d{4}$/.test(r.date) && r.date === dateString) return true;
-
-
-
                 if (/^\d{4}-\d{2}-\d{2}$/.test(r.date)) {
-
                     const asDisplay = toStandardDate(r.date); 
-
                     return asDisplay === dateString;
-
                 }
-
-
-
                 return String(r.date) === dateString;
-
             });
-
-
-
             // build attendance object expected by DayBox / DayDetailsModal
-
             let attendance = { isPresent: 'N/A', login: 'N/A', logout: 'N/A', effectiveHour: 'N/A', date: dateString };
-
-
-
             if (matchedRecord) {
-
                 attendance = {
-
                     date: dateString,
-
                     employeeId: matchedRecord.employeeId ?? matchedRecord.employee_id ?? matchedRecord.employeeId,
-
-                    // prefer normalized display fields if present (loginDisplay/logoutDisplay), otherwise try raw fields
-
                     login: matchedRecord.loginDisplay ?? matchedRecord.login ?? matchedRecord.login_time ?? 'N/A',
-
                     logout: matchedRecord.logoutDisplay ?? matchedRecord.logout ?? matchedRecord.logout_time ?? 'N/A',
-
-                    // effective/gross; prefer already formatted HH:MM displays
-
                     effectiveHour: matchedRecord.effectiveHoursDisplay ?? matchedRecord.effectiveHour ?? (matchedRecord.effectiveMinutes ? formatMinutesToHHMM(matchedRecord.effectiveMinutes) : 'N/A'),
-
                     isPresent: matchedRecord.isPresent ?? (matchedRecord.attended ? 'Present' : (matchedRecord.holiday ? 'Holiday' : 'Absent')),
-
                     holiday: matchedRecord.holiday ?? false,
-
                     mode: matchedRecord.mode ?? null
-
                 };
-
             }
-
-
-
             days.push({
-
                 date: dateString,
-
                 type: 'day',
-
                 day: day,
-
                 dateString,
-
                 attendance
-
             });
-
         }
-
         return days;
-
     }, [currentYear, currentMonth, externalAttendanceRecords]);
-
     const changeMonth = useCallback((amount) => {
-
         setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + amount, 1));
-
         setShowDayDetails(null);
-
         setShowEventForm(false);
-
         setShowEventsList(false);
-
     }, []);
-
-
-
     const handleDayClick = (dayData) => {
-
         if (dayData.type === 'blank') return;
-
-
-
-        if (isEditing) {
-
+        if (isEditing) { 
             setSelectedDateForForm({ start: dayData.dateString, end: dayData.dateString });
-
             setShowEventForm(true);
-
             setIsEditing(false); 
-
         } else {
-
             const eventsOnThisDay = getEventsForDate(dayData.dateString);
-
             setShowDayDetails({ ...dayData, eventsOnThisDay }); 
-
         }
-
     };
-
-
-
     const handleFormSubmit = (newEvent) => {
-
         // Add event to local state and close the form
-
         setEvents(prevEvents => [...prevEvents, newEvent]);
-
         setShowEventForm(false);
-
     };
-
-
-
     // Calendar Day Box Component (Unchanged logic)
-
       const DayBox = ({ dayData }) => {
-
     if (dayData.type === 'blank') {
-
         return <div className="p-2 border border-gray-100 bg-gray-50 min-h-[20px] sm:min-h-[40px]"></div>;
-
     }
-
-
-
     const { day, dateString, attendance } = dayData;
-
-
-
     // Normalize status so DayBox colors match DayDetailsModal behaviour
-
     const normalizeStatus = (att) => {
-
         if (!att) return 'unknown';
-
-        // holiday flag takes precedence
-
         if (att.holiday === true || String(att.holiday).toLowerCase() === 'true') return 'holiday';
-
-
-
         const candidates = [att.isPresent, att.status, att.present, att.attended];
-
         let v = candidates.find(c => typeof c !== 'undefined' && c !== null);
-
         if (typeof v === 'boolean') return v ? 'present' : 'absent';
-
-        if (v == null) {
-
+        if (v == null) { 
             // try effectiveHour/gross heuristics
-
             const eff = parseEffectiveHours(att.effectiveHour ?? att.effectiveHours ?? '');
-
             if (eff && eff > 0) return 'present';
-
             return 'unknown';
-
         }
-
         const s = String(v).trim().toLowerCase();
-
         if (!s) return 'unknown';
-
         if (['present', 'p', 'yes', 'true', '1'].includes(s)) return 'present';
-
         if (['absent', 'a', 'no', 'false', '0'].includes(s)) return 'absent';
-
         if (s.includes('holiday') || s === 'h') return 'holiday';
-
         return 'unknown';
-
     };
-
-
-
     const eventsOnThisDay = getEventsForDate(dateString);
-
     const hasEvents = eventsOnThisDay.length > 0;
-
-
-
     // If any event on this day is marked as holiday, treat the day as holiday
-
     const hasHolidayEvent = eventsOnThisDay.some(ev => ev && (ev.holiday === true || String(ev.holiday).toLowerCase() === 'true'));
-
-
-
-    // Determine effective status giving precedence to holiday events
-
+    // Determine effective status giving precedence to holiday event
     const status = hasHolidayEvent ? 'holiday' : normalizeStatus(attendance);
-
-
-
     const isToday = dateString === new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-
-
-
     // map status to Tailwind classes + icon
-
     let bgClass = 'bg-white';
-
     let borderClass = 'border-gray-300';
-
     let icon = null;
-
     let textClass = 'text-gray-900';
-
-
-
     if (status === 'present') {
-
         bgClass = 'bg-green-50 hover:bg-green-200';
-
         borderClass = 'border-green-500 border-2';
-
         icon = <CheckCircle className="w-2 h-2 text-green-700" />;
-
         textClass = 'text-green-800';
-
     } else if (status === 'absent') {
-
         bgClass = 'bg-red-50 hover:bg-red-200';
-
         borderClass = 'border-red-500 border-2';
-
         icon = <AlertTriangle className="w-2 h-2 text-red-700" />;
-
         textClass = 'text-red-800';
-
     } else if (status === 'holiday') {
-
         bgClass = 'bg-yellow-50 hover:bg-yellow-200';
-
         borderClass = 'border-yellow-500 border-2';
-
         icon = <Calendar className="w-2 h-2 text-yellow-700" />;
-
         textClass = 'text-yellow-800';
-
-    } else {
-
+    } else { 
         bgClass = 'bg-gray-50 hover:bg-gray-100';
-
         borderClass = hasEvents ? 'border-indigo-500 border-2' : 'border-gray-300';
-
     }
-
-
-
     const todayRingClass = isToday ? 'ring-4 ring-indigo-400 font-bold' : '';
-
     const editingClass = isEditing ? 'cursor-crosshair ring-2 ring-pink-500' : '';
-
-
-
     return (
-
         <div
-
             className={`relative group p-2 sm:p-3 border transition-all duration-200 cursor-pointer ${bgClass} ${borderClass} ${todayRingClass} ${editingClass} shadow-sm min-h-[50px] sm:min-h-[70px] flex flex-col justify-start`}
-
             onClick={() => handleDayClick(dayData)}
-
         >
-
             <div className="flex justify-between items-start mb-1">
-
                 <span className={`text-lg sm:text-xl ${isToday ? 'text-indigo-700' : textClass}`}>{day}</span>
-
                 <div className='flex-shrink-0'>{icon}</div>
-
             </div>
-
-
-
             {hasEvents && (
-
                 <div className='mt-auto'>
-
                     <p className={`text-xs text-indigo-700 font-semibold truncate ${eventsOnThisDay.length > 1 ? 'border-t border-indigo-300 pt-1' : ''}`}>
-
                         {eventsOnThisDay.length} {eventsOnThisDay.length > 1 ? 'Events' : 'Event'}
-
                     </p>
-
                 </div>
-
             )}
-
         </div>
-
     );
-
 };
-
-
-
     return (
-
         <div className="p-4 sm:p-8">
-
             <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-4 sm:p-6 relative">
-
-
-
                 {/* Modals are now calling the standalone components */}
-
                 {showEventForm && (
-
                     <EventFormModal 
-
                         onSubmit={handleFormSubmit} 
-
                         selectedDate={selectedDateForForm} 
-
                         onClose={() => setShowEventForm(false)} 
-
                     />
-
                 )}
-
                 {showEventsList && (
-
                     <EventListModal 
-
                         onClose={() => setShowEventsList(false)}
-
                         currentYear={currentYear}
-
                         currentMonth={currentMonth}
-
                         setEvents={setEvents} // Pass setEvents to update App state with fresh data
-
                     />
-
                 )}
-
                 {showDayDetails && (
-
                     <DayDetailsModal 
-
                         dayData={showDayDetails} 
-
                         eventsOnThisDay={showDayDetails.eventsOnThisDay}
-
                         onClose={() => setShowDayDetails(null)} 
-
                     />
-
                 )}
-
-
-
                 {/* Main Content (Blurred when modal is open) */}
-
                 <div className={`${(showEventForm || showEventsList || showDayDetails) ? 'pointer-events-none opacity-50' : ''}`}>
-
                     <div className="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4">
-
                         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4 sm:mb-0">
-
                             {MONTHS[currentMonth]} <span className="text-indigo-600">{currentYear}</span>
-
                         </h1>
-
-
-
                         <div className="flex space-x-2 sm:space-x-4">
-
                             {/* New Edit Button */}
-
                             <button
-
                                 onClick={() => setIsEditing(prev => !prev)}
-
                                 className={`flex items-center px-3 py-2 sm:px-4 sm:py-2 text-white font-semibold text-sm rounded-lg shadow-md transition duration-150 transform hover:scale-105 ${isEditing ? 'bg-indigo-700 hover:bg-indigo-800 ring-2 ring-pink-300' : 'bg-indigo-500 hover:bg-indigo-600'}`}
-
                             >
-
                                 <Edit className="w-4 h-4 mr-1 sm:mr-2"/> {isEditing ? 'Cancel Edit' : 'Edit '}
-
                             </button>
-
-
-
                             <button
-
                                 onClick={() => setShowEventsList(true)}
-
                                 className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-pink-500 text-white font-semibold text-sm rounded-lg shadow-md hover:bg-pink-600 transition duration-150 transform hover:scale-105"
-
                             >
-
                                 <Calendar className="w-4 h-4 mr-1 sm:mr-2"/> Events
-
                             </button>
 
-
-
                             <button
-
                                 onClick={() => changeMonth(-1)}
-
                                 className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
-
                             >
-
                                 <ChevronLeft className="w-5 h-5" />
-
                             </button>
-
                             <button
-
                                 onClick={() => changeMonth(1)}
-
                                 className="p-2 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 transition duration-150"
-
                             >
-
                                 <ChevronRight className="w-5 h-5" />
-
                             </button>
-
                         </div>
-
                     </div>
-
-
 
                     {/* Days of Week Header */}
-
                     <div className="grid grid-cols-7 gap-1 mb-1">
-
                         {DAYS_OF_WEEK.map(day => (
-
                             <div key={day} className="text-center font-semibold text-xs sm:text-sm text-indigo-700 p-2 bg-indigo-100 rounded">
-
                                 {day}
-
                             </div>
-
                         ))}
-
                     </div>
-
-
 
                     {/* Calendar Grid */}
-
                     <div className="grid grid-cols-7 gap-1">
-
                         {calendarDays.map((day, index) => (
-
                             <DayBox key={day.key || day.dateString || `day-${index}`} dayData={day} />
-
                         ))}
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     );
-
 }
 
 const calculateHours = (login, logout) => {
     // If either missing, return 0
     if (!login || !logout) return 0;
-
     // Shift both times by IST offset
     const shiftedLogin = tryNormalizeTo24(login) ? addMinutesToTimeString(login) : null;
     const shiftedLogout = tryNormalizeTo24(logout) ? addMinutesToTimeString(logout) : null;
     if (!shiftedLogin || !shiftedLogout) return 0;
-
     const loginDate = new Date(`2000-01-01T${shiftedLogin}:00`);
     const logoutDate = new Date(`2000-01-01T${shiftedLogout}:00`);
     let diffHours = (logoutDate - loginDate) / (1000 * 60 * 60);
@@ -2026,67 +1051,9 @@ const formatClockTime = (date) => {
     const seconds = String(date.getSeconds()).padStart(2, "0");
     return `${hours}:${minutes}:${seconds}`;
 };
-
-const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }) => {
-    const {theme} = useContext(Context);
-    return(
-    <div className={`flex gap-2 sm:gap-3 flex-wrap ${className}`}>
-        {options.map((option) => (
-            <motion.button
-                key={option}
-                onClick={() => onSelect(option)}
-                className={`px-3 py-2  rounded-lg border text-sm sm:text-base font-semibold     
-                ${selectedOption === option ? "bg-indigo-600 text-white shadow-md" : "bg-white text-gray-700 border-gray-300"}
-                ${theme === 'dark' ? (selectedOption === option ? 'bg-indigo-500 text-white shadow-md' : 'bg-gray-800 text-gray-300 border-gray-600') : ''}
-                hover:bg-indigo-500 hover:text-white transition-colors duration-200 ease-in-out`}
-                aria-pressed={selectedOption === option}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-            >
-                {option}
-            </motion.button>
-        ))}
-    </div>
-)};
-//const dates = ["All", "11", "12", "13", "14", "15"];
-//const rawTableData = [
-//    { employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//    { employee_id: "E_01", date: "2025-06-29", login_time: null, logout_time: null },
-//    { employee_id: "E_01", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//    { employee_id: "E_01", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//    { employee_id: "E_01", date: "2025-06-26", login_time: null, logout_time: null },
-//    { employee_id: "E_01", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//    { employee_id: "E_01", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-//    { employee_id: "E_01", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
-//];
-//const rawPieData = [
-//    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
-//    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
-//    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
-//    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
-//    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
-//];
-//const barChartData = [
-//    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Working_hour: 8.3, Break_hour: 1.7 },
-//    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Working_hour: 8.4, Break_hour: 1.6 },
-//    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Working_hour: 8.2, Break_hour: 1.8 },
-//    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Working_hour: 9.0, Break_hour: 1.0 },
-//    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Working_hour: 8.0, Break_hour: 2.0 },
-//];
-//const Data = [
-//    { EmployeeId: "ACS000001", Date: "11", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 19:00", hours: 0.2 }] },
-//    { EmployeeId: "ACS000001", Date: "12", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:40 - 17:10", hours: 0.5 }, { Time: "19:20 - 19:40", hours: 0.2 }] },
-//    { EmployeeId: "ACS000001", Date: "13", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "19:00 - 19:20", hours: 0.2 }] },
-//    { EmployeeId: "ACS000001", Date: "14", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "18:40 - 18:50", hours: 0.1 }] },
-//    { EmployeeId: "ACS000001", Date: "15", Month: "Aug", Year: "2025", Start_time: "10:00", End_time: "20:00", Break_hour: [{ Time: "13:00 - 14:00", hour: 1.0 }, { Time: "16:30 - 17:00", hours: 0.5 }, { Time: "17:40 - 18:00", hours: 0.2 }] },
-//];
-
-// --- Sub-Component for Hours and Schedule Bar ---
-const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGED
+const MyComponent = ({ Data, selectedMetricDate }) => { 
     const [hoveredHour, setHoveredHour] = useState(null);
     const {theme} = useContext(Context);
-
-    // Helper to get start/end hour from time string
     const getHourValue = useCallback((timeString) => {
         const [start, end] = timeString.split(' - ');
         const [startHour, startMinute] = start.split(':').map(Number);
@@ -2096,8 +1063,6 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
             end: endHour + endMinute / 60
         };
     }, []);
-
-    // Format seconds to hh mm ss
     const formatDuration = (totalSeconds) => {
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -2108,13 +1073,10 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
         if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`;
         return result.trim() || '0s';
     };
-
-    // Calculate metrics for selected date
     const calculateMetrics = useMemo(() => {
         if (!Data || selectedMetricDate === "All") return null; // <--- USE selectedMetricDate
         const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate); // <--- USE selectedMetricDate
         if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
-
         const totalWorkingSeconds =
             (new Date(`2000/01/01 ${dayData.End_time}`) - new Date(`2000/01/01 ${dayData.Start_time}`)) / 1000;
         let breakSeconds = 0;
@@ -2127,7 +1089,6 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
         const productiveSeconds = totalWorkingSeconds - breakSeconds;
         const standardDaySeconds = 8 * 3600;
         const overtimeSeconds = Math.max(0, productiveSeconds - standardDaySeconds);
-
         return {
             totalWorkingHours: formatDuration(totalWorkingSeconds),
             productiveHours: formatDuration(productiveSeconds),
@@ -2139,14 +1100,10 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
   const renderScheduleBar = useCallback(() => {
     if (!Data || selectedMetricDate === "All")
         return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
-
     const rawDay = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate);
     if (!rawDay)
         return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedMetricDate}.</motion.div>;
-
-    // Apply IST offset to schedule times
     const dayData = applyOffsetToSchedule(rawDay);
-
     const timePoints = new Set();
     if (dayData.Start_time) timePoints.add(dayData.Start_time);
     if (dayData.End_time) timePoints.add(dayData.End_time);
@@ -2306,18 +1263,15 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
         </motion.div>
     );
 };
- 
 const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => {
   const { userData, theme } = useContext(Context);
   const id = employeeId || userData?.employeeId || "ACS00000001";
-
   const toIso = (d) => d?.toISOString?.().slice(0, 10) || d;
   const todayIso = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(() => toIso(new Date(startDate || todayIso)));
   const [row, setRow] = useState(null);
   const [loadingRows, setLoadingRows] = useState(false);
   const [errorRows, setErrorRows] = useState(null);
-
   const addIstToEffective = (effValue) => {
     try {
       const baseMinutes = parseEffectiveHours(effValue || '');
@@ -2345,8 +1299,7 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
   const adjustTimeString = (timeString, dateRef, minutesToAdd) => {
     if (timeString === "N/A" || !timeString) return timeString;
     const datetimeStr = `${dateRef} ${timeString}`;
-    const d = new Date(datetimeStr);
-    
+    const d = new Date(datetimeStr); 
     if (isNaN(d.getTime())) {
       const [h, m, s] = timeString.split(':').map(Number);
       const totalMinutes = (h * 60) + (m || 0) + minutesToAdd;
@@ -2355,11 +1308,8 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
       return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
     }
     d.setMinutes(d.getMinutes() + minutesToAdd);
-    
-    // Format the new time back to HH:MM format
     const newHours = String(d.getHours()).padStart(2, '0');
     const newMinutes = String(d.getMinutes()).padStart(2, '0');
-    
     return `${newHours}:${newMinutes}`;
   };
   useEffect(() => {
@@ -2368,8 +1318,6 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
       setSelectedDate(iso);
     }
   }, [startDate]);
-
-  
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -2380,35 +1328,26 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
         const variables = { employeeId: id, startDate: s, endDate: e };
         const data = await graphqlRequest(QUERY, variables); 
         const items = data?.getDetailsBetweenDates || [];
-
         if (!mounted) return;
-
         const item = items[0] || null;
         if (!item) {
           setRow(null);
           setErrorRows("No data for selected day");
           return;
         }
-
         const dateRef = /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : selectedDate;
-
         const initialLoginTime = item.login ? toISTTimeDisplay(item.login, dateRef) : "N/A";
         const initialLogoutTime = item.logout ? toISTTimeDisplay(item.logout, dateRef) : "N/A";
-
         const loginIst = adjustTimeString(initialLoginTime, dateRef, IST_OFFSET_MINUTES);
         const logoutIst = adjustTimeString(initialLogoutTime, dateRef, IST_OFFSET_MINUTES);
-
         const effMin = parseEffectiveHours(item.effectiveHours ?? item.effectiveHour) || 0;
         const grossMin = parseEffectiveHours(item.grossHours) || 0;
-      
         const effWithIst = effMin ? formatMinutesToHHMM(effMin) : "N/A";
         const grossWithIst = grossMin ? formatMinutesToHHMM(grossMin) : "N/A";
-
         setRow({
           date: item.date || selectedDate,
           employeeId: item.employeeId,
           isPresent: item.isPresent,
-        
           login: loginIst, 
           logout: logoutIst,
           effectiveHours: effWithIst,
@@ -2424,35 +1363,23 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
         if (mounted) setLoadingRows(false);
       }
     };
-
     load();
     return () => { mounted = false; };
   }, [id, selectedDate]);
-
   const changeDay = (delta) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + delta);
     setSelectedDate(d.toISOString().slice(0, 10));
   };
   const isDark = theme === 'dark';
-  const containerClasses = isDark 
-    ? 'bg-gray-800 text-white border-gray-700' 
-    : 'bg-white border-gray-200';
-  const buttonClasses = (active = false) => `
-    px-2 py-1 rounded-full text-xs font-medium transition-colors
-    ${isDark 
-      ? (active ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-gray-700 text-gray-300 hover:bg-gray-600') 
-      : (active ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
-    }
-  `;
-  const infoCardClasses = `p-4 rounded-xl shadow-md ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`;
+  const containerClasses = isDark  ? 'bg-gray-800 text-white border-gray-700'  : 'bg-white border-gray-200';
+  const buttonClasses = (active = false) => `  px-2 py-1 rounded-full text-xs font-medium transition-colors  ${isDark     ? (active ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-gray-700 text-gray-300 hover:bg-gray-600')     : (active ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')  }`;
   const statusClasses = (isPresent) => {
     const status = String(isPresent || '').toUpperCase();
     if (status === 'TRUE' || status === 'PRESENT') return 'bg-green-100 text-green-700';
     if (status === 'FALSE' || status === 'ABSENT') return 'bg-red-100 text-red-700';
     return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300';
   };
-  
   const StatusPill = ({ isPresent, mode }) => {
     const statusText = String(isPresent || 'N/A').toUpperCase();
     const pillClass = statusClasses(statusText);
@@ -2468,35 +1395,16 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
       </div>
     );
   };
-  
-  // Custom Metric Card component
   const MetricCard = ({ title, value, icon, isPrimary = false }) => (
     <div className={`p-2 rounded-xl flex flex-col justify-between h-full border ${isPrimary ? 'border-indigo-400':'border-gray-200'} ${isDark ? 'bg-gray-700' : 'bg-white'}`}>
       <div className={`text-lg font-bold ${isPrimary ? 'text-indigo-500' : 'text-gray-900 '}`}>{value}</div>
       <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">{title}</div>
     </div>
   );
-  
   return (
     <div className={`p-2 rounded-2xl shadow-xl ${containerClasses}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2">
         {/* Navigation Buttons */}
-        {/*<div className="flex items-center gap-2">
-          <button onClick={() => changeDay(-1)} className={buttonClasses()}>
-           Prev
-          </button>
-          
-          <span className="text-sm font-semibold px-3 text-indigo-500 whitespace-nowrap">
-            {selectedDate}
-          </span>
-          
-          <button onClick={() => changeDay(1)} className={buttonClasses()}>
-            Next 
-          </button>
-          <button onClick={() => setSelectedDate(todayIso)} className={buttonClasses(selectedDate === todayIso)}>
-            Today
-          </button>
-        </div>*/}
       </div>
       {loadingRows ? (
         <div className="text-center p-3">
@@ -2515,21 +1423,12 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
           <div className="p-2 flex items-center justify-between">
             <StatusPill isPresent={row.isPresent} mode={row.mode} />
             <div className="flex items-center gap-2">
-             <button onClick={() => changeDay(-1)} className={buttonClasses()}>
-           Prev
-          </button>          
-          <span className="text-sm font-semibold px-2 text-indigo-500 whitespace-nowrap">
-            {selectedDate}
-          </span>
-          <button onClick={() => changeDay(1)} className={buttonClasses()}>
-            Next 
-          </button>
-          <button onClick={() => setSelectedDate(todayIso)} className={buttonClasses(selectedDate === todayIso)}>
-            Today
-          </button>
+            <button onClick={() => changeDay(-1)} className={buttonClasses()}> Prev</button>          
+          <span className="text-sm font-semibold px-2 text-indigo-500 whitespace-nowrap">  {selectedDate}</span>
+          <button onClick={() => changeDay(1)} className={buttonClasses()}>  Next </button>
+          <button onClick={() => setSelectedDate(todayIso)} className={buttonClasses(selectedDate === todayIso)}>  Today</button>
           </div>
           </div>
-
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
             <MetricCard 
@@ -2548,7 +1447,6 @@ const ProfileAttendance = ({ employeeId, startDate = null, endDate = null }) => 
     </div>
   );
 };
-// --- Main Attendance Dashboard Component ---
 const AttendancesDashboard = ({ onBack,currentUser , employeeId, startDate = null, endDate = null } ) => {
     const { empID } = useParams();
     const { userData,theme } = useContext(Context);
@@ -2637,7 +1535,6 @@ const AttendancesDashboard = ({ onBack,currentUser , employeeId, startDate = nul
                     setGrossHours(0);
                 }
             } catch (err) {
-                // ... (Error handling)
             } finally {
                 if (mounted) setLoadingTodayAttendance(false);
             }
@@ -2658,11 +1555,9 @@ const AttendancesDashboard = ({ onBack,currentUser , employeeId, startDate = nul
 const displayedEffectiveSeconds = isLoggedIn 
     ? (Number(effectiveHours) || 0) + elapsedTimeSeconds
     : (Number(effectiveHours) || 0);
-
 const displayedGrossSeconds = isLoggedIn 
     ? (Number(grossHours) || 0) + elapsedTimeSeconds
     : (Number(grossHours) || 0);
-
 const grossHoursFormatted = formatSecondsToHHMMSS(displayedGrossSeconds);
 const effectiveHoursFormatted = formatSecondsToHHMMSS(displayedEffectiveSeconds);
 const buildRange = () => {
@@ -2683,7 +1578,6 @@ const buildRange = () => {
 
   startISO = clampToToday(startISO);
   endISO = clampToToday(endISO);
-
   if (startISO && !endISO) {
     endISO = todayISO;
   }
@@ -2709,7 +1603,6 @@ const buildRange = () => {
   }
   if (endISO > todayISO) endISO = todayISO;
   if (startISO > todayISO) startISO = todayISO;
-
   return { startISO, endISO };
 };
     const datesPerPage = 5;
@@ -2720,20 +1613,8 @@ const buildRange = () => {
       const intervalRef = useRef(null);
        const clockTimerRef = useRef(null); 
        
-    const [rawTableData , setRawTableData] = useState(  [
-     //{ employee_id: "E_01", date: "2025-06-30", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     //{ employee_id: "E_02", date: "2025-06-29", login_time: null, logout_time: null },
-     //{ employee_id: "E_03", date: "2025-06-28", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     //{ employee_id: "E_04", date: "2025-06-27", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     //{ employee_id: "E_05", date: "2025-06-26", login_time: null, logout_time: null },
-     //{ employee_id: "E_06", date: "2025-06-25", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     //{ employee_id: "E_07", date: "2025-06-24", login_time: "10:00 AM", logout_time: "08:00 PM" },
-     //{ employee_id: "E_08", date: "2025-06-23", login_time: "10:00 AM", logout_time: "07:00 PM" },
-]);
-
-    const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
+    const [rawTableData , setRawTableData] = useState([]);
     const rowsPerPageOptions = [10, 25, 50, 100];
-    const MONTHS = ["All", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
     const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
      const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
               const [matchedArray,setMatchedArray]=useState(null);
@@ -2753,58 +1634,14 @@ const buildRange = () => {
                  }
                  },[loggedPermissiondata]);
                  //console.log(matchedArray);
-    
-        const [hasAccess,setHasAccess]=useState([])
-            useEffect(()=>{
-                setHasAccess(userData?.permissions)
-            },[userData])
-           // console.log("permissions from userdata:",hasAccess)
-    
-
     const [refreshGrossFormatted, setRefreshGrossFormatted] = useState('00:00:00');
     const [refreshEffectiveFormatted, setRefreshEffectiveFormatted] = useState('00:00:00');        
     const [barChartData, setBarChartData] = useState([]);
     const [rawPieData, setRawPieData] = useState([]);
     const [dates, setDates] = useState([]);
-    const [Data, setData] = useState([])
-    const [cardData, setCardData] = useState([]);
-    const[startIndex,setStartIndex]=useState(0)
-    //const ATTENDANCE_ID_STORAGE_KEY = 'currentAttendanceId';
+    const [Data, setData] = useState([]);
+    const[startIndex,setStartIndex]=useState(0);
     const attendanceStorageKey = `attendanceId_${id}`;
-    //const CLOCKIN_TIME_STORAGE_KEY = `attendanceClockInTime_${userData?.employeeId}`;
-    const toIsoWithIST = (timeValue) => {
-    if (!timeValue) return null;
-    try {
-        if (typeof timeValue === 'string' && /T/.test(timeValue)) {
-            const d = new Date(timeValue);
-            if (isNaN(d)) return null;
-            const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
-            return shifted.toISOString();
-        }
-        if (/^\d{4}-\d{2}-\d{2}/.test(timeValue)) {
-            const d = new Date(timeValue);
-            if (!isNaN(d)) {
-                const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
-                return shifted.toISOString();
-            }
-        }
-        const hhmm = timeValue.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-        if (hhmm) {
-            const today = new Date();
-            const d = new Date(today.getFullYear(), today.getMonth(), today.getDate(), Number(hhmm[1]), Number(hhmm[2]), 0);
-            const shifted = new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
-            return shifted.toISOString();
-        }
-        const parsed = new Date(timeValue);
-        if (!isNaN(parsed)) {
-            const shifted = new Date(parsed.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
-            return shifted.toISOString();
-        }
-    } catch (err) {
-        console.error("toIsoWithIST parse error:", err, timeValue);
-    }
-    return null;
-};
 useEffect(() => {
    if (!dates || dates.length <= 1) return; 
    if (selectedMetricDate && selectedMetricDate !== "All") return;
@@ -2822,68 +1659,6 @@ useEffect(() => {
      setStartIndex(pageStart);
    }
  }, [dates, rawPieData, barChartData]); 
-//    const [profileData, setProfileData] = useState({
-//      mode: "",
-//      shift: "",
-//      onTime: 0,
-//      avgWorkingHours: 0,
-//      loginTime: null,
-//      logoutTime: null,
-//      grossTimeDay: "",
-//      effectiveTimeDay: "",
-//    });
-//const updateProfileField = async (field, value) => {
-//    try {
-//        const today = new Date();
-//        const day = today.getDate();
-//        const month = today.getMonth() + 1;
-//        const year = today.getFullYear();
-//        const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
-//        await dashboardApi.put(url, { [field]: value }, { headers: { 'Content-Type': 'application/json' } });
-//        setProfileData(prev => ({ ...prev, [field]: value }));
-//    } catch (error) {
-//        console.error(`Error updating ${field}:`, error);
-//    }
-//};
-//useEffect(() => {
-//    let mounted = true;
-//    const fetchProfile = async () => {
-//        if (!userData?.employeeId) return;
-//        try {
-//            const today = new Date();
-//            const day = today.getDate();
-//            const month = today.getMonth() + 1;
-//            const year = today.getFullYear();
-//            const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/profile/${day}/${month}/${year}`;
-//            const resp = await dashboardApi.get(url);
-//            if (!mounted) return;
-//            const data = resp?.data || {};
-//            const rawLogin = data.loginTime ?? data.login_time ?? data.login ?? null;
-//            const rawLogout = data.logoutTime ?? data.logout_time ?? data.logout ?? null;
-//
-//            const loginIso = toIsoWithIST(rawLogin);
-//            const logoutIso = toIsoWithIST(rawLogout);
-//
-//            setProfileData({
-//                mode: data.mode ?? data.profileMode ?? "",
-//                shift: data.shift ?? data.shiftName ?? "",
-//                onTime: data.onTime ?? data.on_time ?? 0,
-//                avgWorkingHours: data.avgWorkingHours ?? data.avg_working_hours ?? 0,
-//                loginTime: loginIso,   // ISO string adjusted with +5:30
-//                logoutTime: logoutIso, // ISO string adjusted with +5:30
-//                grossTimeDay: data.grossTimeDay ?? data.gross_time_day ?? "",
-//                effectiveTimeDay: data.effectiveTimeDay ?? data.effective_time_day ?? "",
-//            });
-//        } catch (err) {
-//            console.error("Failed to fetch profile data:", err);
-//        }
-//    };
-//
-//    fetchProfile();
-//    return () => { mounted = false; };
-//}, [userData?.employeeId]);
-
-
     // 1. Bar Chart Data
     useEffect(() => {
         const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/bar-chart?page=0&size=5`;
@@ -2894,8 +1669,6 @@ useEffect(() => {
             setDates(dates);
         }).catch(error => console.error('Error fetching bar chart data:', error));
     }, [empID]);
-
-    // 2. Attendance Table Data
     useEffect(() => {
         const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/attendance?page=0&size=${rowsPerPageOptions[rowsPerPageOptions.length - 1]}`;
         dashboardApi.get(url).then(response => {
@@ -2904,8 +1677,6 @@ useEffect(() => {
             setDates(dates);
         }).catch(error => console.error('Error fetching attendance data:', error));
     }, [empID]);
-
-    // 3. Pie Chart Data
     useEffect(() => {
         const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/pie-chart`;
         dashboardApi.get(url).then(response => {
@@ -2915,8 +1686,6 @@ useEffect(() => {
             setDates(dates);
         }).catch(error => console.error('Error fetching pie chart data:', error));
     }, [empID]);
-
-    // 4. Line Graph/Schedule Bar Data (Data)
     useEffect(() => {
         const url = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/line-graph?page=0&size=5`;
         dashboardApi.get(url).then(response => {
@@ -2926,14 +1695,6 @@ useEffect(() => {
             setDates(dates);
         }).catch(error => console.error('Error fetching line graph data:', error));
     }, [empID]);
-
-    // 5. Stat Card Data
-    //useEffect(() => {
-    //    const url = `https://hrms.anasolconsultancyservices.com/api/attendance/attendance/leaves/dashboard/${empID}`;
-    //    dashboardApi.get(url).then(response => {
-    //        setCardData(response.data);
-    //    }).catch(error => console.error('Error fetching card data:', error));
-    //}, [empID]);
    useEffect(() => {
        const userPayload = JSON.parse(localStorage.getItem("emppayload"));
        const userImage = localStorage.getItem("loggedInUserImage");
@@ -2943,30 +1704,24 @@ useEffect(() => {
          .map((word) => word[0])
          .join("")
          .substring(0, 2);
-   
        setLoggedInUserProfile({
          image: userImage,
          initials: initials,
        });
      }, [userData]);
-  
-
    useEffect(() => {
   if (!id) return;
   try {
     const effKey = `today_effective_seconds_${id}`;
     const grKey = `today_gross_seconds_${id}`;
     const tsKey = `today_lastFetchedAt_${id}`;
-
     const savedEff = Number(localStorage.getItem(effKey));
     const savedGr = Number(localStorage.getItem(grKey));
     const savedTs = Number(localStorage.getItem(tsKey));
-
     if (!Number.isNaN(savedEff) && savedEff >= 0) setEffectiveHours(savedEff);
     if (!Number.isNaN(savedGr) && savedGr >= 0) setGrossHours(savedGr);
     if (!Number.isNaN(savedTs) && savedTs > 0) setLastFetchedAt(savedTs);
   } catch (err) {
-    // fail silently
     console.error("Restore today counters failed:", err);
   }
 }, [id]);  
@@ -2974,7 +1729,6 @@ useEffect(() => {
     try {
       const storedId = localStorage.getItem(attendanceStorageKey);
       if (storedId) {
-        // keep per-employee attendanceId across reloads so UI stays in "Clock Out" state
         setCurrentAttendanceId(storedId);
         setIsLoggedIn(true);
         setStartTime(null);
@@ -2990,14 +1744,10 @@ useEffect(() => {
     }
   }, [attendanceStorageKey, id]);
     useEffect(() => {
-    // 1. Gross/Effective Hours Timer Logic:
     if (isLoggedIn && startTime) {
-        
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
-        
-        
         intervalRef.current = setInterval(() => {
             const now = new Date();
             const diffInSeconds = (now - startTime) / 1000;
@@ -3012,16 +1762,13 @@ useEffect(() => {
             intervalRef.current = null;
         }
     }
-    
-    // 2. Clock Timer Logic (Keep this separate from the gross/effective timer logic)
     if (!clockTimerRef.current) {
         clockTimerRef.current = setInterval(() => setCurrentTime(new Date()), 1000);
     }
      const employeeId = userData?.employeeId;
      const attendanceId = currentAttendanceId;
     let lastHiddenAt = 0;
-    const HIDDEN_THRESHOLD_MS = 30 * 1000; // 30s threshold - adjust if needed
-
+    const HIDDEN_THRESHOLD_MS = 30 * 1000; 
     const handleDisconnect = async (useBeacon = false) => {
         if (!isLoggedIn || !employeeId || !attendanceId) return;
         const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/disconnected`;
@@ -3039,12 +1786,10 @@ useEffect(() => {
             console.error("Disconnected API call failed:", err);
         }
     };
-
     const handleConnect = async () => {
         if (!isLoggedIn || !employeeId || !attendanceId) return;
         const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${employeeId}/${attendanceId}/connected`;
         try {
-            // simple PUT is fine when page is active
             const resp = await fetch(apiUrl, { method: "PUT", headers: { accept: "*/*" } });
             if (!resp.ok) console.warn("Connected endpoint returned non-OK:", resp.status);
             else console.log("Connected endpoint hit:", apiUrl);
@@ -3054,7 +1799,6 @@ useEffect(() => {
     };
     const handleVisibilityChange = () => {
         if (!isLoggedIn) return;
-
         if (document.visibilityState === "hidden") {
             lastHiddenAt = Date.now();
             console.log("Document hidden at", new Date(lastHiddenAt).toISOString());
@@ -3076,7 +1820,6 @@ useEffect(() => {
         if (!isLoggedIn) return;
         handleDisconnect(true);
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pagehide", onPageHide); 
     window.addEventListener("beforeunload", onBeforeUnload);
@@ -3093,7 +1836,7 @@ useEffect(() => {
         window.removeEventListener("pagehide", onPageHide);
         window.removeEventListener("beforeunload", onBeforeUnload);
     };
-}, [isLoggedIn, startTime, currentAttendanceId]); // Depend on currentAttendanceId
+}, [isLoggedIn, startTime, currentAttendanceId]); 
    const updateProfileField = async (field, value) => {
   try {
     if (!userData?.employeeId) return null;
@@ -3152,7 +1895,6 @@ const handleLogin = async () => {
   setEndTime(null);
   setGrossHours(0);
   setEffectiveHours(0);
-
   const newRecord = {
     employee_id: id,
     date: now.toLocaleDateString(),
@@ -3161,22 +1903,16 @@ const handleLogin = async () => {
     login_hours: 0,
     barWidth: "0%",
   };
-
   try {
     const records = JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || [];
     localStorage.setItem(ATTENDANCE_RECORDS_KEY, JSON.stringify([...records, newRecord]));
     setRawTableData(prev => [...prev, newRecord]);
-
     const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${id}/${mode}/clock-in`;
-
-    // Read Bearer token from localStorage (Application Auth / Bearer)
     const token = (() => {
       try { return localStorage.getItem('accessToken'); } catch { return null; }
     })();
-
     const headers = { accept: '*/*' };
     if (token) headers.Authorization = `Bearer ${token}`;
-
     const response = await fetch(apiUrl, {
       method: 'PUT',
       headers,
@@ -3184,7 +1920,6 @@ const handleLogin = async () => {
 
     if (!response.ok) {
       const serverText = await response.text().catch(() => '');
-      // if unauthorized, clear local clock-in state
       if (response.status === 401) {
         setIsLoggedIn(false);
         setStartTime(null);
@@ -3195,11 +1930,8 @@ const handleLogin = async () => {
       }
       throw new Error(`HTTP error! status: ${response.status}. ${serverText}`);
     }
-
     const data = await response.json().catch(() => null);
     console.log("Clock-in successful:", data);
-
-    // store attendance id if returned
     const attendanceIdFromResponse = data?.attendanceId || data?.id || data?.attendance_id;
     if (attendanceIdFromResponse) {
       setCurrentAttendanceId(attendanceIdFromResponse);
@@ -3208,8 +1940,6 @@ const handleLogin = async () => {
     } else {
       console.warn("Attendance ID not received in clock-in response.");
     }
-
-    // If backend returns/refreshes an access token, persist it (common keys: accessToken, token, jwt)
     const returnedToken = data?.accessToken || data?.token || data?.jwt;
     if (returnedToken) {
       try { localStorage.setItem('accessToken', returnedToken); console.log('Stored accessToken from server'); } catch (e) { console.warn('Failed to store accessToken:', e); }
@@ -3220,10 +1950,6 @@ const handleLogin = async () => {
     setStartTime(null);
   }
 };
-const handleShowAttendances = () => {
-        setSidebarView('attendances');
-       setIsSidebarOpen(false);
-    };
 const handleShowAttendance = () => {
         setSidebarView('attendance');
        setIsSidebarOpen(false);
@@ -3237,8 +1963,7 @@ const handleConfirmLogout = async () => {
     const now = new Date(); 
     const clockOutData = {
         employee_id:[`${userData?.employeeId}`],
-        clock_out_time: now.toISOString(), // ISO format is best for backend storage
-        
+        clock_out_time: now.toISOString(), 
     };
     try {
         const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/clock-out`;
@@ -3262,11 +1987,8 @@ const handleConfirmLogout = async () => {
         console.error('Error during clock-out API call:', error);
         alert('A network error occurred while clocking out. You have been logged out locally, but the server record might be missing.');
     } finally {
-            // NEW: Clear Attendance ID from state and local storage on logout
             setCurrentAttendanceId(null);
            localStorage.removeItem(attendanceStorageKey);
-           // no clock-in timestamp was stored — nothing to remove
-
            setIsLoggedIn(false);
         setIsLogoutConfirmed(false);
         setEndTime(now);
@@ -3289,8 +2011,6 @@ const handleConfirmLogout = async () => {
         login_hours: loginHours > 0 ? loginHours : 0,
         barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
     };
-
-            // Update localStorage
             const records = JSON.parse(localStorage.getItem(ATTENDANCE_RECORDS_KEY)) || [];
             records[lastIndex] = updatedRecord;
             localStorage.setItem(ATTENDANCE_RECORDS_KEY, JSON.stringify(records));
@@ -3301,8 +2021,7 @@ const handleConfirmLogout = async () => {
             ];
         }
         return prev;
-    });
-    
+    }); 
 };
 };
 
@@ -3323,13 +2042,10 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
         const employeeId = userData?.employeeId || "ACS00000001";
         const { startISO, endISO } = buildRange();
         const variables = { employeeId, startDate: startISO, endDate: endISO };
-        // Use graphqlRequest so Authorization header (Bearer token) is applied and errors are normalized
         const payload = await graphqlRequest(DETAILS_QUERY, variables);
         if (cancelled) return;
         const data = payload?.getDetailsBetweenDates || [];
-
         const normalized = data.map((item) => {
-          // dateForTime: prefer YYYY-MM-DD
           const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
             ? item.date
             : (() => {
@@ -3337,42 +2053,28 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
                 if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
                 return new Date().toISOString().slice(0, 10);
               })();
-
-          // more robust UTC parsing with fallbacks
           const toUtcDate = (raw) => {
             if (!raw) return null;
             const s = String(raw).trim();
             if (!s || /^(-|n\/a|null)$/i.test(s)) return null;
-
-            // direct ISO / datetime with timezone
             if (/\d{4}-\d{2}-\d{2}T/.test(s) || /[Zz]|[+\-]\d{2}:\d{2}$/.test(s)) {
               const pd = new Date(s);
               return isNaN(pd.getTime()) ? null : pd;
             }
-
-            // try Date.parse (handles many formats incl. "YYYY-MM-DD hh:mm" or "MMM dd yyyy hh:mm")
             const parsedByJS = new Date(s);
             if (!isNaN(parsedByJS.getTime())) return parsedByJS;
-
-            // try plain time "HH:mm" or "HH:mm:ss" normalized -> treat as UTC on dateForTime
             const hhmm = tryNormalizeTo24(s);
             if (hhmm) {
               const pd = new Date(`${dateForTime}T${hhmm}:00Z`);
               return isNaN(pd.getTime()) ? null : pd;
             }
-
-            // try "date time" with space -> convert to ISO-ish and append Z if missing timezone
             const spaceSep = s.replace(' ', 'T');
             if (/\d{4}-\d{2}-\d{2}T/.test(spaceSep)) {
               const maybe = spaceSep.endsWith('Z') || /[+\-]\d{2}:\d{2}$/.test(spaceSep) ? new Date(spaceSep) : new Date(`${spaceSep}Z`);
               if (!isNaN(maybe.getTime())) return maybe;
             }
-
-            // final fallback: return null (we will display raw string)
             return null;
-          };
-
-          // format Date (UTC) into India time string
+          }
           const formatDateToIST = (dateObj) => {
             if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
             return new Intl.DateTimeFormat('en-IN', {
@@ -3388,40 +2090,29 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
 
           const loginUtc = loginRaw ? toUtcDate(loginRaw) : null;
           const logoutUtc = logoutRaw ? toUtcDate(logoutRaw) : null;
-
-          // --- CHANGED: explicitly add IST offset (+5:30) to parsed UTC dates and format ---
          const shiftAndFormat = (utcDate, rawValue) => {
              if (!rawValue) return 'N/A';
              try {
-               // try using already-parsed UTC date if available
                let base = (utcDate && !isNaN(utcDate.getTime())) ? utcDate : null;
- 
-               // fallback: if raw is HH:mm build a UTC instant for dateForTime
                if (!base) {
                  const hh = tryNormalizeTo24(String(rawValue));
                  if (hh) {
                    base = new Date(`${dateForTime}T${hh}:00Z`);
                  }
                }
- 
-               // final parse fallback
                if (!base) {
                  const maybe = new Date(String(rawValue));
                  if (!isNaN(maybe.getTime())) base = maybe;
                }
  
                if (!base || isNaN(base.getTime())) return String(rawValue);
- 
-               // add IST offset (+5:30) explicitly
                const istMs = base.getTime() + IST_OFFSET_MINUTES * 60 * 1000;
                const istDate = new Date(istMs);
- 
-               // Format the shifted instant as a 12-hour India-style time
                return new Intl.DateTimeFormat('en-IN', {
                  hour: '2-digit',
                  minute: '2-digit',
                  hour12: true,
-                 timeZone: 'UTC' // we've already shifted, present as UTC to avoid double TZ conversion
+                 timeZone: 'UTC' 
                }).format(istDate);
              } catch {
                return String(rawValue);
@@ -3485,9 +2176,6 @@ const handleCancel = () => { setIsLogoutConfirmed(false); };
     fetchData();
     return () => { cancelled = true; };
   }, [selectedMonth, userData, startDateFilter, endDateFilter]);
-
-const maxHoursInSeconds = 8 * 3600;
-    const progress = (grossHours / maxHoursInSeconds) * 100;
     const filteredSorted = useMemo(() => {
        let result = [...attendanceRecords];
    
@@ -3556,11 +2244,9 @@ const maxHoursInSeconds = 8 * 3600;
              </div>
            </div>
          );
-
      }
     return (
         <div className={`min-h-screen ${theme === 'dark'? 'bg-gray-900': 'bg-gray-50'} font-sans text-gray-800 relative`}>
-            {/* Sidebar */}
              <AnimatePresence>
             {(matchedArray || []).includes("VIEW_ATTENDANCE_REPORTS") && !isSidebarOpen && (
                 <motion.button onClick={() => setIsSidebarOpen(true)} className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-l-lg shadow-lg z-50 hover:bg-indigo-700 transition-colors"
@@ -3599,7 +2285,6 @@ const maxHoursInSeconds = 8 * 3600;
               
             )}
             </AnimatePresence>
-            {/* Main Content Wrapper */}
             <div className={`flex-1 transition-all duration-300 p-4 sm:p-6 lg:p-8`}>
          
               {isSidebarOpen && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setIsSidebarOpen(false)}></div>}
@@ -3647,10 +2332,7 @@ const maxHoursInSeconds = 8 * 3600;
                             key="dashboard"
                         >
                            <div className="grid grid-cols-1 lg:grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
-   <motion.div
-        className="p-2 flex items-center justify-center w-full"
-        animate={{ opacity: 1, scale: 1 }}
-    >
+   <motion.div className="p-2 flex items-center justify-center w-full" animate={{ opacity: 1, scale: 1 }} >
         <div className={`rounded-3xl shadow-2xl p-4 w-full max-w-lg md:max-w-3xl transition-all hover:shadow-3xl duration-300 relative overflow-hidden 
                 ${theme === 'dark' ? 'bg-gray-800 border border-indigo-500/50' : 'bg-white border border-gray-200'}`}>
 
@@ -3658,7 +2340,7 @@ const maxHoursInSeconds = 8 * 3600;
             <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-gradient-to-tr from-green-100 via-blue-200 to-purple-300 opacity-30 z-0 animate-pulse-slow-reverse"></div>
             <div className="flex flex-row items-start justify-between mb-2 relative z-10">
                 <div className="flex items-start space-x-3 md:space-x-4">
-                    <div className="relative mt-1"> {/* Adjusted margin top */}
+                    <div className="relative mt-1"> 
                         <motion.div
                             className={`w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-4 flex items-center justify-center shadow-xl cursor-pointer 
                                 ${theme === 'dark' ? 'border-gray-700 bg-gray-600' : 'border-white bg-indigo-500'}`}
@@ -3695,8 +2377,6 @@ const maxHoursInSeconds = 8 * 3600;
                             )}
                         </motion.div>
                     </div>
-
-                    {/* Welcome Text */}
                     <motion.div
                         className="text-start mt-2"
                         initial={{ opacity: 0, x: -20 }}
@@ -3796,26 +2476,7 @@ const maxHoursInSeconds = 8 * 3600;
             </div>
             <div className={`grid grid-cols-1 md:grid-cols-1`}>
               <ProfileAttendance/>
-    {/* Other Stats */}
-    {/*<div className={`flex flex-col items-start p-3 rounded-xl   shadow w-full ${theme==='dark'?'bg-gray-800':'bg-gradient-to-br from-orange-50 via-white to-orange-100'}`}>
-        <span className="text-lg font-semibold text-green-500 mb-1">Attendance % (Ontime)</span>
-        <span className={`font-bold text-lg md:text-xl mb-2 ${profileData.onTime >= 75 ? 'text-green-500' : profileData.onTime >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>{profileData.onTime || 0}%</span>
-        <div  className="flex flex-col items-start">
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-2 w-full`}>
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>shift: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.shift || '-'}</span></span>
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Login: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.loginTime ? new Date(profileData.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>   
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Avg. Working Hours: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.avgWorkingHours || 0}</span></span>
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Mode: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.mode || '-'}</span></span> 
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Logout: <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.logoutTime ? new Date(profileData.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span></span>
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Gross Time (Day): <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.grossTimeDay || '-'}</span></span>
-        <span className={`text-sm  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>Effective Time (Day): <span className={`font-bold  ${theme==='dark'?'text-gray-400':'text-gray-500'}`}>{profileData.effectiveTimeDay || '-'}</span></span>
-
-        </div>
-
-        </div>
-    </div>*/}
-</div>
-            
+</div>  
             <div className="relative my-2 w-full flex justify-center">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                     <motion.div
@@ -3830,8 +2491,6 @@ const maxHoursInSeconds = 8 * 3600;
                     CURRENT CLOCK
                 </span>
             </div>
-
-            {/* Time display section: Increased font size for clock, better centered */}
             <div className="w-full flex flex-col items-center text-center mb-4 relative z-10">
 
                 <div className="mb-4">
@@ -3841,11 +2500,10 @@ const maxHoursInSeconds = 8 * 3600;
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.8, duration: 0.5 }}
                     >
-                        <ClockIcon className="w-5 h-5 text-indigo-500" /> {/* Slightly smaller icon */}
+                        <ClockIcon className="w-5 h-5 text-indigo-500" />
                         <span className='text-sm'>Current Time</span>
                     </motion.div>
                     <motion.p
-                        // Central clock is now larger for focus, scales down well on mobile
                         className={`text-3xl md:text-3xl lg:text-3xl font-extrabold tracking-tight mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -3862,10 +2520,6 @@ const maxHoursInSeconds = 8 * 3600;
                         {currentTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                     </motion.p>
                 </div>
-               {/*<div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-                Today's Metrics: {todayIso}
-            </div>*/}
-            
             {loadingTodayAttendance ? (
                 <p className="text-sm text-indigo-400 animate-pulse">Fetching today's hours...</p>
             ) : (
@@ -3882,8 +2536,6 @@ const maxHoursInSeconds = 8 * 3600;
                             Effective Hours
                         </div>
                     </motion.div>
-                    
-                    {/* GROSS HOURS */}
                     <motion.div
                         className={`rounded-xl p-2 shadow-sm text-center flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gray-700 text-white border border-pink-500/50' : 'bg-pink-50 border border-pink-200'}`}
                         transition={{ type: "spring", stiffness: 300 }}
@@ -3898,13 +2550,10 @@ const maxHoursInSeconds = 8 * 3600;
                 </div> 
             )}
             </div>
-
-            {/* Action Buttons - Reduced size and centered for mobile */}
             <div className="w-full flex justify-center mt-4 relative z-10">
                 {!isLoggedIn ? (
                     <motion.button
                         onClick={handleLogin}
-                        // Reduced size and font
                         className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-green-700 font-bold text-lg"
                         whileTap={{ scale: 0.95 }}
                         initial={{ opacity: 0, y: 20 }}
@@ -3944,16 +2593,7 @@ const maxHoursInSeconds = 8 * 3600;
                                     </motion.button>
                                 </>
                             ) : (
-                                <motion.button
-                                    key="logout"
-                                    onClick={handleLogout}
-                                    // Reduced size and font
-                                    className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-600 hover:to-red-700 font-bold text-lg"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
+                                <motion.button key="logout" onClick={handleLogout} className="flex items-center justify-center w-36 py-1.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-red-600 hover:to-red-700 font-bold text-lg" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} whileTap={{ scale: 0.95 }}>
                                     <ClockIcon className="w-5 h-5 mr-1.5" /> 
                                     Clock Out
                                 </motion.button>
@@ -4082,8 +2722,6 @@ const maxHoursInSeconds = 8 * 3600;
          Employee Attendance Tracker
       </h1>
       <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 p-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} rounded-xl shadow-lg border-l-4 border-indigo-500`}>
-        
-       
         <div className="flex flex-wrap gap-4">
           {/* Leave dropdown removed as requested */}
 
@@ -4121,22 +2759,6 @@ const maxHoursInSeconds = 8 * 3600;
   >
     Clear
   </button>
-
-  {/* Quick-set buttons for convenience */}
-  {/*<button
-    title="Set start date to today"
-    onClick={() => { setStartDateFilter(todayISO); setPage(1); }}
-    className="px-2 py-1 bg-gray-100 rounded-lg text-sm border border-gray-300"
-  >
-    st date
-  </button>
-  <button
-    title="Set end date to today"
-    onClick={() => { setEndDateFilter(todayISO); setPage(1); }}
-    className="px-2 py-1 bg-gray-100 rounded-lg text-sm border border-gray-300"
-  >
-    en date
-  </button>*/}
 </div>
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className={`p-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark' ? 'bg-gray-700 text-gray-50' : 'bg-white'}`}>
             <option value="Recantly Added">Sorted By: Recently Added</option>
@@ -4146,7 +2768,6 @@ const maxHoursInSeconds = 8 * 3600;
             <option value="Last Month">Date: Last Month</option>
             <option value="Last 7 days">Date: Last 7 days</option>
           </select>
-
           <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="p-2 border border-gray-300 rounded-lg text-sm bg-white">
             <option value={6}>6 / page</option>
             <option value={12}>12 / page</option>
@@ -4154,7 +2775,6 @@ const maxHoursInSeconds = 8 * 3600;
           </select>
         </div>
       </div>
-
       <div className="overflow-x-auto shadow-2xl rounded-xl">
         <table className="min-w-full bg-white border-collapse">
           <thead className="bg-indigo-600 text-white sticky top-0">
@@ -4169,7 +2789,6 @@ const maxHoursInSeconds = 8 * 3600;
               <th className="py-3 px-4 text-left text-sm font-semibold uppercase tracking-wider border-indigo-500 sm:hidden">Employee Details</th>
             </tr>
           </thead>
-
           <tbody>
             {loading ? (
               <tr><td colSpan={10} className="text-center py-8">Loading…</td></tr>
@@ -4212,7 +2831,6 @@ const maxHoursInSeconds = 8 * 3600;
           </tbody>
         </table>
       </div>
-
       {/* pagination controls */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
@@ -4222,7 +2840,6 @@ const maxHoursInSeconds = 8 * 3600;
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
         </div>
       </div>
-
       <p className={`text-sm ${theme === 'dark' ? ' text-gray-50' : 'text-gray-700'} mt-6 text-center`}>
         Data is displayed for <strong>{filteredSorted.length}</strong> attendance record(s) based on current filters.
       </p>
