@@ -3196,7 +3196,7 @@ const fetchTodayAttendance = useCallback(async () => {
                                 value={endDateFilter}
                                 max={todayISO}
                                 onChange={e => setEndDateFilter(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                               />
                             </div>
                           </div>
@@ -3223,7 +3223,7 @@ const fetchTodayAttendance = useCallback(async () => {
                           <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className={`px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm min-w-[160px] ${theme === 'dark'
+                            className={`px-3 py-2 border border-gray-300 rounded-lg text-sm min-w-[160px] ${theme === 'dark'
                               ? 'bg-gray-700 text-gray-100'
                               : 'bg-white text-gray-900'
                               }`}
@@ -3239,7 +3239,7 @@ const fetchTodayAttendance = useCallback(async () => {
                           <select
                             value={pageSize}
                             onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                            className={`px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm ${theme === 'dark'
+                            className={`px-3 py-2 border border-gray-300 rounded-lg text-sm ${theme === 'dark'
                               ? 'bg-gray-700 text-gray-100'
                               : 'bg-white text-gray-900'
                               }`}
@@ -3253,7 +3253,7 @@ const fetchTodayAttendance = useCallback(async () => {
                     </div>
 
                     {/* Table Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className={`rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'}`}>
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
