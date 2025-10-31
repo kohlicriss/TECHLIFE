@@ -983,7 +983,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
 
         const token = localStorage.getItem('accessToken');
-        const brokerURL = `ws://192.168.0.218:8083/api/chat?employeeId=${currentUser.id}&token=${token}`;
+        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}&token=${token}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
