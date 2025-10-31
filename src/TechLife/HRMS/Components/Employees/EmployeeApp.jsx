@@ -249,7 +249,7 @@ const credentialsFormFields = [
     { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
     { label: "Username", name: "username", type: "text", required: true, hint: "Must start with 'ACS' and match Employee ID (8-30 chars).", maxLength: 30 },
     { label: "Password", name: "password", type: "password", required: true, hint: "Temporary password (8-30 characters).", maxLength: 30 },
-    { label: "Role", name: "role", type: "text", required: true, hint: "E.g., ROLE_ADMIN, ROLE_MANAGER, ROLE_EMPLOYEE, ROLE_HR." },
+    { label: "Role", name: "role", type: "select", required: true, options: ["ROLE_HR", "ROLE_MANAGER", "ROLE_EMPLOYEE", "ROLE_ADMIN", "ROLE_TEAM_LEAD"], hint: "Select the role for the user account." },
 ];
 
 const employeeFormFields = [

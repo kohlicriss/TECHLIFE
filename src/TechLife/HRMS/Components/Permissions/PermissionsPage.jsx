@@ -213,7 +213,7 @@ const PermissionsPage = () => {
         if (permission === 'CREATE_TASK') return 'Create Task';
         if (permission === 'VIEW_TASKS') return 'View Tasks';
         if (permission === 'VIEW_REPORTS') return 'View Reports';
-        if (permission === 'PERMISSIONS_BUTTENS') return 'Permissions Buttons';
+        if (permission === 'PERMISSIONS_BUTTONS') return 'Permissions Buttons';
         if (permission === 'CREATE_HR') return 'Create HR';
         return permission.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
     }, []);
