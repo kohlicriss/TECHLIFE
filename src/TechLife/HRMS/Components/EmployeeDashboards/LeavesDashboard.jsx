@@ -202,7 +202,7 @@ const FormField = ({ label, theme, children, helperText, className = '' }) => {
     );
 };
 
-const baseInputClasses = (theme) => `w-full px-4 py-3 border rounded-lg transition duration-300 text-sm 
+const baseInputClasses = (theme) => `w-full px-4 py-3 border rounded-lg text-sm 
     focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 focus:outline-none 
     ${theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-800'}`;
 
@@ -254,17 +254,38 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
     try {
       let resp;
       // Try PUT first (as originally implemented). If server responds 405, fall back to POST.
-      try {
-        resp = await (dashboardApi?.put ? dashboardApi.put(url, payload, { headers }) : axios.put(url, payload, { headers }));
-      } catch (err) {
-        // If server disallows PUT, try POST as fallback
-        if (err?.response?.status === 405) {
-          console.warn("PUT returned 405, retrying with POST:", url);
-          resp = await (dashboardApi?.post ? dashboardApi.post(url, payload, { headers }) : axios.post(url, payload, { headers }));
-        } else {
-          throw err;
+        try {
+            const response = await (dashboardApi?.post
+                ? dashboardApi.post(url, payload, { headers })
+                : axios.post(url, payload, { headers })
+            );
+
+            // Handle non-success HTTP codes manually
+            if (response.status !== 200 && response.status !== 201) {
+                const message =
+                typeof response.data === "string"
+                    ? response.data
+                    : response.data?.message || "Unexpected error occurred.";
+
+                alert(`Error: ${message}`);
+                throw new Error(message);
+            }
+
+            // Success message (if you want feedback)
+            alert("Request completed successfully 🎉");
+        } catch (error) {
+            console.error("Submission Error:", error);
+
+            // Extract message from backend or fallback
+            const backendMsg = error.response?.data
+                ? typeof error.response.data === "string"
+                ? error.response.data
+                : error.response.data.message
+                : error.message;
+
+            alert(`Error: ${backendMsg}`);
         }
-      }
+
 
       // Persist locally and notify parent
       const key = `leaveHistory_${employeeId}`;
@@ -300,7 +321,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            // transition={{ duration: 0.2 }}
             onClick={onClose}
             aria-hidden={true}
         >
@@ -309,7 +330,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                 initial={{ scale: 0.97, y: -8, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0.97, y: -8, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                // transition={{ duration: 0.2 }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <form
@@ -385,7 +406,7 @@ const AddLeaveForm = ({ onClose, onAddLeave }) => {
                                     type="checkbox"
                                     checked={isHalfDay}
                                     onChange={e => setIsHalfDay(e.target.checked)}
-                                    className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500 transition duration-150"
+                                    className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
                                 />
                                 <label
                                     htmlFor="isHalfDay"
@@ -453,7 +474,7 @@ const LeaveTypeCard = ({
             className={`rounded-xl shadow-lg p-6 h-full flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            // transition={{ duration: 0.5, ease: "easeOut" }}
 
         >
             <h1 className={`text-xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-yellow-100 to-yellow-400 bg-clip-text text-transparent border-gray-100':'text-gray-700'}`}>
@@ -575,7 +596,7 @@ const LeaveType = () => {
             className={` rounded-xl shadow-lg p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            // transition={{ duration: 0.5, delay: 0.2 }}
         >
              <h1 className={`text-2xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent border-gray-100':'text-gray-700 border-gray-200'} border-b pb-4`}>
                 Leave Type Breakdown
@@ -677,7 +698,8 @@ const WeeklyPattern = () => {
             className={` shadow-lg rounded-xl p-6 h-full flex flex-col border border-gray-200 hover:border-indigo-500 hover:shadow-2xl transition-all duration-300 ease-in-out ${theme === 'dark' ? 'bg-gray-600' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            // transition={{ duration: 0.5, delay: 0.4 }}
+
         >
             <h1 className={`text-2xl font-bold mb-4 text-center ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent border-gray-100':'text-gray-700 border-gray-200'} border-b pb-4`}>
                 Weekly Leave Pattern
@@ -1181,13 +1203,9 @@ const UserGreeting = ({ handleRequestLeave }) => {
 
                 const response = await axios.get(url, { headers });
 
-                // Persist token if backend returns a refreshed token (common keys)
-                const returnedToken = response?.data?.accessToken || response?.data?.token || response?.headers?.authorization;
-                if (returnedToken) {
-                    const raw = String(returnedToken).startsWith('Bearer ')
-                        ? String(returnedToken).split(' ')[1]
-                        : String(returnedToken);
-                    try { localStorage.setItem('accessToken', raw); } catch (e) { /* ignore storage errors */ }
+                if (response.status !== 200 && response.status !== 201) {
+                    alert(`Error: ${response}`);
+                    throw new Error(`${response.status}`);
                 }
 
                 setAttendanceSummary(response.data);
@@ -1210,7 +1228,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
                         }`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+            // transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
         >
             {/* Greeting and Profile Section (More prominent on all screens) */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 w-full xl:w-3/5 mb-6 xl:mb-0">
@@ -1220,7 +1238,7 @@ const UserGreeting = ({ handleRequestLeave }) => {
                     className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden flex items-center justify-center border-4 
                         ${theme === 'dark' ? 'border-gray-700 bg-indigo-700' : 'border-indigo-100 bg-indigo-600'} shadow-xl`}
                     whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 300 }}
+                    // transition={{ type: "spring", stiffness: 300 }}
                 >
                     {loggedInUserProfile.image ? (
                         <img
@@ -1414,6 +1432,11 @@ function deduplicateLeaves(leaves) {
                 { cancelToken: source.token } 
             );
 
+            if (response.status !== 200 && response.status !== 201) {
+                alert(`Error: ${response}`);
+                throw new Error(`${response.status}`);
+            }
+
             const typeMap = {
                 Casual: "Casual Leave",
                 Paid: "Paid Leave",
@@ -1514,7 +1537,7 @@ function deduplicateLeaves(leaves) {
                         initial={{ x: '100%' }}
                         animate={{ x: '0%' }}
                         exit={{ x: '100%' }}
-                        transition={{ duration: 0.3, delay: 0.2 }}
+                        // transition={{ duration: 0.3, delay: 0.2 }}
                     >
                         <ChevronLeft />
                     </motion.button>
@@ -1528,7 +1551,7 @@ function deduplicateLeaves(leaves) {
                         initial={{ x: '100%' }}
                         animate={{ x: '0%' }}
                         exit={{ x: '100%' }}
-                        transition={{ duration: 0.3 }}
+                        // transition={{ duration: 0.3 }}
                     >
                         <motion.h3
                             className={`text-lg font-bold ${theme==='dark'?'text-gray-200 hover:bg-gray-500':'text-gray-900 hover:bg-blue-100'} cursor-pointer mb-1 mt-20  p-2 rounded-md`}
@@ -1561,7 +1584,7 @@ function deduplicateLeaves(leaves) {
                             initial={{ x: '100%' }}
                             animate={{ x: '0%' }}
                             exit={{ x: '100%' }}
-                            transition={{ duration: 0.3, delay: 0.2 }}
+                            // transition={{ duration: 0.3, delay: 0.2 }}
                         >
                             <ChevronRight />
                         </button>
@@ -1581,7 +1604,7 @@ function deduplicateLeaves(leaves) {
                          initial={{ opacity: 0, y: 20 }}
                          animate={{ opacity: 1, y: 0 }}
                          exit={{ opacity: 0, y: -20 }}
-                         transition={{ duration: 0.3 }}
+                        //  transition={{ duration: 0.3 }}
                      >
                          <EmployeeTable onBack={() => setSidebarView(null)} />
                      </motion.div>
@@ -1592,7 +1615,7 @@ function deduplicateLeaves(leaves) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3 }}
+                            // transition={{ duration: 0.3 }}
                         >
                             <LeavesReports
                                 onBack={() => setSidebarView(null)}
@@ -1607,7 +1630,7 @@ function deduplicateLeaves(leaves) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.3 }}
+                            // transition={{ duration: 0.3 }}
                         >
                             <header className="p-3 mb-6 text-left">
                                 <UserGreeting handleRequestLeave={handleRequestLeave} />

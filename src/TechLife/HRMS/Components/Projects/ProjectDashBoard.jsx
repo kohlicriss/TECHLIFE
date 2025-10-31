@@ -835,6 +835,7 @@ const ProjectForm = ({ onClose, editProject = null, onSuccess = () => {} }) => {
   ];
    const [fileAttachment, setFileAttachment] = useState(null);
    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [rawErrorDetail, setRawErrorDetail] = useState(null);
    const [submissionMessage, setSubmissionMessage] = useState('');
   useEffect(() => {
     if (!editProject) return;

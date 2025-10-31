@@ -3,15 +3,15 @@ import { CircleUserRound, TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import {BarChart,Bar,XAxis,YAxis,CartesianGrid,} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, } from "recharts";
 import { FaFileAlt, FaRegUser, FaUserEdit, FaUsers } from 'react-icons/fa';
 import { FiUser } from 'react-icons/fi';
 import { useParams } from 'react-router-dom';
 import { Context } from '../HrmsContext';
 import { FaRegCircleXmark } from "react-icons/fa6";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
 } from '@heroicons/react/24/solid'; // Using Heroicons for arrows
 import { useEffect } from 'react';
 import axios from 'axios';
@@ -23,35 +23,35 @@ const Attendance = () => {
     const data = [
         { name: 'Present', value: 60 },
         { name: 'Late', value: 20 },
-        { name: 'Permission', value: 20},
+        { name: 'Permission', value: 20 },
         { name: 'Absent', value: 4 },
     ];
     const statusColorMap = {
-       "Present": "text-green-600",
-       "Late": "text-blue-600",
-       "Permission": "text-yellow-600",
-       "Absent": "text-red-600",
+        "Present": "text-green-600",
+        "Late": "text-blue-600",
+        "Permission": "text-yellow-600",
+        "Absent": "text-red-600",
     };
-    const color=["#4CAF50","#2196F3","#FFC107","#EF5350"];
+    const color = ["#4CAF50", "#2196F3", "#FFC107", "#EF5350"];
 
     const chartData = [...data];
-    const {theme} = useContext(Context);
+    const { theme } = useContext(Context);
 
     return (
         <motion.div
-            className={` p-2 rounded-xl shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
+            className={` p-2 rounded-xl shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all duration-300 ease-in-out h-full ${theme === 'dark' ? 'bg-gray-600 ' : 'bg-stone-100 '}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
         >
             <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-xl font-bold ${theme==='dark' ? 'bg-gradient-to-br from-orange-100 to-orange-400 bg-clip-text text-transparent border-gray-100':'text-gray-800 '}`}>
+                <h2 className={`text-xl font-bold ${theme === 'dark' ? 'bg-gradient-to-br from-orange-100 to-orange-400 bg-clip-text text-transparent border-gray-100' : 'text-gray-800 '}`}>
                     Attendance Overview</h2>
                 <div className="relative inline-block text-left mt-1">
                     <select
                         value={selectedPeriod}
                         onChange={(e) => setSelectedPeriod(e.target.value)}
-                        className={`inline-flex justify-center w-full rounded-md border border-gray-200 shadow-sm px-4 py-2  text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 text-white  hover:bg-gray-500':'bg-white text-gray-700'}`}
+                        className={`inline-flex justify-center w-full rounded-md border border-gray-200 shadow-sm px-4 py-2  text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme === 'dark' ? 'bg-gray-600 text-white  hover:bg-gray-500' : 'bg-white text-gray-700'}`}
                     >
                         <option>Today</option>
                         <option>This Week</option>
@@ -83,20 +83,20 @@ const Attendance = () => {
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center mt-18">
-                    <p className={`text-sm font-medium ${theme==='dark' ? 'text-white ':'text-gray-500 '}`}> Total Attendance</p>
-                    <p className={`text-4xl font-bold ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{totalAttendance}</p>
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white ' : 'text-gray-500 '}`}> Total Attendance</p>
+                    <p className={`text-4xl font-bold ${theme === 'dark' ? 'text-white ' : 'text-gray-800 '}`}>{totalAttendance}</p>
                 </div>
             </div>
             <hr className="my-6 border-gray-200" />
             <div className="flex justify-between items-start">
                 <div>
-                    <h3 className={`text-lg font-semibold mb-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>Status</h3>
+                    <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-white ' : 'text-gray-800 '}`}>Status</h3>
                     <ul className="space-y-2">
                         <AnimatePresence>
                             {data.map((item, index) => (
                                 <motion.li
                                     key={item.name}
-                                    className={`flex items-center  font-medium ${theme==='dark' ? 'text-white ': statusColorMap[item.name] || 'text-gray-700 '}`}
+                                    className={`flex items-center  font-medium ${theme === 'dark' ? 'text-white ' : statusColorMap[item.name] || 'text-gray-700 '}`}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
@@ -112,14 +112,14 @@ const Attendance = () => {
                     </ul>
                 </div>
                 <div className="text-right">
-                    <h3 className={`text-lg font-semibold  mb-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>
+                    <h3 className={`text-lg font-semibold  mb-2 ${theme === 'dark' ? 'text-white ' : 'text-gray-800 '}`}>
                         Percentage</h3>
                     <ul className="space-y-2">
                         <AnimatePresence>
                             {data.map((item, index) => (
                                 <motion.li
                                     key={item.name}
-                                    className={`  font-bold ${theme==='dark' ? 'text-white ':'text-gray-700 '}`}
+                                    className={`  font-bold ${theme === 'dark' ? 'text-white ' : 'text-gray-700 '}`}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
@@ -137,256 +137,256 @@ const Attendance = () => {
 
 
 // Mock imports for demonstration
-const ClockIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.87 14.13H11.5v-6h1.37v6zM12 5.5c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5 6.5-2.91 6.5-6.5-2.91-6.5-6.5-6.5zm.5 1.5h-1v5.25l4.5 2.62.75-1.35-3.5-2.02V7z"/></svg>;
+const ClockIcon = (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.87 14.13H11.5v-6h1.37v6zM12 5.5c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5 6.5-2.91 6.5-6.5-2.91-6.5-6.5-6.5zm.5 1.5h-1v5.25l4.5 2.62.75-1.35-3.5-2.02V7z" /></svg>;
 
 const onTimeDate = [
-  { Month: "Aug", Year: "25", NoofEmployee: 100 },
-  { Month: "Sept", Year:"25", NoofEmployee: 120 },
-  { Month: "Oct", Year: "25", NoofEmployee: 80 },
-  { Month: "Nov", Year: "25", NoofEmployee: 150 },
-  { Month: "Dec", Year: "25", NoofEmployee: 7 },
+    { Month: "Aug", Year: "25", NoofEmployee: 100 },
+    { Month: "Sept", Year: "25", NoofEmployee: 120 },
+    { Month: "Oct", Year: "25", NoofEmployee: 80 },
+    { Month: "Nov", Year: "25", NoofEmployee: 150 },
+    { Month: "Dec", Year: "25", NoofEmployee: 7 },
 ];
 
 const EmployeeBarChart = () => {
     const [selectedYear, setSelectedYear] = useState('This Year');
     const { theme } = useContext(Context);
-    const filteredData = onTimeDate; 
+    const filteredData = onTimeDate;
     const formattedData = filteredData.map((item) => ({
-      name: `${item.Month}-${item.Year}`,
-      employees: item.NoofEmployee,
+        name: `${item.Month}-${item.Year}`,
+        employees: item.NoofEmployee,
     }));
-    
+
     const textColor = theme === 'dark' ? "#FFFFFF" : "#000000";
     const barColor = "#ADD8E6"; // Light Blue
-    
+
     const selectedBtnClass = "bg-blue-600 text-white shadow-md";
     const unselectedBtnClass = theme === 'dark' ? "bg-gray-600 text-gray-200 hover:bg-gray-500" : "bg-white text-gray-700 hover:bg-gray-100";
 
-  return (
-    <motion.div
-            className={` rounded-xl  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-md p-4 w-full font-sans border border-gray-200 h-96 flex flex-col ${theme==='dark' ? 'bg-gray-700 text-gray-200 ':'bg-stone-100 text-gray-800'}`}
+    return (
+        <motion.div
+            className={` rounded-xl  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-md p-4 w-full font-sans border border-gray-200 h-96 flex flex-col ${theme === 'dark' ? 'bg-gray-700 text-gray-200 ' : 'bg-stone-100 text-gray-800'}`}
             initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0.5,scale:1 }}
+            animate={{ opacity: 1, y: 0.5, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
         >
-      
-      <div className="flex justify-between items-center mb-4">
-  
-        <div className="flex items-center">
-            <ClockIcon className="w-6 h-6 text-blue-600 inline-block mr-2" /> 
-            <h2 className="text-xl font-semibold text-start">No of Leaves Taken</h2>
-        </div>
-        
-    
-        <div className="flex p-0.5 rounded-lg border border-gray-300">
-        
-            <button
-                className={`text-xs py-1 px-3 rounded-md transition-colors duration-200 ${selectedYear === 'This Year' ? selectedBtnClass : unselectedBtnClass}`}
-                onClick={() => setSelectedYear('This Year')}
-            >
-                This Year
-            </button>
-         
-            <button
-                className={`text-xs py-1 px-3 rounded-md transition-colors duration-200 ${selectedYear === 'Last Year' ? selectedBtnClass : unselectedBtnClass}`}
-                onClick={() => setSelectedYear('Last Year')}
-            >
-                Last Year
-            </button>
-        </div>
-      </div>
 
-      {/* Bar Chart Container */}
-      <ResponsiveContainer width="100%" height="90%">
-        <BarChart
-          data={formattedData}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-         
-        >
-          <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
-          <YAxis stroke={textColor} tick={{ fill: textColor }} hide/>
-          <Tooltip 
-             contentStyle={{ 
-                 backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", 
-                 border: theme ? "1px solid #4B5563" : "1px solid #ccc" 
-             }} 
-          />
-          <Bar dataKey="employees" fill={barColor} />
-        </BarChart>
-      </ResponsiveContainer>
-    </motion.div>
-  );
+            <div className="flex justify-between items-center mb-4">
+
+                <div className="flex items-center">
+                    <ClockIcon className="w-6 h-6 text-blue-600 inline-block mr-2" />
+                    <h2 className="text-xl font-semibold text-start">No of Leaves Taken</h2>
+                </div>
+
+
+                <div className="flex p-0.5 rounded-lg border border-gray-300">
+
+                    <button
+                        className={`text-xs py-1 px-3 rounded-md transition-colors duration-200 ${selectedYear === 'This Year' ? selectedBtnClass : unselectedBtnClass}`}
+                        onClick={() => setSelectedYear('This Year')}
+                    >
+                        This Year
+                    </button>
+
+                    <button
+                        className={`text-xs py-1 px-3 rounded-md transition-colors duration-200 ${selectedYear === 'Last Year' ? selectedBtnClass : unselectedBtnClass}`}
+                        onClick={() => setSelectedYear('Last Year')}
+                    >
+                        Last Year
+                    </button>
+                </div>
+            </div>
+
+            {/* Bar Chart Container */}
+            <ResponsiveContainer width="100%" height="90%">
+                <BarChart
+                    data={formattedData}
+                    margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                    }}
+
+                >
+                    <XAxis dataKey="name" stroke={textColor} tick={{ fill: textColor }} />
+                    <YAxis stroke={textColor} tick={{ fill: textColor }} hide />
+                    <Tooltip
+                        contentStyle={{
+                            backgroundColor: theme === 'dark' ? "#63676cff" : "#fff",
+                            border: theme ? "1px solid #4B5563" : "1px solid #ccc"
+                        }}
+                    />
+                    <Bar dataKey="employees" fill={barColor} />
+                </BarChart>
+            </ResponsiveContainer>
+        </motion.div>
+    );
 };
 
 
 
 
 const getDaysInMonth = (year, month) => {
-  return new Date(year, month + 1, 0).getDate();
+    return new Date(year, month + 1, 0).getDate();
 };
 
 const getFirstDayOfMonth = (year, month) => {
-  return new Date(year, month, 1).getDay();
+    return new Date(year, month, 1).getDay();
 };
 
 const Calendar = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [monthDirection, setMonthDirection] = useState(0); 
-  const {theme}=useContext(Context);
-  const month = currentDate.getMonth();
-  const year = currentDate.getFullYear();
-  const today = new Date();
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [monthDirection, setMonthDirection] = useState(0);
+    const { theme } = useContext(Context);
+    const month = currentDate.getMonth();
+    const year = currentDate.getFullYear();
+    const today = new Date();
 
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfMonth(year, month);
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfMonth(year, month);
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
- 
-  const leadingEmptyCells = Array.from({ length: firstDay }, (_, i) => i);
-
-  
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  const handlePrevMonth = () => {
-    setMonthDirection(-1);
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() - 1);
-      return newDate;
-    });
-  };
-
-  const handleNextMonth = () => {
-    setMonthDirection(1);
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() + 1);
-      return newDate;
-    });
-  };
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 
-  const calendarVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction) => ({
-      x: direction < 0 ? 300 : -300,
-      opacity: 0,
-    }),
-  };
+    const leadingEmptyCells = Array.from({ length: firstDay }, (_, i) => i);
 
-  return (
-    <div className={`flex justify-center rounded-xl items-center  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '} p-2`}>
-      <motion.div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full h-96 transform transition-all"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0 }}
-      >
-        {/* Calendar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handlePrevMonth}
-            className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-          >
-            <ChevronLeftIcon className="h-5 w-5" />
-          </motion.button>
-          <motion.h2
-            key={month + '-' + year} 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-            className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex-grow text-center"
-          >
-            {monthNames[month]} {year}
-          </motion.h2>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleNextMonth}
-            className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-          >
-            <ChevronRightIcon className="h-5 w-5" />
-          </motion.button>
-        </div>
 
-        {/* Day Names */}
-        <div className="grid grid-cols-7 gap-1 p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-          {dayNames.map((day, index) => (
-            <div key={index} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
-              {day}
-            </div>
-          ))}
-        </div>
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-        {/* Days Grid */}
-        <AnimatePresence initial={false} custom={monthDirection}>
-          <motion.div
-            key={month + '-' + year} // Key for month animation
-            custom={monthDirection}
-            variants={calendarVariants}
-            initial="enter"
-            animate="center"
-          
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 }
-            }}
-            className="grid grid-cols-7 gap-1 p-4"
-          >
-            {/* Empty leading cells */}
-            {leadingEmptyCells.map((_, index) => (
-              <div key={`empty-${index}`} className="h-10"></div>
-            ))}
+    const handlePrevMonth = () => {
+        setMonthDirection(-1);
+        setCurrentDate((prevDate) => {
+            const newDate = new Date(prevDate);
+            newDate.setMonth(newDate.getMonth() - 1);
+            return newDate;
+        });
+    };
 
-            {/* Actual days */}
-            {days.map((day) => {
-              const isToday =
-                day === today.getDate() &&
-                month === today.getMonth() &&
-                year === today.getFullYear();
-              const isWeekend =
-                (firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6; // Sunday or Saturday
+    const handleNextMonth = () => {
+        setMonthDirection(1);
+        setCurrentDate((prevDate) => {
+            const newDate = new Date(prevDate);
+            newDate.setMonth(newDate.getMonth() + 1);
+            return newDate;
+        });
+    };
 
-              return (
-                <div
-                  key={day}
-                  className={`flex items-center justify-center h-10 w-10  rounded-full text-gray-800 dark:text-gray-200 cursor-pointer 
+
+    const calendarVariants = {
+        enter: (direction) => ({
+            x: direction > 0 ? 300 : -300,
+            opacity: 0,
+        }),
+        center: {
+            x: 0,
+            opacity: 1,
+        },
+        exit: (direction) => ({
+            x: direction < 0 ? 300 : -300,
+            opacity: 0,
+        }),
+    };
+
+    return (
+        <div className={`flex justify-center rounded-xl items-center  focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme === 'dark' ? 'bg-gray-600 ' : 'bg-stone-100 '} p-2`}>
+            <motion.div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full h-96 transform transition-all"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0 }}
+            >
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handlePrevMonth}
+                        className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    >
+                        <ChevronLeftIcon className="h-5 w-5" />
+                    </motion.button>
+                    <motion.h2
+                        key={month + '-' + year}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex-grow text-center"
+                    >
+                        {monthNames[month]} {year}
+                    </motion.h2>
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleNextMonth}
+                        className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    >
+                        <ChevronRightIcon className="h-5 w-5" />
+                    </motion.button>
+                </div>
+
+                {/* Day Names */}
+                <div className="grid grid-cols-7 gap-1 p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                    {dayNames.map((day, index) => (
+                        <div key={index} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                            {day}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Days Grid */}
+                <AnimatePresence initial={false} custom={monthDirection}>
+                    <motion.div
+                        key={month + '-' + year} // Key for month animation
+                        custom={monthDirection}
+                        variants={calendarVariants}
+                        initial="enter"
+                        animate="center"
+
+                        transition={{
+                            x: { type: "spring", stiffness: 300, damping: 30 },
+                            opacity: { duration: 0.2 }
+                        }}
+                        className="grid grid-cols-7 gap-1 p-4"
+                    >
+                        {/* Empty leading cells */}
+                        {leadingEmptyCells.map((_, index) => (
+                            <div key={`empty-${index}`} className="h-10"></div>
+                        ))}
+
+                        {/* Actual days */}
+                        {days.map((day) => {
+                            const isToday =
+                                day === today.getDate() &&
+                                month === today.getMonth() &&
+                                year === today.getFullYear();
+                            const isWeekend =
+                                (firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6; // Sunday or Saturday
+
+                            return (
+                                <div
+                                    key={day}
+                                    className={`flex items-center justify-center h-10 w-10  rounded-full text-gray-800 dark:text-gray-200 cursor-pointer 
                               ${isToday ? 'bg-blue-600 text-white font-bold shadow-md transform scale-110' : ''}
                               ${!isToday && !isWeekend ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
                               ${!isToday && isWeekend ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
                               ${isToday ? 'relative z-10' : ''}
                               transition-all duration-200 ease-in-out
                               `}
-                >
-                  {day}
-                </div>
-              );
-            })}
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
-    </div>
-  );
+                                >
+                                    {day}
+                                </div>
+                            );
+                        })}
+                    </motion.div>
+                </AnimatePresence>
+            </motion.div>
+        </div>
+    );
 };
 //const Data = [
 //    {
@@ -412,10 +412,10 @@ const Calendar = () => {
 //];
 
 const ChartCard = ({ title, icontextcolor, value, icon, color, }) => {
-    const {theme} = useContext(Context);
+    const { theme } = useContext(Context);
     return (
         <motion.div
-            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl   transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme==='dark' ? 'bg-gray-500 ':'bg-stone-100 '}`}
+            className={` rounded-xl p-2 shadow-md border border-gray-200 hover:border-blue-500 hover:shadow-xl   transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${theme === 'dark' ? 'bg-gray-500 ' : 'bg-stone-100 '}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
@@ -424,8 +424,8 @@ const ChartCard = ({ title, icontextcolor, value, icon, color, }) => {
                 {React.cloneElement(icon, { className: `w-8 h-8 rounded-full` })}
             </div>
             <div>
-                <h3 className={`text-xl font-semibold  ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{title}</h3>
-                <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>{value}</p>
+                <h3 className={`text-xl font-semibold  ${theme === 'dark' ? 'text-white ' : 'text-gray-800 '}`}>{title}</h3>
+                <p className={`text-3xl font-bold mt-2 ${theme === 'dark' ? 'text-white ' : 'text-gray-800 '}`}>{value}</p>
             </div>
         </motion.div>
     );
@@ -465,7 +465,7 @@ const LeaveCharts = ({ start, end }) => {
                 // sum numeric fields across array
                 payload.forEach((row) => {
                     Object.keys(aggregate).forEach((k) => {
-                        const val = Number(row[k] ?? row[k.replace('Approved','')] ?? 0);
+                        const val = Number(row[k] ?? row[k.replace('Approved', '')] ?? 0);
                         aggregate[k] += isNaN(val) ? 0 : val;
                     });
                     // handle legacy keys that may differ
@@ -522,7 +522,7 @@ const LeaveCharts = ({ start, end }) => {
             transition={{ duration: 0.5, delay: 0.2 }}
         >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-7 gap-6 h-full">
-                     <EmployeePieChart start={start} end={end} />
+                <EmployeePieChart start={start} end={end} />
                 {loadingCards ? (
                     <div className="col-span-full text-center">Loading summary…</div>
                 ) : errorCards ? (
@@ -1072,44 +1072,44 @@ const EmployeePieChart = ({ start, end }) => {
 
 
 const LeaveDetails = ({ leave, onClose }) => {
-  const {theme}=useContext(Context)
-  if (!leave) return null;
-  return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center  bg-opacity-25 backdrop-blur-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <motion.div
-          className={` ${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100'} rounded-lg shadow-xl p-6 max-w-lg w-full relative`}
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-        >
-          <button
-            onClick={onClose}
-            className={`w-20 h-20 absolute top-3 right-3 ${theme==='dark'?'text-gray-200':'text-gray-500'} hover:text-gray-700 text-xl`}
-          >
-         <FaRegCircleXmark className="w-8 h-8"  />
-          </button>
-          <h2 className={`text-2xl font-bold mb-4 ${theme==='dark'?'text-gray-200':'text-gray-800'}`}>Leave Request Summary</h2>
-          <div className="space-y-2">
-            <div><strong>Employee ID:</strong> {leave.employeeId}</div>
-            <div><strong>Leave Type:</strong> {leave.leaveType}</div>
-            <div><strong>Status:</strong> {leave.status}</div>
-            <div><strong>Request On:</strong> {leave.reqOn}</div>
-            <div><strong>Request To:</strong> {leave.reqTo}</div>
-            <div><strong>Leave Reason:</strong>{leave.leaveReason || "-"} </div>
-            <div><strong>Rejection Reason:</strong>{leave.rejectionReason || "-"} </div>
-            <div><strong>Approved On:</strong>{leave.approvedOn || "-"} </div>
-            <div><strong>Half Day:</strong>{leave.halfDay ? "Yes" : "No"} </div>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
+    const { theme } = useContext(Context)
+    if (!leave) return null;
+    return (
+        <AnimatePresence>
+            <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center  bg-opacity-25 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+            >
+                <motion.div
+                    className={` ${theme === 'dark' ? 'bg-gray-500 text-gray-200' : 'bg-stone-100'} rounded-lg shadow-xl p-6 max-w-lg w-full relative`}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                >
+                    <button
+                        onClick={onClose}
+                        className={`w-20 h-20 absolute top-3 right-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-500'} hover:text-gray-700 text-xl`}
+                    >
+                        <FaRegCircleXmark className="w-8 h-8" />
+                    </button>
+                    <h2 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>Leave Request Summary</h2>
+                    <div className="space-y-2">
+                        <div><strong>Employee ID:</strong> {leave.employeeId}</div>
+                        <div><strong>Leave Type:</strong> {leave.leaveType}</div>
+                        <div><strong>Status:</strong> {leave.status}</div>
+                        <div><strong>Request On:</strong> {leave.reqOn}</div>
+                        <div><strong>Request To:</strong> {leave.reqTo}</div>
+                        <div><strong>Leave Reason:</strong>{leave.leaveReason || "-"} </div>
+                        <div><strong>Rejection Reason:</strong>{leave.rejectionReason || "-"} </div>
+                        <div><strong>Approved On:</strong>{leave.approvedOn || "-"} </div>
+                        <div><strong>Half Day:</strong>{leave.halfDay ? "Yes" : "No"} </div>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
 };
 
 
@@ -1120,8 +1120,8 @@ const AdminLeaveHistory = () => {
     const [statusFilter, setStatusFilter] = useState("All");
     const [sortOption, setSortOption] = useState("Recently added");
     const [currentPage, setCurrentPage] = useState(1);
-   const [rowsPerPage, setRowsPerPage] = useState(10);
-       const rowsPerPageOptions = [10, 25, 50, 100];
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const rowsPerPageOptions = [10, 25, 50, 100];
     const [isLoading, setIsLoading] = useState(false);
     const { empID } = useParams();
     const [actionLeave, setActionLeave] = useState(null);
@@ -1129,51 +1129,51 @@ const AdminLeaveHistory = () => {
     const [rejectionReason, setRejectionReason] = useState("");
     const [selectedLeave, setSelectedLeave] = useState(null);
     const { userData } = useContext(Context);
-    
+
     const handleDetailsClick = (leave) => {
-      setSelectedLeave(leave);
+        setSelectedLeave(leave);
     };
-    
+
     const handleCloseModal = () => {
-      setSelectedLeave(null);
-   };
+        setSelectedLeave(null);
+    };
     const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
-  const handleAction = async (status, reason = "") => {
-    if (!actionLeave?.id) return;
-    const leaveId = actionLeave.id;
+    const handleAction = async (status, reason = "") => {
+        if (!actionLeave?.id) return;
+        const leaveId = actionLeave.id;
 
-    // Store leaveId in localStorage for reference
-    localStorage.setItem("lastActionLeaveId", leaveId);
+        // Store leaveId in localStorage for reference
+        localStorage.setItem("lastActionLeaveId", leaveId);
 
-    try {
-                   if (status === "APPROVED") {
-               // Approve endpoint - use PUT instead of POST
-               await fetch(`https://hrms.anasolconsultancyservices.com/api/attendance/admin/leave/${leaveId}/approve`, {
-                   method: "PUT",
-               });
-           } else if (status === "rejected") {
-               // Reject endpoint - use PUT instead of POST
-               await fetch(`https://hrms.anasolconsultancyservices.com/api/attendance/admin/leave/${leaveId}/reject?reason=${encodeURIComponent(reason)}`, {
-                   method: "PUT",
-               });
-           }
-        // Update status locally
-        setLeaveRequests(prev =>
-            prev.map(leave =>
-                leave.id === leaveId
-                    ? {
-                        ...leave,
-                        status,
-                        rejectionReason: status === "rejected" ? reason : leave.rejectionReason,
-                        approvedOn: status === "APPROVED" ? new Date().toISOString().slice(0, 10) : leave.approvedOn,
-                    }
-                    : leave
-            )
-        );
-    } catch (error) {
-        alert("Failed to update leave status. Please try again.");
-    }
-};
+        try {
+            if (status === "APPROVED") {
+                // Approve endpoint - use PUT instead of POST
+                await fetch(`https://hrms.anasolconsultancyservices.com/api/attendance/admin/leave/${leaveId}/approve`, {
+                    method: "PUT",
+                });
+            } else if (status === "rejected") {
+                // Reject endpoint - use PUT instead of POST
+                await fetch(`https://hrms.anasolconsultancyservices.com/api/attendance/admin/leave/${leaveId}/reject?reason=${encodeURIComponent(reason)}`, {
+                    method: "PUT",
+                });
+            }
+            // Update status locally
+            setLeaveRequests(prev =>
+                prev.map(leave =>
+                    leave.id === leaveId
+                        ? {
+                            ...leave,
+                            status,
+                            rejectionReason: status === "rejected" ? reason : leave.rejectionReason,
+                            approvedOn: status === "APPROVED" ? new Date().toISOString().slice(0, 10) : leave.approvedOn,
+                        }
+                        : leave
+                )
+            );
+        } catch (error) {
+            alert("Failed to update leave status. Please try again.");
+        }
+    };
 
     // FIX: Use leaveRequests for filtering and sorting
     const leaveTypes = ["All", ...new Set(leaveRequests.map((d) => d.leaveType))];
@@ -1233,7 +1233,7 @@ const AdminLeaveHistory = () => {
         fetchPendingLeaves();
     }, []);
 
-   
+
 
     return (
         <motion.div
@@ -1243,105 +1243,105 @@ const AdminLeaveHistory = () => {
             transition={{ duration: 0.5 }}
         >
             <h2 className={`text-2xl font-bold mb-4 text-left border-b pb-4 ${theme === 'dark' ? 'bg-gradient-to-br from-green-400 to-green-800 bg-clip-text text-transparent border-gray-100' : 'text-gray-800 border-gray-200'} `}>
-                      Leave Requests History
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-4 mb-6">
-                      <div className="relative">
-                          <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
-                              Leave Type:
-                          </label>
-                          <select
-                              value={leaveTypeFilter}
-                              onChange={(e) => setLeaveTypeFilter(e.target.value)}
-                              className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme==='dark' ? 'border-black  bg-gray-500 text-white':'border-gray-300'}`}
-                          >
-                              {leaveTypes.map((type) => (
-                                  <option key={type} value={type}>
-                                      {type}
-                                  </option>
-                              ))}
-                          </select>
-                      </div>
-                      <div>
-                          <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
-                              Status:
-                          </label>
-                          <select
-                              value={statusFilter}
-                              onChange={(e) => setStatusFilter(e.target.value)}
-                              className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme==='dark' ? 'border-black bg-gray-500 text-white':'border-gray-300'}`}
-                          >
-                              {statuses.map((status) => (
-                                  <option key={status} value={status}>
-                                      {status}
-                                  </option>
-                              ))}
-                          </select>
-                      </div>
-                      <div className="relative">
-                           <label className={`text-base font-semibold mr-2 ${theme==='dark' ? 'text-white':'text-gray-700'}`}>
-                              Sort by:
-                          </label>
-                          <select
-                              value={sortOption}
-                              onChange={(e) => setSortOption(e.target.value)}
-                              className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 ${theme==='dark' ? 'border-black  bg-gray-500 text-white':'border-gray-300'} border`}
-                          >
-                              {sortOptions.map((option) => (
-                                  <option key={option} value={option}>
-                                      {option}
-                                  </option>
-                              ))}
-                          </select>
-                      </div>
-                  </div>
-             <div className="overflow-x-auto rounded-xl ">
+                Leave Requests History
+            </h2>
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="relative">
+                    <label className={`text-base font-semibold mr-2 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                        Leave Type:
+                    </label>
+                    <select
+                        value={leaveTypeFilter}
+                        onChange={(e) => setLeaveTypeFilter(e.target.value)}
+                        className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme === 'dark' ? 'border-black  bg-gray-500 text-white' : 'border-gray-300'}`}
+                    >
+                        {leaveTypes.map((type) => (
+                            <option key={type} value={type}>
+                                {type}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label className={`text-base font-semibold mr-2 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                        Status:
+                    </label>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 border ${theme === 'dark' ? 'border-black bg-gray-500 text-white' : 'border-gray-300'}`}
+                    >
+                        {statuses.map((status) => (
+                            <option key={status} value={status}>
+                                {status}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="relative">
+                    <label className={`text-base font-semibold mr-2 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>
+                        Sort by:
+                    </label>
+                    <select
+                        value={sortOption}
+                        onChange={(e) => setSortOption(e.target.value)}
+                        className={`px-3 py-1.5 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 ${theme === 'dark' ? 'border-black  bg-gray-500 text-white' : 'border-gray-300'} border`}
+                    >
+                        {sortOptions.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            <div className="overflow-x-auto rounded-xl ">
                 <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-                    <thead className={`bg-gray-50  ${theme==='dark' ? ' bg-gray-500 text-white':''}`}>
+                    <thead className={`bg-gray-50  ${theme === 'dark' ? ' bg-gray-500 text-white' : ''}`}>
                         <tr>
-                            <th className={`w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Employee ID</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Leave Type</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Status</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Request On</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Request To</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Leave Reason</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Rejection Reason</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Approved On</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Half Day</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Details</th>
-                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme==='dark' ? 'text-white':''}`}>Action</th>
+                            <th className={`w-1/6 px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Employee ID</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Leave Type</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Status</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Request On</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Request To</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Leave Reason</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Rejection Reason</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Approved On</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Half Day</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Details</th>
+                            <th className={`px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${theme === 'dark' ? 'text-white' : ''}`}>Action</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {paginatedData.length > 0 ? paginatedData.map((row, idx) => (
                             <tr key={row.id || idx}>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.employeeId}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.leaveType}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}><span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "APPROVED" ? "bg-green-500" : row.status === "rejected" ? "bg-red-500" : "bg-blue-500"}`}> {row.status}</span></td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.reqOn}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.reqTo}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.leaveReason}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.rejectionReason || "-"}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.approvedOn || "-"}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>{row.halfDay ? "Yes" : "No"}</td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme==='dark' ? ' bg-gray-500':''}`}>
-                                           <button
-                                                onClick={() => handleDetailsClick(row)}
-                                                className="text-indigo-600 hover:text-indigo-800 text-lg  px-2 rounded"
-                                                title="View Details"
-                                              >
-                                               <FaFileAlt className={` ${theme==='dark'?'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition `} />
-                                           </button>
-                                       </td>
-                                <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme==='dark' ? ' bg-gray-500 text-gray-200':'text-gray-900'}`}>
-                                          <button
-                                            onClick={() => setActionLeave(row)}
-                                            className={`${theme==='dark'?'text-gray-200':'text-gray-600'} hover:text-gray-800 text-lg`}
-                                            title="Take Action"
-                                          >
-                                            ⋯
-                                          </button>
-                                       </td>       
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.employeeId}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.leaveType}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}><span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${row.status === "APPROVED" ? "bg-green-500" : row.status === "rejected" ? "bg-red-500" : "bg-blue-500"}`}> {row.status}</span></td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.reqOn}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.reqTo}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.leaveReason}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.rejectionReason || "-"}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.approvedOn || "-"}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm  ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>{row.halfDay ? "Yes" : "No"}</td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm text-center ${theme === 'dark' ? ' bg-gray-500' : ''}`}>
+                                    <button
+                                        onClick={() => handleDetailsClick(row)}
+                                        className="text-indigo-600 hover:text-indigo-800 text-lg  px-2 rounded"
+                                        title="View Details"
+                                    >
+                                        <FaFileAlt className={` ${theme === 'dark' ? 'text-blue-200' : 'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition `} />
+                                    </button>
+                                </td>
+                                <td className={`px-4 py-3 whitespace-nowrap text-sm ${theme === 'dark' ? ' bg-gray-500 text-gray-200' : 'text-gray-900'}`}>
+                                    <button
+                                        onClick={() => setActionLeave(row)}
+                                        className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-600'} hover:text-gray-800 text-lg`}
+                                        title="Take Action"
+                                    >
+                                        ⋯
+                                    </button>
+                                </td>
                             </tr>
                         )) : (
                             <tr>
@@ -1352,85 +1352,85 @@ const AdminLeaveHistory = () => {
                         )}
                         {actionLeave && (
                             <motion.div
-                              className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-opacity-30"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                             >
-                              <motion.div
-                                className={` rounded-lg shadow-xl p-6 max-w-sm w-full relative ${theme==='dark' ? 'bg-gray-800 text-white ':'bg-white text-gray-800 '}`}
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                              >
-                                <button
-                                  onClick={() => { setActionLeave(null); setActionType(""); setRejectionReason(""); }}
-                                  className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
+                                <motion.div
+                                    className={` rounded-lg shadow-xl p-6 max-w-sm w-full relative ${theme === 'dark' ? 'bg-gray-800 text-white ' : 'bg-white text-gray-800 '}`}
+                                    initial={{ scale: 0.9, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0.9, opacity: 0 }}
                                 >
-                                  &times;
-                                </button>
-                                <h2 className={`text-xl font-bold mb-4 ${theme==='dark' ? 'text-white ':'text-gray-800 '}`}>Take Action</h2>
-                                {!actionType && (
-                                  <div className="flex gap-4 justify-center">
                                     <button
-                                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                                      onClick={() => setActionType("APPROVED")}
+                                        onClick={() => { setActionLeave(null); setActionType(""); setRejectionReason(""); }}
+                                        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
                                     >
-                                      Approve
+                                        &times;
                                     </button>
-                                    <button
-                                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                                      onClick={() => setActionType("rejected")}
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                )}
-                                {actionType === "APPROVED" && (
-                                  <div className="mt-4 flex flex-col items-center">
-                                    <button
-                                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                                      onClick={() => {
-                                        handleAction("APPROVED");
-                                        setActionLeave(null);
-                                        setActionType("");
-                                      }}
-                                    >
-                                      Confirm Approve
-                                    </button>
-                                  </div>
-                                )}
-                                {actionType === "rejected" && (
-                                  <div className="mt-4 flex flex-col items-center">
-                                    <textarea
-                                      rows={2}
-                                      placeholder="Enter rejection reason..."
-                                      value={rejectionReason}
-                                      onChange={e => setRejectionReason(e.target.value)}
-                                      className="border border-gray-300 rounded p-2 w-full mb-2"
-                                    />
-                                    <button
-                                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                                      onClick={() => {
-                                        handleAction("rejected", rejectionReason);
-                                        setActionLeave(null);
-                                        setActionType("");
-                                        setRejectionReason("");
-                                      }}
-                                      disabled={!rejectionReason.trim()}
-                                    >
-                                      Confirm Reject
-                                    </button>
-                                  </div>
-                                )}
-                                 </motion.div>
+                                    <h2 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white ' : 'text-gray-800 '}`}>Take Action</h2>
+                                    {!actionType && (
+                                        <div className="flex gap-4 justify-center">
+                                            <button
+                                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                                onClick={() => setActionType("APPROVED")}
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                                onClick={() => setActionType("rejected")}
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                    {actionType === "APPROVED" && (
+                                        <div className="mt-4 flex flex-col items-center">
+                                            <button
+                                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                                onClick={() => {
+                                                    handleAction("APPROVED");
+                                                    setActionLeave(null);
+                                                    setActionType("");
+                                                }}
+                                            >
+                                                Confirm Approve
+                                            </button>
+                                        </div>
+                                    )}
+                                    {actionType === "rejected" && (
+                                        <div className="mt-4 flex flex-col items-center">
+                                            <textarea
+                                                rows={2}
+                                                placeholder="Enter rejection reason..."
+                                                value={rejectionReason}
+                                                onChange={e => setRejectionReason(e.target.value)}
+                                                className="border border-gray-300 rounded p-2 w-full mb-2"
+                                            />
+                                            <button
+                                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                                onClick={() => {
+                                                    handleAction("rejected", rejectionReason);
+                                                    setActionLeave(null);
+                                                    setActionType("");
+                                                    setRejectionReason("");
+                                                }}
+                                                disabled={!rejectionReason.trim()}
+                                            >
+                                                Confirm Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                </motion.div>
                             </motion.div>
-                          )}
-                          <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
+                        )}
+                        <LeaveDetails leave={selectedLeave} onClose={handleCloseModal} />
                     </tbody>
                 </table>
             </div>
-           {/* PAGINATION CONTROLS */}
+            {/* PAGINATION CONTROLS */}
             <div className="mt-4 flex flex-col sm:flex-row items-center justify-between">
                 <div className="flex items-center gap-2 mb-4 sm:mb-0">
                     <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
@@ -1440,7 +1440,7 @@ const AdminLeaveHistory = () => {
                 </div>
                 <nav className="flex items-center gap-2">
                     <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Previous</button>
-                    <span  className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
+                    <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Page {currentPage} of {totalPages}</span>
                     <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`px-4 py-2 text-sm font-medium  border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500 hover:bg-gray-500' : 'bg-white text-gray-800'} `}>Next</button>
                 </nav>
             </div>
@@ -1449,8 +1449,8 @@ const AdminLeaveHistory = () => {
 };
 const FormInput = ({ label, theme, ...props }) => {
     // Determine the border/text color based on the theme
-    const inputClasses = theme === 'dark' 
-        ? 'border-gray-600 bg-gray-700 text-white' 
+    const inputClasses = theme === 'dark'
+        ? 'border-gray-600 bg-gray-700 text-white'
         : 'border-gray-300 bg-white text-gray-800';
 
     return (
@@ -1458,9 +1458,9 @@ const FormInput = ({ label, theme, ...props }) => {
             <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
                 {label}
             </label>
-            <input 
-                {...props} 
-                className={`w-full px-4 py-2 border rounded-lg transition duration-300 ease-in-out focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none ${inputClasses}`} 
+            <input
+                {...props}
+                className={`w-full px-4 py-2 border rounded-lg transition duration-300 ease-in-out focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none ${inputClasses}`}
             />
         </div>
     );
@@ -1497,46 +1497,50 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
         try {
             // Note: The alert is now handled by the onSubmit success message in the parent component, 
             // but is kept here for direct feedback if the parent isn't setup.
-            await axios.post(
+            const response = await axios.post(
                 "https://hrms.anasolconsultancyservices.com/api/attendance/personalleaves/add",
                 formData
             );
+            if (response.status !== 200 && response.status !== 201) {
+                alert(`Error: ${response}`);
+                throw new Error(`${response.status}`);
+            }
             alert(`Attendance added successfully! 🎉`);
             onSubmit(formData);
             setShowConfirm(false);
             onClose();
         } catch (error) {
             console.error("Submission error:", error);
-            alert("Failed to submit attendance. Please check your network and data, then try again.");
+            alert(error.message || "An error occurred while submitting the form.");
         } finally {
             setIsSubmitting(false);
         }
     };
-    
+
     // Determine main form background and text color
-    const formThemeClasses = theme === 'dark' 
-        ? 'bg-gray-800 text-white border-gray-700' 
+    const formThemeClasses = theme === 'dark'
+        ? 'bg-gray-800 text-white border-gray-700'
         : 'bg-white text-gray-800 border-green-200';
 
     return (
-        <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={onClose} // Close on backdrop click
         >
-            <motion.div 
+            <motion.div
                 className="w-full max-w-2xl mx-auto my-auto max-h-[90vh] overflow-y-auto transform"
-                initial={{ scale: 0.95, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                exit={{ scale: 0.95, opacity: 0 }} 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the form
             >
-                <form 
-                    onSubmit={handleSubmit} 
+                <form
+                    onSubmit={handleSubmit}
                     className={`relative rounded-3xl shadow-2xl ${formThemeClasses} transition-all duration-300`}
                 >
                     <div className="text-center rounded-t-3xl overflow-hidden">
@@ -1549,121 +1553,121 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
 
                     <div className="space-y-6 p-6">
                         {/* Row 1: Employee ID */}
-                        <FormInput 
+                        <FormInput
                             label="Employee ID"
                             theme={theme}
-                            type="text" 
-                            name="employeeId" 
-                            value={formData.employeeId} 
-                            onChange={handleChange} 
-                            required 
+                            type="text"
+                            name="employeeId"
+                            value={formData.employeeId}
+                            onChange={handleChange}
+                            required
                         />
-                        
+
                         {/* Row 2: Month & Year */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormInput 
+                            <FormInput
                                 label="Month (1-12)"
                                 theme={theme}
-                                type="number" 
-                                name="month" 
-                                value={formData.month} 
-                                onChange={handleChange} 
-                                required 
-                                min="1" 
+                                type="number"
+                                name="month"
+                                value={formData.month}
+                                onChange={handleChange}
+                                required
+                                min="1"
                                 max="12"
                             />
-                            <FormInput 
+                            <FormInput
                                 label="Year (e.g., 2025)"
                                 theme={theme}
-                                type="number" 
-                                name="year" 
-                                value={formData.year} 
-                                onChange={handleChange} 
-                                required 
-                                min="2000" 
+                                type="number"
+                                name="year"
+                                value={formData.year}
+                                onChange={handleChange}
+                                required
+                                min="2000"
                                 max="2100"
                             />
                         </div>
-                        
+
                         <h3 className={`text-lg font-semibold border-b pb-2 ${theme === 'dark' ? 'text-gray-300 border-gray-700' : 'text-gray-700 border-gray-200'}`}>
                             Leave Details (Days)
                         </h3>
 
                         {/* Row 3: Paid & Sick Leaves */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormInput 
+                            <FormInput
                                 label="Paid Leaves"
                                 theme={theme}
-                                type="number" 
-                                name="paid" 
-                                value={formData.paid} 
-                                onChange={handleChange} 
-                                required 
+                                type="number"
+                                name="paid"
+                                value={formData.paid}
+                                onChange={handleChange}
+                                required
                                 min="0"
                             />
-                            <FormInput 
+                            <FormInput
                                 label="Sick Leaves"
                                 theme={theme}
-                                type="number" 
-                                name="sick" 
-                                value={formData.sick} 
-                                onChange={handleChange} 
-                                required 
-                                min="0" 
+                                type="number"
+                                name="sick"
+                                value={formData.sick}
+                                onChange={handleChange}
+                                required
+                                min="0"
                             />
                         </div>
 
                         {/* Row 4: Casual & Unpaid Leaves */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormInput 
+                            <FormInput
                                 label="Casual Leaves"
                                 theme={theme}
-                                type="number" 
-                                name="casual" 
-                                value={formData.casual} 
-                                onChange={handleChange} 
-                                required 
+                                type="number"
+                                name="casual"
+                                value={formData.casual}
+                                onChange={handleChange}
+                                required
                                 min="0"
                             />
-                            <FormInput 
+                            <FormInput
                                 label="Unpaid Leaves"
                                 theme={theme}
-                                type="number" 
-                                name="unpaid" 
-                                value={formData.unpaid} 
-                                onChange={handleChange} 
-                                required 
-                                min="0" 
+                                type="number"
+                                name="unpaid"
+                                value={formData.unpaid}
+                                onChange={handleChange}
+                                required
+                                min="0"
                             />
                         </div>
-                        
+
                         {/* Row 5: Shift Name */}
-                        <FormInput 
+                        <FormInput
                             label="Shift Name"
                             theme={theme}
-                            type="text" 
-                            name="shiftName" 
-                            value={formData.shiftName} 
-                            onChange={handleChange} 
-                            required 
+                            type="text"
+                            name="shiftName"
+                            value={formData.shiftName}
+                            onChange={handleChange}
+                            required
                         />
 
                         {/* Action Buttons */}
                         <div className="pt-4 flex justify-end space-x-3">
-                            <motion.button 
-                                type="button" 
-                                onClick={onClose} 
+                            <motion.button
+                                type="button"
+                                onClick={onClose}
                                 className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                                whileHover={{ scale: 1.05 }} 
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 Cancel
                             </motion.button>
-                            <motion.button 
-                                type="submit" 
-                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-colors" 
-                                disabled={isSubmitting} 
-                                whileHover={{ scale: 1.05 }} 
+                            <motion.button
+                                type="submit"
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                                disabled={isSubmitting}
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 {isSubmitting ? 'Processing...' : 'Submit Attendance'}
@@ -1671,7 +1675,7 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
                         </div>
                     </div>
                 </form>
-                
+
                 {/* Confirmation Box (Modal) */}
                 <AnimatePresence>
                     {showConfirm && (
@@ -1719,27 +1723,27 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
         </motion.div>
     );
 };
-  const API_ENDPOINT = "https://hrms.anasolconsultancyservices.com/api/attendance/shifts";
+const API_ENDPOINT = "https://hrms.anasolconsultancyservices.com/api/attendance/shifts";
 
 // --- Custom Input Component for clean JSX ---
 const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
     // Determine the border/text color based on the theme
-    const inputClasses = theme === 'dark' 
-        ? 'border-gray-600 bg-gray-700 text-white' 
+    const inputClasses = theme === 'dark'
+        ? 'border-gray-600 bg-gray-700 text-white'
         : 'border-gray-300 bg-white text-gray-800';
 
     return (
         <div>
-            <label 
-                htmlFor={props.id || props.name} 
+            <label
+                htmlFor={props.id || props.name}
                 className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}
             >
                 {label}
             </label>
-            <input 
+            <input
                 type={type}
-                {...props} 
-                className={`w-full px-4 py-2 border rounded-lg transition duration-300 ease-in-out focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 focus:outline-none ${inputClasses}`} 
+                {...props}
+                className={`w-full px-4 py-2 border rounded-lg transition duration-300 ease-in-out focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 focus:outline-none ${inputClasses}`}
             />
             {helperText && (
                 <p className={`text-xs mt-1 italic ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -1751,7 +1755,7 @@ const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
 };
 // ---------------------------------------------
 
-const ShiftForm = ({onClose}) => {
+const ShiftForm = ({ onClose }) => {
     // Logic (UNCHANGED)
     const { theme } = useContext(Context);
     const [formData, setFormData] = useState({
@@ -1797,14 +1801,20 @@ const ShiftForm = ({onClose}) => {
             shiftName: formData.shiftName,
             startTime: convertToHHMMSS(formData.startTime),
             endTime: convertToHHMMSS(formData.endTime),
+            halfTime: convertToHHMMSS(formData.halfTime),
+            acceptedBreakTime: formData.acceptedBreakTime,  // e.g. "PT1H30M00S"
+            takeAttendanceAfter: formData.takeAttendanceAfter // e.g. "PT0H30M"
         };
 
         try {
             const response = await axios.post(API_ENDPOINT, dataToSubmit);
-
+            if (response.status !== 200 && response.status !== 201) {
+                console.log(response);
+                throw new Error(`error: ${response.status} - ${response.data}`);
+            }
             alert(`Shift submitted successfully! 🎉\nStatus: ${response.status}\nMessage: ${response.data.message || 'Data received by server.'}`);
             setSubmissionMessage('Success: Shift data submitted!');
-            setFormData({ shiftName: '', startTime: '', endTime: '' });
+            setFormData({ shiftName: '', startTime: '', endTime: '', halfTime: '', acceptedBreakTime: '', takeAttendanceAfter: '' });
             onClose();
 
         } catch (error) {
@@ -1817,31 +1827,31 @@ const ShiftForm = ({onClose}) => {
     };
 
     // UI Redesign Starts Here
-    const formThemeClasses = theme === 'dark' 
-        ? 'bg-gray-800 text-white border-gray-700' 
+    const formThemeClasses = theme === 'dark'
+        ? 'bg-gray-800 text-white border-gray-700'
         : 'bg-white text-gray-800 border-gray-100';
-    
+
     const headerGradient = 'bg-gradient-to-r from-teal-500 to-cyan-600';
 
     return (
-        <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={onClose} // Allow closing by clicking backdrop
         >
-            <motion.div 
-                className="w-full max-w-lg mx-auto my-auto max-h-[90vh] overflow-y-auto transform" 
-                initial={{ scale: 0.9, y: -50 }} 
-                animate={{ scale: 1, y: 0 }} 
-                exit={{ scale: 0.9, y: -50 }} 
+            <motion.div
+                className="w-full max-w-lg mx-auto my-auto max-h-[90vh] overflow-y-auto transform"
+                initial={{ scale: 0.9, y: -50 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: -50 }}
                 transition={{ duration: 0.3 }}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             >
-                <form 
-                    onSubmit={handleSubmit} 
+                <form
+                    onSubmit={handleSubmit}
                     className={`relative w-full rounded-3xl shadow-3xl overflow-hidden ${formThemeClasses} transition-all duration-300`}
                 >
                     {/* Professional Header */}
@@ -1853,43 +1863,82 @@ const ShiftForm = ({onClose}) => {
                     </div>
 
                     <div className="space-y-6 p-8">
-                        
+
                         {/* Shift Name Input */}
-                        <Form 
+                        {/* Shift Name */}
+                        <Form
                             label="Shift Name"
                             theme={theme}
-                            type="text" 
-                            name="shiftName" 
-                            value={formData.shiftName} 
-                            onChange={handleChange} 
-                            required 
-                            placeholder="e.g., Night Shift, General Duty"
+                            type="text"
+                            name="shiftName"
+                            value={formData.shiftName}
+                            onChange={handleChange}
+                            required
+                            placeholder="e.g., Morning Shift, Night Duty"
                         />
-                        
-                        {/* Time Inputs Grouped and Side-by-Side */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                            {/* Start Time Input */}
-                            <Form 
-                                label="Start Time (HH:MM)"
+
+                        {/* Start & End Time */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <Form
+                                label="Start Time"
                                 theme={theme}
-                                type="time" 
-                                name="startTime" 
-                                value={formData.startTime} 
-                                onChange={handleChange} 
-                                required 
-                                helperText={`Submits as: ${convertToHHMMSS(formData.startTime)}`}
+                                type="time"
+                                name="startTime"
+                                value={formData.startTime}
+                                onChange={handleChange}
+                                required
+                                helperText={`Will be saved as ${convertToHHMMSS(formData.startTime)}`}
                             />
-                            
-                            {/* End Time Input */}
-                            <Form 
-                                label="End Time (HH:MM)"
+                            <Form
+                                label="End Time"
                                 theme={theme}
-                                type="time" 
-                                name="endTime" 
-                                value={formData.endTime} 
-                                onChange={handleChange} 
-                                required 
-                                helperText={`Submits as: ${convertToHHMMSS(formData.endTime)}`}
+                                type="time"
+                                name="endTime"
+                                value={formData.endTime}
+                                onChange={handleChange}
+                                required
+                                helperText={`Will be saved as ${convertToHHMMSS(formData.endTime)}`}
+                            />
+                        </div>
+
+                        {/* Half Time */}
+                        <div className="pt-2">
+                            <Form
+                                label="Half Time (HH:MM:SS)"
+                                theme={theme}
+                                type="time"
+                                step="1"
+                                name="halfTime"
+                                value={formData.halfTime}
+                                onChange={handleChange}
+                                required
+                                helperText="Example: 01:00:00 represents 1 hour"
+                            />
+                        </div>
+
+                        {/* Accepted Break & Attendance Delay */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                            <Form
+                                label="Accepted Break Duration"
+                                theme={theme}
+                                type="text"
+                                name="acceptedBreakTime"
+                                value={formData.acceptedBreakTime}
+                                onChange={handleChange}
+                                required
+                                placeholder="PT1H30M00S"
+                                helperText="Format: ISO 8601 (e.g., PT1H30M00S = 1h 30m)"
+                            />
+                            <Form
+                                label="Take Attendance After"
+                                theme={theme}
+                                type="text"
+                                name="takeAttendanceAfter"
+                                value={formData.takeAttendanceAfter}
+                                onChange={handleChange}
+                                required
+                                placeholder="PT0H30M"
+                                helperText="Format: ISO 8601 (e.g., PT0H30M = 30 minutes)"
                             />
                         </div>
 
@@ -1900,34 +1949,33 @@ const ShiftForm = ({onClose}) => {
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
-                                    className={`mt-4 text-center p-3 rounded-lg text-sm font-medium ${
-                                        submissionMessage.startsWith('Success') 
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-100' 
+                                    className={`mt-4 text-center p-3 rounded-lg text-sm font-medium ${submissionMessage.startsWith('Success')
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-100'
                                             : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-100'
-                                    }`}
+                                        }`}
                                 >
                                     {submissionMessage}
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                        
+
                         {/* Action Buttons */}
                         <div className="pt-4 flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
-                            <motion.button 
-                                type="button" 
-                                onClick={onClose} 
+                            <motion.button
+                                type="button"
+                                onClick={onClose}
                                 className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                                whileHover={{ scale: 1.05 }} 
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 Cancel
                             </motion.button>
-                            
-                            <motion.button 
-                                type="submit" 
-                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:bg-indigo-400 transition-colors" 
-                                disabled={isSubmitting} 
-                                whileHover={{ scale: 1.05 }} 
+
+                            <motion.button
+                                type="submit"
+                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:bg-indigo-400 transition-colors"
+                                disabled={isSubmitting}
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 {isSubmitting ? 'Creating Shift...' : 'Create Shift'}
@@ -1942,18 +1990,18 @@ const ShiftForm = ({onClose}) => {
 
 function LeavesReports({ onBack }) {
     const { theme } = useContext(Context);
-    const [isLoading,setIsLoading]=useState();
+    const [isLoading, setIsLoading] = useState();
     const [showAttendanceForm, setShowAttendanceForm] = useState(false);
-     const [showShiftForm, setShowShiftForm] = useState(false);
-     
-    const todayISO = new Date().toISOString().slice(0,10);
-    const sevenDaysAgoISO = new Date(Date.now() - 6*24*60*60*1000).toISOString().slice(0,10);
+    const [showShiftForm, setShowShiftForm] = useState(false);
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const sevenDaysAgoISO = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const [stDate, setStDate] = useState(sevenDaysAgoISO);
     const [enDate, setEnDate] = useState(todayISO);
-        const handleAddAttendance = (data) => {
-            // You can POST data to your backend here or update local state
-            console.log("Attendance Added:", data);
-        };
+    const handleAddAttendance = (data) => {
+        // You can POST data to your backend here or update local state
+        console.log("Attendance Added:", data);
+    };
     return (
         <motion.div
             className={`p-2 sm:p-2 min-h-screen font-sans ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
@@ -1967,42 +2015,42 @@ function LeavesReports({ onBack }) {
                 </h1>
 
                 <div className="flex items-center gap-2">
-                  {/* date pickers placed to the left of control buttons */}
-                  <div className="flex items-center space-x-2 mr-2">
-                    <input type="date" value={stDate} onChange={(e) => setStDate(e.target.value)} className="p-1 border rounded bg-white text-sm" />
-                    <input type="date" value={enDate} onChange={(e) => setEnDate(e.target.value)} className="p-1 border rounded bg-white text-sm" />
-                    <button onClick={() => { /* trigger refresh for LeaveCharts by updating state only */ }} className="px-3 py-1 bg-gray-200 rounded text-sm">Range</button>
-                  </div>
+                    {/* date pickers placed to the left of control buttons */}
+                    <div className="flex items-center space-x-2 mr-2">
+                        <input type="date" value={stDate} onChange={(e) => setStDate(e.target.value)} className="p-1 border rounded bg-white text-sm" />
+                        <input type="date" value={enDate} onChange={(e) => setEnDate(e.target.value)} className="p-1 border rounded bg-white text-sm" />
+                        <button onClick={() => { /* trigger refresh for LeaveCharts by updating state only */ }} className="px-3 py-1 bg-gray-200 rounded text-sm">Range</button>
+                    </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
-                    <motion.button
-                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
-                        onClick={() => setShowAttendanceForm(true)}
-                        whileHover={{ scale: 1.05, boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        Add Attendance
-                    </motion.button>
-                    <motion.button
-                        className="px-4 py-2 rounded-lg bg-pink-600 text-white font-semibold hover:bg-pink-700 transition"
-                        onClick={() => setShowShiftForm(true)}
-                        whileHover={{ scale: 1.05, boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        Add Shift
-                    </motion.button>
-                    <motion.button
-                        onClick={onBack}
-                        className="flex items-center px-4 py-2 text-sm font-semibold text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
-                        whileHover={{ scale: 1.05, boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                        </svg>
-                        Back to Dashboard
-                    </motion.button>
-                  </div>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
+                        <motion.button
+                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                            onClick={() => setShowAttendanceForm(true)}
+                            whileHover={{ scale: 1.05, boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Add Attendance
+                        </motion.button>
+                        <motion.button
+                            className="px-4 py-2 rounded-lg bg-pink-600 text-white font-semibold hover:bg-pink-700 transition"
+                            onClick={() => setShowShiftForm(true)}
+                            whileHover={{ scale: 1.05, boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Add Shift
+                        </motion.button>
+                        <motion.button
+                            onClick={onBack}
+                            className="flex items-center px-4 py-2 text-sm font-semibold text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+                            whileHover={{ scale: 1.05, boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)" }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                            </svg>
+                            Back to Dashboard
+                        </motion.button>
+                    </div>
                 </div>
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2">
