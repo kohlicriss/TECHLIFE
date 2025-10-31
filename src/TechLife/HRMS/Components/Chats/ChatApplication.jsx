@@ -55,7 +55,7 @@ const FileIcon = ({ fileName, className = "text-3xl" }) => {
 // Component to render a non-image file message (document, zip, etc.) with a download button
 const FileMessage = ({ msg, isMyMessage, theme }) => {
     const downloadUrl = `${chatApi.defaults.baseURL}/chat/file/${msg.messageId}`;
-    
+
     const handleDownloadClick = async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -69,11 +69,11 @@ const FileMessage = ({ msg, isMyMessage, theme }) => {
             const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.setAttribute('download', msg.fileName || 'download'); 
+            link.setAttribute('download', msg.fileName || 'download');
             document.body.appendChild(link);
             link.click();
             link.remove();
-            window.URL.revokeObjectURL(blobUrl); 
+            window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
             console.error('Download failed:', error);
             window.open(downloadUrl, '_blank');
@@ -90,7 +90,7 @@ const FileMessage = ({ msg, isMyMessage, theme }) => {
                 <p className={`text-sm ${isMyMessage ? 'text-blue-200' : (theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}`}>{formatFileSize(msg.fileSize)}</p>
             </div>
             <div
-                onClick={handleDownloadClick} 
+                onClick={handleDownloadClick}
                 className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 text-white transition-colors cursor-pointer"
             >
                 <FaDownload size={18} />
@@ -437,7 +437,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         setSearchQuery(e.target.value);
     };
 
-// Debounced effect to trigger message search in the currently selected chat on search query change
+    // Debounced effect to trigger message search in the currently selected chat on search query change
     useEffect(() => {
         if (searchQuery.trim() === '') {
             setSearchResults([]);
@@ -457,7 +457,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         return () => clearTimeout(timerId);
     }, [searchQuery, selectedChat, currentUser.id]);
 
-// Handlers to navigate between search results within the chat view
+    // Handlers to navigate between search results within the chat view
     const handleNextResult = () => {
         if (currentResultIndex < searchResults.length - 1) {
             setCurrentResultIndex(prev => prev + 1);
@@ -470,7 +470,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     };
 
-// Effect to scroll the chat container to the highlighted search result
+    // Effect to scroll the chat container to the highlighted search result
     useEffect(() => {
         if (currentResultIndex !== -1 && searchResults[currentResultIndex]) {
             const messageId = searchResults[currentResultIndex].messageId;
@@ -481,7 +481,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
     }, [currentResultIndex, searchResults]);
 
-// Fetches a block of messages around a specific search result and scrolls to it, highlighting the message.
+    // Fetches a block of messages around a specific search result and scrolls to it, highlighting the message.
     const handleJumpToMessage = async (message) => {
         setIsSearchVisible(false);
         setSearchQuery('');
@@ -983,7 +983,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
         }
 
         const token = localStorage.getItem('accessToken');
-        const brokerURL = `wss://hrms.anasolconsultancyservices.com/api/chat?employeeId=${currentUser.id}&token=${token}`;
+        const brokerURL = `ws://192.168.0.218:8083/api/chat?employeeId=${currentUser.id}&token=${token}`;
         const client = new Client({
             brokerURL,
             reconnectDelay: 5000,
@@ -1862,7 +1862,7 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                         )}
                     </div>
                 </div>
-                 {/* Chat Window Container (Messages, Header, Input) */}
+                {/* Chat Window Container (Messages, Header, Input) */}
                 <div className={`flex-col shadow-xl fixed inset-0 z-[100] overflow-hidden md:relative md:inset-auto md:z-auto md:w-[70%] md:h-full md:rounded-lg ${isChatOpen ? 'flex' : 'hidden md:flex'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} `}>
                     {!currentChatInfo ? (
                         <div className="flex items-center justify-center h-full">
@@ -1905,8 +1905,11 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                             <p className={`font-bold text-lg truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{currentChatInfo.name}</p>
                                         </button>
                                         {currentChatInfo.type === 'private' ? (
-                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{currentChatInfo.isOnline ? 'Online' : formatLastSeen(currentChatInfo.lastMessageTimestamp)}</p>
-                                        ) : (
+                                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {currentChatInfo.isOnline
+                                                    ? 'Online'
+                                                    : (currentChatInfo.userLastSeen ? formatLastSeen(currentChatInfo.userLastSeen) : 'Offline')}
+                                            </p>) : (
                                             <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{currentChatInfo.memberCount || 0} members</p>
                                         )}
                                     </div>
@@ -2281,14 +2284,20 @@ function ChatApplication({ currentUser, chats: initialChats, loadMoreChats, hasM
                                         <p className="text-center text-gray-500">Loading members...</p>
                                     ) : (
                                         groupMembers.map((member, i) => (
-                                            <div key={member.employeeId || i} className={`flex items-center gap-4 p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
-                                                {member.employeeImage ? (
-                                                    <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
-                                                ) : (
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                                        <FaUser className={`text-gray-500`} size={20} />
-                                                    </div>
-                                                )}
+                                            <div
+                                                key={member.employeeId || i}
+                                                className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                                                onClick={() => {
+                                                    setIsGroupInfoModalOpen(false); 
+                                                    navigate(`/employees/${currentUser.id}/public/${member.employeeId}`); 
+                                                }}
+                                            >                                                {member.employeeImage ? (
+                                                <img src={member.employeeImage} alt={member.displayName} className="w-10 h-10 rounded-full object-cover" />
+                                            ) : (
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                                    <FaUser className={`text-gray-500`} size={20} />
+                                                </div>
+                                            )}
                                                 <div>
                                                     <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{member.displayName}</span>
                                                     {member.jobTitlePrimary && <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{member.jobTitlePrimary}</p>}

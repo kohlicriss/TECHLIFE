@@ -8,7 +8,6 @@ import {
     Outlet,
 } from "react-router-dom";
 import logo from "./assets/anasol-logo.png";
-
 import HrmsContext, { Context, UISidebarContext } from "./HrmsContext"; 
 import Sidebar from "./Home/Sidebar";
 import Navbar from "./Home/Navbar";
