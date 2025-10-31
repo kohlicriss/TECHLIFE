@@ -10,6 +10,248 @@ import classNames from 'classnames';
 import { FiDelete, FiEdit } from "react-icons/fi";
 import { authApi } from '../../../../axiosInstance';
 // -------- Add ProjectOverviewForm component (Create / Update) ----------
+const SprintTable = ({ projectId }) => {
+  const { theme } = useContext(Context);
+  const [sprints, setSprints] = useState([]);
+  const [loadingSprints, setLoadingSprints] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [selectedSprint, setSelectedSprint] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [form, setForm] = useState({
+    sprintName: '',
+    startDate: '',
+    endDate: '',
+    status: 'PLANNED'
+  });
+
+  const API_HOST = 'http://192.168.0.112:8090/api/sprints';
+
+  const token = () => localStorage.getItem('accessToken');
+
+  const persistTokenFromRes = async (res, body) => {
+    try {
+      const authHeader = res.headers.get('authorization') || res.headers.get('Authorization');
+      if (authHeader) storeAccessToken(authHeader);
+      if (body?.accessToken || body?.token || body?.jwt) storeAccessToken(body?.accessToken || body?.token || body?.jwt);
+    } catch (e) { /* ignore */ }
+  };
+
+  const loadSprints = async () => {
+    if (!projectId) return;
+    setLoadingSprints(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_HOST}/project/${encodeURIComponent(projectId)}`, {
+        headers: { Accept: 'application/json', Authorization: token() ? `Bearer ${token()}` : undefined }
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => null);
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
+      const body = await res.json().catch(() => []);
+      await persistTokenFromRes(res, body);
+      // body expected to be array of sprint objects
+      setSprints(Array.isArray(body) ? body : (body.sprints || []));
+      if (Array.isArray(body) && body.length) {
+        setSelectedSprint(body[0]);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load sprints');
+      setSprints([]);
+    } finally {
+      setLoadingSprints(false);
+    }
+  };
+
+  useEffect(() => { loadSprints(); }, [projectId]);
+
+  const openCreate = () => {
+    setForm({ sprintName: '', startDate: '', endDate: '', status: 'PLANNED' });
+    setShowCreate(true);
+  };
+  const openEdit = () => {
+    if (!selectedSprint) return;
+    setForm({
+      sprintName: selectedSprint.sprintName || selectedSprint.title || '',
+      startDate: selectedSprint.startDate || '',
+      endDate: selectedSprint.endDate || '',
+      status: selectedSprint.status || 'PLANNED'
+    });
+    setShowEdit(true);
+  };
+
+  const createSprint = async (e) => {
+    e?.preventDefault();
+    if (!projectId) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_HOST}/project/${encodeURIComponent(projectId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: token() ? `Bearer ${token()}` : undefined },
+        body: JSON.stringify(form)
+      });
+      const body = await res.json().catch(() => null);
+      await persistTokenFromRes(res, body);
+      if (!res.ok) throw new Error(body?.message || `Status ${res.status}`);
+      setShowCreate(false);
+      await loadSprints();
+    } catch (err) {
+      alert('Create failed: ' + (err.message || err));
+    } finally { setSubmitting(false); }
+  };
+
+  const updateSprint = async (e) => {
+    e?.preventDefault();
+    if (!projectId || !selectedSprint) return;
+    setSubmitting(true);
+    try {
+      const sprintId = selectedSprint.sprintId || selectedSprint.sprint_id || selectedSprint.id;
+      const res = await fetch(`${API_HOST}/${encodeURIComponent(projectId)}/${encodeURIComponent(sprintId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: token() ? `Bearer ${token()}` : undefined },
+        body: JSON.stringify(form)
+      });
+      const body = await res.json().catch(() => null);
+      await persistTokenFromRes(res, body);
+      if (!res.ok) throw new Error(body?.message || `Status ${res.status}`);
+      setShowEdit(false);
+      await loadSprints();
+    } catch (err) {
+      alert('Update failed: ' + (err.message || err));
+    } finally { setSubmitting(false); }
+  };
+
+  const deleteSprint = async (s) => {
+    if (!projectId || !s) return;
+    if (!window.confirm(`Delete sprint ${s.sprintId || s.sprint_id || s.id}?`)) return;
+    setSubmitting(true);
+    try {
+      const sprintId = s.sprintId || s.sprint_id || s.id;
+      const res = await fetch(`${API_HOST}/${encodeURIComponent(projectId)}/${encodeURIComponent(sprintId)}`, {
+        method: 'DELETE',
+        headers: { Authorization: token() ? `Bearer ${token()}` : undefined }
+      });
+      const body = await res.json().catch(() => null);
+      await persistTokenFromRes(res, body);
+      if (!res.ok) throw new Error(body?.message || `Status ${res.status}`);
+      await loadSprints();
+    } catch (err) {
+      alert('Delete failed: ' + (err.message || err));
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className={`p-4 rounded-xl shadow-md ${theme === 'dark' ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold">Sprints</h3>
+        <div className="flex items-center gap-2">
+          <button onClick={openCreate} title="Create Sprint" className="p-2 rounded-md bg-green-600 text-white"><FaPlus /></button>
+          <button onClick={openEdit} disabled={!selectedSprint} title="Edit Selected" className="p-2 rounded-md bg-yellow-500 text-white"><FiEdit /></button>
+          <button onClick={() => deleteSprint(selectedSprint)} disabled={!selectedSprint} title="Delete Selected" className="p-2 rounded-md bg-red-600 text-white"><FiDelete /></button>
+        </div>
+      </div>
+
+      {loadingSprints ? (
+        <div className="py-6 text-center text-sm text-indigo-500">Loading sprints...</div>
+      ) : error ? (
+        <div className="py-4 text-center text-sm text-red-500">{error}</div>
+      ) : sprints.length === 0 ? (
+        <div className="py-6 text-center text-sm text-gray-500">No sprints found.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="text-left text-xs uppercase text-gray-500">
+              <tr>
+                <th className="py-2 px-3">Sprint ID</th>
+                <th className="py-2 px-3">Name</th>
+                <th className="py-2 px-3">Start</th>
+                <th className="py-2 px-3">End</th>
+                <th className="py-2 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sprints.map((s, idx) => (
+                <tr
+                  key={s.sprintId || s.sprint_id || idx}
+                  onClick={() => setSelectedSprint(s)}
+                  className={`cursor-pointer ${selectedSprint === s ? 'ring-2 ring-indigo-300' : ''} hover:bg-gray-50`}
+                >
+                  <td className="py-2 px-3">{s.sprintId || s.sprint_id || s.id || '-'}</td>
+                  <td className="py-2 px-3">{s.sprintName || s.title || '-'}</td>
+                  <td className="py-2 px-3">{s.startDate || '-'}</td>
+                  <td className="py-2 px-3">{s.endDate || '-'}</td>
+                  <td className="py-2 px-3">{s.status || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={createSprint} className={`w-full max-w-md p-6 rounded-xl ${theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'}`} onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-semibold">Create Sprint</h4>
+              <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400">×</button>
+            </div>
+            <div className="space-y-3">
+              <input className="w-full p-2 border rounded" placeholder="Sprint Name" value={form.sprintName} onChange={e => setForm(prev => ({ ...prev, sprintName: e.target.value }))} required />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="date" className="p-2 border rounded" value={form.startDate} onChange={e => setForm(prev => ({ ...prev, startDate: e.target.value }))} required />
+                <input type="date" className="p-2 border rounded" value={form.endDate} onChange={e => setForm(prev => ({ ...prev, endDate: e.target.value }))} required />
+              </div>
+              <select className="w-full p-2 border rounded" value={form.status} onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))}>
+                <option>PLANNED</option>
+                <option>ACTIVE</option>
+                <option>COMPLETED</option>
+                <option>CANCELLED</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded">Cancel</button>
+              <button type="submit" disabled={submitting} className="px-4 py-2 bg-green-600 text-white rounded">{submitting ? 'Creating...' : 'Create'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEdit && selectedSprint && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={updateSprint} className={`w-full max-w-md p-6 rounded-xl ${theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'}`} onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-semibold">Update Sprint</h4>
+              <button type="button" onClick={() => setShowEdit(false)} className="text-gray-400">×</button>
+            </div>
+            <div className="space-y-3">
+              <input className="w-full p-2 border rounded" placeholder="Sprint Name" value={form.sprintName} onChange={e => setForm(prev => ({ ...prev, sprintName: e.target.value }))} required />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="date" className="p-2 border rounded" value={form.startDate} onChange={e => setForm(prev => ({ ...prev, startDate: e.target.value }))} required />
+                <input type="date" className="p-2 border rounded" value={form.endDate} onChange={e => setForm(prev => ({ ...prev, endDate: e.target.value }))} required />
+              </div>
+              <select className="w-full p-2 border rounded" value={form.status} onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))}>
+                <option>PLANNED</option>
+                <option>ACTIVE</option>
+                <option>COMPLETED</option>
+                <option>CANCELLED</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="button" onClick={() => setShowEdit(false)} className="px-4 py-2 border rounded">Cancel</button>
+              <button type="submit" disabled={submitting} className="px-4 py-2 bg-yellow-500 text-white rounded">{submitting ? 'Updating...' : 'Update'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+};
 const ProjectOverviewForm = ({ mode = 'create', projectId, initialData = {}, onClose = () => {}, onSuccess = () => {} }) => {
   const { theme } = useContext(Context);
   const [form, setForm] = useState({
@@ -325,13 +567,13 @@ const projects = [
     {
         name: "HRMS Project",
         description: " The HRMS Project is a comprehensive web-based solution designed to streamline and automate all core HR processes within an organization. It enhances operational efficiency by integrating modules like employee records, attendance tracking, leave management, payroll, and performance evaluations into one centralized system.",
-        team: [
-            { role: "Project Manager", avatars: [1] },
-            { role: "Backend Developers", avatars: [4] },
-            { role: "Frontend Developers", avatars: [3] },
-            { role: "QA Engineers", avatars: [2] },
-            { role: "UX/UI Designer", avatars: [1] },
-        ],
+        //team: [
+        //    { role: "Project Manager", avatars: [1] },
+        //    { role: "Backend Developers", avatars: [4] },
+        //    { role: "Frontend Developers", avatars: [3] },
+        //    { role: "QA Engineers", avatars: [2] },
+        //    { role: "UX/UI Designer", avatars: [1] },
+        //],
         duration: "12 months",
         modules: ["Payroll", "Attendance Tracking", "Leave Management"],
         status: "On Track",
@@ -482,6 +724,8 @@ const ProjectCard = () => {
     const { projectId: paramProjectId } = useParams(); // read from URL if present
     const [projectId, setProjectId] = useState(() => paramProjectId || localStorage.getItem('selectedProjectId') || '');
 
+    const [rolesData, setRolesData] = useState(null);
+   const [rolesLoading, setRolesLoading] = useState(false);
     // local state renamed to avoid shadowing module-scope `projectData`
     const [localProjectData, setLocalProjectData] = useState(null);
     const [showCreateOverview, setShowCreateOverview] = useState(false);
@@ -491,6 +735,43 @@ const ProjectCard = () => {
     const progressSource = localProjectData || projectData;
     const progressPercent = calculateProgress(progressSource?.projectDetails?.startedOn, progressSource?.projectDetails?.endDate);
 
+    const loadRoles = async (pid) => {
+     if (!pid) return;
+     setRolesLoading(true);
+     try {
+       const token = localStorage.getItem('accessToken');
+       const url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/roles`;
+       const res = await fetch(url, { headers: { Accept: 'application/json', Authorization: token ? `Bearer ${token}` : undefined } });
+       if (!res.ok) {
+         console.warn('Failed to load roles', res.status);
+         setRolesData(null);
+         return;
+       }
+       const body = await res.json().catch(() => null);
+       // Expected body: [{ role, count, employees: [{ employeeImage, employeeId, displayName }] }, ...]
+       if (Array.isArray(body)) {
+         const mapped = body.map(g => ({
+           role: g.role || 'Unknown',
+           count: typeof g.count === 'number' ? g.count : (Array.isArray(g.employees) ? g.employees.length : 0),
+           employees: Array.isArray(g.employees) ? g.employees.map(e => ({
+             employeeId: e.employeeId,
+             name: e.displayName || e.employeeName || e.name,
+             image: e.employeeImage || null
+           })) : []
+         }));
+         setRolesData(mapped);
+       } else {
+         setRolesData(null);
+       }
+     } catch (err) {
+       console.error('loadRoles error', err);
+       setRolesData(null);
+     } finally {
+       setRolesLoading(false);
+     }
+   };
+
+   useEffect(() => { if (projectId) loadRoles(projectId); }, [projectId]);
     const handleDeleteOverview = async () => {
        if (!projectId) return alert('Project id missing');
        if (!window.confirm(`Delete overview for ${projectId}? This cannot be undone.`)) return;
@@ -580,27 +861,7 @@ const ProjectCard = () => {
             >
                 {currentProject.description}
             </motion.p>
-            <motion.div
-                className={`mb-6 p-3 rounded-lg border border-indigo-200 shadow-inner ${theme === 'dark' ? 'bg-gray-800' : 'bg-stone-100'}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-            >
-                <h4 className={`text-sm font-bold mb-3 uppercase ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-700'}`}>Key Modules</h4>
-                <div className="flex flex-wrap gap-2">
-                    {currentProject.modules && currentProject.modules.map((module, i) => (
-                        <span
-                            key={i}
-                            className={`px-3 py-1 text-sm font-medium rounded-full shadow-sm ${theme === 'dark' ? 'text-teal-300 bg-teal-900' : 'text-indigo-800 bg-indigo-100'}`}
-                        >
-                            {module}
-                        </span>
-                    ))}
-                </div>
-            </motion.div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2 ">
-                <motion.div
+             <motion.div
                     className={`p-4 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-yellow-50 to-white'}`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -617,9 +878,14 @@ const ProjectCard = () => {
                     </dl>
                 </motion.div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2 ">
+                <div className="mt-6">
+                    <SprintTable projectId={projectId} />
+                  </div>
+
                 {/* Project Details / Progress Column (Combined from previous) */}
                 <motion.div
-                    className={`p-4 rounded-lg shadow-lg border border-gray-200 col-span-1 lg:col-span-2 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-50 to-white'}`}
+                    className={`p-4 rounded-lg shadow-lg border border-gray-200 col-span-1 lg:col-span-2 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-blue-50 to-white'} mt-6`}
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.5, duration: 0.5 }}
@@ -662,39 +928,59 @@ const ProjectCard = () => {
                     whileHover={{ translateY: -3, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)" }}
                 >
                     <h3 className={`text-xl sm:text-2xl font-bold mb-4 border-b pb-2 ${theme==='dark' ? 'text-white':'text-gray-800'}`}>Team Allocation</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
-                        {currentProject.team.map((teamMember, index) => (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
+                      {rolesLoading ? (
+                        <div className="col-span-3 py-6 text-center text-sm text-gray-500">Loading team allocation...</div>
+                      ) : ( (rolesData ?? currentProject?.team ?? []) ).map((teamMember, index) => {
+                           // support both backend shape (rolesData) and static currentProject.team shape
+                           const role = teamMember.role || teamMember.roleName || 'Team';
+                           const count = teamMember.count ?? (teamMember.avatars ? teamMember.avatars[0] : 0);
+                           const employees = teamMember.employees || teamMember.members || [];
+                          return (
                             <motion.div
-                                key={index}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-md  dark:hover:bg-gray-200 transition border-l-4 border-indigo-400"
+                                key={role + index}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-md transition border-l-4 border-indigo-400"
                                 initial={{ x: -20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
                                 transition={{ delay: 0.7 + index * 0.05 }}
                             >
                                 <p className={`font-semibold text-base ${theme === 'dark' ? 'text-white' : 'text-gray-800'} mb-1 sm:mb-0`}>
-                                    {teamMember.role}
+                                    {role}
                                 </p>
                                 <div className="flex items-center">
-                                    <span className="text-sm font-bold mr-3">{teamMember.avatars[0]}</span>
+                                    <span className="text-sm font-bold mr-3">{count}</span>
                                     <div className="flex -space-x-2 overflow-hidden">
-                                        {Array.from({ length: Math.min(teamMember.avatars[0], 4) }).map((_, avatarIndex) => (
-                                            <img
-                                                key={avatarIndex}
-                                                className={`inline-block h-8 w-8 rounded-full ring-2 ${theme === 'dark' ? 'ring-gray-800' : 'ring-white'} object-cover`}
-                                                src={getAvatarUrl(avatarIndex + 1 + index * 5)}
-                                                alt={`Avatar ${avatarIndex + 1}`}
-                                                title={`${teamMember.role} Member ${avatarIndex + 1}`}
-                                            />
-                                        ))}
-                                        {teamMember.avatars[0] > 4 && (
-                                            <span className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 text-xs font-medium text-gray-700 ring-2 ring-white dark:bg-gray-600 dark:text-white">
-                                                +{teamMember.avatars[0] - 4}
-                                            </span>
-                                        )}
+                                      {employees.length ? (
+                                        employees.slice(0,4).map((emp, avatarIndex) => (
+                                          <img
+                                            key={emp.employeeId || avatarIndex}
+                                            className={`inline-block h-8 w-8 rounded-full ring-2 ${theme === 'dark' ? 'ring-gray-800' : 'ring-white'} object-cover`}
+                                            src={emp.image || emp.employeeImage || getAvatarUrl(avatarIndex + 1 + index * 5)}
+                                            alt={emp.name || emp.displayName || `Member ${avatarIndex+1}`}
+                                            title={emp.name || emp.displayName}
+                                          />
+                                        ))
+                                      ) : (
+                                        // fallback to generated avatars when backend doesn't provide individual employees
+                                        Array.from({ length: Math.min(count || 1, 4) }).map((_, avatarIndex) => (
+                                          <img
+                                            key={avatarIndex}
+                                            className={`inline-block h-8 w-8 rounded-full ring-2 ${theme === 'dark' ? 'ring-gray-800' : 'ring-white'} object-cover`}
+                                            src={getAvatarUrl(avatarIndex + 1 + index * 5)}
+                                            alt={`Avatar ${avatarIndex + 1}`}
+                                          />
+                                        ))
+                                      )}
+                                      {count > 4 && (
+                                        <span className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 text-xs font-medium text-gray-700 ring-2 ring-white dark:bg-gray-600 dark:text-white">
+                                          +{count - 4}
+                                        </span>
+                                      )}
                                     </div>
                                 </div>
                             </motion.div>
-                        ))}
+                          );
+                      })}
                     </div>
                 </motion.div>
             </div>
@@ -1469,9 +1755,12 @@ const getAccessToken = () => {
 }
 const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/employee'; 
 
-const fetchProjects = async (page, size, token) => {
+const fetchProjects = async (page, size, token, employeeId = null) => {
     if (!token) throw new Error("Authentication token missing.");
-    const url = `${API_BASE_URL}/${page}/${size}/projectId/asc/projects`;
+    // If employeeId is provided, fetch projects for that user
+    const url = employeeId
+      ? `${API_BASE_URL}/projects/${encodeURIComponent(employeeId)}`
+      : `${API_BASE_URL}/${page}/${size}/projectId/asc/projects`;
     
     const response = await fetch(url, {
         headers: {
@@ -1489,7 +1778,7 @@ const fetchProjects = async (page, size, token) => {
     }
     return response.json();
 };
-// --- END MOCK API ---
+
 
 
 function Project() {
@@ -1558,21 +1847,35 @@ function Project() {
     //        setMatchedArray(loggedPermissiondata.permissions);
     //    }
     //}, [loggedPermissiondata]);
-    const loadProjects = useCallback(async (page, size) => {
+     const loadProjects = useCallback(async (page, size) => {
         setLoading(true);
         setError(null);
         const token = getAccessToken();
-        
+
         try {
-            const data = await fetchProjects(page, size, token);
+            // Admins should get paginated endpoint; others (or when userData.employeeId present)
+            const rawRole = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
+            const normalizedRole = typeof rawRole === "string" ? rawRole.toUpperCase().replace(/^ROLE_/, "") : "";
+            const isAdmin = normalizedRole === 'ADMIN';
+
+            const employeeId = (!isAdmin && userData?.employeeId) ? userData.employeeId : null;
+
+            const data = await fetchProjects(page, size, token, employeeId);
             
-            setProjectTableData(data.content);
-            setPaginationInfo({
-                pageNumber: data.pageNumber,
-                pageSize: data.pageSize,
-                totalElements: data.totalElements,
-                totalPages: data.totalPages,
-            });
+            // If the projects-for-user endpoint returns an array, normalize to expected shape
+            if (employeeId && Array.isArray(data)) {
+                // Build a simple paginated shape so rest of code expects .content, .pageNumber etc.
+                setProjectTableData(data || []);
+                setPaginationInfo(prev => ({ ...prev, totalElements: data.length || 0 }));
+            } else {
+                setProjectTableData(data.content || data || []);
+                setPaginationInfo({
+                    pageNumber: typeof data.pageNumber !== 'undefined' ? data.pageNumber : page,
+                    pageSize: typeof data.pageSize !== 'undefined' ? data.pageSize : size,
+                    totalElements: typeof data.totalElements !== 'undefined' ? data.totalElements : (Array.isArray(data) ? data.length : 0),
+                    totalPages: typeof data.totalPages !== 'undefined' ? data.totalPages : 1,
+                });
+            }
         } catch (err) {
             console.error("Failed to load projects:", err);
             setError(err.message);
@@ -1580,9 +1883,9 @@ function Project() {
         } finally {
             setLoading(false);
         }
-    }, []);
-    useEffect(() => {
+    }, [userData]); // depend on userData so endpoint selection updates when user loads
 
+    useEffect(() => {
         loadProjects(paginationInfo.pageNumber, paginationInfo.pageSize);
     }, [loadProjects, paginationInfo.pageNumber, paginationInfo.pageSize]);
     const handleRowClick = (proj) => {

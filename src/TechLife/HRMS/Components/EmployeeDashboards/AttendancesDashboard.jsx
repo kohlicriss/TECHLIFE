@@ -173,21 +173,14 @@ const parseToDateSafe = (timeStr, dateRef = null) => {
 const toISTTimeDisplay = (timeStr, dateRef = null) => {
   if (!timeStr) return 'N/A';
   const raw = String(timeStr).trim();
-
-  // If it's a plain time like "HH:mm" -> compute by string arithmetic and format
   const hhmm = tryNormalizeTo24(raw);
   if (hhmm && !/[TtZz]/.test(raw)) {
-    // addMinutesToTimeString returns HH:MM after adding IST_OFFSET_MINUTES
     const shifted = addMinutesToTimeString(hhmm, IST_OFFSET_MINUTES);
     return formatHHMMTo12h(shifted);
   }
-
-  // Otherwise try parsing as Date and format in Asia/Kolkata timezone
   const parsed = parseToDateSafe(raw, dateRef);
   if (!parsed) return raw;
-
   try {
-    // Use Intl to force India timezone display regardless of user's browser TZ
     return new Intl.DateTimeFormat('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -195,19 +188,13 @@ const toISTTimeDisplay = (timeStr, dateRef = null) => {
       timeZone: 'Asia/Kolkata'
     }).format(parsed);
   } catch {
-    // Fallback to local formatting (should rarely happen)
     return parsed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 };
-
-// convert gross/effective value to display string (HH:MM)
 const toHHMMDisplay = (value) => {
   const minutes = parseEffectiveHours(value || '');
   return minutes > 0 ? formatMinutesToHHMM(minutes) : 'N/A';
 };
-
-// GraphQL endpoint & query (kept as-is)
-
 const DETAILS_QUERY = `
   query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
     getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
@@ -257,10 +244,9 @@ const toStandardDate = (isoDateString) => {
 };
 
 /**
- * Common GraphQL Fetch Utility
- * @param {string} query - The GraphQL query or mutation string.
- * @param {object} variables - The variables object.
- * @returns {Promise<object>} - The data object from the GraphQL response.
+ * @param {string} query
+ * @param {object} variables 
+ * @returns {Promise<object>}
  */
 const executeGraphQL = async (query, variables = {}) => {
   try {
@@ -282,25 +268,18 @@ const executeGraphQL = async (query, variables = {}) => {
     throw err;
   }
 };
-
 const GRAPHQL_URL = process.env.REACT_APP_HRMS_GRAPHQL_URL || "https://hrms.anasolconsultancyservices.com/api/attendance/graphql";
 const graphqlRequest = async (query, variables = {}) => {
   const url = GRAPHQL_URL;
   try {
-    // Choose client that likely has auth headers
     const client = (dashboardApi && typeof dashboardApi.post === "function") ? dashboardApi : axios;
-
-    // Build headers and ensure Authorization is provided from localStorage (Bearer token)
     const token = (() => {
       try { return localStorage.getItem('accessToken'); } catch { return null; }
     })();
     const headers = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    // Use absolute URL so axios does not mix baseURL/proxy paths
     const resp = await client.post(url, { query, variables }, { headers });
-
-    // GraphQL-level errors
     if (resp?.data?.errors && resp.data.errors.length) {
       const msg = resp.data.errors.map(e => e.message).join("; ");
       const err = new Error(msg);
@@ -308,7 +287,6 @@ const graphqlRequest = async (query, variables = {}) => {
       console.error("GraphQL response errors:", resp.data.errors);
       throw err;
     }
-
     return resp?.data?.data ?? null;
   } catch (err) {
     console.error("Error executing GraphQL operation:", err?.message || err, {
@@ -321,55 +299,32 @@ const graphqlRequest = async (query, variables = {}) => {
   }
 };
 const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose }) => {
-
   const { userData } = useContext(Context);
-
   const employeeId = userData?.employeeId;
-
   const [attendanceData, setAttendanceData] = useState(null);
-
   const [eventsOnThisDay, setEventsOnThisDay] = useState(propEvents);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState(null);
-
-
 
   const dateString = dayData?.dateString || '';
 
-
-
   // helper: add IST offset (5:30) to an effectiveHours value and return HH:MM string
-
   const addIstToEffective = (effValue) => {
-
     try {
-
       const baseMinutes = parseEffectiveHours(effValue || '');
-
       if (!baseMinutes) return 'N/A';
 
       const adjusted = baseMinutes;
 
       return formatMinutesToHHMM(adjusted);
-
     } catch {
-
       return 'N/A';
-
     }
-
   };
 
-
-
   // NEW helper: shift given time by IST_OFFSET_MINUTES and return localized 12-hour string
-
   // *** REPLACED WITH CORRECTED LOGIC ***
-
   const shiftTimeToISTDisplay = (timeStr, dateIso = null) => {
-
     if (!timeStr || timeStr === 'N/A') return 'N/A';
 
 
@@ -381,30 +336,19 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose })
 
 
     if (isNaN(d.getTime())) {
-
       try {
-
         const parts = timeStr.split(':');
-
         let h = parseInt(parts[0], 10) || 0;
-
         let m = parseInt(parts[1], 10) || 0;
 
 
 
         d = new Date(baseDateString);
-
         d.setHours(h, m, 0, 0);
-
       } catch {
-
         return timeStr;
-
       }
-
     }
-
-
 
     // Explicitly add 330 minutes (5 hours 30 minutes) as requested
 
@@ -413,221 +357,109 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose })
 
 
     // Format to 12-hour IST display
-
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-
   };
-
   // *** END OF REPLACEMENT ***
 
-
-
   useEffect(() => {
-
     let mounted = true;
-
     if (!dateString || !employeeId) {
-
       // when using passed-in attendance, also convert times to IST and adjust effective hour
-
       const src = dayData?.attendance ?? null;
-
       if (src) {
-
         const dateIso = toIsoDate(dateString) || undefined;
-
         // USE shiftTimeToISTDisplay so times are explicitly +5:30
-
         const loginIst = shiftTimeToISTDisplay(src.login ?? src.loginTime ?? 'N/A', dateIso);
-
         const logoutIst = shiftTimeToISTDisplay(src.logout ?? src.logoutTime ?? 'N/A', dateIso);
-
         const effAdj = addIstToEffective(src.effectiveHour ?? src.effectiveHours ?? src.effectiveHour);
-
         setAttendanceData({
-
           ...src,
-
           login: loginIst,
-
           logout: logoutIst,
-
           effectiveHour: effAdj
-
         });
-
       } else {
-
         setAttendanceData(null);
-
       }
-
       setEventsOnThisDay(propEvents || []);
-
       setLoading(false);
-
       return;
-
     }
-
-
-
     const QUERY = `
-
      query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
-
         getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
-
           date
-
           event
-
           description
-
           employeeId
-
           isPresent
-
           login
-
           logout
-
           effectiveHours
-
           grossHours
-
           holiday
-
           mode
-
         }
-
       }
-
     `;
-
-
-
     const load = async () => {
-
       setLoading(true);
-
       try {
-
         const iso = toIsoDate(dateString);
-
         const variables = { employeeId, startDate: iso, endDate: iso };
-
         const data = await graphqlRequest(QUERY, variables);
-
         if (!mounted) return;
-
         const items = data?.getDetailsBetweenDates || [];
-
         const dayItem = items.find(i => i.date === dateString || i.date === iso) || null;
 
         if (dayItem) {
 
           const loginIst = shiftTimeToISTDisplay(dayItem.login ?? 'N/A', iso);
-
           const logoutIst = shiftTimeToISTDisplay(dayItem.logout ?? 'N/A', iso);
-
           const effAdj = addIstToEffective(dayItem.effectiveHours ?? dayItem.effectiveHour);
-
           setAttendanceData({
-
             employeeId: dayItem.employeeId || employeeId,
-
             date: dayItem.date || dateString,
-
             effectiveHour: effAdj,
-
             isPresent: dayItem.isPresent ?? 'N/A',
-
             login: loginIst,
-
             logout: logoutIst,
-
             holiday: dayItem.holiday ?? false,
-
             mode: dayItem.mode ?? null
-
           });
-
         } else {
-
-          // fallback to provided dayData attendance (also convert)
-
           const src = dayData?.attendance ?? { isPresent: 'N/A', login: 'N/A', logout: 'N/A', date: dateString };
-
           const srcIso = toIsoDate(src.date || dateString);
-
           setAttendanceData({
-
             ...src,
-
             login: shiftTimeToISTDisplay(src.login ?? 'N/A', srcIso),
-
             logout: shiftTimeToISTDisplay(src.logout ?? 'N/A', srcIso),
-
             effectiveHour: addIstToEffective(src.effectiveHour ?? src.effectiveHours),
-
             holiday: src.holiday ?? false
-
           });
-
         }
-
         const mappedEvents = items
-
           .filter(it => it.event || it.description || (typeof it.holiday !== 'undefined'))
-
           .map(it => ({
-
             event: it.event || 'Event',
-
             description: it.description || '',
-
             startDate: it.startDate || it.date,
-
             endDate: it.endDate || it.date,
-
             holiday: Boolean(it.holiday)
-
           }));
-
-        // If any event (backend or propEvents) marks this day as holiday, make sure attendanceData reflects that
-
         const propEventsList = propEvents || [];
-
-        const anyHolidayFromMapped = mappedEvents.some(ev => ev.holiday);
-
+        const anyHolidayFromMapped = mappedEvents.some(ev => ev.holiday)
         const anyHolidayFromProp = propEventsList.some(ev => ev && (ev.holiday === true || String(ev.holiday).toLowerCase() === 'true'));
-
         const anyHoliday = anyHolidayFromMapped || anyHolidayFromProp;
-
-        // If attendanceData exists and we detected a holiday override it; otherwise set it when building fallback
-
         if (anyHoliday) {
-
           setEventsOnThisDay(mappedEvents.length ? mappedEvents : propEventsList);
-
           setAttendanceData(prev => ({
-
             ...(prev || {}),
-
             holiday: true,
-
-            // prefer backend isPresent if provided, otherwise mark as 'Holiday'
-
             isPresent: prev && prev.isPresent ? prev.isPresent : 'Holiday'
-
           }));
-
         } else {
-
           setEventsOnThisDay(mappedEvents.length ? mappedEvents : propEventsList);
-
         }
 
 
@@ -637,339 +469,160 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose })
         setError(null);
 
       } catch (err) {
-
         console.error("DayDetailsModal fetch failed:", err);
-
         setError(err.message || "Failed to load details");
-
         const src = dayData?.attendance ?? null;
-
         if (src) {
-
           const srcIso = toIsoDate(src.date || dateString);
-
           setAttendanceData({
-
             ...src,
-
             login: shiftTimeToISTDisplay(src.login ?? 'N/A', srcIso),
-
             logout: shiftTimeToISTDisplay(src.logout ?? 'N/A', srcIso),
-
             effectiveHour: addIstToEffective(src.effectiveHour ?? src.effectiveHours)
-
           });
-
         } else {
-
           setAttendanceData(null);
-
         }
-
         setEventsOnThisDay(propEvents || []);
-
       } finally {
-
         if (mounted) setLoading(false);
-
       }
-
     };
-
-
-
     load();
-
     return () => { mounted = false; };
-
   }, [dateString, userData?.employeeId]);
-
   if (!dayData || dayData.type === 'blank') return null;
-
   if (loading) {
-
     return (
-
       <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
         <div className="bg-white/90 px-6 py-4 rounded-lg shadow-lg text-indigo-700 font-semibold">Loading Day Details…</div>
-
       </div>
-
     );
-
   }
-
   const displayAttendance = attendanceData || (dayData?.attendance ?? { isPresent: 'N/A', login: 'N/A', logout: 'N/A', date: dateString });
-
   return (
-
     <div
-
       role="dialog"
-
       aria-modal="true"
-
       aria-label={`Details for ${displayAttendance?.date || dateString}`}
-
       className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm"
-
     >
-
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-
-
-
       <div className="relative w-full max-w-4xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-0">
-
-        {/* Header */}
-
         <div className="md:col-span-2 flex items-center justify-between px-5 py-4 border-b">
-
           <div className="flex items-center gap-3">
-
             <Calendar className="w-6 h-6 text-indigo-600" />
-
             <div>
-
               <h3 className="text-lg font-bold text-indigo-700">Details — {MONTHS ? MONTHS[new Date().getMonth()] : ''} <span className="text-base font-medium text-gray-600"> {displayAttendance?.date || dateString}</span></h3>
-
               <p className="text-xs text-gray-500">Employee: <span className="font-medium text-gray-700">{displayAttendance?.employeeId || employeeId || "N/A"}</span></p>
-
             </div>
-
           </div>
-
           <button onClick={onClose} aria-label="Close details" className="p-2 rounded-full hover:bg-gray-100">
-
             <X className="w-5 h-5 text-gray-600" />
-
           </button>
-
         </div>
-
-
-
         {/* Left: Attendance summary */}
-
         <section className="p-5 border-r md:border-r md:border-gray-100 bg-white">
-
           <h4 className="text-sm font-semibold text-indigo-600 mb-3">Attendance</h4>
-
           <div className="space-y-3 text-sm text-gray-700">
 
             <div className="flex justify-between items-center">
 
               <span className="text-gray-500">Status</span>
-
               {(() => {
-
                 const raw = displayAttendance?.isPresent;
-
                 const holidayFlag = displayAttendance?.holiday === true || String(raw || '').toLowerCase().includes('holiday');
-
                 const s = String(raw || '').trim().toLowerCase();
-
                 const isPresent = ['present', 'p', 'yes', 'true', '1'].includes(s);
-
                 const isAbsent = ['absent', 'a', 'no', 'false', '0'].includes(s);
-
                 const badgeClass = holidayFlag
-
                   ? 'bg-yellow-100 text-yellow-800'
-
                   : isPresent
-
                     ? 'bg-green-100 text-green-800'
-
                     : isAbsent
-
                       ? 'bg-red-100 text-red-800'
-
                       : 'bg-gray-100 text-gray-800';
-
                 const label = holidayFlag ? 'Holiday' : (isPresent ? 'Present' : (isAbsent ? 'Absent' : (displayAttendance?.isPresent || 'N/A')));
-
                 return <span className={`ml-2 font-semibold px-2 py-0.5 rounded-full text-xs ${badgeClass}`}>{label}</span>;
-
               })()}
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Login</span>
-
               <span className="font-medium">{displayAttendance?.login || 'N/A'}</span>
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Logout</span>
-
               <span className="font-medium">{displayAttendance?.logout || 'N/A'}</span>
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Effective Hours</span>
-
               <span className="font-medium">{displayAttendance?.effectiveHour || 'N/A'}</span>
-
             </div>
-
-
-
             <div className="flex justify-between">
-
               <span className="text-gray-500">Mode</span>
-
               <span className="font-medium">{displayAttendance?.mode || '-'}</span>
-
             </div>
-
-
-
             <div className="mt-2">
-
               <p className="text-xs text-gray-500">Notes</p>
-
               {error ? (
-
                 <p className="text-xs text-red-600 mt-1">{error}</p>
-
               ) : (
-
                 <p className="text-xs text-gray-600 mt-1">This view shows converted IST times and any event notes for the selected day.</p>
-
               )}
-
             </div>
-
           </div>
-
-
-
           <div className="mt-6">
-
             <button onClick={onClose} className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
-
               Got it
-
             </button>
-
           </div>
-
         </section>
-
-
-
-        {/* Right: Events */}
-
         <aside className="p-5 bg-gray-50">
-
           <div className="flex items-center justify-between mb-3">
-
             <h4 className="text-sm font-semibold text-teal-700">Events ({eventsOnThisDay.length})</h4>
-
             <span className="text-xs text-gray-500">{eventsOnThisDay.length > 0 ? `${Math.min(eventsOnThisDay.length, 99)}` : '—'}</span>
-
           </div>
-
-
-
           {eventsOnThisDay.length === 0 ? (
-
             <div className="flex flex-col items-center justify-center h-full text-center py-6">
-
               <p className="text-sm text-gray-500 italic">No events scheduled for this day.</p>
-
               <p className="text-xs text-gray-400 mt-2">You can add events from the calendar.</p>
-
             </div>
-
           ) : (
-
             <ul className="space-y-3 max-h-[260px] overflow-y-auto pr-2">
-
               {eventsOnThisDay.map((event, idx) => (
-
                 <li key={idx} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-
                   <div className="flex items-start justify-between gap-3">
-
                     <div className="flex-1">
-
                       <div className="flex items-center gap-2">
-
                         <span className="text-sm font-semibold text-gray-800">{event.event}</span>
-
                         {event.holiday && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Holiday</span>}
-
                       </div>
-
                       <p className="text-xs text-gray-500 mt-1 truncate">{event.description || 'No description'}</p>
-
                       {event.startDate !== event.endDate && (
-
                         <p className="text-xs text-teal-600 mt-2">Multi-day: {event.startDate} — {event.endDate}</p>
-
                       )}
-
                     </div>
-
                     <div className="flex-shrink-0 text-xs text-gray-400 ml-3">
-
                       <span>{event.startDate}</span>
-
                     </div>
-
                   </div>
-
                 </li>
-
               ))}
-
             </ul>
-
           )}
-
         </aside>
-
       </div>
-
     </div>
-
   );
-
 };
-
-// --- Updated EventFormModal (sends mutation to GraphQL) ---
-
 const EventFormModal = ({ onSubmit, selectedDate, onClose }) => {
-
   const { userData } = useContext(Context);
-
   const employeeId = userData?.employeeId;
-
   const [eventTitle, setEventTitle] = useState('');
-
   const [description, setDescription] = useState('');
-
   const [startDate, setStartDate] = useState(toIsoDate(selectedDate.start) || '');
-
   const [endDate, setEndDate] = useState(toIsoDate(selectedDate.end) || '');
-
   const [isHalfDay, setIsHalfDay] = useState(false);
-
   const [loading, setLoading] = useState(false);
 
 
@@ -997,445 +650,197 @@ const EventFormModal = ({ onSubmit, selectedDate, onClose }) => {
   const handleSubmit = async (e) => {
 
     e.preventDefault();
-
     setLoading(true);
-
     try {
-
       const input = {
-
         startDate: startDate, // YYYY-MM-DD
-
         endDate: endDate,
-
         event: eventTitle,
-
         description,
-
         holiday: !!isHalfDay
-
-        // removed employeeId — backend CalendarInput does not accept this field
-
       };
-
       const variables = { input };
-
       const data = await graphqlRequest(MUTATION, variables);
-
       const added = data?.addCalendarEntries || [];
-
-      // convert returned dates if needed; send to parent as DD-MM-YYYY
-
       const newEvents = added.map(a => ({
-
         event: eventTitle,
-
         description: a.description || description,
-
         startDate: toStandardDate(a.date || startDate),
-
         endDate: toStandardDate(a.date || endDate),
-
         holiday: a.holiday ?? isHalfDay
-
       }));
-
-      // notify parent
-
       onSubmit(newEvents.length ? newEvents[0] : {
-
         event: eventTitle,
-
         description,
-
         startDate: toStandardDate(startDate),
-
         endDate: toStandardDate(endDate),
-
         holiday: isHalfDay
-
       });
-
       onClose();
-
     } catch (err) {
-
       console.error("EventFormModal mutation failed:", err);
-
-      // Prefer GraphQL message if available
-
       const graphqlMessage = err?.graphql?.length ? err.graphql.map(g => g.message).join("; ") : null;
-
       const serverMessage = err?.response?.data?.message || err?.message;
-
       alert("Failed to save event: " + (graphqlMessage || serverMessage || "Unknown error"));
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
-
-
   return (
-
     <div className="absolute inset-0 flex justify-center items-center z-50 p-4 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
       <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
-
         <h2 className="text-2xl font-bold text-indigo-700 mb-3 border-b pb-2 flex items-center">
-
           <Calendar className="mr-2" /> {loading ? 'Saving...' : 'Add/Edit Event'}
-
         </h2>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
           <div className="mb-2">
-
             <label className="block text-gray-700 font-medium mb-2" htmlFor="startDate">Start Date</label>
-
             <input id="startDate" name="startDate" type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-
           </div>
-
           <div className="mb-2">
-
             <label className="block text-gray-700 font-medium mb-2" htmlFor="endDate">End Date</label>
-
             <input id="endDate" name="endDate" type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-
           </div>
-
         </div>
-
-
-
         <div className="mb-2">
-
           <label className="block text-gray-700 font-medium mb-2" htmlFor="eventTitle">Event Title</label>
-
           <input id="eventTitle" name="event" type="text" placeholder="e.g., Team Meeting" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-
         </div>
-
-
-
         <div className="flex items-center pt-6 mb-2">
-
           <input id="holiday" type="checkbox" checked={isHalfDay} onChange={e => setIsHalfDay(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-blue-600" />
-
           <label htmlFor="holiday" className="ml-2 block text-sm font-medium cursor-pointer">Is Holiday?</label>
-
         </div>
-
-
-
         <div className="mb-3">
-
           <label className="block text-gray-700 font-medium mb-2" htmlFor="description">Description</label>
-
           <textarea id="description" name="description" rows="3" placeholder="Details about the event..." value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
-
         </div>
-
-
-
         <div className="flex justify-end space-x-4">
-
           <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">Cancel</button>
-
           <button type="submit" className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg">{loading ? 'Submitting...' : 'Submit'}</button>
-
         </div>
-
       </form>
-
     </div>
-
   );
-
 };
-
-
-
-// --- Updated EventListModal (fetches month range via GraphQL) ---
-
 const EventListModal = ({ currentYear, currentMonth, onClose }) => {
-
   const { userData } = useContext(Context);
-
   const employeeId = userData?.employeeId;
-
   const [eventsList, setEventsList] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState(null);
-
-
-
-  const QUERY = `
-
-     query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) {
-
-       getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) {
-
-         date
-
-         description
-
-         holiday
-
-         event
-
-       }
-
-     }
-
-  `;
-
-
-
-  // pagination state (3 rows per page)
-
+  const QUERY = ` query getDetailsBetweenDates($employeeId: String!, $startDate: Date!, $endDate: Date!) { getDetailsBetweenDates(employeeId: $employeeId, startDate: $startDate, endDate: $endDate) { date description holiday event } }`;
   const ROWS_PER_PAGE = 3;
-
   const [page, setPage] = useState(1);
-
-
-
   useEffect(() => {
-
     let mounted = true;
-
     const fetchMonthlyEvents = async () => {
-
       setLoading(true);
-
       try {
-
         const start = new Date(currentYear, currentMonth, 1);
-
         const end = new Date(currentYear, currentMonth + 1, 0);
-
         const startISO = start.toISOString().slice(0, 10);
-
         const endISO = end.toISOString().slice(0, 10);
-
         const variables = { employeeId, startDate: startISO, endDate: endISO };
-
         const data = await graphqlRequest(QUERY, variables);
-
         if (!mounted) return;
-
         const fetched = data?.getDetailsBetweenDates || [];
-
         const mapped = fetched.map(f => ({
-
           event: f.event || 'Event',
-
           description: f.description || '',
-
           startDate: f.startDate || f.date,
-
           endDate: f.endDate || f.date,
-
           holiday: f.holiday ?? false
-
         }));
-
         setEventsList(mapped);
-
         setError(null);
-
-        setPage(1); // reset to first page when new data arrives
-
-      } catch (err) {
-
+        setPage(1); 
+       } catch (err) {
         console.error("EventListModal fetch failed:", err);
-
         setError(err.message || "Failed to fetch event list");
-
         setEventsList([]);
-
       } finally {
-
         if (mounted) setLoading(false);
-
       }
-
     };
-
     fetchMonthlyEvents();
-
     return () => { mounted = false; };
-
   }, [currentYear, currentMonth, userData?.employeeId]);
-
-
-
   const totalPages = Math.max(1, Math.ceil(eventsList.length / ROWS_PER_PAGE));
-
   const startIndex = (page - 1) * ROWS_PER_PAGE;
-
   const pageItems = eventsList.slice(startIndex, startIndex + ROWS_PER_PAGE);
-
-
-
   if (loading) {
-
     return (
-
       <div className="p-4 absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
-
         <div className="text-center py-6">
-
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-teal-400 border-t-transparent mx-auto mb-3"></div>
-
           <div className="text-lg font-semibold text-teal-700">Loading Events...</div>
-
         </div>
-
       </div>
-
     );
-
   }
-
-
-
   return (
-
     // Non-overlay modal: render inline so it stays inside App layout
-
     <div className=" absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
 
       <div className="bg-white max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-2 sm:p-6 relative ">
 
         <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-4">
-
           <h2 className="text-2xl font-extrabold text-teal-600 flex items-center">
-
             <Calendar className="mr-3 w-6 h-6" /> Events for {MONTHS[currentMonth]} {currentYear}
-
           </h2>
-
           <button onClick={onClose} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition">
-
             <X className="w-6 h-6" />
-
           </button>
-
         </div>
-
-
-
         {error ? (
-
           <p className="text-red-600 text-center py-6">{error}</p>
-
         ) : eventsList.length === 0 ? (
-
           <p className="text-gray-500 text-lg text-center py-10">No events added for this month yet. 🎉</p>
-
         ) : (
-
           <div className="space-y-4">
-
             {pageItems.map((event, index) => (
-
               <div key={`${event.startDate}-${startIndex + index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
-
                 <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
-
                   <Clock className="inline w-4 h-4 mr-2" />
-
                   Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
-
                 </p>
-
                 <p className="text-xl font-semibold text-gray-800 mb-2">{event.event}</p>
-
                 <p className="text-gray-600 italic border-l-4 border-teal-400 pl-3">{event.description}</p>
-
               </div>
-
             ))}
-
-
-
             {/* pagination controls */}
-
             <div className="flex items-center justify-between mt-4">
-
               <div className="text-sm text-gray-600">
-
                 Showing {startIndex + 1} - {Math.min(startIndex + ROWS_PER_PAGE, eventsList.length)} of {eventsList.length}
-
               </div>
-
               <div className="flex items-center gap-2">
-
                 <button
-
                   onClick={() => setPage(p => Math.max(1, p - 1))}
-
                   disabled={page <= 1}
-
                   className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-
                 >
-
                   Prev
-
                 </button>
-
                 <span className="text-sm">Page {page} / {totalPages}</span>
-
                 <button
-
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-
                   disabled={page >= totalPages}
-
                   className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-
                 >
-
                   Next
-
                 </button>
-
               </div>
-
             </div>
-
           </div>
-
         )}
-
-
-
         <div className="flex justify-end mt-6">
-
           <button onClick={onClose} className="px-6 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition duration-150">
-
             Close
-
           </button>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 };
 
 function App({ attendanceRecords: externalAttendanceRecords = [] }) {
@@ -1657,15 +1062,8 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
       return <div className="p-2 border border-gray-100 bg-gray-50 min-h-[20px] sm:min-h-[40px]"></div>;
 
     }
-
-
-
     const { day, dateString, attendance } = dayData;
-
-
-
     // Normalize status so DayBox colors match DayDetailsModal behaviour
-
     const normalizeStatus = (att) => {
 
       if (!att) return 'unknown';
@@ -1707,43 +1105,18 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
       return 'unknown';
 
     };
-
-
-
     const eventsOnThisDay = getEventsForDate(dateString);
-
     const hasEvents = eventsOnThisDay.length > 0;
-
-
-
     // If any event on this day is marked as holiday, treat the day as holiday
-
     const hasHolidayEvent = eventsOnThisDay.some(ev => ev && (ev.holiday === true || String(ev.holiday).toLowerCase() === 'true'));
-
-
-
-    // Determine effective status giving precedence to holiday events
-
+    // Determine effective status giving precedence to holiday event
     const status = hasHolidayEvent ? 'holiday' : normalizeStatus(attendance);
-
-
-
     const isToday = dateString === new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-
-
-
     // map status to Tailwind classes + icon
-
     let bgClass = 'bg-white';
-
     let borderClass = 'border-gray-300';
-
     let icon = null;
-
     let textClass = 'text-gray-900';
-
-
-
     if (status === 'present') {
 
       bgClass = 'bg-green-50 hover:bg-green-200';
@@ -1781,15 +1154,8 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
       borderClass = hasEvents ? 'border-indigo-500 border-2' : 'border-gray-300';
 
     }
-
-
-
     const todayRingClass = isToday ? 'ring-4 ring-indigo-400 font-bold' : '';
-
     const editingClass = isEditing ? 'cursor-crosshair ring-2 ring-pink-500' : '';
-
-
-
     return (
 
       <div
@@ -2147,7 +1513,6 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
 
     // Apply IST offset to schedule times
     const dayData = applyOffsetToSchedule(rawDay);
-
     const timePoints = new Set();
     if (dayData.Start_time) timePoints.add(dayData.Start_time);
     if (dayData.End_time) timePoints.add(dayData.End_time);
@@ -2601,7 +1966,6 @@ const fetchTodayAttendance = useCallback(async () => {
         console.error("Disconnected API call failed:", err);
       }
     };
-
     const handleConnect = async () => {
       if (!isLoggedIn || !employeeId || !attendanceId) return;
 
@@ -3055,13 +2419,10 @@ const fetchTodayAttendance = useCallback(async () => {
         const employeeId = userData?.employeeId || "ACS00000001";
         const { startISO, endISO } = buildRange();
         const variables = { employeeId, startDate: startISO, endDate: endISO };
-        // Use graphqlRequest so Authorization header (Bearer token) is applied and errors are normalized
         const payload = await graphqlRequest(DETAILS_QUERY, variables);
         if (cancelled) return;
         const data = payload?.getDetailsBetweenDates || [];
-
         const normalized = data.map((item) => {
-          // dateForTime: prefer YYYY-MM-DD
           const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
             ? item.date
             : (() => {
@@ -3075,36 +2436,24 @@ const fetchTodayAttendance = useCallback(async () => {
             if (!raw) return null;
             const s = String(raw).trim();
             if (!s || /^(-|n\/a|null)$/i.test(s)) return null;
-
-            // direct ISO / datetime with timezone
             if (/\d{4}-\d{2}-\d{2}T/.test(s) || /[Zz]|[+\-]\d{2}:\d{2}$/.test(s)) {
               const pd = new Date(s);
               return isNaN(pd.getTime()) ? null : pd;
             }
-
-            // try Date.parse (handles many formats incl. "YYYY-MM-DD hh:mm" or "MMM dd yyyy hh:mm")
             const parsedByJS = new Date(s);
             if (!isNaN(parsedByJS.getTime())) return parsedByJS;
-
-            // try plain time "HH:mm" or "HH:mm:ss" normalized -> treat as UTC on dateForTime
             const hhmm = tryNormalizeTo24(s);
             if (hhmm) {
               const pd = new Date(`${dateForTime}T${hhmm}:00Z`);
               return isNaN(pd.getTime()) ? null : pd;
             }
-
-            // try "date time" with space -> convert to ISO-ish and append Z if missing timezone
             const spaceSep = s.replace(' ', 'T');
             if (/\d{4}-\d{2}-\d{2}T/.test(spaceSep)) {
               const maybe = spaceSep.endsWith('Z') || /[+\-]\d{2}:\d{2}$/.test(spaceSep) ? new Date(spaceSep) : new Date(`${spaceSep}Z`);
               if (!isNaN(maybe.getTime())) return maybe;
             }
-
-            // final fallback: return null (we will display raw string)
             return null;
-          };
-
-          // format Date (UTC) into India time string
+          }
           const formatDateToIST = (dateObj) => {
             if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
             return new Intl.DateTimeFormat('en-IN', {
