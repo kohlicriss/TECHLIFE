@@ -2228,11 +2228,10 @@ const fetchTodayAttendance = useCallback(async () => {
         return prev;
       });
 
-      // ✅ Refresh today’s data
+      
       fetchTodayAttendance();
     }
   };
-
 
   const handleCancel = () => { setIsLogoutConfirmed(false); };
 
