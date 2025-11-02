@@ -17,6 +17,7 @@ import ProjectDetails from "./Projects/ProjectDetails";
 import Department from "./Departments/Department";
 import Departmentspage from "./Departments/Departmentspage";
 import HomePayRoll from "./PayRoll/HomePayRoll";
+import PersonalLeaves from "./EmployeeDashboards/PersonalLeaves";
 
 // Lazy imports with error handling
 const NotificationSystem = lazy(() => 
@@ -61,6 +62,11 @@ const EmployeeTicket = lazy(() =>
 );
 const CombinedDashBoard = lazy(() => 
     import("./EmployeeDashboards/CombinedDashBoard").catch(() => ({
+        default: () => <div className="p-8 text-center text-red-600">Failed to load Dashboard. Please refresh.</div>
+    }))
+);
+const AttendanceDetails = lazy(() => 
+    import("./EmployeeDashboards/PersonalLeaves").catch(() => ({
         default: () => <div className="p-8 text-center text-red-600">Failed to load Dashboard. Please refresh.</div>
     }))
 );
@@ -442,6 +448,16 @@ const HrmsApp = () => {
                                                     <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
                                                         <RouteWrapper moduleName="Admin Dashboard">
                                                             <CombinedDashBoard />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+                                            <Route 
+                                                path="/personal-leaves/:empId/*" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE']}>
+                                                        <RouteWrapper moduleName="Personal Leaves">
+                                                            <AttendanceDetails />
                                                         </RouteWrapper>
                                                     </ProtectedRoute>
                                                 } 

@@ -1723,7 +1723,7 @@ function EmployeeAttendanceForm({ onClose, onSubmit }) {
         </motion.div>
     );
 };
-const API_ENDPOINT = "https://hrms.anasolconsultancyservices.com/api/attendance/shifts";
+const API_BASE = "https://hrms.anasolconsultancyservices.com/api/attendance/shifts";
 
 // --- Custom Input Component for clean JSX ---
 const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
@@ -1755,237 +1755,322 @@ const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
 };
 // ---------------------------------------------
 
+
 const ShiftForm = ({ onClose }) => {
-    // Logic (UNCHANGED)
-    const { theme } = useContext(Context);
-    const [formData, setFormData] = useState({
-        shiftName: '',
-        startTime: '',
-        endTime: ''
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submissionMessage, setSubmissionMessage] = useState('');
+  const { theme } = useContext(Context);
 
-    const convertToHHMMSS = (timeString) => {
-        if (!timeString || timeString.length !== 5) return '';
-        return `${timeString}:00`;
-    };
+  // --- State for Shift Form ---
+  const [shiftFormData, setShiftFormData] = useState({
+    shiftName: "",
+    startTime: "",
+    endTime: "",
+    halfTime: "",
+    acceptedBreakTime: "",
+    takeAttendanceAfter: "",
+  });
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prevData => ({
-            ...prevData,
-            [name]: value
-        }));
-    };
+  // --- State for Trigger Form ---
+  const [triggerFormData, setTriggerFormData] = useState({
+    shift: "",
+    section: "",
+    cronExpression: "",
+    zone: "",
+  });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSubmissionMessage('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionMessage, setSubmissionMessage] = useState("");
 
-        // The original logic with window.confirm (preserved as requested)
-        const isConfirmed = window.confirm(
-            "Are you sure you want to submit this shift data?\n" +
-            `Shift Name: ${formData.shiftName}\n` +
-            `Start Time: ${formData.startTime}\n` +
-            `End Time: ${formData.endTime}`
-        );
+  // --- Helpers ---
+  const convertToHHMMSS = (timeString) => {
+    if (!timeString || timeString.length !== 5) return "";
+    return `${timeString}:00`;
+  };
 
-        if (!isConfirmed) {
-            return;
-        }
+  const handleShiftChange = (e) => {
+    const { name, value } = e.target;
+    setShiftFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-        setIsSubmitting(true);
+  const handleTriggerChange = (e) => {
+    const { name, value } = e.target;
+    setTriggerFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-        const dataToSubmit = {
-            shiftName: formData.shiftName,
-            startTime: convertToHHMMSS(formData.startTime),
-            endTime: convertToHHMMSS(formData.endTime),
-            halfTime: convertToHHMMSS(formData.halfTime),
-            acceptedBreakTime: formData.acceptedBreakTime,  // e.g. "PT1H30M00S"
-            takeAttendanceAfter: formData.takeAttendanceAfter // e.g. "PT0H30M"
-        };
+  // --- Submit Shift ---
+  const handleShiftSubmit = async (e) => {
+    e.preventDefault();
+    setSubmissionMessage("");
 
-        try {
-            const response = await axios.post(API_ENDPOINT, dataToSubmit);
-            if (response.status !== 200 && response.status !== 201) {
-                console.log(response);
-                throw new Error(`error: ${response.status} - ${response.data}`);
-            }
-            alert(`Shift submitted successfully! 🎉\nStatus: ${response.status}\nMessage: ${response.data.message || 'Data received by server.'}`);
-            setSubmissionMessage('Success: Shift data submitted!');
-            setFormData({ shiftName: '', startTime: '', endTime: '', halfTime: '', acceptedBreakTime: '', takeAttendanceAfter: '' });
-            onClose();
-
-        } catch (error) {
-            console.error('Submission Error:', error.response?.data || error.message);
-            alert(`Submission failed! 😔\nError: ${error.response?.data?.message || error.message}`);
-            setSubmissionMessage(`Error: Submission failed! ${error.response?.data?.message || error.message}`);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // UI Redesign Starts Here
-    const formThemeClasses = theme === 'dark'
-        ? 'bg-gray-800 text-white border-gray-700'
-        : 'bg-white text-gray-800 border-gray-100';
-
-    const headerGradient = 'bg-gradient-to-r from-teal-500 to-cyan-600';
-
-    return (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={onClose} // Allow closing by clicking backdrop
-        >
-            <motion.div
-                className="w-full max-w-lg mx-auto my-auto max-h-[90vh] overflow-y-auto transform"
-                initial={{ scale: 0.9, y: -50 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: -50 }}
-                transition={{ duration: 0.3 }}
-                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
-            >
-                <form
-                    onSubmit={handleSubmit}
-                    className={`relative w-full rounded-3xl shadow-3xl overflow-hidden ${formThemeClasses} transition-all duration-300`}
-                >
-                    {/* Professional Header */}
-                    <div className={`text-center rounded-t-3xl ${headerGradient} p-6`}>
-                        <h2 className="text-2xl font-extrabold text-white">
-                            <i className="fas fa-clock mr-2"></i> Create New Shift
-                        </h2>
-                        <p className="text-sm text-white/90 mt-1">Define the operational hours for a new shift.</p>
-                    </div>
-
-                    <div className="space-y-6 p-8">
-
-                        {/* Shift Name Input */}
-                        {/* Shift Name */}
-                        <Form
-                            label="Shift Name"
-                            theme={theme}
-                            type="text"
-                            name="shiftName"
-                            value={formData.shiftName}
-                            onChange={handleChange}
-                            required
-                            placeholder="e.g., Morning Shift, Night Duty"
-                        />
-
-                        {/* Start & End Time */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <Form
-                                label="Start Time"
-                                theme={theme}
-                                type="time"
-                                name="startTime"
-                                value={formData.startTime}
-                                onChange={handleChange}
-                                required
-                                helperText={`Will be saved as ${convertToHHMMSS(formData.startTime)}`}
-                            />
-                            <Form
-                                label="End Time"
-                                theme={theme}
-                                type="time"
-                                name="endTime"
-                                value={formData.endTime}
-                                onChange={handleChange}
-                                required
-                                helperText={`Will be saved as ${convertToHHMMSS(formData.endTime)}`}
-                            />
-                        </div>
-
-                        {/* Half Time */}
-                        <div className="pt-2">
-                            <Form
-                                label="Half Time (HH:MM:SS)"
-                                theme={theme}
-                                type="time"
-                                step="1"
-                                name="halfTime"
-                                value={formData.halfTime}
-                                onChange={handleChange}
-                                required
-                                helperText="Example: 01:00:00 represents 1 hour"
-                            />
-                        </div>
-
-                        {/* Accepted Break & Attendance Delay */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-                            <Form
-                                label="Accepted Break Duration"
-                                theme={theme}
-                                type="text"
-                                name="acceptedBreakTime"
-                                value={formData.acceptedBreakTime}
-                                onChange={handleChange}
-                                required
-                                placeholder="PT1H30M00S"
-                                helperText="Format: ISO 8601 (e.g., PT1H30M00S = 1h 30m)"
-                            />
-                            <Form
-                                label="Take Attendance After"
-                                theme={theme}
-                                type="text"
-                                name="takeAttendanceAfter"
-                                value={formData.takeAttendanceAfter}
-                                onChange={handleChange}
-                                required
-                                placeholder="PT0H30M"
-                                helperText="Format: ISO 8601 (e.g., PT0H30M = 30 minutes)"
-                            />
-                        </div>
-
-                        {/* Submission Status Message (Better Visual Placement) */}
-                        <AnimatePresence>
-                            {submissionMessage && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className={`mt-4 text-center p-3 rounded-lg text-sm font-medium ${submissionMessage.startsWith('Success')
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-100'
-                                            : 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-100'
-                                        }`}
-                                >
-                                    {submissionMessage}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* Action Buttons */}
-                        <div className="pt-4 flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 -mx-8 px-8">
-                            <motion.button
-                                type="button"
-                                onClick={onClose}
-                                className="px-5 py-2.5 rounded-lg border text-sm font-semibold shadow-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                Cancel
-                            </motion.button>
-
-                            <motion.button
-                                type="submit"
-                                className="px-5 py-2.5 rounded-lg border border-transparent bg-indigo-600 text-sm font-semibold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:bg-indigo-400 transition-colors"
-                                disabled={isSubmitting}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                {isSubmitting ? 'Creating Shift...' : 'Create Shift'}
-                            </motion.button>
-                        </div>
-                    </div>
-                </form>
-            </motion.div>
-        </motion.div>
+    const isConfirmed = window.confirm(
+      `Submit this shift?\nShift: ${shiftFormData.shiftName}\nStart: ${shiftFormData.startTime}\nEnd: ${shiftFormData.endTime}`
     );
+    if (!isConfirmed) return;
+
+    setIsSubmitting(true);
+    const dataToSubmit = {
+      shiftName: shiftFormData.shiftName,
+      startTime: convertToHHMMSS(shiftFormData.startTime),
+      endTime: convertToHHMMSS(shiftFormData.endTime),
+      halfTime: convertToHHMMSS(shiftFormData.halfTime),
+      acceptedBreakTime: shiftFormData.acceptedBreakTime,
+      takeAttendanceAfter: shiftFormData.takeAttendanceAfter,
+    };
+
+    try {
+      const response = await axios.post(API_BASE, dataToSubmit);
+      alert("Shift created successfully ✅");
+      setSubmissionMessage("Success: Shift data submitted!");
+      setShiftFormData({
+        shiftName: "",
+        startTime: "",
+        endTime: "",
+        halfTime: "",
+        acceptedBreakTime: "",
+        takeAttendanceAfter: "",
+      });
+    } catch (error) {
+      console.error(error);
+      setSubmissionMessage(`Error: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // --- Submit Trigger ---
+  const handleTriggerSubmit = async (e) => {
+    e.preventDefault();
+    setSubmissionMessage("");
+
+    const isConfirmed = window.confirm(
+      `Create trigger?\nShift: ${triggerFormData.shift}\nSection: ${triggerFormData.section}\nCron: ${triggerFormData.cronExpression}`
+    );
+    if (!isConfirmed) return;
+
+    setIsSubmitting(true);
+    const dataToSubmit = {
+      Shift: triggerFormData.shift,
+      Section: triggerFormData.section,
+      CronExpression: triggerFormData.cronExpression,
+      Zone: triggerFormData.zone,
+    };
+
+    try {
+      const response = await axios.post(`${API_BASE}/trigger`, dataToSubmit);
+      alert("Trigger created successfully ✅");
+      setSubmissionMessage("Success: Trigger data submitted!");
+      setTriggerFormData({ shift: "", section: "", cronExpression: "", zone: "" });
+    } catch (error) {
+      console.error(error);
+      setSubmissionMessage(`Error: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formThemeClasses =
+    theme === "dark"
+      ? "bg-gray-800 text-white border-gray-700"
+      : "bg-white text-gray-800 border-gray-100";
+
+  const headerGradient = "bg-gradient-to-r from-teal-500 to-cyan-600";
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="w-full max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[90vh] overflow-y-auto transform"
+        initial={{ scale: 0.9, y: -50 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: -50 }}
+        transition={{ duration: 0.3 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ----------- Shift Form ----------- */}
+        <form
+          onSubmit={handleShiftSubmit}
+          className={`relative rounded-3xl shadow-3xl overflow-hidden ${formThemeClasses}`}
+        >
+          <div className={`${headerGradient} text-center rounded-t-3xl p-5`}>
+            <h2 className="text-xl font-bold text-white flex justify-center items-center gap-2">
+              <i className="fas fa-clock"></i> Create Shift
+            </h2>
+            <p className="text-sm text-white/80">Define operational hours</p>
+          </div>
+
+          <div className="space-y-5 p-6">
+            <Form
+              label="Shift Name"
+              theme={theme}
+              type="text"
+              name="shiftName"
+              value={shiftFormData.shiftName}
+              onChange={handleShiftChange}
+              required
+              placeholder="Morning Shift"
+            />
+
+            <div className="grid grid-cols-2 gap-5">
+              <Form
+                label="Start Time"
+                theme={theme}
+                type="time"
+                name="startTime"
+                value={shiftFormData.startTime}
+                onChange={handleShiftChange}
+                required
+              />
+              <Form
+                label="End Time"
+                theme={theme}
+                type="time"
+                name="endTime"
+                value={shiftFormData.endTime}
+                onChange={handleShiftChange}
+                required
+              />
+            </div>
+
+            <Form
+              label="Half Time"
+              theme={theme}
+              type="time"
+              name="halfTime"
+              value={shiftFormData.halfTime}
+              onChange={handleShiftChange}
+              required
+            />
+
+            <Form
+              label="Accepted Break (ISO 8601)"
+              theme={theme}
+              type="text"
+              name="acceptedBreakTime"
+              value={shiftFormData.acceptedBreakTime}
+              onChange={handleShiftChange}
+              required
+              placeholder="PT1H30M00S"
+            />
+
+            <Form
+              label="Take Attendance After (ISO 8601)"
+              theme={theme}
+              type="text"
+              name="takeAttendanceAfter"
+              value={shiftFormData.takeAttendanceAfter}
+              onChange={handleShiftChange}
+              required
+              placeholder="PT0H30M"
+            />
+
+            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+              <motion.button
+                type="submit"
+                className="px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.05 }}
+              >
+                {isSubmitting ? "Submitting..." : "Create Shift"}
+              </motion.button>
+            </div>
+          </div>
+        </form>
+
+        {/* ----------- Trigger Form ----------- */}
+        <form
+          onSubmit={handleTriggerSubmit}
+          className={`relative rounded-3xl shadow-3xl overflow-hidden ${formThemeClasses}`}
+        >
+          <div className={`${headerGradient} text-center rounded-t-3xl p-5`}>
+            <h2 className="text-xl font-bold text-white flex justify-center items-center gap-2">
+              <i className="fas fa-bolt"></i> Create Trigger
+            </h2>
+            <p className="text-sm text-white/80">Setup scheduled trigger</p>
+          </div>
+
+          <div className="space-y-5 p-6">
+            <Form
+              label="Shift Name"
+              theme={theme}
+              type="text"
+              name="shift"
+              value={triggerFormData.shift}
+              onChange={handleTriggerChange}
+              required
+              placeholder="Morning"
+            />
+
+            <Form
+              label="Section"
+              theme={theme}
+              type="text"
+              name="section"
+              value={triggerFormData.section}
+              onChange={handleTriggerChange}
+              required
+              placeholder="FIRST, SECOND"
+            />
+
+            <Form
+              label="Cron Expression"
+              theme={theme}
+              type="text"
+              name="cronExpression"
+              value={triggerFormData.cronExpression}
+              onChange={handleTriggerChange}
+              required
+              placeholder="0 0 8 * * *"
+            />
+
+            <Form
+              label="Time Zone"
+              theme={theme}
+              type="text"
+              name="zone"
+              value={triggerFormData.zone}
+              onChange={handleTriggerChange}
+              required
+              placeholder="Asia/Kolkata"
+            />
+
+            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+              <motion.button
+                type="submit"
+                className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.05 }}
+              >
+                {isSubmitting ? "Creating..." : "Create Trigger"}
+              </motion.button>
+            </div>
+          </div>
+        </form>
+      </motion.div>
+
+      {/* --- Submission Message --- */}
+      <AnimatePresence>
+        {submissionMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`absolute bottom-6 text-center w-full text-sm font-medium ${
+              submissionMessage.startsWith("Success")
+                ? "text-green-500"
+                : "text-red-500"
+            }`}
+          >
+            {submissionMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 };
 
 function LeavesReports({ onBack }) {
