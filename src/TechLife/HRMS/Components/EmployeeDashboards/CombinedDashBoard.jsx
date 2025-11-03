@@ -1,5 +1,5 @@
 import { Calendar as CalendarDays, BriefcaseMedical, PackageSearch, MessageSquareCode, CircleUserRound, UserRoundCog, ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { Fragment, useContext, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useContext, useEffect, useState } from 'react';
 import Calendar from './Calender';
 import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -640,259 +640,218 @@ const TaskStatistics = ({onViewAll}) => {
         </div>
     );
 };
+const getAccessToken = () => {
+    return localStorage.getItem('accessToken'); 
+}
+const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/employee'; 
+const fetchProjects = async (page, size, token, employeeId = null) => {
+    if (!token) throw new Error("Authentication token missing.");
+    const url = employeeId
+      ? `${API_BASE_URL}/projects/${encodeURIComponent(employeeId)}`
+      : `${API_BASE_URL}/${page}/${size}/projectId/asc/projects`;
+    
+    const response = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error("Unauthorized: Token expired or invalid. Please log in again.");
+        }
+        const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(`API Error: ${errorBody.message || response.statusText}`);
+    }
+    return response.json();
+};
 function Project() {
-    const { userData,theme } = useContext(Context);
+    const { userData, theme } = useContext(Context);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
-
-    const [projectTableData, setProjectTableData] = useState([
-        {project_id: "P_01",project_name: "HRMS Project",status: "Ongoing",start_date: "2025-05-01",end_date: "2025-09-30",Team_Lead:"Naveen",                   Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        { project_id: "P_02",project_name: "Employee Self-Service App", status: "Upcoming", start_date: "2025-10-15", end_date: "2025-12-15",Team_Lead:"Rajiv",  Priority: "Medium", Open_task: 20, Closed_task: 10, Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_03",project_name: "Payroll Automation",status: "Completed",start_date: "2024-10-01",end_date: "2025-02-15",Team_Lead:"Manikanta",        Priority: "High",Open_task: 12,Closed_task: 10,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P_04",project_name: "Attendance System Upgrade",status: "Ongoing",start_date: "2025-05-10",end_date: "2025-08-10",Team_Lead:"Ravinder",    Priority: "Low",Open_task: 40,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688" },
-        {project_id: "P_05",project_name: "AI-Based Recruitment Tool",status: "Upcoming",start_date: "2025-12-01",end_date: "2026-02-28",Team_Lead:"Sravani",    Priority: "Medium",Open_task: 20,Closed_task: 15,Details: "https://www.flaticon.com/free-icon/document_16702688"},
-        {project_id: "P06",project_name: "Internal Chatbot System",status: "Completed",start_date: "2024-05-01",end_date: "2024-11-30",Team_Lead:"Gayatri",      Priority: "High",Open_task: 30,Closed_task: 25,Details: "https://www.flaticon.com/free-icon/document_16702688"}]);
-
-    const teamLeadImageMap = {
-        Naveen: "https://i.pravatar.cc/40?img=1",
-        Rajiv: "https://i.pravatar.cc/40?img=2",
-        Manikanta: "https://i.pravatar.cc/40?img=3",
-        Ravinder: "https://i.pravatar.cc/40?img=4",
-        Sravani: "https://i.pravatar.cc/40?img=5",
-        Gayatri: "https://i.pravatar.cc/40?img=6"
-    };
-
-    
-    const getPriorityColor = (priority) => {
-        switch (priority) {case "High":return "bg-green-100 text-green-800";case "Medium":return "bg-orange-100 text-orange-800";case "Low": return "bg-red-100 text-red-800";default:return "bg-gray-100 text-gray-800";}};
-    const getStatusColor = (status) => {
-        switch (status) {case "In Progress":    return "bg-green-100 text-green-800";case "Ongoing": return "bg-blue-100 text-blue-800";case "Upcoming": return "bg-yellow-100 text-yellow-800";case "Completed": return "bg-purple-100 text-purple-800";default: return "bg-gray-100 text-gray-800";} };
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [newProject, setNewProject] = useState({
-        project_id: "",
-        project_name: "",
-        status: "Ongoing",
-        start_date: "",
-        end_date: "",
-        Team_Lead:"",
-        Employee_team: [],
-        Priority: "Medium",
-        Open_task: 0,
-        Closed_task: 0,
-        rating: "",
-        remark: "",
-        completionNote: "",
-        relatedLinks: [""],
-        attachedFileLinks: [],
+     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from MyTeam :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
+             const [hasAccess,setHasAccess]=useState([])
+                   useEffect(()=>{
+                       setHasAccess(userData?.permissions)
+                   },[userData])
+                   console.log("permissions from userdata:",hasAccess)
+    const [projectTableData, setProjectTableData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [paginationInfo, setPaginationInfo] = useState({
+        pageNumber: 0,
+        pageSize: 11,
+        totalElements: 0,
+        totalPages: 1,
     });
-    const [files, setFiles] = useState([]);
-    const handleCreateProject = (e) => {
-        e.preventDefault();
-        setProjectTableData(prev => [
-            ...prev,
-            { ...newProject, project_id: `P_${prev.length + 1}`, attachedFileLinks: files }
-        ]);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("All");
+    const navigate = useNavigate();
+     const loadProjects = useCallback(async (page, size) => {
+        setLoading(true);
+        setError(null);
+        const token = getAccessToken();
+        try {
+            const rawRole = Array.isArray(userData?.roles) ? userData.roles[0] : userData?.roles || "";
+            const normalizedRole = typeof rawRole === "string" ? rawRole.toUpperCase().replace(/^ROLE_/, "") : "";
+            const isAdmin = normalizedRole === 'ADMIN';
+            const employeeId = (!isAdmin && userData?.employeeId) ? userData.employeeId : null;
+            const data = await fetchProjects(page, size, token, employeeId);
+            if (employeeId && Array.isArray(data)) {
+                setProjectTableData(data || []);
+                setPaginationInfo(prev => ({ ...prev, totalElements: data.length || 0 }));
+            } else {
+                setProjectTableData(data.content || data || []);
+                setPaginationInfo({
+                    pageNumber: typeof data.pageNumber !== 'undefined' ? data.pageNumber : page,
+                    pageSize: typeof data.pageSize !== 'undefined' ? data.pageSize : size,
+                    totalElements: typeof data.totalElements !== 'undefined' ? data.totalElements : (Array.isArray(data) ? data.length : 0),
+                    totalPages: typeof data.totalPages !== 'undefined' ? data.totalPages : 1,
+                });
+            }
+        } catch (err) {
+            console.error("Failed to load projects:", err);
+            setError(err.message);
+            setProjectTableData([]); 
+        } finally {
+            setLoading(false);
+        }
+    }, [userData]); 
+    useEffect(() => {
+        loadProjects(paginationInfo.pageNumber, paginationInfo.pageSize);
+    }, [loadProjects, paginationInfo.pageNumber, paginationInfo.pageSize]);
+    const handleRowClick = (proj) => {
+        const idKey = proj.projectId || proj.project_id; 
+        try { localStorage.setItem('selectedProjectId', idKey); } catch {}
+        navigate(`/project-details/${idKey}`, { state: { project: proj } });
+    };
+    const handlePageChange = (newPage) => {
+        if (newPage >= 0 && newPage < paginationInfo.totalPages) {
+            setPaginationInfo(prev => ({ ...prev, pageNumber: newPage }));
+        }
+    };
+    const getPriorityColor = (priority) => {
+        switch (priority) {
+            case "High": return "bg-green-100 text-green-800";
+            case "Medium": return "bg-orange-100 text-orange-800";
+            case "Low": return "bg-red-100 text-red-800";
+            default: return "bg-gray-100 text-gray-800";
+        }
+    };
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "In Progress": return "bg-green-100 text-green-800";
+            case "Ongoing": return "bg-blue-100 text-blue-800";
+            case "Upcoming": return "bg-yellow-100 text-yellow-800";
+            case "Completed": return "bg-purple-100 text-purple-800";
+            default: return "bg-gray-100 text-gray-800";
+        }
+    };
+       const getTeamLeadDisplay = (proj) => {
+        if (!proj) return "N/A";
+        if (Array.isArray(proj.teamLeadId) && proj.teamLeadId.length) return proj.teamLeadId.join(', ');
+        if (Array.isArray(proj.TeamLeadId) && proj.TeamLeadId.length) return proj.TeamLeadId.join(', ');
+        if (proj.teamLeadId) return String(proj.teamLeadId);
+        if (proj.TeamLeadId) return String(proj.TeamLeadId);
+        if (proj.TeamLead) return String(proj.TeamLead);
+        if (proj.Team_Lead) return String(proj.Team_Lead);
+        return "N/A";
+    };
+    const handleProjectSubmissionSuccess = () => {
         setShowCreateForm(false);
-        setNewProject({
-            project_id: "",
-            project_name: "",
-            status: "Ongoing",
-            start_date: "",
-            end_date: "",
-            Team_lead:"",
-            Employee_team: [],
-            Priority: "Medium",
-            Open_task: 0,
-            Closed_task: 0,
-            rating: "",
-            remark: "",
-            completionNote: "",
-            relatedLinks: [""],
-            attachedFileLinks: [],
-        });
-        setFiles([]);
+        loadProjects(paginationInfo.pageNumber, paginationInfo.pageSize); 
     };
-
-    const handleFileChange = (e) => {
-        setFiles(prev => [...prev, ...Array.from(e.target.files)]);
-    };
-
-    const removeFile = (index) => {
-        setFiles(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const handleRelatedLinkChange = (index, value) => {
-        const newLinks = [...newProject.relatedLinks];
-        newLinks[index] = value;
-        setNewProject(prev => ({ ...prev, relatedLinks: newLinks }));
-    };
-
-    const addRelatedLink = () => {
-        setNewProject(prev => ({ ...prev, relatedLinks: [...prev.relatedLinks, ""] }));
-    };
-
-    const removeRelatedLink = (index) => {
-        setNewProject(prev => ({
-            ...prev,
-            relatedLinks: prev.relatedLinks.filter((_, i) => i !== index)
-        }));
-    };
-    const [editProjectIndex, setEditProjectIndex] = useState(null);
-const [editProjectData, setEditProjectData] = useState(null);
-
-const handleEditProject = (idx) => {
-    setEditProjectIndex(idx);
-    setEditProjectData(projectTableData[idx]);
-    setShowEditForm(true);
-};
-
-const handleDeleteProject = (idx) => {
-    setProjectTableData(prev => prev.filter((_, i) => i !== idx));
-};
-
-const [showEditForm, setShowEditForm] = useState(false);
-
-const handleUpdateProject = (e) => {
-    e.preventDefault();
-    setProjectTableData(prev =>
-        prev.map((proj, idx) => idx === editProjectIndex ? editProjectData : proj)
+    const [editTarget, setEditTarget] = useState(null);
+    const filteredProjects = projectTableData.filter(
+        (proj) => statusFilter === "All" || proj.projectStatus === statusFilter
     );
-    setShowEditForm(false);
-    setEditProjectIndex(null);
-    setEditProjectData(null);
-};
- const [statusFilter, setStatusFilter] = useState("All");
-   const navigate = useNavigate();
-const handleRowClick = (proj) => {
-    navigate(`/project-details/${proj.project_id}`, { state: { project: proj } });
-};
-    return (
-        <motion.div
-            className={`p-6  rounded-2xl shadow-xl border border-purple-500 overflow-x-auto relative ${theme==='dark' ? 'bg-gray-700':'bg-gradient-to-br from-purple-10 to-purple-50 '}`}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-        >
-            <div className="absolute right-5 gap-2 justify-end items-end">
-                    <select
-                       value={statusFilter}
-                       onChange={(e) => setStatusFilter(e.target.value)}
-                       className={`${theme==='dark'?'bg-gray-500 text-purple-500':'bg-purple-50  text-purple-700'} border border-purple-500   font-medium rounded-xl px-4 py-2 text-sm shadow   shadow transition`}
-                    >
-                     <option value="All" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Select Status</option>
-                     <option value="Ongoing" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Ongoing</option>
-                     <option value="Upcoming" className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Upcoming</option>
-                     <option value="Completed"className={` ${theme==='dark'?'bg-gray-800 text-white':'bg-white text-black'}`}>Completed</option>
-                   </select>
-         
+   return (
+        <motion.div  className={`p-6 rounded-2xl shadow-2xl border border-purple-500 relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-gradient-to-br from-purple-10 to-purple-50 '}`}>
+            <div className="flex justify-between items-center mb-4 border-b pb-4">
+                <h2 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-purple-400' : 'text-purple-800'}`}>  Project Overview</h2>
+                {/*{(matchedArray || []).includes("CREATE_PROJECT") && (
+                    <motion.button className={`flex items-center text-sm sm:text-base ${theme === 'dark' ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-700 text-white hover:bg-purple-800'} font-bold py-2 px-4 rounded-xl shadow-md transition`} onClick={() => setShowCreateForm(true)}    ><FaPlus className="mr-2" /> Create Project</motion.button>
+                )}*/}
             </div>
-            <div className="flex justify-between items-center mb-4">
-                <h2 className={`text-2xl font-bold text-purple-800 ${theme==='dark' ? 'bg-gradient-to-br from-purple-100 to-purple-400 bg-clip-text text-transparent ':''}`}>
-                    Project Overview</h2>
-                    
+            <div className="flex justify-between items-center mb-6">
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`min-w-[150px] border-2 border-purple-400 font-medium rounded-xl px-4 py-2 text-sm shadow-inner transition ${theme === 'dark' ? 'bg-gray-700 text-purple-200 focus:border-purple-500' : 'bg-white text-purple-800 focus:border-purple-600'}`} >
+                    <option value="All" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>All Statuses</option>
+                    <option value="In Progress" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>InProgress</option>
+                    <option value="Completed" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>Completed</option>
+                    <option value="Not Started" className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}>NotStarted</option>
+                </select>
+                {loading && <p className={`text-base ${theme === 'dark' ? 'text-purple-300' : 'text-purple-700'}`}>Loading projects...</p>}
+                {error && <p className="text-red-500 font-semibold text-base">Error: {error}</p>}
             </div>
-            {/* Full-page overlay for the form */}
-          <div className="overflow-x-auto rounded-xl  ">
-            <table className="min-w-full bg-white  ">
-                <thead className={` text-left uppercase tracking-wider border border-purple-500 ${theme==='dark' ? 'bg-gray-500 text-white':'bg-purple-50 text-purple-700'}`}>
-                    <tr className={" border border-purple-500"}>
-                        <th className="p-3 text-sm md:text-base">Project</th>
-                        <th className="p-3 text-sm md:text-base">Team_Lead</th>
-                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />Start</th>
-                        <th className="p-3 text-sm md:text-base"><FaCalendarAlt className="inline mr-1" />End</th>
-                        <th className="p-3 text-sm md:text-base">Priority</th>
-                        <th className="p-3 text-sm md:text-base">Status</th>
-                        <th className="p-3 text-sm md:text-base">Open Task</th>
-                        <th className="p-3 text-sm md:text-base">Closed Task</th>
-                        <th className="p-3 text-sm md:text-base">Details</th>
-                       {/* {showSidebar &&<th className="p-3 text-sm md:text-base">Delete</th>}*/}
-                    </tr>
-                </thead>
-                <tbody  className="bg-white   ">
-                    <AnimatePresence>
-                        {projectTableData.filter((proj)=>statusFilter==="All"||proj.status===statusFilter)
-                        .map((proj, index) => (
-                            <motion.tr
-                                key={proj.project_id}
-                                className="border-t border-gray-100 hover:bg-gray-50"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                 onClick={() => handleRowClick(proj)}
-                            >
-                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> {proj.project_name}</td>
-                                <td className={`p-3 text-sm md:text-base font-semibold ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}> 
-                                     <motion.img
-                                            src={teamLeadImageMap[proj.Team_Lead] || "https://i.pravatar.cc/40?img=19"} // Fallback image
-                                            alt={proj.Team_Lead}
-                                            className="w-8 h-8 md:w-8 md:h-8 rounded-full border-2 border-white shadow-sm inline-block mr-2"
-                                            whileHover={{ scale: 1.1, translateY: -5, zIndex: 10 }}
-                                        />
-                                        {proj.Team_Lead}
-                                    
-                                </td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.start_date}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.end_date}</td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.Priority} onChange={(e) => (proj.Priority = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
-                                          proj.Priority === "High"
-                                            ? "bg-red-100 text-red-700"
-                                            : proj.Priority === "Medium"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : "bg-green-100 text-green-700"
-                                        }`}
-                                    >
-                                     <option value="High" className="text-red-600 ">🔴 High </option>
-                                     <option value="Medium" className="text-yellow-600">🟡 Medium </option>
-                                     <option value="Low" className="text-green-600"> 🟢 Low </option>
-                                 </select>
-                                </td>
-                                <td className={`p-3 ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <select value={proj.status} onChange={(e) => (proj.status = e.target.value)} className={`px-3 py-1 rounded text-xs font-medium shadow cursor-pointer ${
-                                          proj.status === "Ongoing"
-                                            ? "bg-blue-100 text-blue-700"
-                                            : proj.status === "Upcoming"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : "bg-purple-100 text-purple-700"
-                                        }`}
-                                    >
-                                     <option value="Ongoing" className="text-blue-600 ">🔵 Ongoing</option>
-                                     <option value="Upcoming" className="text-yellow-600">🟡 Upcoming</option>
-                                     <option value="Completed" className="text-blue-600">🟣 Completed</option>
-                                 </select>
-                                </td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Open_task}</td>
-                                <td className={`p-3 text-sm md:text-base ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>{proj.Closed_task}</td>          
-                             <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}><a href={proj.Details} target="_blank" rel="noopener noreferrer"><motion.div whileHover={{ scale: 1.2 }}> <FaFileAlt className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg inline w-6 h-6 md:w-6 md:h-6 transition`} /> </motion.div></a></td>
-                          { /*  {showSidebar && (
-                                <td className={`p-3 text-center ${theme==='dark' ? 'bg-gray-500 text-gray-200':''}`}>
-                                    <motion.button
-                                        whileHover={{ scale: 1.2 }}
-                                        onClick={e => { e.stopPropagation(); handleEditProject(index); }}
-                                    >
-                                        <FiEdit className={` ${theme==='dark' ? 'text-blue-200':'text-blue-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.2 }}
-                                       onClick={e => { e.stopPropagation(); handleDeleteProject(index); }}
-                                        className="ml-2"
-                                    >
-                                        <FaTrashAlt className={`${theme==='dark' ? 'text-red-200':'text-red-600'} text-lg w-3 h-3 md:w-5 md:h-5 transition`} />
-                                    </motion.button>
-                                </td> 
-                            )} */}
-                            </motion.tr>
-                            ))}
-                    </AnimatePresence>
-                </tbody>
-            </table>
+            <div className="overflow-x-auto rounded-xl shadow-2xl">
+                <table className={`min-w-full divide-y divide-gray-200 ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}`}>
+                    <thead className={`text-left uppercase tracking-wider text-xs sm:text-sm ${theme === 'dark' ? 'bg-gray-700 text-purple-300 border-b border-purple-500' : 'bg-purple-100 text-purple-800'}`}>
+                        <tr>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Project</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Team Lead</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap"><FaCalendarAlt className="inline mr-1" />Start</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap"><FaCalendarAlt className="inline mr-1" />End</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Priority</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Status</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Open/Closed</th>
+                            <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Details</th>
+                            {/*{(matchedArray || []).includes("DELETE_PROJECT") && ( <th className="py-3 px-4 text-xs sm:text-sm font-semibold whitespace-nowrap">Actions</th>)}*/}
+                        </tr>
+                    </thead>
+                    <tbody className={`divide-y divide-gray-100 ${theme === 'dark' ? 'divide-gray-600' : 'bg-white'}`}>
+                        <AnimatePresence mode="wait">
+                            {filteredProjects.length > 0 ? (
+                                filteredProjects
+                                .map((proj, index) => 
+                                    <motion.tr key={proj.projectId || proj.project_id} className={`border-t border-gray-100 ${theme === 'dark' ? 'text-gray-100 hover:bg-gray-600' : 'text-gray-800 hover:bg-purple-50'} cursor-pointer transition duration-150`} onClick={() => handleRowClick(proj)} >
+                                        <td className="py-3 px-4 text-sm font-bold max-w-[200px] whitespace-normal"> {proj.title || proj.project_name}</td>
+                                        <td className="py-3 px-4 text-sm max-w-[150px] font-medium text-gray-600 whitespace-normal">  {getTeamLeadDisplay(proj)}</td>
+                                        <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.startDate}</td>
+                                        <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.endDate}</td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4"><span className={`px-2 py-1 rounded-full text-xs font-semibold shadow-sm ${getPriorityColor(proj.projectPriority || proj.Priority)}`}>  {proj.projectPriority || proj.Priority}</span></td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4"><span className={`px-2 py-1 rounded-full text-xs font-semibold shadow-sm ${getStatusColor(proj.projectStatus || proj.status)}`}>  {proj.projectStatus || proj.status}</span></td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4 text-sm whitespace-nowrap"><span className="text-blue-600 font-semibold">{proj.openTask || proj.Open_task || 0}</span> / <span className="text-gray-500">{proj.closedTask || proj.Closed_task || 0}</span></td>
+                                        <td onClick={e => { e.stopPropagation()}} className="py-3 px-4 text-center"><a href={proj.details || proj.Details} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}><motion.div whileHover={{ scale: 1.2 }}>  <FaFileAlt className={`${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'} text-lg transition`} /></motion.div></a></td>
+                                         {/*{(matchedArray || []).includes("DELETE_PROJECT") && (
+                                        <td className="py-3 px-4 text-sm whitespace-nowrap" onClick={e => e.stopPropagation()}><button onClick={(e) => handleEditClick(e, proj)} className="mr-3 text-indigo-600 hover:text-indigo-800" title="Edit">  <FiEdit /></button><button onClick={(e) => handleDeleteClick(e, proj)} className="text-red-600 hover:text-red-800" title="Delete">    <FiDelete /></button></td>
+                                        )}*/}
+                                    </motion.tr>
+                                )
+                            ) : (
+                                <tr><td colSpan="8" className={`p-10 text-center text-lg ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>{loading ? 'Fetching data...' : 'No projects found matching the filter.'}</td></tr>
+                            )}
+                        </AnimatePresence>
+                    </tbody>
+                </table>
+            </div>
+            <div className={`flex flex-col sm:flex-row justify-between items-center mt-6 p-3 rounded-xl ${theme === 'dark' ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-white border border-gray-200 text-gray-700'} shadow-md`}>
+                <span className="text-sm mb-2 sm:mb-0"> Showing {projectTableData.length} projects out of {paginationInfo.totalElements} total </span>
+                <div className="flex space-x-2">
+                    <button onClick={() => handlePageChange(paginationInfo.pageNumber - 1)} disabled={paginationInfo.pageNumber === 0} className="px-3 py-1 rounded-lg text-sm bg-purple-200 text-purple-800 hover:bg-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition" >     &larr; Previous </button>
+                    <span className="px-3 py-1 rounded-lg text-sm bg-purple-600 text-white font-bold">{paginationInfo.pageNumber + 1} / {paginationInfo.totalPages}</span>
+                    <button onClick={() => handlePageChange(paginationInfo.pageNumber + 1)} disabled={paginationInfo.pageNumber >= paginationInfo.totalPages - 1} className="px-3 py-1 rounded-lg text-sm bg-purple-200 text-purple-800 hover:bg-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition" >     Next &rarr; </button>
+                </div>
             </div>
         </motion.div>
     );
 }
-
-
 const CombinedDashboard = () => {
     const [showEmployeeDetails, setShowEmployeeDetails] = useState(false);
     const [showApplicants, setShowApplicants] = useState(false);
