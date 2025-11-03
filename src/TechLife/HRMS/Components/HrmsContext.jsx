@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
 import { authApi, notificationsApi } from "../../../axiosInstance";
