@@ -724,7 +724,7 @@ const ProjectCard = () => {
                      >
                        Sprints
                      </button>
-                     <h2 className="text-xl font-bold mb-4 border-b pb-2 text-yellow-600">Key Metrics (KPIs)</h2>
+                     <h2 className="text-xl font-bold mb-2 border-b pb-2 text-yellow-600">Key Metrics (KPIs)</h2>
                      <div className="mt-2">
                        <dl className="space-y-3">
                          {currentProject?.kpis && Object.keys(currentProject.kpis).length ? (
