@@ -4,7 +4,9 @@ import { publicinfoApi } from "../../../../axiosInstance";
 import { Context } from "../HrmsContext";
 import { PlusCircle, X, Loader2, Trash2, Pencil, Users, Building2 } from 'lucide-react';
 
+
 const initialNewDepartment = { departmentName: '', departmentDescription: '' };
+
 
 const NotificationPopup = memo(({ open, onClose, message, type, theme }) => {
   if (!open) return null;
@@ -28,6 +30,7 @@ const NotificationPopup = memo(({ open, onClose, message, type, theme }) => {
     </div>
   );
 });
+
 
 const DepartmentModal = memo(({
   open, onClose, onSubmit, department, onInputChange, isSubmitting, formError, editMode, theme
@@ -119,16 +122,20 @@ const DepartmentModal = memo(({
   );
 });
 
+
 const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 640;
+
 
 const Departmentspage = () => {
   const { theme } = useContext(Context);
   const navigate = useNavigate();
 
+
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredDeptId, setHoveredDeptId] = useState(null);
+
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -143,11 +150,13 @@ const Departmentspage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteDept, setDeleteDept] = useState({});
 
+
   useEffect(() => {
     const onResize = () => setMobile(isMobile());
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
 
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
@@ -162,9 +171,11 @@ const Departmentspage = () => {
     }
   }, []);
 
+
   useEffect(() => {
     fetchDepartments();
   }, [fetchDepartments]);
+
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -172,12 +183,14 @@ const Departmentspage = () => {
     if (formError) setFormError('');
   };
 
+
   const showNotif = (type, msg) => {
     setNotifType(type);
     setNotifMsg(msg);
     setNotifOpen(true);
   };
   const hideNotif = () => setNotifOpen(false);
+
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
@@ -201,6 +214,7 @@ const Departmentspage = () => {
     }
   };
 
+
   const handleOpenEdit = (dept) => {
     setEditDeptId(dept.departmentId);
     setDepartmentForm({
@@ -210,6 +224,7 @@ const Departmentspage = () => {
     setIsEditOpen(true);
     setFormError('');
   };
+
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -233,11 +248,13 @@ const Departmentspage = () => {
     }
   };
 
+
   const handleDeleteDepartment = (e, dept) => {
     e.stopPropagation();
     setDeleteDept(dept);
     setConfirmOpen(true);
   };
+
 
   const confirmDeleteDept = async () => {
     setLoading(true);
@@ -252,17 +269,20 @@ const Departmentspage = () => {
     }
   };
 
+
   if (loading) return (
     <div className={`flex justify-center items-center h-[50vh] text-lg ${theme === "dark" ? "text-gray-400" : "text-gray-700"}`}>
       <Loader2 size={28} className="animate-spin mr-3" /> Loading departments...
     </div>
   );
 
+
   if (error) return (
     <div className={`flex justify-center items-center h-[50vh] text-lg ${theme === "dark" ? "text-red-500" : "text-red-600"}`}>
       {error}
     </div>
   );
+
 
   return (
     <div className={`${theme === "dark" ? "bg-gray-900" : "bg-gray-50"} min-h-screen`}>
@@ -336,7 +356,7 @@ const Departmentspage = () => {
               key={dept.departmentId}
               onMouseEnter={() => setHoveredDeptId(dept.departmentId)}
               onMouseLeave={() => setHoveredDeptId(null)}
-              onClick={() => navigate(`departmentview/${dept.departmentId}`)}
+              onClick={() => navigate(`departmentview/${btoa(dept.departmentId)}`)}
               className={`${theme === "dark" ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-white border-gray-200 text-gray-900"} p-6 cursor-pointer relative border-2 shadow-lg hover:shadow-2xl transition`}
             >
               <div className={`absolute -top-3 -left-3 p-3 shadow-lg ${theme === "dark" ? "bg-blue-900/50" : "bg-blue-100"}`}>
@@ -373,5 +393,6 @@ const Departmentspage = () => {
     </div>
   );
 };
+
 
 export default Departmentspage;

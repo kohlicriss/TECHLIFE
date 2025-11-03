@@ -674,6 +674,7 @@ const AllTeams = () => {
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState('MY_TEAMS');
     const [adminallteams, setAdminAllTeams] = useState([]);
+    const encodeId = (id) => btoa(id.toString());
 
     // Form state
     const [teamName, setTeamName] = useState('');
@@ -1127,7 +1128,7 @@ const AllTeams = () => {
                                             </h2>
                                         </div>
                                         <div className="flex space-x-2 flex-shrink-0">
-                                            <Link to={`/teams/${teamId}`} title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
+                                            <Link to={`/teams/${encodeId(teamId)}`}  title="View Details" className="p-2 text-gray-500 hover:text-blue-500 transition-colors">
                                                 <FaEye className="w-3 h-3 sm:w-4 sm:h-4" />
                                             </Link>
                                             {matchedArray?.includes("MY_TEAM_MY_TEAMS_DELETE_TEAM") && !fromContextMenu && (

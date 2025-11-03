@@ -6,9 +6,11 @@ import { X } from 'lucide-react';
 import { Context } from '../HrmsContext';
 import EditTeamModal from './EditTeamModal';
 
+
 // Custom Notification Component (unchanged)
 const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) => {
     const [isVisible, setIsVisible] = useState(false);
+
 
     useEffect(() => {
         if (isOpen) {
@@ -22,12 +24,15 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
         }
     }, [isOpen, type]);
 
+
     const handleClose = () => {
         setIsVisible(false);
         setTimeout(() => onClose(), 300);
     };
 
+
     if (!isOpen) return null;
+
 
     const getIcon = () => {
         switch (type) {
@@ -42,6 +47,7 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
         }
     };
 
+
     const getTitleClass = () => {
         switch (type) {
             case 'success':
@@ -54,6 +60,7 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
                 return theme === 'dark' ? 'text-white' : 'text-gray-800';
         }
     };
+
 
     return (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-[200] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
@@ -87,12 +94,14 @@ const CustomNotification = ({ isOpen, onClose, type, title, message, theme }) =>
     );
 };
 
+
 // LoadingSpinner Component (unchanged)
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center h-40 sm:h-64">
         <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-t-2 border-b-2 border-blue-500"></div>
     </div>
 );
+
 
 // ErrorDisplay Component (unchanged)
 const ErrorDisplay = ({ message }) => (
@@ -102,9 +111,10 @@ const ErrorDisplay = ({ message }) => (
     </div>
 );
 
-// TeamDetails Component (updated to show ONLY role)
+
+// TeamDetails Component (updated to decode teamId from URL)
 const TeamDetails = () => {
-    const { teamId } = useParams();
+    const { teamId: encodedTeamId } = useParams();
     const navigate = useNavigate();
     const [team, setTeam] = useState(null);
     const [projects, setProjects] = useState([]);
@@ -123,11 +133,25 @@ const TeamDetails = () => {
         message: ''
     });
 
+
     const { theme, userData } = useContext(Context);
     const userRoles = userData?.roles || [];
     const canModifyTeam = userRoles.includes('ADMIN') || userRoles.includes('HR') || userRoles.includes('MANAGER');
     const LoggedUserRole = userData?.roles[0] ? `ROLE_${userData?.roles[0]}` : null;
     const empID = userData?.employeeId;
+
+    // Decode the teamId from the URL parameter
+    const decodeId = (encodedId) => {
+        try {
+            return atob(encodedId);
+        } catch (error) {
+            console.error("Error decoding teamId:", error);
+            return null;
+        }
+    };
+
+    const teamId = decodeId(encodedTeamId);
+
 
     // Custom notification handlers
     const showNotification = (type, title, message) => {
@@ -139,6 +163,7 @@ const TeamDetails = () => {
         });
     };
 
+
     const closeNotification = () => {
         setNotification({
             isOpen: false,
@@ -147,6 +172,7 @@ const TeamDetails = () => {
             message: ''
         });
     };
+
 
     useEffect(() => {
         let fetchedData = async () => {
@@ -164,21 +190,31 @@ const TeamDetails = () => {
         }
     }, [LoggedUserRole])
 
+
     useEffect(() => {
         if (loggedPermissiondata) {
             setMatchedArray(loggedPermissiondata?.permissions || []);
         }
     }, [loggedPermissiondata]);
 
+
     console.log(matchedArray);
 
+
     const fetchTeamDetails = async () => {
+        if (!teamId) {
+            setError("Invalid team ID");
+            setLoading(false);
+            showNotification('error', 'Invalid Team ID', 'The team ID in the URL is invalid or corrupted.');
+            return;
+        }
+
         try {
             setLoading(true);
             const teamResponse = await publicinfoApi.get(`employee/team/employee/${teamId}`);
-            // Note: The API response is handled as an array, taking the first element for team data.
             const teamData = Array.isArray(teamResponse.data) ? teamResponse.data[0] : teamResponse.data;
             setTeam(teamData);
+
 
             const projectsResponse = await publicinfoApi.get(`employee/team/projects/${teamId}`);
             setProjects(projectsResponse.data || []);
@@ -194,6 +230,7 @@ const TeamDetails = () => {
         }
     };
 
+
     const fetchAllEmployees = async () => {
         try {
             const response = await publicinfoApi.get('employee/0/1000/employeeId/asc/employees');
@@ -208,6 +245,7 @@ const TeamDetails = () => {
         }
     };
 
+
     const handleUserClick = (member) => {
         if (empID && member.employeeId) {
             navigate(`/employees/${empID}/public/${member.employeeId}`);
@@ -216,14 +254,17 @@ const TeamDetails = () => {
         }
     };
 
+
     const handleTeamUpdated = () => {
         fetchTeamDetails();
         showNotification('success', 'Team Updated', 'Team details have been successfully updated.');
     };
 
+
     const handleEditModalClose = () => {
         setIsEditModalOpen(false);
     };
+
 
     useEffect(() => {
         if (teamId) {
@@ -234,11 +275,13 @@ const TeamDetails = () => {
         }
     }, [teamId, canModifyTeam]);
 
+
     if (loading) return <LoadingSpinner />;
     if (error) return <ErrorDisplay message={error} />;
     if (!team) return <div className={`text-center p-4 sm:p-8 text-sm sm:text-base ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>No team data found.</div>;
     
     const teamWithProjects = { ...team, projects };
+
 
     return (
         <div className={`px-0 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
@@ -249,6 +292,7 @@ const TeamDetails = () => {
                 >
                     <FaArrowLeft className="mr-2 w-3 h-3 sm:w-4 sm:h-4" /> Back to All Teams
                 </button>
+
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 md:mb-8 px-4 sm:px-0 gap-4 sm:gap-0">
                     <div className="w-full sm:w-auto">
@@ -266,6 +310,7 @@ const TeamDetails = () => {
                         </button>
                     )}
                 </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                     {/* Team Members Column */}
@@ -306,27 +351,13 @@ const TeamDetails = () => {
                                                     <span className="break-words">Role: {member.role}</span>
                                                 </div>
                                             )}
-                                            
-                                            {/* The following block was removed to stop rendering 
-                                                the 'jobTitlePrimary' (e.g., MANAGER, Backend Engeneer) tag:
-                                            
-                                            {member.jobTitlePrimary && (
-                                                <div className={`text-xs font-bold px-2 sm:px-3 py-1 rounded-full flex items-center flex-shrink-0 ${
-                                                    member.jobTitlePrimary === 'TEAM_LEAD' 
-                                                    ? (theme === 'dark' ? 'bg-green-800 text-green-200' : 'bg-green-100 text-green-800')
-                                                    : (theme === 'dark' ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700')
-                                                }`}>
-                                                    {member.jobTitlePrimary === 'TEAM_LEAD' && <FaUserShield className="mr-1 sm:mr-2 w-3 h-3"/>}
-                                                    <span className="break-words">{member.jobTitlePrimary}</span>
-                                                </div>
-                                            )} 
-                                            */}
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         </div>
                     </div>
+
 
                     {/* Projects Column */}
                     <div>
@@ -355,6 +386,7 @@ const TeamDetails = () => {
                 </div>
             </div>
 
+
             <EditTeamModal
                 isOpen={isEditModalOpen}
                 onClose={handleEditModalClose}
@@ -362,6 +394,7 @@ const TeamDetails = () => {
                 onTeamUpdated={handleTeamUpdated}
                 employees={allEmployees}
             />
+
 
             {/* Custom Notification */}
             <CustomNotification
@@ -375,5 +408,6 @@ const TeamDetails = () => {
         </div>
     );
 };
+
 
 export default TeamDetails;
