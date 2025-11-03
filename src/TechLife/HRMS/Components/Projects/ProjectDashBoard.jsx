@@ -25,7 +25,7 @@ const SprintTable = ({ projectId }) => {
     endDate: '',
     status: 'PLANNED'
   });
-  const API_HOST = 'http://192.168.0.112:8090/api/sprints';
+  const API_HOST = 'https://hrms.anasolconsultancyservices.com/api/sprints';
   const token = () => localStorage.getItem('accessToken');
   const persistTokenFromRes = async (res, body) => {
     try {
@@ -592,7 +592,7 @@ const ProjectCard = () => {
       const empId = userData?.employeeId;
       if (empId) {
         try {
-          const kpiUrl = `http://192.168.0.112:8090/api/employee/kpi/${encodeURIComponent(empId)}/${encodeURIComponent(pid)}`;
+          const kpiUrl = `https://hrms.anasolconsultancyservices.com/api/employee/kpi/${encodeURIComponent(empId)}/${encodeURIComponent(pid)}`;
           const kpiRes = await fetch(kpiUrl, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
           if (kpiRes.ok) kpiBody = await kpiRes.json().catch(() => null);
         } catch (e) { /* ignore KPI error */ }
