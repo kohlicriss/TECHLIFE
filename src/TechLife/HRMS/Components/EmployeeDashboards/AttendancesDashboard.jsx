@@ -122,75 +122,9 @@ const formatMinutesToHHMM = (totalMinutes) => {
 
 
 // Parse time string into Date and shift to IST (dateRef = 'YYYY-MM-DD' used when timeStr is 'HH:mm')
-const parseToISTDate = (timeStr, dateRef = null) => {
-  if (!timeStr) return null;
-  const raw = String(timeStr).trim();
-  try {
-    let d;
-    if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
-      d = new Date(raw);
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw) && dateRef === null) {
-      d = new Date(raw);
-    } else if (/^\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
-      const datePart = dateRef || new Date().toISOString().slice(0, 10);
-      d = new Date(`${datePart}T${raw}${raw.includes('Z') ? '' : 'Z'}`);
-    } else {
-      d = new Date(raw);
-    }
-    if (isNaN(d.getTime())) return null;
-    return new Date(d.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
-  } catch {
-    return null;
-  }
-};
-const parseToDateSafe = (timeStr, dateRef = null) => {
-  if (!timeStr) return null;
-  const raw = String(timeStr).trim();
-  // ISO-like or full datetime
-  if (/\d{4}-\d{2}-\d{2}T/.test(raw) || raw.includes('Z')) {
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  // YYYY-MM-DD date only
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    const d = new Date(`${raw}T00:00:00Z`);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  // HH:mm or HH:mm:ss -> attach dateRef (or today) and treat as local time
-  const hhmm = tryNormalizeTo24(raw);
-  if (hhmm) {
-    const datePart = dateRef || new Date().toISOString().slice(0, 10);
-    const d = new Date(`${datePart}T${hhmm}:00`);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  // Fallback
-  const any = new Date(raw);
-  return isNaN(any.getTime()) ? null : any;
-};
 
-// convert/shift time string to IST display (adds 5:30 to UTC)
-// dateRef should be YYYY-MM-DD used when timeStr is "HH:mm" only
-const toISTTimeDisplay = (timeStr, dateRef = null) => {
-  if (!timeStr) return 'N/A';
-  const raw = String(timeStr).trim();
-  const hhmm = tryNormalizeTo24(raw);
-  if (hhmm && !/[TtZz]/.test(raw)) {
-    const shifted = addMinutesToTimeString(hhmm, IST_OFFSET_MINUTES);
-    return formatHHMMTo12h(shifted);
-  }
-  const parsed = parseToDateSafe(raw, dateRef);
-  if (!parsed) return raw;
-  try {
-    return new Intl.DateTimeFormat('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'Asia/Kolkata'
-    }).format(parsed);
-  } catch {
-    return parsed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  }
-};
+
+
 const toHHMMDisplay = (value) => {
   const minutes = parseEffectiveHours(value || '');
   return minutes > 0 ? formatMinutesToHHMM(minutes) : 'N/A';
@@ -209,12 +143,6 @@ const DETAILS_QUERY = `
     }
   }
 `;
-// Mock Data
-const ATTENDANCE_DATA = [
-  { date: '17-10-2025', employeeId: 'EMP001', effectiveHour: '8.5', isPresent: 'Present', login: '09:00', logout: '17:30' },
-  { date: '16-10-2025', employeeId: 'EMP001', effectiveHour: 'N/A', isPresent: 'Absent', login: 'N/A', logout: 'N/A' },
-  { date: '15-10-2025', employeeId: 'EMP001', effectiveHour: 'N/A', isPresent: 'Holiday', login: 'N/A', logout: 'N/A' },
-];
 
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
