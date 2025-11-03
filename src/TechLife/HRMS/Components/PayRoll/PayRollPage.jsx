@@ -7,7 +7,7 @@ import { useNavigate} from 'react-router-dom';
 
 // API Service Functions - Updated with correct endpoints
 
-const API_BASE_URL = 'http://localhost:8087/api/payroll';
+const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/payroll';
 
 const token=localStorage.getItem("accessToken");
 
