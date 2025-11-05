@@ -877,124 +877,61 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {} }) => {
       <h4 className={`mb-6 text-2xl font-extrabold border-b pb-4 tracking-tight ${theme === 'dark' ? 'text-indigo-400 border-gray-800' : 'text-indigo-700 border-gray-100'}`}>
          Shift & Employee Filters
       </h4>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <div className="flex flex-col gap-4">
-          <h5 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Select a Shift</h5>
-          {loadingShifts ? (
-            <div className="text-sm text-gray-500 p-4">Loading shifts...</div>
-          ) : loadError ? (
-            <div className="text-sm text-red-500 p-4">{loadError}</div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {shiftOptions.map((s, idx) => {
-                const sName = s.name ?? s.shiftName ?? s.shift ?? "";
-                const sStart = s.startTime || s.start || s.startTimeIso || "";
-                const sEnd = s.endTime || s.end || s.endTimeIso || "";
-                const isSelected = selectedShift === sName;
-                return (
-                  <label   key={idx}   className={`w-full block p-4 rounded-xl border cursor-pointer transition-all duration-150  ${isSelected  ? 'border-indigo-500 ring-2 ring-indigo-500/50'  : `${theme === 'dark'  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50'  : 'bg-white border-gray-200 hover:bg-gray-50'}`}`} >
-                    <div className="flex items-center gap-4 w-full">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedShift(sName);
-                            setStartTime(sStart ? fmtTime(sStart) : "");
-                            setEndTime(sEnd ? fmtTime(sEnd) : "");
-                          } else {
-                            setSelectedShift("");
-                            setStartTime("");
-                            setEndTime("");
-                            setEmployeesForShift([]); 
-                          }
-                        }}
-                        className="h-5 w-5 rounded-full text-indigo-600 focus:ring-indigo-500 flex-shrink-0 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-bold truncate ${theme === 'dark' ? 'text-gray-50' : 'text-gray-900'}`}>{sName || "Unnamed Shift"}</div>
-                        <div className="text-sm text-gray-500 truncate dark:text-gray-400 mt-0.5">{s.description || s.group || "No description"}</div>
-                      </div>
-                      <div className="ml-4 flex-shrink-0 flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>Start:</span>
-                          <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sStart ? fmtTime(sStart) : "—"}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>End:</span>
-                          <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sEnd ? fmtTime(sEnd) : "—"}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {loadingShifts ? (
+    <div className="col-span-full text-sm text-gray-500 p-4">Loading shifts...</div>
+  ) : loadError ? (
+    <div className="col-span-full text-sm text-red-500 p-4">{loadError}</div>
+  ) : (
+    shiftOptions.map((s, idx) => {
+      const sName = s.name ?? s.shiftName ?? s.shift ?? "";
+      const sStart = s.startTime || s.start || s.startTimeIso || "";
+      const sEnd = s.endTime || s.end || s.endTimeIso || "";
+      const isSelected = selectedShift === sName;
+      return (
+        <label 
+          key={idx} 
+          className={`w-full block p-4 rounded-xl border cursor-pointer transition-all duration-150 ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50' : `${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50' : 'bg-white border-gray-200 hover:bg-gray-50'}`}`}
+        >
+          <div className="flex items-center gap-4 w-full">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedShift(sName);
+                  setStartTime(sStart ? fmtTime(sStart) : "");
+                  setEndTime(sEnd ? fmtTime(sEnd) : "");
+                } else {
+                  setSelectedShift("");
+                  setStartTime("");
+                  setEndTime("");
+                  setEmployeesForShift([]);
+                }
+              }}
+              className="h-5 w-5 rounded-full text-indigo-600 focus:ring-indigo-500 flex-shrink-0 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+            />
+            <div className="flex-1 min-w-0">
+              <div className={`font-bold truncate ${theme === 'dark' ? 'text-gray-50' : 'text-gray-900'}`}>{sName || "Unnamed Shift"}</div>
+              <div className="text-sm text-gray-500 truncate dark:text-gray-400 mt-0.5">{s.description || s.group || "No description"}</div>
             </div>
-          )}
-          <div className={`p-2 rounded-xl border mt-2 shadow-sm ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-            <div className="text-sm font-medium text-gray-500 dark:text-gray-400 border-b pb-2 mb-3">Current Selection</div>
-            <div className={`text-xl font-bold ${selectedShift ? 'text-indigo-500' : 'text-gray-400'}`}>{selectedShift || "No Shift Selected"}</div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className={`p-2 rounded-lg border text-sm transition-colors ${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <div className={`text-xs font-medium uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Start Time</div>
-                <div className="font-mono text-lg">{startTime || "—"}</div>
+            <div className="ml-4 flex-shrink-0 flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>Start:</span>
+                <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sStart ? fmtTime(sStart) : "—"}</span>
               </div>
-              <div className={`p-2 rounded-lg border text-sm transition-colors ${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <div className={`text-xs font-medium uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>End Time</div>
-                <div className="font-mono text-lg">{endTime || "—"}</div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>End:</span>
+                <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sEnd ? fmtTime(sEnd) : "—"}</span>
               </div>
             </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <h5 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Employee Preview</h5>
-          <div className={`w-full p-5 rounded-xl border shadow-sm h-full ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-            <div className="flex justify-between items-start border-b pb-3 mb-4">
-              <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Shift Status</div>
-                <div className={`mt-1 text-base font-bold ${selectedShift ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                  {selectedShift ? `Employees for ${selectedShift}` : "Select a shift to preview employees"}
-                </div>
-              </div>
-              <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1">
-                {selectedShift ? (loadingEmployees ? "Loading..." : `${employeesForShift.length} employees`) : ""}
-              </div>
-            </div>
-            {selectedShift && (
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {loadingEmployees ? (
-                  <div className="col-span-full text-center text-sm text-gray-500 py-6">Loading employee roster...</div>
-                ) : employeesForShift.length === 0 ? (
-                  <div className="col-span-full text-center text-sm text-gray-500 py-6">No employees found for this shift.</div>
-                ) : (
-                  employeesForShift.map((emp, i) => (
-                    <div key={i} className={`p-3 rounded-lg border text-sm flex flex-col justify-between h-20 transition-shadow hover:shadow-md  ${theme === 'dark' ? 'bg-gray-900 border-gray-700 hover:border-indigo-600' : 'bg-white border-gray-200 hover:border-indigo-400'}`} >
-                      <div className="text-lg text-indigo-500 dark:text-indigo-400 font-medium">ID: {emp.employeeId || emp.employeeID || emp.id || "—"}</div>
-                      <div className={`mt-1 font-semibold truncate ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
-                        {emp.name || emp.userData?.name || emp.user?.name || "Unnamed Employee"}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-            {!selectedShift && (
-              <div className="mt-4 text-sm text-gray-500 py-6 text-center italic">
-                The employee list will appear here once a shift is selected.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="mt-2 pt-3 border-t border-dashed flex items-center justify-end gap-4 
-        ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}">
-        <button onClick={handleReset} className={`px-8 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wider transition-all duration-200 shadow-md ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-gray-200 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 focus:ring-offset-gray-900' : 'bg-gray-200 hover:bg-gray-300 text-gray-700 focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 focus:ring-offset-white'}`}>
-          Reset Filters
-        </button>
-        <button  onClick={handleApply}  className="px-8 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm uppercase tracking-wider transition-all duration-200 shadow-lg shadow-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-white dark:focus:ring-offset-gray-900" >
-          Apply Filter
-        </button>
-      </div>
+        </label>
+      );
+    })
+  )}
+</div>
+
     </div>
   );
 };
@@ -1242,7 +1179,7 @@ const PersonalLeaves = () => {
     if (empId) setEmployeeId(empId);
   }, [empId]);
   useEffect(() => {
-    loadEmployeeDetails(empId);
+    handleViewEmployee(empId);
   }, [currentPage, filters]);
   const loadAllEmployees = async () => {
     setLoading(true);
