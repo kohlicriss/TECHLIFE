@@ -2082,10 +2082,8 @@ const fetchTodayAttendance = useCallback(async () => {
   const handleConfirmLogout = async () => {
     const now = new Date();
     const clockOutData = await getDynamicDeviceData(mode);
-
     try {
       const apiUrl = `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/clock-out`;
-
       // ✅ Retrieve token safely
       const token = (() => {
         try {
@@ -2094,21 +2092,18 @@ const fetchTodayAttendance = useCallback(async () => {
           return null;
         }
       })();
-
       // ✅ Build headers
       const headers = {
         "Content-Type": "application/json",
         Accept: "*/*",
       };
       if (token) headers.Authorization = `Bearer ${token}`;
-
       // ✅ Send clock-out data
       const response = await fetch(apiUrl, {
         method: "PUT",
         headers,
         body: JSON.stringify(clockOutData),
       });
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Clock-out API call failed:", response.status, errorText);
@@ -2127,18 +2122,14 @@ const fetchTodayAttendance = useCallback(async () => {
       // ✅ Clear attendance session data
       setCurrentAttendanceId(null);
       localStorage.removeItem(attendanceStorageKey);
-
       setIsLoggedIn(false);
       setIsLogoutConfirmed(false);
       setEndTime(now);
-
       // ✅ Update frontend table data
       setRawTableData((prev) => {
         if (prev.length === 0) return prev;
-
         const lastIndex = prev.length - 1;
         const lastRecord = prev[lastIndex];
-
         if (
           lastRecord.date === now.toLocaleDateString() &&
           !lastRecord.logout_time
@@ -2147,32 +2138,24 @@ const fetchTodayAttendance = useCallback(async () => {
           const loginDate = new Date(`2000-01-01T${shiftedLoginStr}:00`);
           const logoutDate = now;
           const loginHours = (logoutDate - loginDate) / (1000 * 60 * 60);
-
           const updatedRecord = {
             ...lastRecord,
             logout_time: formatClockTime(now),
             login_hours: loginHours > 0 ? loginHours : 0,
             barWidth: `${(loginHours / STANDARD_WORKDAY_HOURS) * 100}%`,
           };
-
           return [...prev.slice(0, lastIndex), updatedRecord];
         }
-
         return prev;
       });
-
-      
       fetchTodayAttendance();
     }
   };
-
   const handleCancel = () => { setIsLogoutConfirmed(false); };
-
   const [barChartData, setBarChartData] = useState([]);
   const [rawPieData, setRawPieData] = useState([]);
   const [dates, setDates] = useState([]);
   const [Data, setData] = useState([])
-  const [cardData, setCardData] = useState([]);
   const [startIndex, setStartIndex] = useState(0)
   //const ATTENDANCE_ID_STORAGE_KEY = 'currentAttendanceId';
   const attendanceStorageKey = `attendanceId_${id}`;

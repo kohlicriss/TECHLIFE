@@ -5,7 +5,7 @@ import { set } from "date-fns";
 import { Context } from "../HrmsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, SearchIcon, UserCircle, X } from "lucide-react";
-import { FaListUl, FaPlus, FaTh } from "react-icons/fa";
+import { FaListUl, FaPlus, FaRegClock, FaTh } from "react-icons/fa";
 import { FiDelete, FiEdit } from "react-icons/fi";
 
 const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
@@ -237,28 +237,28 @@ const Shift = ({ shiftName: propShiftName, onClose = () => {} }) => {
       {loading && <div className="py-8 text-center text-lg font-medium text-indigo-400 animate-pulse">Loading shift details...</div>}
       {error && <div className="p-4 rounded-lg bg-red-500/10 text-red-400 border border-red-500 font-semibold">{error}</div>}
       {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className={`p-4 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`p-2 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
             <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Shift Name</div>
             <div className="text-xl font-bold mt-1 text-indigo-600 dark:text-indigo-400">{shift?.shiftName || shiftName || "N/A"}</div>
           </div>
-          <div className={`p-4 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
+          <div className={`p-2 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
             <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Start Time</div>
             <div className="text-xl font-bold mt-1">{fmtTime(shift?.startTime)}</div>
           </div>
-          <div className={`p-4 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
+          <div className={`p-2 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
             <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">End Time</div>
             <div className="text-xl font-bold mt-1">{fmtTime(shift?.endTime)}</div>
           </div>
-          <div className={`p-4 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
+          <div className={`p-2 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
             <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Half Time</div>
             <div className="text-xl font-bold mt-1">{fmtTime(shift?.halfTime)}</div>
           </div>
-          <div className={`p-4 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
+          <div className={`p-2 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
             <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Accepted Break Time</div>
             <div className="text-xl font-bold mt-1">{parsePTDuration(shift?.acceptedBreakTime)}</div>
           </div>
-          <div className={`p-4 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
+          <div className={`p-2 rounded-xl border border-gray-200 bg-gray-50  transition-shadow hover:shadow-md ${theme === "dark" ? "bg-gray-800" : ""}`}>
             <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Take Attendance After</div>
             <div className="text-xl font-bold mt-1">{parsePTDuration(shift?.takeAttendanceAfter)}</div>
           </div>
@@ -380,21 +380,17 @@ const PersonalLeavesService = {
 
 const AddEmployeeLeavesForm = ({ activeView, Data, onCancel = () => {} }) => {
   // console.log(Data);
-  const isEdit = !!Data; // detect mode
+  const isEdit = !!Data; 
   const [employee, setEmployee] = useState({ ...PersonDetailsAddDto });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const {theme} = useContext(Context);
-
-  // 🧭 Initialize data (prefill if editing)
   useEffect(() => {
     if (isEdit && Data) {
       setEmployee({ ...Data });
     }
   }, [Data]);
-
-  // 🧭 Fetch user location automatically
   useEffect(() => {
     if (!isEdit && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -408,19 +404,15 @@ const AddEmployeeLeavesForm = ({ activeView, Data, onCancel = () => {} }) => {
       );
     }
   }, [isEdit]);
-
-  // 🧾 Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setSuccess("");
     setError("");
-
     try {
       if (!employee.employeeId.trim()) {
         throw new Error("Employee ID is required");
       }
-
       if (isEdit) {
         await PersonalLeavesService.updateLeaves(employee, employee.month, employee.year);
         setSuccess("✅ Employee leaves updated successfully!");
@@ -428,7 +420,6 @@ const AddEmployeeLeavesForm = ({ activeView, Data, onCancel = () => {} }) => {
         await PersonalLeavesService.addLeaves(employee);
         setSuccess("✅ Employee leaves added successfully!");
       }
-
       if (!isEdit) setEmployee({ ...PersonDetailsAddDto });
     } catch (err) {
       setError("❌ Operation failed: " + (err.message || "Unknown error"));
@@ -441,13 +432,11 @@ const AddEmployeeLeavesForm = ({ activeView, Data, onCancel = () => {} }) => {
     setSuccess("");
     setError("");
   };
-
   return (
     <div className={`rounded-2xl shadow-xl p-8 max-w-6xl mx-auto mt-10 border border-gray-200  transition-colors ${theme === "dark" ? "dark:bg-gray-900" : "bg-white"}`}>
       <h2 className={`text-3xl font-semibold mb-6 text-center ${theme === "dark" ? "text-white" : "text-gray-800"}`}>
         {isEdit ? "Update Employee Leave Details" : "Add Employee Leave Details"}
       </h2>
-
       {success && (
         <div className={`p-3 rounded-lg mb-4 font-medium ${theme === "dark" ? "bg-green-900 text-green-200" : "bg-green-100 text-green-700"}`}>
           {success}
@@ -458,7 +447,6 @@ const AddEmployeeLeavesForm = ({ activeView, Data, onCancel = () => {} }) => {
           {error}
         </div>
       )}
-
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
@@ -521,9 +509,9 @@ const AddEmployeeLeavesForm = ({ activeView, Data, onCancel = () => {} }) => {
            type="button"
            onClick={handleReset}
            className="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 
-                      dark:bg-gray-700 dark:hover:bg-gray-600 text-white 
-                      rounded-lg font-medium shadow-md 
-                      focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+              dark:bg-gray-700 dark:hover:bg-gray-600 text-white 
+              rounded-lg font-medium shadow-md 
+              focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
          >
            Reset
          </button>
@@ -554,8 +542,6 @@ const CreateTriggerForm = ({ mode = "create", initialData = null, onClose = () =
 
   useEffect(() => {
     if (initialData) {
-      // initialData may be the trigger object from backend
-      // backend sample: { name: "attendance_check_Morning_FIRST", cronExpression: "...", nextFireTime: "...", group: "...", ... }
       const name = initialData.name || "";
       const parts = name.split("_");
       const section = parts.length > 0 ? parts[parts.length - 1] : "";
@@ -707,80 +693,132 @@ const TriggerLayout = ({ shiftName = "" }) => {
   };
 
   return (
-  <div className={`rounded-2xl shadow-2xl p-8 mb-8 ${theme === "dark" ? "bg-gray-800 border border-gray-700 shadow-indigo-500/10" : "bg-white border border-gray-200 shadow-xl shadow-indigo-100/50"}`}>
+  <div className={`rounded-2xl shadow-2xl p-4 md:p-8 mb-8 transition-shadow duration-300 
+    ${theme === "dark" 
+      ? "bg-gray-800 border border-gray-700 shadow-indigo-500/10" 
+      : "bg-white border border-gray-200 shadow-xl shadow-indigo-100/50"}`}>
+    
+    {/* Header and Action Buttons */}
     <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 mb-6 border-b border-gray-200 dark:border-gray-700">
-      <h3 className={`text-2xl font-bold tracking-tight mb-3 md:mb-0 ${theme === "dark" ? "text-indigo-400" : "text-indigo-700"}flex items-center`}>
-        Scheduled Triggers for: <span className="ml-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-base font-semibold">{shiftName || "—"}</span>
+      
+      {/* Title Block */}
+      <h3 className={`text-xl md:text-2xl font-bold tracking-tight mb-3 md:mb-0 ${theme === "dark" ? "text-indigo-400" : "text-indigo-700"} flex items-center flex-wrap`}>
+        <FaRegClock className="w-5 h-5 mr-2 hidden sm:inline" /> {/* Added icon for visual cue */}
+        Scheduled Triggers for: 
+        <span className="ml-0 sm:ml-2 mt-1 sm:mt-0 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-base font-semibold truncate max-w-full inline-block">
+          {shiftName || "— No Shift Selected —"}
+        </span>
       </h3>
+      
+      {/* Action Buttons Group */}
       <div className="flex items-center gap-3">
-        <button onClick={() => setShowCreate(true)} title="Create New Trigger" className="px-4 py-2 flex items-center gap-1 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]">
+        
+        {/* Create Button (New) */}
+        <button 
+          onClick={() => setShowCreate(true)} 
+          title="Create New Trigger" 
+          className="p-3 sm:px-4 sm:py-2 flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] min-w-[44px] h-[44px]"
+        >
           <FaPlus className="w-4 h-4" />
-          {/*<span className="hidden sm:inline">New</span>*/}
         </button>
         
-        <button onClick={() => { if (!selected) { alert("Select a trigger first"); return; } setShowEdit(true); }} title="Edit Selected Trigger" disabled={!selected}className={`px-4 py-2 flex items-center gap-1 rounded-lg font-medium transition-all duration-200 shadow-md active:scale-[0.98] ${!selected ? "bg-gray-400 text-gray-700 cursor-not-allowed opacity-70" : "bg-yellow-500 hover:bg-yellow-600 text-white"}`}>
+        {/* Edit Button */}
+        <button 
+          onClick={() => { if (!selected) { alert("Select a trigger first"); return; } setShowEdit(true); }} 
+          title="Edit Selected Trigger" 
+          disabled={!selected}
+          className={`p-3 sm:px-4 sm:py-2 flex items-center justify-center rounded-lg font-medium transition-all duration-200 shadow-md active:scale-[0.98] min-w-[44px] h-[44px]
+            ${!selected 
+              ? "bg-gray-400 text-gray-700 dark:bg-gray-600 dark:text-gray-300 cursor-not-allowed opacity-70" 
+              : "bg-yellow-500 hover:bg-yellow-600 text-white"}`
+          }
+        >
           <FiEdit className="w-4 h-4" />
-          {/*<span className="hidden sm:inline">Edit</span>*/}
         </button>
         
-        <button onClick={() => { if (!selected) { alert("Select a trigger first"); return; } handleDelete(selected); }} title="Delete Selected Trigger" disabled={isDeleting || !selected} className={`px-4 py-2 flex items-center gap-1 rounded-lg font-medium transition-all duration-200 shadow-md active:scale-[0.98] ${isDeleting || !selected ? "bg-gray-400 text-gray-700 cursor-not-allowed opacity-70" : "bg-red-600 hover:bg-red-700 text-white"}`}>
+        {/* Delete Button */}
+        <button 
+          onClick={() => { if (!selected) { alert("Select a trigger first"); return; } handleDelete(selected); }} 
+          title="Delete Selected Trigger" 
+          disabled={isDeleting || !selected} 
+          className={`p-3 sm:px-4 sm:py-2 flex items-center justify-center rounded-lg font-medium transition-all duration-200 shadow-md active:scale-[0.98] min-w-[44px] h-[44px]
+            ${isDeleting || !selected 
+              ? "bg-gray-400 text-gray-700 dark:bg-gray-600 dark:text-gray-300 cursor-not-allowed opacity-70" 
+              : "bg-red-600 hover:bg-red-700 text-white"}`
+          }
+        >
           <FiDelete className="w-4 h-4" />
-          {/*<span className="hidden sm:inline">Delete</span>*/}
         </button>
       </div>
     </div>
 
-    {/* Content Area */}
+    {/* --- Trigger Content Area --- */}
+    
     {loading ? (
       <div className="py-8 text-center text-lg font-medium text-indigo-500 animate-pulse">
         <div className="flex justify-center items-center"><span className="mr-2">⏳</span> Loading triggers...</div>
       </div>
     ) : error ? (
-      <div className="py-4 px-4 rounded-md bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm font-medium">
-        Error fetching triggers: {error}
+      <div className="py-4 px-4 rounded-md bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-sm font-medium border border-red-300 dark:border-red-700">
+        **Error fetching triggers:** {error}
       </div>
     ) : triggers.length === 0 ? (
       <div className="py-6 text-center text-base text-gray-500 italic">
         No scheduled triggers found for this shift. Click **New** to create one.
       </div>
     ) : (
-      <div
-  className="flex flex-col gap-4"
->
-  {triggers.map((t, i) => {
-    const name = t.name || t.group || `trigger-${i}`;
-    const section = t.section || parseSectionFromName(name);
-    return (
-      <div
-        key={i}
-        onClick={() => setSelected(t)}
-        className={`
-          p-5 rounded-xl border transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer
-          ${selected === t ? "ring-4 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 shadow-lg" : theme === "dark" ? "bg-gray-900 border-gray-700 hover:border-indigo-500 hover:shadow-md" : "bg-white border-gray-200 hover:border-indigo-400 hover:shadow-md"}
-        `}
-      >
-        <div className="mb-2 sm:mb-0">
-          <div className="text-lg text-indigo-600 dark:text-indigo-400 font-bold">{name}</div>
-          <div className={`mt-1 text-sm font-mono ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-            CRON: {t.cronExpression || t.CronExpression || t.cron || <span className="text-red-400">— N/A —</span>}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Next Fire: <span className="font-medium">{t.nextFireTime ? new Date(t.nextFireTime).toLocaleString() : "—"}</span>
-          </div>
-        </div>
+      <div className="flex flex-col gap-3 md:gap-4"> {/* Tightened gap slightly on mobile */}
+        {triggers.map((t, i) => {
+          const name = t.name || t.group || `trigger-${i}`;
+          const section = t.section || parseSectionFromName(name);
+          return (
+            <div
+              key={i}
+              onClick={() => setSelected(t)}
+              className={`
+                p-4 md:p-5 rounded-xl border transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer
+                ${selected === t 
+                  ? "ring-4 ring-indigo-500 bg-indigo-100/50 dark:bg-indigo-900/50 border-indigo-500 shadow-lg" // Brighter selected state
+                  : theme === "dark" 
+                    ? "bg-gray-900 border-gray-700 hover:border-indigo-500 hover:shadow-md" 
+                    : "bg-white border-gray-200 hover:border-indigo-400 hover:shadow-md"}
+              `}
+            >
+              
+              {/* Left Side: Name, CRON, Next Fire */}
+              <div className="mb-3 sm:mb-0 min-w-0 flex-grow"> {/* Added min-w-0 for better truncate handling */}
+                <div className={`text-lg font-bold truncate ${selected === t ? "text-indigo-700 dark:text-indigo-300" : "text-indigo-600 dark:text-indigo-400"}`}>{name}</div>
+                
+                {/* CRON Expression */}
+                <div className={`mt-1 text-sm font-mono ${theme === "dark" ? "text-gray-300" : "text-gray-700"} flex items-center`}>
+                  <span className="text-xs mr-2 text-gray-500 dark:text-gray-400">CRON:</span>
+                  <span className="truncate max-w-full">
+                    {t.cronExpression || t.CronExpression || t.cron || <span className="text-red-500 dark:text-red-400">— N/A —</span>}
+                  </span>
+                </div>
+                
+                {/* Next Fire Time */}
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Next Fire: <span className="font-medium">{t.nextFireTime ? new Date(t.nextFireTime).toLocaleString() : "—"}</span>
+                </div>
+              </div>
 
-        <div className="text-right text-sm">
-          <div className={`font-semibold ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>
-            Section: <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-400">{section}</span>
-          </div>
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
-            Group: {t.group || t.description || "No description"}
-          </div>
-        </div>
+              {/* Right Side: Section and Group */}
+              <div className="text-left sm:text-right text-sm sm:flex-shrink-0 mt-2 sm:mt-0">
+                <div className={`font-semibold ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>
+                  Section: 
+                  <span className="ml-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-400 inline-block truncate max-w-[150px] sm:max-w-none">
+                    {section}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                  Group: {t.group || t.description || "No description"}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
-    );
-  })}
-</div>
     )}
     <AnimatePresence>
       {showCreate && <CreateTriggerForm mode="create" onClose={() => setShowCreate(false)} onSaved={() => loadTriggers(shiftName)} />}
@@ -789,7 +827,7 @@ const TriggerLayout = ({ shiftName = "" }) => {
   </div>
 );
 };
-const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {} }) => {
+const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {}, onShiftSelected = () => {} }) => {
   const { theme } = useContext(Context);
   const [employeeId, setEmployeeId] = useState("");
   const [shiftOptions, setShiftOptions] = useState([]);
@@ -857,7 +895,7 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {} }) => {
     return () => { mounted = false; };
   }, [selectedShift]);
 
-  const handleApply = () => {
+ const handleApply = () => {
     onApply({ employeeId: employeeId.trim(), shiftName: selectedShift, start: startTime, end: endTime });
   };
   const handleReset = () => {
@@ -867,55 +905,88 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {} }) => {
     setEndTime("");
     setEmployeesForShift([]);
     onReset();
+    // Also notify parent that no shift is selected
+    onShiftSelected("");
   };
  const inputBase = `w-full px-4 py-2 rounded-lg transition-all duration-200 border text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/50 ${theme === 'dark' ? 'bg-gray-800 text-gray-50 border-gray-700 placeholder-gray-500 focus:ring-indigo-600/60' : 'bg-white text-gray-800 border-gray-300 placeholder-gray-400 focus:ring-indigo-500/50'}`;
   return (
-    <div className={`w-full max-w-7xl p-8 rounded-3xl shadow-2xl transition-colors duration-300 
-      ${theme === 'dark' 
-        ? 'bg-gray-900 shadow-indigo-500/30' 
-        : 'bg-white shadow-xl shadow-gray-200/50'}`}>
-      <h4 className={`mb-6 text-2xl font-extrabold border-b pb-4 tracking-tight ${theme === 'dark' ? 'text-indigo-400 border-gray-800' : 'text-indigo-700 border-gray-100'}`}>
-         Shift & Employee Filters
-      </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  {loadingShifts ? (
-    <div className="col-span-full text-sm text-gray-500 p-4">Loading shifts...</div>
-  ) : loadError ? (
-    <div className="col-span-full text-sm text-red-500 p-4">{loadError}</div>
-  ) : (
-    shiftOptions.map((s, idx) => {
-      const sName = s.name ?? s.shiftName ?? s.shift ?? "";
-      const sStart = s.startTime || s.start || s.startTimeIso || "";
-      const sEnd = s.endTime || s.end || s.endTimeIso || "";
-      const isSelected = selectedShift === sName;
-      return (
-        <label 
-          key={idx} 
-          className={`w-full block p-4 rounded-xl border cursor-pointer transition-all duration-150 ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50' : `${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50' : 'bg-white border-gray-200 hover:bg-gray-50'}`}`}
-        >
-          <div className="flex items-center gap-4 w-full">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setSelectedShift(sName);
-                  setStartTime(sStart ? fmtTime(sStart) : "");
-                  setEndTime(sEnd ? fmtTime(sEnd) : "");
-                } else {
-                  setSelectedShift("");
-                  setStartTime("");
-                  setEndTime("");
-                  setEmployeesForShift([]);
-                }
-              }}
-              className="h-5 w-5 rounded-full text-indigo-600 focus:ring-indigo-500 flex-shrink-0 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-            />
-            <div className="flex-1 min-w-0">
-              <div className={`font-bold truncate ${theme === 'dark' ? 'text-gray-50' : 'text-gray-900'}`}>{sName || "Unnamed Shift"}</div>
-              <div className="text-sm text-gray-500 truncate dark:text-gray-400 mt-0.5">{s.description || s.group || "No description"}</div>
+  <div className={`w-full max-w-7xl p-4 md:p-8 rounded-3xl shadow-2xl transition-colors duration-300 
+  ${theme === 'dark' 
+    ? 'bg-gray-900 shadow-indigo-500/30' 
+    : 'bg-white shadow-xl shadow-gray-200/50'}`}>
+  
+  {/* Header Section */}
+  <h4 className={`mb-2 text-xl md:text-2xl font-extrabold border-b pb-4 tracking-tight 
+    ${theme === 'dark' ? 'text-indigo-400 border-gray-800' : 'text-indigo-700 border-gray-100'}`}>
+     Shift & Employee Filters
+  </h4>
+  
+  {/* Shift Options Grid */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    
+    {loadingShifts ? (
+      <div className="col-span-full text-sm text-gray-500 p-4 text-center">Loading shifts...</div>
+    ) : loadError ? (
+      <div className="col-span-full text-sm text-red-500 p-4 text-center">{loadError}</div>
+    ) : (
+      shiftOptions.map((s, idx) => {
+        const sName = s.name ?? s.shiftName ?? s.shift ?? "";
+        const sStart = s.startTime || s.start || s.startTimeIso || "";
+        const sEnd = s.endTime || s.end || s.endTimeIso || "";
+        const isSelected = selectedShift === sName;
+
+        return (
+          <label 
+            key={idx} 
+            className={`w-full block p-4 rounded-xl border cursor-pointer transition-all duration-150 
+              ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/50' 
+                : `${theme === 'dark' ? 'bg-gray-800 border-gray-700 hover:bg-gray-700/50' : 'bg-white border-gray-200 hover:bg-gray-50'}`}`}
+          >
+            <div className="flex items-start gap-4 w-full"> {/* Changed to items-start for better vertical alignment */}
+              
+              {/* Checkbox */}
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedShift(sName);
+                    setStartTime(sStart ? fmtTime(sStart) : "");
+                    setEndTime(sEnd ? fmtTime(sEnd) : "");
+                    onShiftSelected(sName);
+                  } else {
+                    setSelectedShift("");
+                    setStartTime("");
+                    setEndTime("");
+                    setEmployeesForShift([]);
+                    onShiftSelected("");
+                  }
+                }}
+                className="mt-1 h-5 w-5 rounded-md text-indigo-600 focus:ring-indigo-500 flex-shrink-0 border-gray-300 dark:border-gray-600 dark:bg-gray-700" // Added mt-1 for better vertical alignment
+              />
+              
+              {/* Name and Description (Content) */}
+              <div className="flex-1 min-w-0">
+                <div className={`font-semibold truncate ${theme === 'dark' ? 'text-gray-50' : 'text-gray-900'}`}>{sName || "Unnamed Shift"}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{s.description || s.group || "No description"}</div>
+              </div>
+              
+              {/* Time Details (Mobile/Desktop Responsive) */}
+              <div className="hidden md:flex ml-4 flex-shrink-0 flex-col items-end gap-1 text-sm"> {/* Desktop: Stacked, aligned right */}
+                 <div className="flex items-center gap-1.5">
+                    <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>Start:</span>
+                    <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sStart ? fmtTime(sStart) : "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>End:</span>
+                    <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sEnd ? fmtTime(sEnd) : "—"}</span>
+                  </div>
+              </div>
+
             </div>
-            <div className="ml-4 flex-shrink-0 flex items-center gap-3 text-sm">
+            
+            {/* Time Details (Mobile Only: Full Width below Name/Description) */}
+            <div className="mt-3 pt-3 border-t md:hidden flex justify-between items-center text-sm space-x-4">
               <div className="flex items-center gap-1.5">
                 <span className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>Start:</span>
                 <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sStart ? fmtTime(sStart) : "—"}</span>
@@ -925,14 +996,12 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {} }) => {
                 <span className={`px-2 py-0.5 rounded-md font-mono ${theme === 'dark' ? 'bg-gray-700 text-gray-200' : 'bg-indigo-50 text-indigo-700'}`}>{sEnd ? fmtTime(sEnd) : "—"}</span>
               </div>
             </div>
-          </div>
-        </label>
-      );
-    })
-  )}
-</div>
-
-    </div>
+          </label>
+        );
+      })
+    )}
+  </div>
+  </div>
   );
 };
 const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = () => {} }) => {
@@ -1303,39 +1372,65 @@ const PersonalLeaves = () => {
     setSuccess('');
   };
 
-   if (activeView === 'shift') {
-    return (
-      <div className={`min-h-screen p-6 ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
-        <div className="max-w-7xl mx-auto">
-          <h1 className={`text-3xl font-bold mb-8 ${theme === "dark" ? "text-gray-100" : "text-gray-900"}`}>Create / View Shift</h1>
-         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div className="w-full">
-              <Shift
-                shiftName={shiftQueryName}
-                onClose={() => {
-                  setActiveView('search');
-                  setShiftQueryName('');
-                }}
-              />
-            </div>
-
-            <div className="w-full">
-              <TriggerLayout shiftName={shiftQueryName} />
-            </div>
-          </div>
-          <div className="mb-8">
-            <ShiftFilterLayout
-              onApply={(filters) => {console.log('ShiftFilter applied:', filters);}}
-              onReset={() => { console.log('ShiftFilter reset'); }}
+  if (activeView === 'shift') {
+  return (
+    <div className={`min-h-screen p-6 ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-gray-100" : "text-gray-900"}`}>Create / View Shift</h1>
+          <button
+            onClick={() => {
+              setActiveView('MyDetails');
+              clearMessages();
+              handleViewEmployee(empId);
+            }}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 ${
+              theme === "dark" 
+                ? "bg-indigo-600 hover:bg-indigo-700 text-white" 
+                : "bg-indigo-600 hover:bg-indigo-700 text-white"
+            } shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Details
+          </button>
+        </div>
+       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="w-full">
+            <Shift
+              shiftName={shiftQueryName}
+              onClose={() => {
+                setActiveView('search');
+                setShiftQueryName('');
+              }}
             />
           </div>
-         <div className="mb-8">
-            <EmployeeShiftDetails shiftName={shiftQueryName} onViewEmployee={(employeeId) => { setActiveView("view"); handleViewEmployee(employeeId); }} />
+          <div className="w-full">
+            <TriggerLayout shiftName={shiftQueryName} />
           </div>
         </div>
+        <div className="mb-8">
+          <ShiftFilterLayout
+            onApply={(filters) => {console.log('ShiftFilter applied:', filters);}}
+            onReset={() => { console.log('ShiftFilter reset'); }}
+            onShiftSelected={(selectedShift) => {
+              setShiftQueryName(selectedShift);
+              console.log('Shift selected:', selectedShift);
+            }}
+          />
+        </div>
+       <div className="mb-8">
+          <EmployeeShiftDetails 
+            shiftName={shiftQueryName} 
+            onViewEmployee={(employeeId) => { 
+              setActiveView("view"); 
+              handleViewEmployee(employeeId); 
+            }} 
+          />
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
      <div className={`min-h-screen p-6 ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
@@ -1612,7 +1707,7 @@ const PersonalLeaves = () => {
                 <select
                   value={filters.month}
                   onChange={(e) => setFilters({ ...filters, month: parseInt(e.target.value) })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === "dark" ? "bg-gray-700 text-white":"bg-white text-gray-900"}`}
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i + 1} value={i + 1}>
@@ -1626,7 +1721,7 @@ const PersonalLeaves = () => {
                 <select
                   value={filters.year}
                   onChange={(e) => setFilters({ ...filters, year: parseInt(e.target.value) })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === "dark" ? "bg-gray-700 text-white":"bg-white text-gray-900"}`}
                 >
                   {Array.from({ length: 11 }, (_, i) => (
                     <option key={i} value={2020 + i}>
@@ -1659,22 +1754,22 @@ const PersonalLeaves = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className={`bg-gray-50 ${theme === "dark" ? "dark:bg-gray-700" : ""}`}>
                       <tr>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                           Employee ID
                         </th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                           Month/Year
                         </th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                           Working Days
                         </th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                           Days Present
                         </th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                           Unpaid Leaves
                         </th>
-                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                           Actions
                         </th>
                       </tr>
@@ -1689,16 +1784,16 @@ const PersonalLeaves = () => {
                           <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-900"}`}>
                             {employee.employeeId}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                             {employee.month}/{employee.year}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                             {employee.totalWorkingDays}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                             {employee.daysPresent}
                           </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === "dark" ? "text-gray-100" : "text-gray-500"}`}>
                             {employee.unpaidLeaves}
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium`}>
