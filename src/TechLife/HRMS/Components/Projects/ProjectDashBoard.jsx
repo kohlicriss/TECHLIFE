@@ -1,12 +1,10 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { CircleUserRound } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { FaCalendarAlt, FaTrashAlt, FaFileAlt, FaPlus, FaPaperclip, FaUsers, FaRegFolderOpen } from 'react-icons/fa';
 import axios from 'axios';
 import { Context } from '../HrmsContext';
-import classNames from 'classnames';
 import { FiDelete, FiEdit } from "react-icons/fi";
 import { authApi } from '../../../../axiosInstance';
 
@@ -25,7 +23,7 @@ const SprintTable = ({ projectId }) => {
     endDate: '',
     status: 'PLANNED'
   });
-  const API_HOST = 'https://hrms.anasolconsultancyservices.com/api/sprints';
+  const API_HOST = 'https://hrms.anasolconsultancyservices.com/api/employee/sprints';
   const token = () => localStorage.getItem('accessToken');
   const persistTokenFromRes = async (res, body) => {
     try {
@@ -384,20 +382,20 @@ const storeAccessToken = (rawTokenOrHeader) => {
         : String(rawTokenOrHeader);
     try { localStorage.setItem('accessToken', token); } catch (e) { /* ignore */ }
 };
- const ProjectDetails = () => {
-    const { projectId: paramProjectId } = useParams(); 
-    const [projectId, setProjectId] = useState(() => paramProjectId || localStorage.getItem('selectedProjectId') || '');
+ const ProjectDetails = ({ projectId: propProjectId }) => {
+    const { projectId: paramProjectId } = useParams();
+    const [projectId, setProjectId] = useState(() => propProjectId || paramProjectId || localStorage.getItem('selectedProjectId') || '');
     const [projectData, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const {theme} = useContext(Context);
     const [showUpdateOverview, setShowUpdateOverview] = useState(false);
     useEffect(() => {
-        if (paramProjectId && paramProjectId !== projectId) {
-            setProjectId(paramProjectId);
-            try { localStorage.setItem('selectedProjectId', paramProjectId); } catch {}
+        if (propProjectId && propProjectId !== projectId) {
+            setProjectId(propProjectId);
+            try { localStorage.setItem('selectedProjectId', propProjectId); } catch {}
         }
-    }, [paramProjectId]);
+    }, [propProjectId]);
     useEffect(() => {
        const fetchProjectData = async () => {
            setLoading(true);
@@ -447,7 +445,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
            }
        };
        fetchProjectData();
-    }, [projectId]); 
+     }, [projectId]); 
     if (loading) {
         return (
             <div className="flex justify-center items-center h-40"><p className="text-xl text-blue-600">Loading project details...</p></div>
@@ -608,6 +606,7 @@ const ProjectCard = () => {
       };
       setCurrentProject(normalized);
       setLocalProjectData(normalized.overview || null);
+      try { setProjectId(pid); localStorage.setItem('selectedProjectId', pid); } catch {}
     } catch (err) {
       console.error('loadProjectDetailsById error', err);
     } finally {
@@ -764,7 +763,7 @@ const ProjectCard = () => {
                 <button title="Delete Overview" onClick={handleDeleteOverview} disabled={overviewSubmitting} className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"><FiDelete /></button>
               </div>
             </div>
-                    <ProjectDetails />
+                   <ProjectDetails projectId={projectId} />
                     <AnimatePresence>
             {showCreateOverview && (
               <ProjectOverviewForm mode="create" projectId={projectId} initialData={{}} onClose={() => setShowCreateOverview(false)} onSuccess={(newData) => {  setLocalProjectData(newData); }} />
@@ -854,9 +853,9 @@ const ProjectForm = ({ onClose, editProject = null, onSuccess = () => {} }) => {
      teamLeadId: [''],
    });
    const statusOptions = [
-    { value: 'IN_PROGRESS', label: 'In Progress' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'NOT_STARTED', label: 'Not Started' },
+    { value: 'In Progress', label: 'In Progress' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Not Started', label: 'Not Started' },
   ];
    const [fileAttachment, setFileAttachment] = useState(null);
    const [isSubmitting, setIsSubmitting] = useState(false);

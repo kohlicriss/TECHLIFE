@@ -370,7 +370,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) return;
-      const url = `http://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/tasks`;
+      const url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/tasks`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
       if (!res.ok) {
         console.warn('Failed to load tasks', res.status);
