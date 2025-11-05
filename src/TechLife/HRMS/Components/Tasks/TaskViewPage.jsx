@@ -289,7 +289,20 @@ const UpdateHistoryPopup = ({
     );
 };
 const TaskViewPage = () => {
-    const { projectid, id } = useParams();
+    const { projectid: encodedProjectId, id: encodedTaskId } = useParams();
+
+    // Decode the projectId and taskId from URL parameters
+    const decodeId = (encodedId) => {
+        try {
+            return atob(encodedId);
+        } catch (error) {
+            console.error("Error decoding ID:", error);
+            return null;
+        }
+    };
+
+    const projectid = decodeId(encodedProjectId);
+    const id = decodeId(encodedTaskId);
     const navigate = useNavigate();
     const [assignedBy, setAssignedBy] = useState("");
     const [showUpdateHistoryPopup, setShowUpdateHistoryPopup] = useState(false);

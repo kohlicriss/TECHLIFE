@@ -773,7 +773,7 @@ const TasksPage = () => {
     };
 
     const clickHandler = (projectId, id) => {
-        navigate(`taskview/${projectId}/${id}`);
+        navigate(`taskview/${btoa(projectId)}/${btoa(id)}`);
     };
 
     const getPriorityStyles = (priority) => {

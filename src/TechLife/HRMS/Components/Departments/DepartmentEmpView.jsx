@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { publicinfoApi } from "../../../../axiosInstance";
@@ -5,9 +6,10 @@ import { Mail, Briefcase, ChevronLeft, Users, ArrowRight, ArrowLeft } from "luci
 import { Context } from "../HrmsContext";
 
 
+
 const DepartmentEmpView = () => {
   const BASE_API_URL = "https://hrms.anasolconsultancyservices.com/api";
-  const { departmentId, empID } = useParams();
+  const { departmentId: encodedDepartmentId, empID } = useParams();
   const navigate = useNavigate();
   const { theme } = useContext(Context);
   const [employees, setEmployees] = useState([]);
@@ -16,9 +18,28 @@ const DepartmentEmpView = () => {
   const [error, setError] = useState(null);
   const [showOwnProfilePopup, setShowOwnProfilePopup] = useState(false);
 
+  // Decode the departmentId from URL parameter
+  const decodeId = (encodedId) => {
+    try {
+      return atob(encodedId);
+    } catch (error) {
+      console.error("Error decoding departmentId:", error);
+      return null;
+    }
+  };
+
+  const departmentId = decodeId(encodedDepartmentId);
+
+
 
   useEffect(() => {
     const depEmployeesfetch = async () => {
+      if (!departmentId) {
+        setError("Invalid department ID");
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await publicinfoApi.get(
           `employee/0/10/employeeId/asc/department/${departmentId}/employees`
@@ -41,6 +62,7 @@ const DepartmentEmpView = () => {
   }, [departmentId]);
 
 
+
   const generateInitials = (name) => {
     if (!name) return "?";
     const parts = name.split(/\s+/).filter((p) => p.length > 0);
@@ -50,11 +72,13 @@ const DepartmentEmpView = () => {
   };
 
 
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) return imagePath;
     return `${BASE_API_URL}/${imagePath.replace(/^\//, "")}`;
   };
+
 
 
   const onCardClick = (employeeId) => {
@@ -67,6 +91,7 @@ const DepartmentEmpView = () => {
       navigate(`/employees/${employeeId}/public/${employeeId}`);
     }
   };
+
 
 
   if (loading)
@@ -85,12 +110,14 @@ const DepartmentEmpView = () => {
     );
 
 
+
   if (error)
     return (
       <div className={`flex items-center justify-center h-[60vh] ${theme === "dark" ? "text-red-500" : "text-red-600"}`}>
         <span className="text-lg">{error}</span>
       </div>
     );
+
 
 
   return (
@@ -120,6 +147,7 @@ const DepartmentEmpView = () => {
             <ArrowLeft size={20} />
           </button>
 
+
           {/* Center Section - Department Name */}
           <div className="text-center flex-1">
             <h2 className={`${theme === "dark" ? "text-gray-100" : "text-gray-800"} text-2xl sm:text-3xl font-extrabold tracking-tight line-clamp-2`}>
@@ -129,6 +157,7 @@ const DepartmentEmpView = () => {
               Team Members
             </p>
           </div>
+
 
           {/* Right Section - Employee Count Badge */}
           <div
@@ -147,6 +176,7 @@ const DepartmentEmpView = () => {
         </div>
       </div>
 
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 pb-8 pt-8 sm:pt-12">
         {/* Popup for own profile */}
@@ -155,6 +185,7 @@ const DepartmentEmpView = () => {
             This is your own Profile
           </div>
         )}
+
 
         {employees.length === 0 ? (
           <div
@@ -209,6 +240,7 @@ const DepartmentEmpView = () => {
                     </div>
                   )}
 
+
                   {/* Gradient overlay on hover */}
                   <div
                     className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
@@ -218,6 +250,7 @@ const DepartmentEmpView = () => {
                     }`}
                   />
 
+
                   {/* View Profile Arrow */}
                   <div
                     className={`absolute top-4 right-4 p-2 ${
@@ -226,6 +259,7 @@ const DepartmentEmpView = () => {
                   >
                     <ArrowRight size={16} />
                   </div>
+
 
                   {/* Employee Avatar Section */}
                   <div
@@ -264,6 +298,7 @@ const DepartmentEmpView = () => {
                       </div>
                     )}
 
+
                     <div className="flex-1 min-w-0">
                       <h3
                         className={`text-lg font-bold transition-colors duration-300 line-clamp-2 ${
@@ -277,6 +312,7 @@ const DepartmentEmpView = () => {
                       </p>
                     </div>
                   </div>
+
 
                   {/* Employee Details */}
                   <div
@@ -294,6 +330,7 @@ const DepartmentEmpView = () => {
                       </div>
                     </div>
 
+
                     <div className="flex items-center gap-3 transition-all duration-200 p-2 rounded-lg hover:bg-opacity-50 hover:bg-purple-500/10">
                       <div className={`p-2 ${theme === "dark" ? "bg-purple-900/50 text-purple-400" : "bg-purple-100 text-purple-600"}`}>
                         <Briefcase size={14} />
@@ -304,6 +341,7 @@ const DepartmentEmpView = () => {
                       </div>
                     </div>
                   </div>
+
 
                   {/* Bottom gradient border effect */}
                   <div
@@ -320,6 +358,7 @@ const DepartmentEmpView = () => {
     </div>
   );
 };
+
 
 
 export default DepartmentEmpView;
