@@ -24,6 +24,7 @@ export default function TicketDashboard() {
   const [messages, setMessages] = useState([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
  // const [activeTab, setActiveTab] = useState("all");
+ const [activeTab, setActiveTab] = useState("My Tickets");
 
     const { userData, theme } = useContext(Context);
   const isDark = theme === "dark";
@@ -287,8 +288,17 @@ export default function TicketDashboard() {
   const sidebarItems = [{ tab: "My Tickets", icon: Ticket }];
 
 const handleTabClick = (tab) => {
+
+  const employeeIdToUse = userData?.employeeId || empID;
+  
+
+  
   if (tab === "My Tickets") {
-    navigate(`/tickets/employee/${empID}`);
+    const targetUrl = `/tickets/employee/${employeeIdToUse}`;
+    navigate(targetUrl);
+  } else {
+    setActiveTab(tab);
+    setCurrentPage(1);
   }
   
   setIsSidebarCollapsed(true);
