@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Context } from '../HrmsContext';
-import { authApi, publicinfoApi } from '../../../../axiosInstance';
+import { authApi, publicinfoApi, payrollApi, payroll } from '../../../../axiosInstance';
 import {
     IoSearchOutline,
     IoLockClosed,
@@ -268,6 +268,26 @@ const employeeFormFields = [
     },
 ];
 
+const payrollFormFields = [
+    { label: "Employee Name", name: "empNameDisplay", type: "text", required: true, hint: "Auto-filled from Employee Form.", disabled: true },
+    { label: "Employee ID", name: "employeeIdDisplay", type: "text", required: true, hint: "Auto-filled from Employee Form.", disabled: true },
+    { label: "Email", name: "email", type: "email", required: true, hint: "Employee email address." },
+    { label: "Phone Number", name: "phoneNumber", type: "text", required: false, hint: "Contact phone number." },
+    { label: "Annual Salary", name: "annualSalary", type: "number", required: true, hint: "Annual salary amount." },
+    { label: "Account Number", name: "accountNumber", type: "text", required: true, hint: "Bank account number." },
+    { label: "IFSC Code", name: "ifsccode", type: "text", required: true, hint: "IFSC code for bank." },
+    { label: "Bank Name", name: "bankName", type: "text", required: true, hint: "Name of the bank." },
+    { label: "PF Number", name: "pfnum", type: "text", required: false, hint: "Provident Fund number." },
+    { label: "PAN Number", name: "panNumber", type: "text", required: true, hint: "Permanent Account Number." },
+    { label: "Aadhar Number", name: "aadharNumber", type: "text", required: true, hint: "Aadhar ID number." },
+    { label: "UAN Number", name: "uanNumber", type: "text", required: false, hint: "Universal Account Number." },
+    { label: "Department", name: "department", type: "text", required: true, hint: "Department name." },
+    { label: "Designation", name: "designation", type: "text", required: true, hint: "Job designation." },
+    { label: "Job Type", name: "JobType", type: "select", required: true, options: ["Full-time", "Part-time", "Contract", "Temporary"], hint: "Select job type." },
+    { label: "Level", name: "Level", type: "text", required: true, hint: "Employee level or grade." },
+    { label: "Start Date", name: "startDate", type: "date", required: true, hint: "Employment start date." },
+];
+
 const generateInitials = (name) => {
     if (!name) return "";
     const nameParts = name.split(" ");
@@ -277,6 +297,7 @@ const generateInitials = (name) => {
     return nameParts[0][0].toUpperCase();
 };
 
+// --- Department Dropdown Component ---
 const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [departments, setDepartments] = useState([]);
@@ -501,18 +522,43 @@ function EmployeeApp() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [submissionStatus, setSubmissionStatus] = useState('');
 
+    // Multi-step form states
+    const [currentStep, setCurrentStep] = useState(1); // 1: Credentials, 2: Employee, 3: Payroll
+
     const initialFormData = {
+        // User Credentials
         fullName: '',
         username: '',
         password: '',
         role: '',
+        // Employee Information
         employeeId: '',
         firstName: '',
         displayName: '',
         maritalStatus: '',
         departmentId: '',
         employeeRole: '',
+        // Payroll/Job Details
+        empNameDisplay: '',
+        employeeIdDisplay: '',
+        email: '',
+        phoneNumber: '',
+        annualSalary: '',
+        accountNumber: '',
+        ifsccode: '',
+        bankName: '',
+        pfnum: '',
+        panNumber: '',
+        aadharNumber: '',
+        uanNumber: '',
+        department: '',
+        designation: '',
+        JobType: '',
+        Level: '',
+        startDate: '',
+        empName: '',
     };
+
     const [formData, setFormData] = useState(initialFormData);
     const [formErrors, setFormErrors] = useState({});
 
@@ -750,6 +796,12 @@ function EmployeeApp() {
             if (name === 'fullName') {
                 updatedData.firstName = value.split(' ')[0] || '';
                 updatedData.displayName = value;
+                updatedData.empName = value;
+                updatedData.empNameDisplay = value;
+            }
+
+            if (name === 'employeeId') {
+                updatedData.employeeIdDisplay = value;
             }
 
             if (name === 'role') {
@@ -783,17 +835,63 @@ function EmployeeApp() {
         const { name, value } = e.target;
         let error = '';
 
+        // Strict validation rules
+        if (name === 'fullName') {
+            if (!value.trim()) {
+                error = "Full name is required.";
+            } else if (value.trim().length < 2) {
+                error = "Full name must be at least 2 characters.";
+            } else if (!/^[a-zA-Z\s\'-]+$/.test(value)) {
+                error = "Full name can only contain letters, spaces, hyphens, and apostrophes.";
+            }
+        }
+
         if (name === 'username' || name === 'employeeId') {
             if (value && !value.startsWith('ACS')) {
                 error = "Incorrect format. Must start with 'ACS'.";
             } else if (value && (value.length < 8 || value.length > 30)) {
                 error = "Must be between 8 and 30 characters.";
+            } else if (value && !/^[A-Z0-9_]+$/.test(value)) {
+                error = "Can only contain uppercase letters, numbers, and underscores.";
             }
         }
 
         if (name === 'password') {
             if (value && (value.length < 8 || value.length > 30)) {
                 error = "Password must be 8-30 characters.";
+            } else if (value && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+                error = "Password must contain uppercase, lowercase, and numbers.";
+            }
+        }
+
+        if (name === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (value && !emailRegex.test(value)) {
+                error = "Invalid email format.";
+            }
+        }
+
+        if (name === 'annualSalary') {
+            if (value && (isNaN(value) || parseFloat(value) <= 0)) {
+                error = "Annual salary must be a positive number.";
+            }
+        }
+
+        if (name === 'panNumber') {
+            if (value && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) {
+                error = "Invalid PAN format (e.g., ABCDE1234F).";
+            }
+        }
+
+        if (name === 'aadharNumber') {
+            if (value && (!/^[0-9]{12}$/.test(value))) {
+                error = "Aadhar must be 12 digits.";
+            }
+        }
+
+        if (name === 'phoneNumber') {
+            if (value && (!/^[0-9]{10}$/.test(value))) {
+                error = "Phone number must be 10 digits.";
             }
         }
 
@@ -808,33 +906,107 @@ function EmployeeApp() {
         });
     };
 
-    const validateForm = (data) => {
+    // Strict validation for each step
+    const validateStep = (step) => {
         const errors = {};
-        if (!data.fullName) errors.fullName = "Full name is required.";
 
-        if (!data.username) errors.username = "Username is required.";
-        else if (data.username.length < 8 || data.username.length > 30) errors.username = "Username must be 8-30 characters.";
-        else if (!data.username.startsWith('ACS')) errors.username = "Username must start with 'ACS'.";
+        if (step === 1) {
+            // Credentials validation
+            if (!formData.fullName) errors.fullName = "Full name is required.";
+            else if (formData.fullName.trim().length < 2) errors.fullName = "Full name must be at least 2 characters.";
+            else if (!/^[a-zA-Z\s\'-]+$/.test(formData.fullName)) errors.fullName = "Full name can only contain letters, spaces, hyphens, and apostrophes.";
 
-        if (!data.password) errors.password = "Password is required.";
-        else if (data.password.length < 8 || data.password.length > 30) errors.password = "Password must be 8-30 characters.";
+            if (!formData.username) errors.username = "Username is required.";
+            else if (formData.username.length < 8 || formData.username.length > 30) errors.username = "Username must be 8-30 characters.";
+            else if (!formData.username.startsWith('ACS')) errors.username = "Username must start with 'ACS'.";
+            else if (!/^[A-Z0-9_]+$/.test(formData.username)) errors.username = "Can only contain uppercase letters, numbers, and underscores.";
 
-        if (!data.role) errors.role = "Role is required.";
+            if (!formData.password) errors.password = "Password is required.";
+            else if (formData.password.length < 8 || formData.password.length > 30) errors.password = "Password must be 8-30 characters.";
+            else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) errors.password = "Password must contain uppercase, lowercase, and numbers.";
 
-        if (!data.employeeId) errors.employeeId = "Employee ID is required.";
-        else if (data.employeeId.length < 8 || data.employeeId.length > 30) errors.employeeId = "Employee ID must be 8-30 characters.";
-        else if (!data.employeeId.startsWith('ACS')) errors.employeeId = "Employee ID must start with 'ACS'.";
+            if (!formData.role) errors.role = "Role is required.";
+        } else if (step === 2) {
+            // Employee validation
+            if (!formData.employeeId) errors.employeeId = "Employee ID is required.";
+            else if (formData.employeeId.length < 8 || formData.employeeId.length > 30) errors.employeeId = "Employee ID must be 8-30 characters.";
+            else if (!formData.employeeId.startsWith('ACS')) errors.employeeId = "Employee ID must start with 'ACS'.";
+            else if (!/^[A-Z0-9_]+$/.test(formData.employeeId)) errors.employeeId = "Can only contain uppercase letters, numbers, and underscores.";
 
-        if (data.username && data.employeeId && data.username !== data.employeeId) {
-            errors.username = "Username and Employee ID must match.";
-            errors.employeeId = "Username and Employee ID must match.";
+            if (formData.username && formData.employeeId && formData.username !== formData.employeeId) {
+                errors.employeeId = "Employee ID must match Username.";
+            }
+
+            if (!formData.firstName) errors.firstName = "First name is required.";
+            else if (formData.firstName.trim().length < 2) errors.firstName = "First name must be at least 2 characters.";
+            else if (!/^[a-zA-Z\s\'-]+$/.test(formData.firstName)) errors.firstName = "First name can only contain letters, spaces, hyphens, and apostrophes.";
+
+            if (!formData.maritalStatus) errors.maritalStatus = "Marital status is required.";
+            if (!formData.departmentId) errors.departmentId = "Department ID is required.";
+        } else if (step === 3) {
+            // Payroll validation
+            if (!formData.email) errors.email = "Email is required.";
+            else {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(formData.email)) errors.email = "Invalid email format.";
+            }
+
+            if (!formData.annualSalary) errors.annualSalary = "Annual salary is required.";
+            else if (isNaN(formData.annualSalary) || parseFloat(formData.annualSalary) <= 0) errors.annualSalary = "Annual salary must be a positive number.";
+
+            if (!formData.accountNumber) errors.accountNumber = "Account number is required.";
+            else if (formData.accountNumber.length < 10) errors.accountNumber = "Account number must be at least 10 digits.";
+
+            if (!formData.ifsccode) errors.ifsccode = "IFSC code is required.";
+            else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsccode)) errors.ifsccode = "Invalid IFSC format.";
+
+            if (!formData.bankName) errors.bankName = "Bank name is required.";
+
+            if (!formData.panNumber) errors.panNumber = "PAN number is required.";
+            else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber)) errors.panNumber = "Invalid PAN format (e.g., ABCDE1234F).";
+
+            if (!formData.aadharNumber) errors.aadharNumber = "Aadhar number is required.";
+            else if (!/^[0-9]{12}$/.test(formData.aadharNumber)) errors.aadharNumber = "Aadhar must be 12 digits.";
+
+            if (formData.phoneNumber && !/^[0-9]{10}$/.test(formData.phoneNumber)) errors.phoneNumber = "Phone number must be 10 digits.";
+
+            if (!formData.department) errors.department = "Department is required.";
+            if (!formData.designation) errors.designation = "Designation is required.";
+            if (!formData.JobType) errors.JobType = "Job type is required.";
+            if (!formData.Level) errors.Level = "Level is required.";
+            if (!formData.startDate) errors.startDate = "Start date is required.";
         }
 
-        if (!data.firstName) errors.firstName = "First name is required.";
-        if (!data.maritalStatus) errors.maritalStatus = "Marital status is required.";
-        if (!data.departmentId) errors.departmentId = "Department ID is required.";
-
         return errors;
+    };
+
+    const handleNextStep = async () => {
+        const stepErrors = validateStep(currentStep);
+
+        if (Object.keys(stepErrors).length > 0) {
+            setFormErrors(stepErrors);
+            return;
+        }
+
+        setFormErrors({});
+
+        // Check terminated employees when moving to step 2
+        if (currentStep === 1) {
+            const terminatedIds = await fetchTerminatedEmployeeIds();
+            if (terminatedIds.has(formData.employeeId)) {
+                const errorMessage = `Employee ID ${formData.employeeId} is already in use. Please use a unique ID.`;
+                setFormErrors({ employeeId: "ID already in use by a terminated employee." });
+                setPopup({ show: true, message: errorMessage, type: 'error' });
+                return;
+            }
+        }
+
+        setCurrentStep(prev => prev + 1);
+    };
+
+    const handlePreviousStep = () => {
+        setCurrentStep(prev => prev - 1);
+        setFormErrors({});
     };
 
     const fetchTerminatedEmployeeIds = async () => {
@@ -870,30 +1042,18 @@ function EmployeeApp() {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
 
-        const validationErrors = validateForm(formData);
-        if (Object.keys(validationErrors).length > 0) {
-            setFormErrors(validationErrors);
+        const stepErrors = validateStep(3);
+        if (Object.keys(stepErrors).length > 0) {
+            setFormErrors(stepErrors);
             return;
         }
 
         setIsUpdating(true);
         setFormErrors({});
-        setSubmissionStatus('Checking terminated employees...');
-
-        const newEmployeeId = formData.employeeId;
+        setSubmissionStatus('Creating User...');
 
         try {
-            const terminatedIds = await fetchTerminatedEmployeeIds();
-
-            if (terminatedIds.has(newEmployeeId)) {
-                const errorMessage = `Employee ID ${newEmployeeId} is currently assigned to a terminated employee. Please use a unique ID.`;
-                setFormErrors({ employeeId: "ID already in use by a terminated employee." });
-                setPopup({ show: true, message: errorMessage, type: 'error' });
-                setIsUpdating(false);
-                setSubmissionStatus('');
-                return;
-            }
-
+            // Step 1: Create User Credentials
             const credentialsDto = {
                 fullName: formData.fullName,
                 username: formData.username,
@@ -901,9 +1061,10 @@ function EmployeeApp() {
                 role: formData.role.toUpperCase(),
             };
 
-            setSubmissionStatus('Creating User...');
             await authApi.post("/register", credentialsDto);
 
+            // Step 2: Create Employee
+            setSubmissionStatus('Creating Employee...');
             const employeeDto = {
                 employeeId: formData.employeeId,
                 firstName: formData.firstName,
@@ -913,12 +1074,36 @@ function EmployeeApp() {
                 role: formData.role.toUpperCase(),
             };
 
-            setSubmissionStatus('Creating Employee...');
             await publicinfoApi.post('employee', employeeDto);
 
-            setPopup({ show: true, message: 'Employee and user account created successfully!', type: 'success' });
+            // Step 3: Create Payroll/Job Details
+            setSubmissionStatus('Creating Payroll Details...');
+            const payrollDto = {
+                employeeId: formData.employeeId,
+                empName: formData.empName,
+                email: formData.email,
+                phoneNumber: formData.phoneNumber,
+                annualSalary: parseFloat(formData.annualSalary),
+                accountNumber: formData.accountNumber,
+                ifsccode: formData.ifsccode,
+                bankName: formData.bankName,
+                pfnum: formData.pfnum,
+                panNumber: formData.panNumber,
+                aadharNumber: formData.aadharNumber,
+                uanNumber: formData.uanNumber,
+                department: formData.department,
+                designation: formData.designation,
+                JobType: formData.JobType,
+                Level: formData.Level,
+                startDate: formData.startDate,
+            };
+
+            await payroll.post('payroll/jobdetails/create', payrollDto);
+
+            setPopup({ show: true, message: 'Employee, user account, and payroll details created successfully!', type: 'success' });
             setIsAddEmployeeModalOpen(false);
             setFormData(initialFormData);
+            setCurrentStep(1);
             fetchAllEmployees();
 
         } catch (error) {
@@ -946,6 +1131,7 @@ function EmployeeApp() {
         setIsAddEmployeeModalOpen(false);
         setFormData(initialFormData);
         setFormErrors({});
+        setCurrentStep(1);
     };
 
     const renderField = (field, currentErrors, handleChange, fieldValue) => {
@@ -989,22 +1175,41 @@ function EmployeeApp() {
     const renderAddEmployeeModal = () => {
         if (!isAddEmployeeModalOpen) return null;
 
+        const getStepTitle = () => {
+            if (currentStep === 1) return "User Credentials";
+            if (currentStep === 2) return "Employee Information";
+            if (currentStep === 3) return "Payroll & Job Details";
+        };
+
+        const getStepIcon = () => {
+            if (currentStep === 1) return <IoKeyOutline className="w-5 h-5 mr-2" />;
+            if (currentStep === 2) return <IoPersonOutline className="w-5 h-5 mr-2" />;
+            if (currentStep === 3) return <IoBriefcaseOutline className="w-5 h-5 mr-2" />;
+        };
+
+        const getStepColor = () => {
+            if (currentStep === 1) return "from-blue-500 to-purple-600";
+            if (currentStep === 2) return "from-purple-500 to-pink-600";
+            if (currentStep === 3) return "from-green-500 to-teal-600";
+        };
+
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
                 <div
-                    className={`rounded-2xl sm:rounded-3xl w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col ${
+                    className={`rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col ${
                         theme === 'dark' ? 'bg-gray-800' : 'bg-white'
                     }`}
                 >
-                    <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white flex-shrink-0`}>
+                    {/* Header */}
+                    <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${getStepColor()} text-white flex-shrink-0`}>
                         <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-3 min-w-0 flex-1">
                                 <div className="text-xl sm:text-2xl">
-                                    <IoAddCircleOutline />
+                                    {getStepIcon()}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Add New Employee</h2>
-                                    <p className="text-xs sm:text-sm opacity-90 mt-1">Provide user credentials and basic employee details.</p>
+                                    <p className="text-xs sm:text-sm opacity-90 mt-1">Step {currentStep} of 3: {getStepTitle()}</p>
                                 </div>
                             </div>
                             <button onClick={handleFormClose} className="p-2 hover:bg-white/20 rounded-lg">
@@ -1013,89 +1218,149 @@ function EmployeeApp() {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto">
-                        <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 md:p-8">
-                            <div className="mb-6 sm:mb-8">
-                                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
-                                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                                }`}>
-                                    <IoKeyOutline className="w-5 h-5 mr-2" />
-                                    User Credentials
-                                </h3>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                                    {credentialsFormFields.map(field => (
-                                        <div key={field.name}>
-                                            {renderField(field, formErrors, handleFormChange, formData[field.name])}
+                    {/* Form Content - Fixed Height with Scrollable Content */}
+                    <div className="flex-1 overflow-hidden flex flex-col">
+                        <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6">
+                            <form onSubmit={handleFormSubmit} className="space-y-6">
+                                {/* Step 1: User Credentials */}
+                                {currentStep === 1 && (
+                                    <div>
+                                        <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                                            theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                                        }`}>
+                                            <IoKeyOutline className="w-5 h-5 mr-2" />
+                                            User Credentials
+                                        </h3>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                                            {credentialsFormFields.map(field => (
+                                                <div key={field.name}>
+                                                    {renderField(field, formErrors, handleFormChange, formData[field.name])}
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="mb-6 sm:mb-8">
-                                <h3 className={`text-lg font-semibold mb-4 flex items-center ${
-                                    theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
-                                }`}>
-                                    <IoPersonOutline className="w-5 h-5 mr-2" />
-                                    Employee Information
-                                </h3>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-                                    {employeeFormFields.map(field => (
-                                        <div key={field.name}>
-                                            {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {formErrors.general && (
-                                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
-                                    theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
-                                }`}>
-                                    <div className="flex items-center">
-                                        <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
-                                        <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
-                                            {formErrors.general}
-                                        </p>
                                     </div>
-                                </div>
-                            )}
-                        </form>
+                                )}
+
+                                {/* Step 2: Employee Information */}
+                                {currentStep === 2 && (
+                                    <div>
+                                        <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                                            theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+                                        }`}>
+                                            <IoPersonOutline className="w-5 h-5 mr-2" />
+                                            Employee Information
+                                        </h3>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                                            {employeeFormFields.map(field => (
+                                                <div key={field.name}>
+                                                    {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 3: Payroll & Job Details */}
+                                {currentStep === 3 && (
+                                    <div className="p-4 sm:p-6 rounded-lg border-2 border-green-500/50 bg-green-50 dark:bg-green-900/20">
+                                        <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                                            theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                                        }`}>
+                                            <IoBriefcaseOutline className="w-5 h-5 mr-2" />
+                                            Payroll & Job Details
+                                        </h3>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                                            {payrollFormFields.map(field => (
+                                                <div key={field.name}>
+                                                    {renderField(field, formErrors, handleFormChange, formData[field.name])}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {formErrors.general && (
+                                    <div className={`mt-4 sm:mt-6 p-3 sm:p-4 border-l-4 border-red-400 rounded-r-lg ${
+                                        theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
+                                    }`}>
+                                        <div className="flex items-center">
+                                            <IoWarning className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mr-3" />
+                                            <p className={`font-medium text-sm ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                                                {formErrors.general}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </form>
+                        </div>
                     </div>
 
+                    {/* Footer with Action Buttons */}
                     <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex-shrink-0 ${
                         theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
-                    } flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4`}>
-                        <button
-                            type="button"
-                            onClick={handleFormClose}
-                            className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base ${
-                                theme === 'dark'
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                            }`}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            onClick={handleFormSubmit}
-                            disabled={isUpdating}
-                            className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base flex items-center justify-center space-x-2 ${
-                                isUpdating ? 'cursor-not-allowed opacity-75' : ''
-                            }`}
-                        >
-                            {isUpdating ? (
-                                <>
-                                    <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>{submissionStatus || 'Saving...'}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <IoCheckmarkCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    <span>Create Employee</span>
-                                </>
+                    } flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-4`}>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            <button
+                                type="button"
+                                onClick={handleFormClose}
+                                className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base ${
+                                    theme === 'dark'
+                                        ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                        : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                                }`}
+                            >
+                                Cancel
+                            </button>
+
+                            {currentStep > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={handlePreviousStep}
+                                    className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center space-x-2 ${
+                                        theme === 'dark'
+                                            ? 'border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500'
+                                            : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
+                                    }`}
+                                >
+                                    <IoArrowBack className="w-4 h-4" />
+                                    <span>Previous</span>
+                                </button>
                             )}
-                        </button>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                            {currentStep < 3 ? (
+                                <button
+                                    type="button"
+                                    onClick={handleNextStep}
+                                    className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base flex items-center justify-center space-x-2`}
+                                >
+                                    <span>Next</span>
+                                    <IoArrowForward className="w-4 h-4" />
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    onClick={handleFormSubmit}
+                                    disabled={isUpdating}
+                                    className={`px-8 sm:px-10 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base flex items-center justify-center space-x-2 ${
+                                        isUpdating ? 'cursor-not-allowed opacity-75' : ''
+                                    }`}
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <div className="h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <span>{submissionStatus || 'Creating...'}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <IoCheckmarkCircle className="w-4 h-4" />
+                                            <span>Create Employee</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1349,6 +1614,7 @@ function EmployeeApp() {
     return (
         <div className={`min-h-screen px-0 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'}`}>
             <div className="max-w-7xl mx-auto">
+                {/* Search and Filters Bar */}
                 <div
                     className={`rounded-none sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg border mb-4 sm:mb-6 mx-2 sm:mx-0 ${
                         theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -1503,7 +1769,7 @@ function EmployeeApp() {
                                 <div key={employee.employeeId} className="relative">
                                     {viewMode === 'grid' ? (
                                         <div
-                                            className={`w-full h-auto rounded-xl shadow-lg border cursor-pointer ${
+                                            className={`w-full h-72 rounded-xl shadow-lg border cursor-pointer ${
                                                 theme === 'dark'
                                                     ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'
                                                     : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
@@ -1537,7 +1803,7 @@ function EmployeeApp() {
                                                                 </p>
                                                             </div>
 
-                                                            <div className="overflow-y-auto flex-1 space-y-1 sm:space-y-2 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-700">
+                                                            <div className="overflow-y-auto flex-1 space-y-1 sm:space-y-2">
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();

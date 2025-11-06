@@ -13,6 +13,7 @@ import Profile from "./tabs/Profile";
 import Job from "./tabs/Job";
 import Document from "./tabs/Document";
 import Achievements from "./tabs/Achievements";
+import OfferLetter from "./tabs/OfferLetter";
 import { HiIdentification, HiPencil } from "react-icons/hi";
 import {
     MdWork,
@@ -269,6 +270,7 @@ const Profiles = () => {
         { name: "Profile", path: "profile", icon: HiIdentification },
         { name: "Job", path: "job", icon: MdWork },
         { name: "Documents", path: "documents", icon: MdBusiness },
+        { name: "Offer Letter", path: "offerletter", icon: MdBusiness },
         { name: "Achievements", path: "achievements", icon: MdStar },
     ];
 
@@ -848,11 +850,11 @@ const Profiles = () => {
             <div className="max-w-md mx-auto p-3">
                 <Routes>
                     <Route index element={<Navigate to="profile" replace />} />
-                    {/* ❌ FIX APPLIED HERE */}
                     <Route path="about" element={<About />} /> 
                     <Route path="profile" element={<Profile />} />
                     <Route path="job" element={<Job />} />
                     <Route path="documents" element={<Document />} />
+                    <Route path="offerletter" element={<OfferLetter />} />
                     <Route path="achievements" element={<Achievements />} />
                 </Routes>
             </div>
@@ -861,7 +863,8 @@ const Profiles = () => {
 
     return (
         <div className={`min-h-screen flex flex-col ${theme === "dark" ? "bg-gray-900" : "bg-gray-50"}`}>
-            <div className={`hidden md:block h-auto md:h-48 relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
+            {/* 🔑 FIX 1: Set header height to md:h-[200px] */}
+            <div className={`hidden md:block h-auto md:h-[200px] relative ${theme === "dark" ? "bg-gray-800" : "bg-[#B7D4FF]"}`}>
                 {matchedArray.includes("PROFILE_EDIT_HEADER") && (
                     <button
                         onClick={handleHeaderEditClick}
@@ -997,6 +1000,10 @@ const Profiles = () => {
                                 <Document />
                             </div>
                         } />
+                        
+                        {/* 🔑 FIX 2: ADD THE MISSING ROUTE FOR DESKTOP VIEW */}
+                        <Route path="offerletter" element={<OfferLetter />} />
+
                         <Route path="achievements" element={
                             <div className="relative">
                                 {matchedArray.includes("CREATE_ACHIEVEMENT") && (
