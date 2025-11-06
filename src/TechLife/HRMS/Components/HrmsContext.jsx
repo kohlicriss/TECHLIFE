@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import logo from "./assets/anasol-logo.png";
 import { authApi, notificationsApi } from "../../../axiosInstance";
@@ -148,32 +147,27 @@ const HrmsContext = ({ children }) => {
     }, []);
     
     const fetchChatUnreadCount = useCallback(async () => {
-        // user data lekapothe, wait chey
         if (!userData?.employeeId) return; 
 
         console.log("Fetching initial chat unread count...");
         try {
-            // ChatApp.jsx lo laage, first page chat list ni fetch cheddam
             const rawChatListData = await getChatOverview(userData.employeeId, 0, 10); 
             
             if (rawChatListData.length === 0) {
-                setChatUnreadCount(0); // Chats levu kabatti count 0
+                setChatUnreadCount(0); 
                 return;
             }
 
-            // Data ni transform cheddam
             const formattedChatList = transformOverviewToChatList(rawChatListData, userData.employeeId);
             
-            // Groups mariyu private chats ni kalupudham
             const allChats = [
                 ...formattedChatList.privateChatsWith.filter(user => user.chatId !== userData.employeeId),
                 ...formattedChatList.groups,
             ];
 
-            // ChatApplication.jsx lo laage, unread count ni calculate cheddam
             const totalUnread = allChats.reduce((acc, chat) => acc + (chat.unreadMessageCount || 0), 0);
             
-            setChatUnreadCount(totalUnread); // Final ga count ni state lo set cheddam
+            setChatUnreadCount(totalUnread); 
             console.log("Initial Chat Unread Count fetched:", totalUnread);
 
         } catch (err) {
