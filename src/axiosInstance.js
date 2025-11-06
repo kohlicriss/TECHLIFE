@@ -111,10 +111,11 @@ window.addEventListener('storage', (event) => {
     }
 });
  
-export const tasksApi = createAxiosInstance('http://192.168.0.142:8090/api/employee');
-export const publicinfoApi = createAxiosInstance('http://192.168.0.142:8090/api');
+export const tasksApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/employee');
+export const publicinfoApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
 export const chatApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api');
 export const notificationsApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/notification');
 export const ticketsApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/ticket')
 export const authApi = createAxiosInstance('https://hrms.anasolconsultancyservices.com/api/auth')
 export const dashboardApi=createAxiosInstance('hrms.anasolconsultancyservices.com/api/attendance')
+export const payroll = createAxiosInstance('http://192.168.0.233:8087/api');
