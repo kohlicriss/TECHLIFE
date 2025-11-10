@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Context } from '../HrmsContext';
-import { authApi, publicinfoApi, payrollApi, payroll } from '../../../../axiosInstance';
+import { authApi, publicinfoApi, payrollApi } from '../../../../axiosInstance';
 import {
     IoSearchOutline,
     IoLockClosed,
@@ -1098,7 +1098,7 @@ function EmployeeApp() {
                 startDate: formData.startDate,
             };
 
-            await payroll.post('payroll/jobdetails/create', payrollDto);
+            await payrollApi.post('/jobdetails/create', payrollDto);
 
             setPopup({ show: true, message: 'Employee, user account, and payroll details created successfully!', type: 'success' });
             setIsAddEmployeeModalOpen(false);

@@ -185,7 +185,7 @@ const EmployeePayRoll = () => {
   const fetchEmployeeDetails = async () => {
   try {
     const employeeResponse = await axios.get(
-      `http://localhost:8087/api/payroll/employee/${empId}`,
+      `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }

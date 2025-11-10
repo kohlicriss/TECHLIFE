@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
-import { IoDocumentText } from "react-icons/io5";
-import axios from "axios"; // Note: axios is imported but not used, publicinfoApi is
+import { IoDocumentText, IoDownload, IoEye } from "react-icons/io5";
 import { useParams } from "react-router-dom";
-import { Context } from "../../HrmsContext"; // Assuming this is the correct path to your context
-import { payroll, publicinfoApi } from "../../../../../axiosInstance";
+import { Context } from "../../HrmsContext";
+import { payrollApi } from "../../../../../axiosInstance";
+import html2pdf from "html2pdf.js";
 
 const OfferLetter = () => {
   const { empID } = useParams();
@@ -12,26 +12,37 @@ const OfferLetter = () => {
   const [offerLetter, setOfferLetter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [htmlContent, setHtmlContent] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const fetchOfferLetter = async () => {
       try {
-        const response = await payroll.get(
-          `/payroll/offerletter/html/employee/${empID}`
+        const response = await payrollApi.get(
+          `/offerletter/html/employee/${empID}`
         );
 
-        // Check if the request was successful and data exists
-        if (response.data && response.data.success && response.data.data) {
-          setOfferLetter(response.data.data); // Set the nested data object
+        if (typeof response.data === "string") {
+          setHtmlContent(response.data);
+          setOfferLetter({ html: response.data });
+        } else if (response.data && response.data.success) {
+          if (typeof response.data.data === "string") {
+            setHtmlContent(response.data.data);
+            setOfferLetter({ html: response.data.data });
+          } else if (
+            response.data.data &&
+            typeof response.data.data === "object"
+          ) {
+            setOfferLetter(response.data.data);
+          }
         } else {
-          // Handle API-level errors (e.g., success: false)
-          setError(response.data.message || "No offer letter data found.");
+          setError(response.data?.message || "No offer letter data found.");
           setOfferLetter(null);
         }
       } catch (err) {
         console.error("Error fetching offer letter:", err);
         setError("Failed to fetch offer letter data. Please try again later.");
-        setOfferLetter(null); // Ensure no stale data is shown
+        setOfferLetter(null);
       } finally {
         setLoading(false);
       }
@@ -39,6 +50,95 @@ const OfferLetter = () => {
 
     fetchOfferLetter();
   }, [empID]);
+
+  const wrapWithA4Styling = (content) => `
+    <div style="
+        font-family: Calibri, Arial, sans-serif;
+        font-size: 10pt;
+        background: #fff;
+        color: #333;
+        width: 100%;
+        line-height: 1.5;
+        padding: 0;
+        margin: 0;
+      "
+    >
+      <style>
+        table {
+          border-collapse: collapse !important;
+          width: 100% !important;
+          table-layout: fixed !important;
+        }
+        td, th {
+          border: 1px solid !important;
+          padding: 6px 8px !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        tr {
+          page-break-inside: avoid !important;
+        }
+      </style>
+      ${content}
+    </div>
+  `;
+  // Preview PDF with page splits
+  const openPdfPreview = () => {
+    if (htmlContent) {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = wrapWithA4Styling(htmlContent);
+
+      const options = {
+        margin: 10,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      html2pdf()
+        .set(options)
+        .from(tempDiv)
+        .toPdf()
+        .get("pdf")
+        .then(function (pdf) {
+          window.open(pdf.output("bloburl"), "_blank");
+        });
+    }
+  };
+
+  // Download PDF with correct paging
+  const downloadPdf = async () => {
+    if (!htmlContent || downloading) return;
+    setDownloading(true);
+    try {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = wrapWithA4Styling(htmlContent);
+
+      const options = {
+        margin: 10,
+        filename: `Offer_Letter_${empID}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      await html2pdf().set(options).from(tempDiv).save();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Error generating PDF. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // Utility: Demonstration of page breaks (in HTML), inject `.page-break` after sections
+  // For real use, make sure your offer letter HTML includes <div class="page-break"></div>
+  const exampleContentWithBreak = () => {
+    if (!htmlContent) return "";
+    // This is just an example, inject breaks between major sections.
+    // You can replace this with your real parsing logic if needed.
+    return htmlContent.replace(/<\/section>/g, '</section><div class="page-break"></div>');
+  };
 
   return (
     <div
@@ -89,13 +189,64 @@ const OfferLetter = () => {
           )}
 
           {/* Error */}
-          {/* This will now also show errors like "No offer letter data found" from the API */}
           {error && (
             <p className="text-red-500 font-medium">{error}</p>
           )}
 
-          {/* Data Display */}
-          {!loading && offerLetter && (
+          {/* Action Buttons */}
+          {htmlContent && (
+            <div className="flex justify-center gap-4 mb-6">
+              <button
+                onClick={openPdfPreview}
+                disabled={downloading}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  theme === "dark"
+                    ? "bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400"
+                    : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300"
+                }`}
+              >
+                <IoEye className="w-5 h-5" />
+                Preview Offer Letter
+              </button>
+              <button
+                onClick={downloadPdf}
+                disabled={downloading}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  theme === "dark"
+                    ? "bg-green-600 hover:bg-green-700 text-white disabled:bg-green-400"
+                    : "bg-green-500 hover:bg-green-600 text-white disabled:bg-green-300"
+                }`}
+              >
+                <IoDownload className="w-5 h-5" />
+                {downloading ? "Downloading..." : "Download PDF"}
+              </button>
+            </div>
+          )}
+
+          {/* Downloading Overlay */}
+          {downloading && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div
+                className={`p-6 rounded-lg ${
+                  theme === "dark" ? "bg-gray-800" : "bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  <p
+                    className={
+                      theme === "dark" ? "text-white" : "text-gray-800"
+                    }
+                  >
+                    Generating PDF...
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Details Panel */}
+          {!loading && offerLetter && offerLetter.empName && (
             <div
               className={`mt-6 text-left p-6 rounded-xl shadow-inner ${
                 theme === "dark"
@@ -106,7 +257,6 @@ const OfferLetter = () => {
               <h3 className="text-xl font-semibold mb-4">
                 Employee Offer Details
               </h3>
-              {/* --- UPDATED UI BASED ON NEW RESPONSE --- */}
               <div className="space-y-2">
                 <p>
                   <span className="font-medium">Employee Name:</span>{" "}
@@ -126,7 +276,10 @@ const OfferLetter = () => {
                 </p>
                 <p>
                   <span className="font-medium">Annual Salary:</span>{" "}
-                  {offerLetter.annualSalary !== null ? offerLetter.annualSalary : "N/A"}
+                  {offerLetter.annualSalary !== null &&
+                  offerLetter.annualSalary !== undefined
+                    ? `₹${offerLetter.annualSalary}`
+                    : "N/A"}
                 </p>
                 <p>
                   <span className="font-medium">Start Date:</span>{" "}
@@ -137,12 +290,9 @@ const OfferLetter = () => {
                   {offerLetter.jobType || "N/A"}
                 </p>
               </div>
-              {/* --- END OF UPDATED UI --- */}
             </div>
           )}
 
-          {/* No Data */}
-          {/* This condition now correctly triggers if loading is done, there's no error, and offerLetter is still null */}
           {!loading && !offerLetter && !error && (
             <p
               className={`${

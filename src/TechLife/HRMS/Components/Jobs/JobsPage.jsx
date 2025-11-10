@@ -32,7 +32,7 @@ const JobsPage = () => {
     const token = localStorage.getItem("accessToken");
 
     // API base URL
-    const API_BASE_URL = 'http://localhost:8087/api/payroll/jobs';
+    const API_BASE_URL = 'https://hrms.anasolconsultancyservices.com/api/payroll/jobs';
 
     // Fetch all jobs
     const fetchJobs = async () => {
