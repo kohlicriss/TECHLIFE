@@ -389,6 +389,24 @@ const storeAccessToken = (rawTokenOrHeader) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const {theme} = useContext(Context);
+    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from MyTeam :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
     const [showUpdateOverview, setShowUpdateOverview] = useState(false);
     useEffect(() => {
         if (propProjectId && propProjectId !== projectId) {
@@ -464,7 +482,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
     return (
         <div className="p-2 space-y-4">
             <div className="flex items-end justify-end border-b pb-2 mb-2">
-               <button title="Update Overview" onClick={() => setShowUpdateOverview(true)} className="p-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600"><FiEdit /></button>
+               {(matchedArray || []).includes("UPDATE_PROJECTOVERVIEW") && (<button title="Update Overview" onClick={() => setShowUpdateOverview(true)} className="p-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600"><FiEdit /></button>  )}
             </div>
             {/* General Project Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -556,6 +574,24 @@ const ProjectCard = () => {
     const progressSource = localProjectData || projectData;
     const progressPercent = calculateProgress(progressSource?.projectDetails?.startedOn, progressSource?.projectDetails?.endDate);
 
+    const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from MyTeam :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
      const loadCarouselProjects = async () => {
     setLoadingCarousel(true);
     try {
@@ -746,7 +782,7 @@ const ProjectCard = () => {
                       <div className="flex items-center justify-between p-4 border-b">
                         <h3 className="text-lg font-semibold">Sprints for {projectId}</h3>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => setShowSprintModal(false)} className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300">Close</button>
+                          {(matchedArray || []).includes("CREATE_SPRINT") && (<button onClick={() => setShowSprintModal(false)} className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300">Close</button>   )}
                         </div>
                       </div>
                       <div className="p-4">
@@ -759,8 +795,8 @@ const ProjectCard = () => {
                     <div className="flex items-start justify-between border-b pb-2 mb-2">
               <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Project Overview ({projectId})</h1>
               <div className="flex items-center gap-2">
-                <button title="Create Overview" onClick={() => setShowCreateOverview(true)} className="p-2 rounded-md bg-green-600 text-white hover:bg-green-700"><FaPlus /></button>
-                <button title="Delete Overview" onClick={handleDeleteOverview} disabled={overviewSubmitting} className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"><FiDelete /></button>
+                {(matchedArray || []).includes("CREATE_PROJECTOVERVIEW") && (<button title="Create Overview" onClick={() => setShowCreateOverview(true)} className="p-2 rounded-md bg-green-600 text-white hover:bg-green-700"><FaPlus /></button>  )}
+                {(matchedArray || []).includes("DELETE_PROJECTOVERVIEW") && (<button title="Delete Overview" onClick={handleDeleteOverview} disabled={overviewSubmitting} className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"><FiDelete /></button>  )}
               </div>
             </div>
                    <ProjectDetails projectId={projectId} />
@@ -1248,12 +1284,14 @@ function Project() {
                       <FaPlus />
                     </button>
                   )}
-                  <button title="Edit selected" onClick={handleGlobalEdit} disabled={!selectedRow} className={`p-2 rounded-md ${selectedRow ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
+                  {(matchedArray || []).includes("EDIT_PROJECT") && (<button title="Edit selected" onClick={handleGlobalEdit} disabled={!selectedRow} className={`p-2 rounded-md ${selectedRow ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
                     <FiEdit />
                   </button>
-                  <button title="Delete selected" onClick={handleGlobalDelete} disabled={!selectedRow} className={`p-2 rounded-md ${selectedRow ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
+                  )}
+                  {(matchedArray || []).includes("DELETE_PROJECT") && (<button title="Delete selected" onClick={handleGlobalDelete} disabled={!selectedRow} className={`p-2 rounded-md ${selectedRow ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
                     <FiDelete />
                   </button>
+                  )}
                 </div>
             </div>
             <div className="flex justify-between items-center mb-6">
@@ -1287,7 +1325,7 @@ function Project() {
                                 filteredProjects
                                 .map((proj, index) => 
                                     <motion.tr key={proj.projectId || proj.project_id} className={`border-t border-gray-100 ${theme === 'dark' ? 'text-gray-100 hover:bg-gray-600' : 'text-gray-800 hover:bg-purple-50'} cursor-pointer transition duration-150`} onClick={() => handleRowClick(proj)} >
-                                        <td className="py-3 px-4 text-sm font-bold max-w-[200px] whitespace-normal"><button onClick={(e)=>handleSelectRow(proj,e)} className={`mr-2 px-2 py-1 rounded ${selectedRow===proj ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>  {selectedRow===proj ? 'Selected' : 'Select'}</button>{proj.title || proj.project_name}</td>
+                                        <td className="py-3 px-4 text-sm font-bold max-w-[200px] whitespace-normal">{(matchedArray || []).includes("SELECT_ROW") && (<button onClick={(e)=>handleSelectRow(proj,e)} className={`mr-2 px-2 py-1 rounded ${selectedRow===proj ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>  {selectedRow===proj ? 'Selected' : 'Select'}</button>  )}{proj.title || proj.project_name}</td>
                                         <td className="py-3 px-4 text-sm max-w-[150px] font-medium text-gray-600 whitespace-normal">  {getTeamLeadDisplay(proj)}</td>
                                         <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.startDate}</td>
                                         <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.endDate}</td>

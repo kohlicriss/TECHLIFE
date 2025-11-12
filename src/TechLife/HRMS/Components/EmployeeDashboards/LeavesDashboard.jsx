@@ -1166,8 +1166,6 @@ const LeavesDashboard = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [showMain,setShowMain]=useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-     const [error, setError] = useState(null);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
     const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
 
@@ -1320,7 +1318,7 @@ function deduplicateLeaves(leaves) {
 }, [employeeId]);
 
     const [showAddLeaveForm, setShowAddLeaveForm] = useState(false);
-     const casualLeaveQuota = leaveSummaryData.find((item) => item.type === "Casual Leave");
+    const casualLeaveQuota = leaveSummaryData.find((item) => item.type === "Casual Leave");
     const paidLeaveQuota = leaveSummaryData.find((item) => item.type === "Paid Leave");
     const sickLeaveQuota = leaveSummaryData.find((item) => item.type === "Sick Leave");
     const unpaidLeaveQuota = leaveSummaryData.find((item) => item.type === "Unpaid Leave");
