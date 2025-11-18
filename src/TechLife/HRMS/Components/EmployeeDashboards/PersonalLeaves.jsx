@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, SearchIcon, UserCircle, X } from "lucide-react";
 import { FaListUl, FaPlus, FaRegClock, FaTh } from "react-icons/fa";
 import { FiDelete, FiEdit } from "react-icons/fi";
+import { authApi } from "../../../../axiosInstance";
 
 const Form = ({ label, theme, helperText, type = 'text', ...props }) => {
     const inputClasses = theme === 'dark'
@@ -828,7 +829,7 @@ const TriggerLayout = ({ shiftName = "" }) => {
 );
 };
 const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {}, onShiftSelected = () => {} }) => {
-  const { theme } = useContext(Context);
+  const { theme, userData } = useContext(Context);
   const [employeeId, setEmployeeId] = useState("");
   const [shiftOptions, setShiftOptions] = useState([]);
   const [selectedShift, setSelectedShift] = useState("");
@@ -838,6 +839,24 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {}, onShiftSele
   const [loadError, setLoadError] = useState("");
   const [employeesForShift, setEmployeesForShift] = useState([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from MyTeam :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
   useEffect(() => {
     let mounted = true;
     const loadShifts = async () => {
@@ -910,7 +929,8 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {}, onShiftSele
   };
  const inputBase = `w-full px-4 py-2 rounded-lg transition-all duration-200 border text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/50 ${theme === 'dark' ? 'bg-gray-800 text-gray-50 border-gray-700 placeholder-gray-500 focus:ring-indigo-600/60' : 'bg-white text-gray-800 border-gray-300 placeholder-gray-400 focus:ring-indigo-500/50'}`;
   return (
-  <div className={`w-full max-w-7xl p-4 md:p-8 rounded-3xl shadow-2xl transition-colors duration-300 
+    <div>
+  {(matchedArray || []).includes("FILTER_SHIFTS") && (<div className={`w-full max-w-7xl p-4 md:p-8 rounded-3xl shadow-2xl transition-colors duration-300 
   ${theme === 'dark' 
     ? 'bg-gray-900 shadow-indigo-500/30' 
     : 'bg-white shadow-xl shadow-gray-200/50'}`}>
@@ -1001,7 +1021,8 @@ const ShiftFilterLayout = ({ onApply = () => {}, onReset = () => {}, onShiftSele
       })
     )}
   </div>
-  </div>
+  </div>)}
+</div>
   );
 };
 const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = () => {} }) => {
@@ -1094,15 +1115,6 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-stretch space-x-2 w-full md:w-auto">
-            <input
-              placeholder="Search Employee ID"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`${inputCls} flex-grow md:w-56`}
-            />
-            <button onClick={handleSearch} className="flex-shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 active:scale-[0.98]">
-              Search
-            </button>
           </div>
           <div className="flex items-center rounded-lg overflow-hidden shadow-sm border border-gray-300 dark:border-gray-700">
             <button
@@ -1226,7 +1238,7 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
 };
 const PersonalLeaves = () => {
   const { empId } = useParams();
-  const {theme} = useContext(Context);
+  const {theme,userData} = useContext(Context);
   const [employeeId, setEmployeeId] = useState('');
   const [activeView, setActiveView] = useState('view');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1250,6 +1262,24 @@ const PersonalLeaves = () => {
   useEffect(() => {
     handleViewEmployee(empId);
   }, [currentPage, filters]);
+  const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
+          const [matchedArray,setMatchedArray]=useState(null);
+           const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
+           useEffect(()=>{
+             let fetchedData=async()=>{
+                     let response = await authApi.get(`role-access/${LoggedUserRole}`);
+                     console.log("from MyTeam :",response.data);
+                     setLoggedPermissionData(response.data);
+             }
+             fetchedData();
+             },[])
+        
+             useEffect(()=>{
+             if(loggedPermissiondata){
+                 setMatchedArray(loggedPermissiondata?.permissions)
+             }
+             },[loggedPermissiondata]);
+             console.log(matchedArray);
   const loadAllEmployees = async () => {
     setLoading(true);
     setError('');
@@ -1675,7 +1705,7 @@ const PersonalLeaves = () => {
                  focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all
                  ${theme === "dark" ? "bg-gray-700 text-white placeholder-gray-400 border-gray-600" : "bg-gray-50 text-gray-900 placeholder-gray-500"}`}
              />
-             <button
+             {(matchedArray || []).includes("SEARCH_LEAVES") && (<button
                onClick={handleSearch}
                disabled={loading}
                className={`w-full md:w-auto px-6 py-3 font-semibold bg-indigo-600 text-white rounded-lg 
@@ -1684,7 +1714,8 @@ const PersonalLeaves = () => {
                  disabled:opacity-60 disabled:cursor-not-allowed`}
              >
                {loading ? 'Searching...' : 'Search Leaves'}
-             </button>
+             </button>)}
+             {(matchedArray || []).includes("ADD_PERSONAL_LEAVE") && (
              <button
                onClick={() => setActiveView('add')}
                disabled={loading}
@@ -1694,7 +1725,7 @@ const PersonalLeaves = () => {
                  disabled:opacity-60 disabled:cursor-not-allowed`}
              >
                {'ADD Employee'}
-             </button>
+             </button>)}
            </div>
          </div>
         )}
@@ -1797,7 +1828,7 @@ const PersonalLeaves = () => {
                             {employee.unpaidLeaves}
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium`}>
-                            <button
+                            {(matchedArray || []).includes("EDIT_LEAVES") && (<button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleUpdateDetails(employee.employeeId);
@@ -1806,7 +1837,8 @@ const PersonalLeaves = () => {
                               className="text-blue-600 hover:text-blue-900 mr-3"
                             >
                               Edit
-                            </button>
+                            </button>)}
+                             {(matchedArray || []).includes("DELETE_LEAVES") && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1815,7 +1847,7 @@ const PersonalLeaves = () => {
                               className="text-red-600 hover:text-red-900"
                             >
                               Delete
-                            </button>
+                            </button>)}
                           </td>
                         </tr>
                       ))}
