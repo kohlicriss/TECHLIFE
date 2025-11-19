@@ -388,7 +388,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
     const [projectData, setProjectData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const {theme} = useContext(Context);
+    const {theme, userData} = useContext(Context);
     const [showUpdateOverview, setShowUpdateOverview] = useState(false);
     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
           const [matchedArray,setMatchedArray]=useState(null);
@@ -782,7 +782,7 @@ const ProjectCard = () => {
                       <div className="flex items-center justify-between p-4 border-b">
                         <h3 className="text-lg font-semibold">Sprints for {projectId}</h3>
                         <div className="flex items-center gap-2">
-                          {(matchedArray || []).includes("CREATE_SPRINT") && (<button onClick={() => setShowSprintModal(false)} className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300">Close</button>   )}
+                          <button onClick={() => setShowSprintModal(false)} className="px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300">Close</button>
                         </div>
                       </div>
                       <div className="p-4">
