@@ -389,6 +389,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const {theme} = useContext(Context);
+    const [showUpdateOverview, setShowUpdateOverview] = useState(false);
     const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
           const [matchedArray,setMatchedArray]=useState(null);
            const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
@@ -407,7 +408,6 @@ const storeAccessToken = (rawTokenOrHeader) => {
              }
              },[loggedPermissiondata]);
              console.log(matchedArray);
-    const [showUpdateOverview, setShowUpdateOverview] = useState(false);
     useEffect(() => {
         if (propProjectId && propProjectId !== projectId) {
             setProjectId(propProjectId);
@@ -482,7 +482,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
     return (
         <div className="p-2 space-y-4">
             <div className="flex items-end justify-end border-b pb-2 mb-2">
-               {(matchedArray || []).includes("UPDATE_PROJECTOVERVIEW") && (<button title="Update Overview" onClick={() => setShowUpdateOverview(true)} className="p-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600"><FiEdit /></button>  )}
+               {(matchedArray || []).includes("EDIT_PROJECT_OVERVIEW") && (<button title="Update Overview" onClick={() => setShowUpdateOverview(true)} className="p-2 rounded-md bg-yellow-500 text-white hover:bg-yellow-600"><FiEdit /></button>)}
             </div>
             {/* General Project Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -751,14 +751,14 @@ const ProjectCard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2 ">
               <motion.div className={`p-4 rounded-lg shadow-lg border border-gray-200 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-yellow-50 to-white'}`} >
                    <div className="relative">
-                     <button
+                     {(matchedArray || []).includes("CREATE_SPRINT") && (<button
                        type="button"
                        title="Open Sprints"
                        onClick={() => setShowSprintModal(true)}
                        className="absolute top-2 right-2 z-10 inline-flex items-center gap-2 px-2 py-1 rounded-md bg-indigo-600 text-white text-xs hover:bg-indigo-700"
                      >
                        Sprints
-                     </button>
+                     </button>)}
                      <h2 className="text-xl font-bold mb-2 border-b pb-2 text-yellow-600">Key Metrics (KPIs)</h2>
                      <div className="mt-2">
                        <dl className="space-y-3">
@@ -795,8 +795,9 @@ const ProjectCard = () => {
                     <div className="flex items-start justify-between border-b pb-2 mb-2">
               <h1 className={`text-3xl font-extrabold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Project Overview ({projectId})</h1>
               <div className="flex items-center gap-2">
-                {(matchedArray || []).includes("CREATE_PROJECTOVERVIEW") && (<button title="Create Overview" onClick={() => setShowCreateOverview(true)} className="p-2 rounded-md bg-green-600 text-white hover:bg-green-700"><FaPlus /></button>  )}
-                {(matchedArray || []).includes("DELETE_PROJECTOVERVIEW") && (<button title="Delete Overview" onClick={handleDeleteOverview} disabled={overviewSubmitting} className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"><FiDelete /></button>  )}
+                {(matchedArray || []).includes("CREATE_PROJECT_OVERVIEW") && (<button title="Create Overview" onClick={() => setShowCreateOverview(true)} className="p-2 rounded-md bg-green-600 text-white hover:bg-green-700"><FaPlus /></button>
+                )}
+                {(matchedArray || []).includes("DELETE_PROJECT_OVERVIEW") && (<button title="Delete Overview" onClick={handleDeleteOverview} disabled={overviewSubmitting} className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"><FiDelete /></button>)}
               </div>
             </div>
                    <ProjectDetails projectId={projectId} />
@@ -1288,7 +1289,8 @@ function Project() {
                     <FiEdit />
                   </button>
                   )}
-                  {(matchedArray || []).includes("DELETE_PROJECT") && (<button title="Delete selected" onClick={handleGlobalDelete} disabled={!selectedRow} className={`p-2 rounded-md ${selectedRow ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
+                  {(matchedArray || []).includes("DELETE_PROJECT") && (
+                  <button title="Delete selected" onClick={handleGlobalDelete} disabled={!selectedRow} className={`p-2 rounded-md ${selectedRow ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>
                     <FiDelete />
                   </button>
                   )}
@@ -1325,7 +1327,7 @@ function Project() {
                                 filteredProjects
                                 .map((proj, index) => 
                                     <motion.tr key={proj.projectId || proj.project_id} className={`border-t border-gray-100 ${theme === 'dark' ? 'text-gray-100 hover:bg-gray-600' : 'text-gray-800 hover:bg-purple-50'} cursor-pointer transition duration-150`} onClick={() => handleRowClick(proj)} >
-                                        <td className="py-3 px-4 text-sm font-bold max-w-[200px] whitespace-normal">{(matchedArray || []).includes("SELECT_ROW") && (<button onClick={(e)=>handleSelectRow(proj,e)} className={`mr-2 px-2 py-1 rounded ${selectedRow===proj ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>  {selectedRow===proj ? 'Selected' : 'Select'}</button>  )}{proj.title || proj.project_name}</td>
+                                        <td className="py-3 px-4 text-sm font-bold max-w-[200px] whitespace-normal">{(matchedArray || []).includes("SELECT_PROJECT") && (<button onClick={(e)=>handleSelectRow(proj,e)} className={`mr-2 px-2 py-1 rounded ${selectedRow===proj ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>  {selectedRow===proj ? 'Selected' : 'Select'}</button>)}{proj.title || proj.project_name}</td>
                                         <td className="py-3 px-4 text-sm max-w-[150px] font-medium text-gray-600 whitespace-normal">  {getTeamLeadDisplay(proj)}</td>
                                         <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.startDate}</td>
                                         <td className="py-3 px-4 text-xs sm:text-sm whitespace-nowrap">{proj.endDate}</td>

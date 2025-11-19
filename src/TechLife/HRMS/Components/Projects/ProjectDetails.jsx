@@ -18,7 +18,17 @@ const ProjectDetails = () => {
   const reportsRef = useRef(null);
   const [open, setOpen] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [departmentData, setDepartmentData] = useState({});
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [departmentLoading, setDepartmentLoading] = useState(false);
+  const [departmentError, setDepartmentError] = useState(null);
 
+  useEffect(() => {
+  if (selectedYear && selectedMonth) {
+    fetchDepartmentProgress(selectedYear, selectedMonth);
+  }
+}, [selectedYear, selectedMonth]);
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -366,37 +376,38 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
   const [progress, setprogress] = useState([]);
    const [selectedTask, setSelectedTask] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
-     const loadTasks = async (pid) => {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-      const url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/tasks`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
-      if (!res.ok) {
-        console.warn('Failed to load tasks', res.status);
-        setTasks([]);
-        return;
-      }
-      const body = await res.json().catch(() => []);
-      const rawTasks = Array.isArray(body) ? body : (Array.isArray(body.tasks) ? body.tasks : []);
-      const mapped = rawTasks.map((t, i) => ({
-        id: t.id ?? i + 1,
-        title: t.title ?? `Task ${i + 1}`,
-        status: t.status ?? 'Not Started',
-        description: t.description ?? t.desc ?? '',
-        statusColor: getStatusClass(t.status),
-      }));
-      setTasks(mapped);
-      if (mapped.length) {
-        setSelectedTask(mapped[0].id);
-        const empId = userData?.employeeId || null;
-        await loadTaskProgress(pid, empId, mapped[0].id, mapped[0].title);
-      }
-    } catch (err) {
-      console.error('loadTasks error', err);
+ const loadTasks = async (pid) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    const url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/tasks`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+    if (!res.ok) {
+      console.warn('Failed to load tasks', res.status);
       setTasks([]);
+      return;
     }
-  };
+    const body = await res.json().catch(() => []);
+    const rawTasks = Array.isArray(body) ? body : (Array.isArray(body.tasks) ? body.tasks : []);
+    const mapped = rawTasks.map((t, i) => ({
+      id: t.id ?? t.taskId ?? i + 1,
+      taskId: t.taskId || t.id || `TASK${String(i + 1).padStart(3, '0')}`, // Add taskId field
+      title: t.title ?? `Task ${i + 1}`,
+      status: t.status ?? 'Not Started',
+      description: t.description ?? t.desc ?? '',
+      statusColor: getStatusClass(t.status),
+    }));
+    setTasks(mapped);
+    if (mapped.length) {
+      setSelectedTask(mapped[0].id);
+      const empId = userData?.employeeId || null;
+      await loadTaskProgress(pid, empId, mapped[0].id, mapped[0].title);
+    }
+  } catch (err) {
+    console.error('loadTasks error', err);
+    setTasks([]);
+  }
+};
    const loadTaskProgress = async (pid, empId = null, taskId = null, taskTitle = null) => {
     setProgressLoading(true);
     try {
@@ -409,7 +420,7 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
 
       let url;
       if (taskId) {
-        url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/${encodeURIComponent("TASK005")}/progress`;
+        url = `https://hrms.anasolconsultancyservices.com/api/employee/${encodeURIComponent(pid)}/${encodeURIComponent(taskId)}/progress`;
         if (empId) url += `?employeeId=${encodeURIComponent(empId)}`;
       } else if (empId) {
         url = `https://hrms.anasolconsultancyservices.com/api/employee/project/${encodeURIComponent(pid)}/employee/${encodeURIComponent(empId)}/details`;
@@ -454,30 +465,92 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
     if (!pid) return;
     await loadTaskProgress(pid, empId, task?.id, task?.title || null);
   };
-  const departmentData = {
-    May: [
-      { department: "Frontend", progress: 10 }, { department: "Backend", progress: 55 }, { department: "Database", progress: 50 },
-      { department: "Integration", progress: 30 }, { department: "API Integration", progress: 5 }, { department: "Deployment", progress: 5 },
-    ],
-    Jun: [
-      { department: "Frontend", progress: 35 }, { department: "Backend", progress: 65 }, { department: "Database", progress: 70 },
-      { department: "Integration", progress: 45 }, { department: "API Integration", progress: 10 }, { department: "Deployment", progress: 5 },
-    ],
-    Jul: [
-      { department: "Frontend", progress: 60 }, { department: "Backend", progress: 80 }, { department: "Database", progress: 75 },
-      { department: "Integration", progress: 50 }, { department: "API Integration", progress: 10 }, { department: "Deployment", progress: 5 },
-    ],
-    Aug: [
-      { department: "Frontend", progress: 70 }, { department: "Backend", progress: 90 }, { department: "Database", progress: 80 },
-      { department: "Integration", progress: 60 }, { department: "API Integration", progress: 30 }, { department: "Deployment", progress: 20 },
-    ],
-    Sept: [
-      { department: "Frontend", progress: 80 }, { department: "Backend", progress: 92 }, { department: "Database", progress: 83 },
-      { department: "Integration", progress: 70 }, { department: "API Integration", progress: 40 }, { department: "Deployment", progress: 30 },
-    ],
-  };
+const fetchDepartmentProgress = async (year, month) => {
+  setDepartmentLoading(true);
+  setDepartmentError(null);
+  
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setDepartmentError('Missing access token');
+      return;
+    }
+
+    const url = `https://hrms.anasolconsultancyservices.com/api/employee/departments/progress?year=${year}&month=${month}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch department progress: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Transform the API data to match chart format
+    const chartData = Array.isArray(data) ? data.map(item => ({
+      department: item.role || 'Unknown',
+      progress: Math.round(item.progress * 100) || 0, // Convert to percentage if needed
+    })) : [];
+
+    // Update department data for the specific month
+    setDepartmentData(prev => ({
+      ...prev,
+      [`${getMonthName(month)} ${year}`]: chartData
+    }));
+
+  } catch (error) {
+    console.error('Error fetching department progress:', error);
+    setDepartmentError(error.message);
+  } finally {
+    setDepartmentLoading(false);
+  }
+};
+
+// Helper functions remain the same
+const getMonthName = (monthNumber) => {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[monthNumber - 1] || 'Invalid Month';
+};
+
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let i = currentYear - 2; i <= currentYear + 2; i++) {
+    years.push(i);
+  }
+  return years;
+};
+
+const getMonthOptions = () => {
+  return [
+    { value: 1, name: 'January' },
+    { value: 2, name: 'February' },
+    { value: 3, name: 'March' },
+    { value: 4, name: 'April' },
+    { value: 5, name: 'May' },
+    { value: 6, name: 'June' },
+    { value: 7, name: 'July' },
+    { value: 8, name: 'August' },
+    { value: 9, name: 'September' },
+    { value: 10, name: 'October' },
+    { value: 11, name: 'November' },
+    { value: 12, name: 'December' },
+  ];
+};
+
+// Update the selectedMonth state initialization
+
  const COLOR=["purple"]
-  const [selectedMonth, setSelectedMonth] = useState(Object.keys(departmentData)[0]); // Default to the first month
+ // Default to the first month
   const displayProject = project || projectData?.raw || { title: "Loading project...", projectId: "" };
   const tasksDone = tasks.filter((task) => task.status === "Completed").length;
   const totalTasks = tasks.length;
@@ -861,31 +934,145 @@ const textColor = theme==='dark' ? "#FFFFFF" : "#000000";
           </section>
           <section ref={reportsRef} className="mt-10 mb-20 scroll-mt-24">
             <div className={`${theme==='dark'?'bg-gray-500 text-gray-200':'bg-stone-100 text-gray-800'} p-6 rounded-xl shadow-md`}>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold">Department Progress</h2>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="px-4 py-2 rounded-lg bg-orange-400 text-white font-medium shadow-md cursor-pointer focus:outline-none"
-                >
-                  <option disabled>Month</option>
-                  {Object.keys(departmentData).map((month) => (
-                    <option key={month} value={month} className="text-black">{month}</option>
-                  ))}
-                </select>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Year Dropdown */}
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="px-4 py-2 rounded-lg bg-blue-500 text-white font-medium shadow-md cursor-pointer focus:outline-none hover:bg-blue-600 transition"
+                  >
+                    <option disabled>Select Year</option>
+                    {getYearOptions().map((year) => (
+                      <option key={year} value={year} className="text-black">
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+          
+                  {/* Month Dropdown */}
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="px-4 py-2 rounded-lg bg-orange-400 text-white font-medium shadow-md cursor-pointer focus:outline-none hover:bg-orange-500 transition"
+                  >
+                    <option disabled>Select Month</option>
+                    {getMonthOptions().map((month) => (
+                      <option key={month.value} value={month.value} className="text-black">
+                        {month.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className={`p-2 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-white to-blue-50 '}  rounded-lg`}>
-                {isMounted &&  ( // Conditional rendering based on isMounted state
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={departmentData[selectedMonth]} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                      <XAxis dataKey="department" stroke={textColor} tick={{ fill: textColor }}  />
-                      <YAxis domain={[0, 100]} stroke={textColor} tick={{ fill: textColor }} />
-                      <Tooltip contentStyle={{ backgroundColor: theme ==='dark' ? "#63676cff" : "#fff", border: theme ? "1px solid #4B5563" : "1px solid #ccc" }}formatter={(value) => `${value}%`} />
-                      <Bar dataKey="progress"fill={barColor}  barSize={40} radius={[5, 5, 0, 0]} barCategoryGap="20%" />
-                    </BarChart>
-                  </ResponsiveContainer>
+          
+              {/* Error Display */}
+              {departmentError && (
+                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                  Error: {departmentError}
+                </div>
+              )}
+          
+              {/* Chart Container */}
+              <div className={`p-2 ${theme==='dark'?'bg-gray-800 ':'bg-gradient-to-r from-white to-blue-50 '} rounded-lg`}>
+                {departmentLoading ? (
+                  <div className="flex items-center justify-center h-[350px]">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                      <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'}`}>Loading department progress...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {isMounted && departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`] ? (
+                      <ResponsiveContainer width="100%" height={350}>
+                        <BarChart 
+                          data={departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`]} 
+                          margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+                        >
+                          <XAxis 
+                            dataKey="department" 
+                            stroke={textColor} 
+                            tick={{ fill: textColor, fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                          />
+                          <YAxis 
+                            domain={[0, 100]} 
+                            stroke={textColor} 
+                            tick={{ fill: textColor }} 
+                            label={{ value: 'Progress (%)', angle: -90, position: 'insideLeft' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: theme === 'dark' ? "#374151" : "#fff", 
+                              border: theme === 'dark' ? "1px solid #4B5563" : "1px solid #ccc",
+                              borderRadius: "8px"
+                            }}
+                            formatter={(value) => [`${value}%`, 'Progress']}
+                            labelFormatter={(label) => `Department: ${label}`}
+                          />
+                          <Bar 
+                            dataKey="progress"
+                            fill={barColor}  
+                            barSize={40} 
+                            radius={[5, 5, 0, 0]} 
+                            barCategoryGap="20%" 
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[350px]">
+                        <div className="text-center">
+                          <p className={`${theme==='dark'?'text-gray-200':'text-gray-600'} text-lg`}>
+                            No data available for {getMonthName(selectedMonth)} {selectedYear}
+                          </p>
+                          <p className={`${theme==='dark'?'text-gray-300':'text-gray-500'} text-sm mt-2`}>
+                            Please select a different month or year
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
+          
+              {/* Data Summary */}
+              {departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`] && (
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className={`p-3 rounded-lg ${theme==='dark'?'bg-gray-700':'bg-white'} text-center`}>
+                    <p className={`text-sm ${theme==='dark'?'text-gray-300':'text-gray-600'}`}>Departments</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`].length}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${theme==='dark'?'bg-gray-700':'bg-white'} text-center`}>
+                    <p className={`text-sm ${theme==='dark'?'text-gray-300':'text-gray-600'}`}>Avg Progress</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {Math.round(
+                        departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`]
+                          .reduce((sum, dept) => sum + dept.progress, 0) / 
+                        departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`].length
+                      )}%
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${theme==='dark'?'bg-gray-700':'bg-white'} text-center`}>
+                    <p className={`text-sm ${theme==='dark'?'text-gray-300':'text-gray-600'}`}>Highest</p>
+                    <p className="text-xl font-bold text-purple-600">
+                      {Math.max(...departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`].map(d => d.progress))}%
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${theme==='dark'?'bg-gray-700':'bg-white'} text-center`}>
+                    <p className={`text-sm ${theme==='dark'?'text-gray-300':'text-gray-600'}`}>Lowest</p>
+                    <p className="text-xl font-bold text-orange-600">
+                      {Math.min(...departmentData[`${getMonthName(selectedMonth)} ${selectedYear}`].map(d => d.progress))}%
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>

@@ -254,41 +254,25 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose })
   // *** REPLACED WITH CORRECTED LOGIC ***
   const shiftTimeToISTDisplay = (timeStr, dateIso = null) => {
     if (!timeStr || timeStr === 'N/A') return 'N/A';
-
-
-
     const baseDateString = dateIso || new Date().toISOString().slice(0, 10);
-
     let d = new Date(`${baseDateString}T${timeStr}`);
-
-
-
     if (isNaN(d.getTime())) {
       try {
         const parts = timeStr.split(':');
         let h = parseInt(parts[0], 10) || 0;
         let m = parseInt(parts[1], 10) || 0;
-
-
-
         d = new Date(baseDateString);
         d.setHours(h, m, 0, 0);
       } catch {
         return timeStr;
       }
     }
-
     // Explicitly add 330 minutes (5 hours 30 minutes) as requested
-
     d.setMinutes(d.getMinutes() + IST_OFFSET_MINUTES);
-
-
-
     // Format to 12-hour IST display
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
   // *** END OF REPLACEMENT ***
-
   useEffect(() => {
     let mounted = true;
     if (!dateString || !employeeId) {
