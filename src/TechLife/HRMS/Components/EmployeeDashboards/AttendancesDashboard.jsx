@@ -268,7 +268,7 @@ const DayDetailsModal = ({ dayData, eventsOnThisDay: propEvents = [], onClose })
       }
     }
     // Explicitly add 330 minutes (5 hours 30 minutes) as requested
-    d.setMinutes(d.getMinutes() + IST_OFFSET_MINUTES);
+    d.setMinutes(d.getMinutes());
     // Format to 12-hour IST display
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
