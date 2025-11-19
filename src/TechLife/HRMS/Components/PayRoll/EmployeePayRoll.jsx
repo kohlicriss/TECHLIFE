@@ -135,11 +135,11 @@ const EmployeePayRoll = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  // Separate endpoints for payroll and employee details
+ 
   useEffect(() => {
     const fetchPayrollData = async () => {
       if (!token || !empId) {
-        console.error('No empId found in URL');
+    
         setError('Employee ID not found in URL.');
         setLoading(false);
         return;
@@ -156,7 +156,7 @@ const EmployeePayRoll = () => {
           }
         );
         
-        console.log('Payroll API Response:', payrollResponse.data);
+        
         
         if (payrollResponse.data) {
           const payrollData = payrollResponse.data.data || 
@@ -171,7 +171,7 @@ const EmployeePayRoll = () => {
         await fetchEmployeeDetails();
 
       } catch (err) {
-        console.error('Error fetching payroll data:', err);
+       
         setError(`Failed to fetch payroll data: ${err.response?.data?.message || err.message}`);
         setPayrollData([]);
       } finally {
@@ -183,27 +183,31 @@ const EmployeePayRoll = () => {
   }, [empId]);
 
   const fetchEmployeeDetails = async () => {
-    try {
-      const employeeResponse = await axios.get(
-        `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      
-      console.log('Employee details response:', employeeResponse.data);
-      
-      if (employeeResponse.data) {
-        const employeeData = employeeResponse.data.data || employeeResponse.data;
-        setEmployee(employeeData);
-        setEditFormData(employeeData);
-      } else {
-        setEmployee(null);
+  try {
+    const employeeResponse = await axios.get(
+      `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
       }
-    } catch (err) {
-      console.error('Error fetching employee details:', err);
+    );
+    
+    
+    if (employeeResponse.data) {
+      const employeeData = employeeResponse.data.data || employeeResponse.data;
+      
+      
+      setEmployee(employeeData);
+      setEditFormData(employeeData);
+      
+     
+    } else {
+      
+      setEmployee(null);
     }
-  };
+  } catch (err) {
+    console.error('Error fetching employee details:', err);
+  }
+};
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -497,7 +501,7 @@ const handleDownloadPayslip = async (payslip) => {
 
   const handleEdit = () => {
     setIsEditing(true);
-    setActiveField(null); // Reset active field when starting edit
+    setActiveField(null); 
   };
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -507,49 +511,71 @@ const handleDownloadPayslip = async (payslip) => {
     }));
   }, []);
 
-  const handleSave = async () => {
-    try {
-      setSaveLoading(true);
-      
-      const updateData = {
-        empName: editFormData.empName,
-        email: editFormData.email,
-        phoneNumber: editFormData.phoneNumber,
-        accountNumber: editFormData.accountNumber,
-        bankName: editFormData.bankName,
-        panNumber: editFormData.panNumber,
-        aadharNumber: editFormData.aadharNumber,
-        ifsccode: editFormData.ifsccode,
-        pfnum: editFormData.pfnum,
-        uanNumber: editFormData.uanNumber,
-        department: editFormData.department,
-        designation: editFormData.designation
-      };
+const handleSave = async () => {
+  try {
+    setSaveLoading(true);
+    
+    const updateData = {
+      empName: editFormData.empName,
+      email: editFormData.email,
+      phoneNumber: editFormData.phoneNumber,
+      accountNumber: editFormData.accountNumber,
+      bankName: editFormData.bankName,
+      panNumber: editFormData.panNumber,
+      aadharNumber: editFormData.aadharNumber,
+      ifsccode: editFormData.ifsccode,
+      pfnum: editFormData.pfnum,
+      uanNumber: editFormData.uanNumber,
+      department: editFormData.department,
+      designation: editFormData.designation
+    };
 
-      console.log('Updating employee data:', updateData);
+    console.log('Updating employee data:', updateData);
 
-      const response = await axios.put(
-        `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}/update`,
-        updateData,
-        {
-          headers: { Authorization: `Bearer ${token}` }
+    const response = await axios.put(
+      `https://hrms.anasolconsultancyservices.com/api/payroll/employee/${empId}/update`,
+      updateData,
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
-
-      if (response.data && response.data.success) {
-        setEmployee(editFormData);
-        setIsEditing(false);
-        alert('Employee details updated successfully!');
-      } else {
-        alert('Failed to update employee details');
       }
-    } catch (err) {
-      console.error('Error updating employee details:', err);
-      alert(`Failed to update employee details: ${err.message}`);
-    } finally {
-      setSaveLoading(false);
+    );
+
+
+
+    if (response.data && response.data.success) {
+    
+      const updatedEmployee = response.data.employee;
+      
+      if (updatedEmployee) {
+   
+        setEmployee(updatedEmployee);
+        setEditFormData(updatedEmployee);
+      } else {
+        
+        console.log('No employee data in response, refetching...');
+        await fetchEmployeeDetails();
+      }
+      
+      setIsEditing(false);
+      alert('Employee details updated successfully!');
+    } else {
+      alert('Failed to update employee details: ' + (response.data?.message || 'Unknown error'));
     }
-  };
+  } catch (err) {
+    const errorMessage = err.response?.data?.message || err.message;
+    
+    if (err.response?.status === 401) {
+      alert('Admin access required to update employee details. Please check your permissions.');
+    } else {
+      alert(`Failed to update employee details: ${errorMessage}`);
+    }
+  } finally {
+    setSaveLoading(false);
+  }
+};
 
   const handleCancel = () => {
     setIsEditing(false);
@@ -743,6 +769,12 @@ const handleDownloadPayslip = async (payslip) => {
                 isEditing={false}
               />
               <DetailField 
+                key="intern"
+                label="Intern" 
+                value={employee.stipend} 
+                isEditing={false}
+              />
+              <DetailField 
                 key="level"
                 label="Level" 
                 value={employee.level} 
@@ -909,7 +941,7 @@ const handleDownloadPayslip = async (payslip) => {
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               onClick={handleViewDetails}
             >
-              View My Details
+              View  Details
             </button>
             <button 
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

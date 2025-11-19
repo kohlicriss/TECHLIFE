@@ -19,6 +19,8 @@ import Departmentspage from "./Departments/Departmentspage";
 import HomePayRoll from "./PayRoll/HomePayRoll";
 import PersonalLeaves from "./EmployeeDashboards/PersonalLeaves";
 
+import JobsPage from "./Jobs/JobsPage";
+
 // Lazy imports with error handling
 const NotificationSystem = lazy(() => 
     import("./Notifications/NotificationSystem").catch(() => ({
@@ -472,7 +474,16 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
-                                            
+                                              <Route 
+                                                path="/jobs/:empId/*" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                                                        <RouteWrapper moduleName="Jobs Page">
+                                                            <JobsPage />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
                                             {/* Employee Specific Dashboards */}
                                             <Route 
                                                 path="/attendance/:empId/*" 

@@ -530,6 +530,11 @@ const Achivements = () => {
     return filePath;
   };
 
+
+  const handleOpenCertification = (certUrl) => {
+    if (!certUrl) return;
+    window.open(certUrl, '_blank');
+  };
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${
       theme === 'dark'

@@ -48,6 +48,7 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
     { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
     { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" },
+     { name: "Jobs", icon: <Database size={18} />, path: empId ? `/jobs/${empId}` : "/jobs" },
      { 
       name: "Pay Roll", 
       icon: <TfiMoney size={18}/>, 

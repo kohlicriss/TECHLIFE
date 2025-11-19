@@ -40,15 +40,18 @@ const [totalCount, setTotalCount] = useState(0);
   const token = localStorage.getItem("accessToken");
    const isDark = theme === "dark";
   
- 
 const sidebarItems = [
   { tab: "My Tickets", icon: Ticket, key: "my-tickets" },
-  ...(normalizedRole === "ADMIN" || normalizedRole === "HR" || normalizedRole === "MANAGER" 
+  
+ 
+  ...((normalizedRole === "ADMIN" || 
+       normalizedRole === "HR" || 
+       normalizedRole === "MANAGER" ||
+       matchedArray.includes("VIEW_ASSIGNED")) 
     ? [{ tab: "Assigned Tickets", icon: Ticket, key: "assigned-tickets" }] 
     : [])
 ];
 
-console.log('Working sidebarItems:', sidebarItems);
 
 
  
