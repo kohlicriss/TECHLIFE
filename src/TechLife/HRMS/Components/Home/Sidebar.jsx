@@ -59,11 +59,11 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
   ]
   if (userRole === 'ADMIN') {
     navItems.push({ name: "Permissions", icon: <UserRoundCog size={18} />, path: empId ? `/permissions/${empId}` : "/permissions" });
-    navItems.push({ name: "ADMIN", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
+    //navItems.push({ name: "ADMIN", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
   }
-  if (userRole === 'HR') {
+  {/*if (userRole === 'HR') {
     navItems.push({ name: "HR", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
-  }
+  }*/}
 
   return (
     <>

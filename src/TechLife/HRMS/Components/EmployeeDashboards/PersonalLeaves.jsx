@@ -1467,19 +1467,19 @@ const PersonalLeaves = () => {
       <div className="max-w-7xl mx-auto">
         <h1 className={`text-3xl font-bold mb-8 ${theme === "dark" ? "text-gray-100" : "text-gray-900"}`}>Employee Leaves Management</h1>
 <AnimatePresence>
-  {!sidebarOpen && (
-    <motion.button
-      key="open-nav"
-      onClick={() => setSidebarOpen(true)}
-      className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-700 text-white p-2 rounded-l-xl shadow-2xl z-50 hover:bg-indigo-600 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/50"
-      initial={{ x: 60, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 60, opacity: 0 }}
-      aria-label="Open Navigation"
-    >
-      <ChevronLeft className="h-6 w-6" /> 
-    </motion.button>
-  )}
+  {(!sidebarOpen || showShiftModal) && (
+  <motion.button
+    key="open-nav"
+    onClick={() => setSidebarOpen(true)}
+    className="fixed right-0 top-1/2 transform -translate-y-1/2 bg-indigo-700 text-white p-2 rounded-l-xl shadow-2xl z-50 hover:bg-indigo-600 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/50"
+    initial={{ x: 60, opacity: 0 }}
+    animate={{ x: 0, opacity: 1 }}
+    exit={{ x: 60, opacity: 0 }}
+    aria-label="Open Navigation"
+  >
+    <ChevronLeft className="h-6 w-6" /> 
+  </motion.button>
+)}
 
   {sidebarOpen && (
     <>
@@ -1545,6 +1545,7 @@ const PersonalLeaves = () => {
               setSidebarOpen(false);
               setShiftQueryName("Morning");
               setActiveView('shift');
+              setSidebarOpen(false);
             }}
             className={`text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
               theme === 'dark' ? 'hover:bg-gray-700 text-gray-300 hover:text-white' : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900'

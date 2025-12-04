@@ -15,7 +15,6 @@ import {
     Label,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import Calendar from "./Calender";
 import axios from 'axios';
 import { Navigate, useParams } from "react-router-dom";
 import { Context } from "../HrmsContext";
@@ -26,7 +25,6 @@ import { FaFileAlt, FaRegFileAlt } from "react-icons/fa";
 import { LiaFileAlt, LiaFileAltSolid } from "react-icons/lia";
 import { IoPersonOutline } from "react-icons/io5";
 import { authApi, dashboardApi } from "../../../../axiosInstance";
-import EmployeeTable from "./TotalEmployeeLeaves";
 
 
 const FormField = ({ label, theme, children, helperText, className = '' }) => {
@@ -1441,17 +1439,6 @@ function deduplicateLeaves(leaves) {
               {sidebarOpen && <div className="md:hidden fixed inset-0 bg-black opacity-50 z-30" onClick={() => setSidebarOpen(false)}></div>}
             <main className={`p-2 sm:p-2 lg:p-2 ${sidebarOpen && showSidebar ? 'filter blur-sm' : ''}`}>
                 <AnimatePresence mode="wait">
-                    {sidebarView === 'leaves' &&(
-                     <motion.div
-                         key="leaves"
-                         initial={{ opacity: 0, y: 20 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         exit={{ opacity: 0, y: -20 }}
-                        //  transition={{ duration: 0.3 }}
-                     >
-                         <EmployeeTable onBack={() => setSidebarView(null)} />
-                     </motion.div>
-                 )}
                     {sidebarView ==='leaveReports' &&  (
                         <motion.div
                             key="reports"

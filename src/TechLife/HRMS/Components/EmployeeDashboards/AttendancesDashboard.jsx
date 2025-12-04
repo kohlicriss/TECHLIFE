@@ -12,7 +12,7 @@ import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
 import { authApi, dashboardApi, publicinfoApi } from "../../../../axiosInstance";
 import { IoPersonOutline } from "react-icons/io5";
-import AttendanceTable from "./TotalEmployeeAttendance";
+//import AttendanceTable from "./TotalEmployeeAttendance";
 import { LiaFileAlt } from "react-icons/lia";
 import { Calendar, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Edit, X } from "lucide-react";
 
@@ -2370,44 +2370,63 @@ const fetchTodayAttendance = useCallback(async () => {
           const logoutUtc = logoutRaw ? toUtcDate(logoutRaw) : null;
 
           // --- CHANGED: explicitly add IST offset (+5:30) to parsed UTC dates and format ---
-          const shiftAndFormat = (utcDate, rawValue) => {
-            if (!rawValue) return 'N/A';
-            try {
-              // try using already-parsed UTC date if available
-              let base = (utcDate && !isNaN(utcDate.getTime())) ? utcDate : null;
+         const shiftAndFormat = (utcDate, rawValue) => {
+  if (!rawValue) return 'N/A';
 
-              // fallback: if raw is HH:mm build a UTC instant for dateForTime
-              if (!base) {
-                const hh = tryNormalizeTo24(String(rawValue));
-                if (hh) {
-                  base = new Date(`${dateForTime}T${hh}:00Z`);
-                }
-              }
+  // If raw value already contains an HH:MM-like string, normalize and return it
+  try {
+    const maybe = String(rawValue).trim();
+    // tryNormalizeTo24 is used elsewhere in this file; use it if available
+    if (typeof tryNormalizeTo24 === 'function') {
+      const normalized = tryNormalizeTo24(maybe);
+      if (normalized && /^[0-2]?\d:[0-5]\d$/.test(normalized)) {
+        // ensure zero-pad to HH:MM
+        const [h, m] = normalized.split(':');
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+    }
+    // fallback: if string itself matches HH:MM or HH:MM:SS, extract HH:MM
+    const match = maybe.match(/([0-2]?\d):([0-5]\d)(?::[0-5]\d)?/);
+    if (match) {
+      return `${String(match[1]).padStart(2, '0')}:${String(match[2]).padStart(2, '0')}`;
+    }
+  } catch {
+    // ignore and continue to parse as Date
+  }
 
-              // final parse fallback
-              if (!base) {
-                const maybe = new Date(String(rawValue));
-                if (!isNaN(maybe.getTime())) base = maybe;
-              }
+  try {
+    // Use the already-parsed UTC date if available
+    let base = (utcDate && !isNaN(utcDate.getTime())) ? utcDate : null;
 
-              if (!base || isNaN(base.getTime())) return String(rawValue);
+    // fallback: if raw is HH:mm build a UTC instant for dateForTime (there is code above that defines dateForTime)
+    if (!base) {
+      const hhmm = (typeof tryNormalizeTo24 === 'function') ? tryNormalizeTo24(String(rawValue)) : null;
+      if (hhmm && /^[0-2]?\d:[0-5]\d$/.test(hhmm)) {
+        // dateForTime is defined in the outer scope in this file
+        base = new Date(`${dateForTime}T${hhmm}:00Z`);
+      }
+    }
 
-              // add IST offset (+5:30) explicitly
-              const istMs = base.getTime() + IST_OFFSET_MINUTES * 60 * 1000;
-              const istDate = new Date(istMs);
+    // final parse fallback
+    if (!base) {
+      const maybeDate = new Date(String(rawValue));
+      if (!isNaN(maybeDate.getTime())) base = maybeDate;
+    }
 
-              // Format the shifted instant as a 12-hour India-style time
-              return new Intl.DateTimeFormat('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'UTC' // we've already shifted, present as UTC to avoid double TZ conversion
-              }).format(istDate);
-            } catch {
-              return String(rawValue);
-            }
-          };
+    if (!base || isNaN(base.getTime())) return 'N/A';
 
+    // add IST offset minutes (IST_OFFSET_MINUTES is used elsewhere in this file)
+    const istMs = base.getTime() + (typeof IST_OFFSET_MINUTES === 'number' ? IST_OFFSET_MINUTES : 330) * 60 * 1000;
+    const istDate = new Date(istMs);
+
+    // Return HH:MM using UTC fields of shifted instant (to avoid double timezone conversion)
+    const hh = String(istDate.getUTCHours()).padStart(2, '0');
+    const mm = String(istDate.getUTCMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  } catch {
+    return 'N/A';
+  }
+};
 
           const loginDisplay = shiftAndFormat(loginUtc, loginRaw);
           const logoutDisplay = shiftAndFormat(logoutUtc, logoutRaw);
@@ -2560,7 +2579,7 @@ const fetchTodayAttendance = useCallback(async () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <LiaFileAlt className="w-5 h-5 inline-block mr-2" />Total Employee Attendance
+              {/*<LiaFileAlt className="w-5 h-5 inline-block mr-2" />Total Employee Attendance*/}
             </motion.h3>
             <motion.h3
               className={`text-lg font-bold   cursor-pointer mb-4 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
@@ -2598,7 +2617,7 @@ const fetchTodayAttendance = useCallback(async () => {
           </header>
           {/* Conditional Rendering of Main Content */}
           <AnimatePresence mode="wait">
-            {sidebarView === 'attendance' && (
+            {/*{sidebarView === 'attendance' && (
               <motion.div
                 key="attendance"
                 initial={{ opacity: 0, y: 20 }}
@@ -2608,7 +2627,7 @@ const fetchTodayAttendance = useCallback(async () => {
               >
                 <AttendanceTable onBack={() => setSidebarView(null)} />
               </motion.div>
-            )}
+            )}*/}
             {sidebarView === 'attendanceReport' && (
               <motion.div
                 key="reports"
