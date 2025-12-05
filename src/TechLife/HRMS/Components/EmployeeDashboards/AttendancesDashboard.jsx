@@ -698,7 +698,7 @@ const EventListModal = ({ currentYear, currentMonth, onClose }) => {
     // Non-overlay modal: render inline so it stays inside App layout
     <div className=" absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
 
-      <div className={`max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-2 sm:p-6 relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className={`max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto shadow-2xl rounded-xl p-2 sm:p-6 relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
 
         <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-4">
           <h2 className="text-2xl font-extrabold text-teal-600 flex items-center">
@@ -715,8 +715,8 @@ const EventListModal = ({ currentYear, currentMonth, onClose }) => {
         ) : (
           <div className="space-y-4">
             {pageItems.map((event, index) => (
-              <div key={`${event.startDate}-${startIndex + index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
-                <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
+              <div key={`${event.startDate}-${startIndex + index}`} className={`border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 ${theme === 'dark' ? 'bg-teal-900' : 'bg-teal-50'}`}>
+                <p className={`text-lg font-bold mb-1 border-b border-teal-100 pb-1 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-700'}`}>
                   <Clock className="inline w-4 h-4 mr-2" />
                   Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
                 </p>
@@ -1033,7 +1033,7 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
     let bgClass = [`${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`];
     let borderClass = 'border-gray-300';
     let icon = null;
-    let textClass = 'text-gray-900';
+    let textClass = `${theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}`;
     if (status === 'present') {
 
       bgClass = 'bg-green-50 hover:bg-green-200';
@@ -1066,7 +1066,7 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
 
     } else {
 
-      bgClass = 'bg-gray-50 hover:bg-gray-100';
+      bgClass = `${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'} hover:${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`;
 
       borderClass = hasEvents ? 'border-indigo-500 border-2' : 'border-gray-300';
 

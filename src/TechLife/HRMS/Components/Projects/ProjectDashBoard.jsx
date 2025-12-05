@@ -457,7 +457,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
                setProjectData(data);
            } catch (err) {
                console.error("Fetch error:", err);
-               setError(`Failed to fetch project data. Check the token and URL. Error: ${err.message}`);
+               setError(`Failed to fetch project data. Check the token and URL. Error: ${err.message || err}`);
            } finally {
                setLoading(false);
            }
@@ -471,7 +471,7 @@ const storeAccessToken = (rawTokenOrHeader) => {
     }
     if (error) {
         return (
-            <div className="bg-red-100 border border-red-400 text-red-700 p-4 rounded m-6" role="alert"><p className="font-bold">Error!</p><p className="text-sm">{error}</p></div>
+            <div className="bg-red-100 border border-red-400 text-red-700 p-4 rounded m-6" role="alert"><p className="font-bold">Caption!</p><p className="text-sm">No Project Overview Created For the project</p></div>
         );
     }
     if (!projectData) {
@@ -506,7 +506,6 @@ const storeAccessToken = (rawTokenOrHeader) => {
                     <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}><span className="font-medium">Employee ID:</span> {projectData.manager.employeeId}</p>
                 </div>
             )}
-            
             {/* Due Alert */}
             <div className="pt-2 border-t mt-2">
                 <p className={`text-lg font-bold ${projectData.dueAlert > 0 ? 'text-red-600' : 'text-green-600'}`}> Due Alert: {projectData.dueAlert} {projectData.dueAlert > 0 ? 'Days Overdue!' : 'No Alert'} </p>
