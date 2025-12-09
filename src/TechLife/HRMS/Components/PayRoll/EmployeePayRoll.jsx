@@ -847,7 +847,7 @@ const handleSave = async () => {
               <DetailField 
                 key="annualSalary"
                 label="Annual Salary" 
-                value={formatCurrency(employee.annualSalary)} 
+                value={(employee.annualSalary)} 
                 isEditing={false}
                 showLPA={true}
               />

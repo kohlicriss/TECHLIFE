@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { IoDocumentText, IoDownload, IoEye } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { Context } from "../../HrmsContext";
-import { payrollApi } from "../../../../../axiosInstance";
+import { payroll } from "../../../../../axiosInstance";
 import html2pdf from "html2pdf.js";
 
 const OfferLetter = () => {
@@ -18,8 +18,8 @@ const OfferLetter = () => {
   useEffect(() => {
     const fetchOfferLetter = async () => {
       try {
-        const response = await payrollApi.get(
-          `/offerletter/html/employee/${empID}`
+        const response = await payroll.get(
+          `payroll/offerletter/html/employee/${empID}`
         );
 
         if (typeof response.data === "string") {
