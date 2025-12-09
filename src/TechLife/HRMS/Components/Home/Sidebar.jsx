@@ -1,9 +1,22 @@
 import React, { useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, CalendarCheck, FileText, Users, Database, ListChecks,
-  MessageCircle, LogOut, X, ChevronLeft, ChevronRight, UserCircle, BadgePlus,
-  TicketCheck, UserRoundCog,FolderCog
+  LayoutDashboard,
+  CalendarCheck,
+  FileText,
+  Users,
+  Database,
+  ListChecks,
+  MessageCircle,
+  LogOut,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  UserCircle,
+  BadgePlus,
+  TicketCheck,
+  UserRoundCog,
+  FolderCog,
 } from "lucide-react";
 import { TfiMoney } from "react-icons/tfi";
 import { Context } from "../HrmsContext";
@@ -19,71 +32,154 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
 
   const handleLogoutClick = async () => {
     try {
-      await fetch("https://hrms.anasolConsultancyservices.com/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await fetch(
+        "https://hrms.anasolConsultancyservices.com/api/auth/logout",
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
     } catch {
       // Fallback/no action needed for failed logout
     } finally {
       [
-        "accessToken","emppayload","logedempid","logedemprole",
-        "loggedInUserImage","employeeFormData","aboutResponses",
-        "loggedUserImage","permissionsData"
-      ].forEach(key => localStorage.removeItem(key));
+        "accessToken",
+        "emppayload",
+        "logedempid",
+        "logedemprole",
+        "loggedInUserImage",
+        "employeeFormData",
+        "aboutResponses",
+        "loggedUserImage",
+        "permissionsData",
+      ].forEach((key) => localStorage.removeItem(key));
       setUserData(null);
       if (onLogout) onLogout();
     }
   };
 
   const navItems = [
-    { name: "Profile", icon: <UserCircle size={18} />, path: empId ? `/profile/${empId}` : "/profile" },
-    { name: "Attendance", icon: <CalendarCheck size={18} />, path: empId ? `/attendance/${empId}` : "/attendance" },
-    { name: "My Leaves", icon: <FileText size={18} />, path: empId ? `/leaves/${empId}` : "/leaves" },
-    { name: "My Team", icon: <Users size={18} />, path: empId ? `/my-teams/${empId}` : "/my-teams" },
-    { name: "Attendance Details", icon: <Users size={18} />, path: empId ? `/personal-leaves/${empId}` : "/personal-leaves" },
-    { name: "My Projects", icon: <Database size={18} />, path: empId ? `/projects/${empId}` : "/projects" },
-    { name: "My Tasks", icon: <ListChecks size={18} />, path: empId ? `/tasks/${empId}` : "/tasks" },
-    { name: "Employees", icon: <BadgePlus size={18} />, path: empId ? `/employees/${empId}` : "/employees" },
-    { name: "Chat", icon: <MessageCircle size={18} />, path: empId ? `/chat/${empId}` : "/chat", notification: chatUnreadCount > 0 },
-    { name: "Tickets", icon: <TicketCheck size={18} />, path: empId ? `/tickets/employee/${empId}`  :"/tickets" },
-    { name: "Departments", icon: <Database size={18} />, path: empId ? `/departments/${empId}` : "/departments" },
-     { name: "Jobs", icon: <Database size={18} />, path: empId ? `/jobs/${empId}` : "/jobs" },
-     { 
-      name: "Pay Roll", 
-      icon: <TfiMoney size={18}/>, 
-      path: (['ADMIN', 'HR', 'MANAGER'].includes(userRole) 
-        ? (empId ? `/payroll/home/${empId}` : "/payroll")
-        : (empId ? `/payroll/employee/${empId}` : "/payroll/employee")
-      )
+    {
+      name: "Profile",
+      icon: <UserCircle size={18} />,
+      path: empId ? `/profile/${empId}` : "/profile",
     },
-  ]
-  if (userRole === 'ADMIN') {
-    navItems.push({ name: "Permissions", icon: <UserRoundCog size={18} />, path: empId ? `/permissions/${empId}` : "/permissions" });
-    navItems.push({ name: "ADMIN", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
+    {
+      name: "Attendance",
+      icon: <CalendarCheck size={18} />,
+      path: empId ? `/attendance/${empId}` : "/attendance",
+    },
+    {
+      name: "My Leaves",
+      icon: <FileText size={18} />,
+      path: empId ? `/leaves/${empId}` : "/leaves",
+    },
+    {
+      name: "My Team",
+      icon: <Users size={18} />,
+      path: empId ? `/my-teams/${empId}` : "/my-teams",
+    },
+    {
+      name: "Attendance Details",
+      icon: <Users size={18} />,
+      path: empId ? `/personal-leaves/${empId}` : "/personal-leaves",
+    },
+    {
+      name: "My Projects",
+      icon: <Database size={18} />,
+      path: empId ? `/projects/${empId}` : "/projects",
+    },
+    {
+      name: "My Tasks",
+      icon: <ListChecks size={18} />,
+      path: empId ? `/tasks/${empId}` : "/tasks",
+    },
+    {
+      name: "Employees",
+      icon: <BadgePlus size={18} />,
+      path: empId ? `/employees/${empId}` : "/employees",
+    },
+    {
+      name: "Chat",
+      icon: <MessageCircle size={18} />,
+      path: empId ? `/chat/${empId}` : "/chat",
+      notification: chatUnreadCount > 0,
+    },
+    {
+      name: "Tickets",
+      icon: <TicketCheck size={18} />,
+      path: empId ? `/tickets/employee/${empId}` : "/tickets",
+    },
+    {
+      name: "Departments",
+      icon: <Database size={18} />,
+      path: empId ? `/departments/${empId}` : "/departments",
+    },
+    // "Jobs" removed from general list
+    {
+      name: "Pay Roll",
+      icon: <TfiMoney size={18} />,
+      path: ["ADMIN", "HR", "MANAGER"].includes(userRole)
+        ? empId
+          ? `/payroll/home/${empId}`
+          : "/payroll"
+        : empId
+        ? `/payroll/employee/${empId}`
+        : "/payroll/employee",
+    },
+  ];
+
+  if (userRole === "ADMIN") {
+    // "Jobs" added only for ADMIN
+    navItems.push({
+      name: "Jobs",
+      icon: <Database size={18} />,
+      path: empId ? `/jobs/${empId}` : "/jobs",
+    });
+    navItems.push({
+      name: "Permissions",
+      icon: <UserRoundCog size={18} />,
+      path: empId ? `/permissions/${empId}` : "/permissions",
+    });
+    navItems.push({
+      name: "ADMIN",
+      icon: <FaUsers size={18} />,
+      path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
+    });
   }
-  if (userRole === 'HR') {
-    navItems.push({ name: "HR", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
+
+  if (userRole === "HR") {
+    navItems.push({
+      name: "HR",
+      icon: <FaUsers size={18} />,
+      path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
+    });
   }
 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-opacity-50 z-40 lg:hidden transition-opacity ${isSidebarOpen ? "block" : "hidden"}`}
+        className={`fixed inset-0 bg-opacity-50 z-40 lg:hidden transition-opacity ${
+          isSidebarOpen ? "block" : "hidden"
+        }`}
         onClick={() => setSidebarOpen(false)}
       />
       <div
         style={{ boxShadow: "5px 0 5px -1px rgba(0,0,0,0.2)" }}
-        className={`fixed top-0 left-0 h-full ${
-          collapsed ? "w-20" : "w-60"
-        } ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'} shadow-lg z-[150] transform transition-all duration-200 ease-in-out ${
+        className={`fixed top-0 left-0 h-full ${collapsed ? "w-20" : "w-60"} ${
+          theme === "dark" ? "bg-gray-900" : "bg-white"
+        } shadow-lg z-[150] transform transition-all duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:shadow-none pt-3 flex flex-col`}
       >
         <div className="flex items-center justify-between px-4 mb-2 flex-shrink-0">
           <div className="lg:hidden">
             <button
-              className={theme === 'dark' ? 'text-white hover:text-gray-300' : 'text-gray-600 hover:text-black'}
+              className={
+                theme === "dark"
+                  ? "text-white hover:text-gray-300"
+                  : "text-gray-600 hover:text-black"
+              }
               onClick={() => setSidebarOpen(false)}
             >
               <X size={20} />
@@ -93,12 +189,16 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
             <button
               onClick={() => setCollapsed(!collapsed)}
               className={`border rounded-full p-1 transition ${
-                theme === 'dark'
-                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white'
-                  : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600'
+                theme === "dark"
+                  ? "bg-gray-800 border-gray-700 hover:bg-gray-700 text-white"
+                  : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-600"
               }`}
             >
-              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+              {collapsed ? (
+                <ChevronRight size={18} />
+              ) : (
+                <ChevronLeft size={18} />
+              )}
             </button>
           </div>
         </div>
@@ -111,12 +211,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
                   key={item.name}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center cursor-pointer ${collapsed ? "justify-center" : "justify-start"} gap-3 px-4 py-1.5 transition rounded-md mx-2 relative ${
+                  className={`flex items-center cursor-pointer ${
+                    collapsed ? "justify-center" : "justify-start"
+                  } gap-3 px-4 py-1.5 transition rounded-md mx-2 relative ${
                     isActive
                       ? "bg-blue-500 text-white font-semibold"
-                      : theme === 'dark'
-                          ? "text-white hover:bg-gray-800"
-                          : "text-gray-700 hover:bg-blue-100"
+                      : theme === "dark"
+                      ? "text-white hover:bg-gray-800"
+                      : "text-gray-700 hover:bg-blue-100"
                   }`}
                 >
                   {item.icon}
@@ -135,10 +237,12 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         <div className="mt-4 mb-4 px-2 flex-shrink-0">
           <button
             onClick={handleLogoutClick}
-            className={`flex items-center cursor-pointer ${collapsed ? "justify-center" : "justify-start"} gap-3 px-4 py-2 rounded-md w-full text-left ${
-              theme === 'dark'
-                ? 'text-red-400 hover:bg-gray-800'
-                : 'text-red-600 hover:bg-red-50'
+            className={`flex items-center cursor-pointer ${
+              collapsed ? "justify-center" : "justify-start"
+            } gap-3 px-4 py-2 rounded-md w-full text-left ${
+              theme === "dark"
+                ? "text-red-400 hover:bg-gray-800"
+                : "text-red-600 hover:bg-red-50"
             }`}
           >
             <LogOut size={18} />
