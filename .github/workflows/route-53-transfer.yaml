@@ -1,0 +1,79 @@
+name: Hosting webpage
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  host-webpage:
+    runs-on: self-hosted
+    steps:
+    - name: Cleanup workspace
+      run: |
+        rm -rf ./* ./.??* || true
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    # - name: Install dependencies
+    #   run: npm ci   # smaller & reproducible
+
+    # - name: Run build
+    #   env:
+    #     CI: ""
+    #   run: npm run build
+
+    - name: Move build artifacts
+      run: |
+        rm -rf terraform/webhosting/build
+        mv build terraform/webhosting/
+        # Immediately cleanup node_modules to free space
+        rm -rf node_modules package-lock.json
+
+    - name: Delete everything from S3
+      run: aws s3 rm s3://hrms-fromtend-web-files/ --recursive
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.0.11
+        terraform_wrapper: false
+
+    - name: Terraform Init
+      run: terraform -chdir=./terraform/webhosting init -input=false
+
+    - name: Terraform Apply
+      run: terraform -chdir=./terraform/webhosting apply -var-file=use.tfvars -auto-approve -input=false
+
+    - name: Get CloudFront Distribution ID
+      id: get_dist
+      run: |
+        dist_id=$(terraform -chdir=./terraform/webhosting output -raw cloud_front_distribution_id)
+        echo "DIST_ID=$dist_id" >> $GITHUB_ENV
+
+    - name: CloudFront Invalidation
+      run: |
+        aws cloudfront create-invalidation \
+          --distribution-id $DIST_ID \
+          --paths "/*"
+
+    - name: Final Cleanup
+      if: always()
+      run: |
+        rm -rf terraform/webhosting/build
+        rm -rf terraform/webhosting/.terraform
+        rm -f terraform/webhosting/.terraform.lock.hcl
+        rm -rf ./* ./.??* || true

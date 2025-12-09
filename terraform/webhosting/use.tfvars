@@ -1,0 +1,15 @@
+bucket_name = "hrms-fromtend-web-files"
+privacy = "private"
+enable_website = true
+versioning = "Disabled"
+cloudfront_enabled = true
+folder_path = "build/"
+domine_names = ["techlife.anasolconsultancyservices.com"]
+route_53_enable = true
+domine_exists = true
+domine_name = "anasolconsultancyservices.com"
+parms_to_enter = []
+certificate_type = "SUB_ROOT_CERT"
+acm_domine_name = "*.anasolconsultancyservices.com"
+validation_method = "DNS"
+Environment = "prod"
