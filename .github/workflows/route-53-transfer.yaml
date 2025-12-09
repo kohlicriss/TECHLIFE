@@ -2,7 +2,7 @@ name: Hosting webpage
 on:
   push:
     branches:
-      - main
+      - xyz
 
 jobs:
   host-webpage:
