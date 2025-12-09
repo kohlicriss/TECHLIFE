@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Context } from '../HrmsContext';
-import { authApi, publicinfoApi, payrollApi, payroll } from '../../../../axiosInstance';
+import { authApi, publicinfoApi, payrollApi, payroll, attendanceApi } from '../../../../axiosInstance'; // ADDED attendanceApi
 import {
     IoSearchOutline,
     IoLockClosed,
@@ -244,7 +244,7 @@ const InputField = ({
     );
 };
 
-// --- Field Definitions ---
+// --- Field Definitions (UPDATED with Step 4) ---
 const credentialsFormFields = [
     { label: "Full Name", name: "fullName", type: "text", required: true, hint: "Enter the full name for the user account." },
     { label: "Username", name: "username", type: "text", required: true, hint: "Must start with 'ACS' and match Employee ID (8-30 chars).", maxLength: 30 },
@@ -281,11 +281,30 @@ const payrollFormFields = [
     { label: "PAN Number", name: "panNumber", type: "text", required: true, hint: "Permanent Account Number." },
     { label: "Aadhar Number", name: "aadharNumber", type: "text", required: true, hint: "Aadhar ID number." },
     { label: "UAN Number", name: "uanNumber", type: "text", required: false, hint: "Universal Account Number." },
-    { label: "Department", name: "department", type: "text", required: true, hint: "Department name." },
+    // CHANGED: Department is now a DepartmentDropdown (same as Step 2)
+    { label: "Department", name: "department", type: "department-dropdown", required: true, hint: "Select department from the list." },
     { label: "Designation", name: "designation", type: "text", required: true, hint: "Job designation." },
-    { label: "Job Type", name: "JobType", type: "select", required: true, options: ["Full-time", "Part-time", "Contract", "Temporary"], hint: "Select job type." },
-    { label: "Level", name: "Level", type: "text", required: true, hint: "Employee level or grade." },
+    // UPDATED: Added 'Intern' option
+    { label: "Job Type", name: "JobType", type: "select", required: true, options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern"], hint: "Select job type." },
+    // CHANGED: Level is now a dropdown
+    { label: "Level", name: "Level", type: "select", required: true, options: ["Senior", "Junior", "Medium"], hint: "Select job level." },
     { label: "Start Date", name: "startDate", type: "date", required: true, hint: "Employment start date." },
+];
+
+// NEW: Step 4 Fields (Leaves/Attendance)
+const leavesFormFields = [
+    { label: "Employee ID", name: "employeeIdDisplay4", type: "text", required: true, hint: "Auto-filled.", disabled: true },
+    { label: "Shift Name", name: "shiftName", type: "text", required: true, hint: "E.g., Morning Shift, General Shift." },
+    { label: "Month", name: "month", type: "number", required: true, hint: "1 (Jan) to 12 (Dec).", min: 1, max: 12 },
+    { label: "Year", name: "year", type: "number", required: true, hint: "E.g., 2024.", min: 2020 },
+    { label: "Paid Leaves", name: "paid", type: "number", required: true, hint: "Total paid leave days.", min: 0 },
+    { label: "Sick Leaves", name: "sick", type: "number", required: true, hint: "Total sick leave days.", min: 0 },
+    { label: "Casual Leaves", name: "casual", type: "number", required: true, hint: "Total casual leave days.", min: 0 },
+    { label: "Unpaid Leaves", name: "unpaid", type: "number", required: true, hint: "Total unpaid leave days.", min: 0 },
+    // ADDED: Visible and Disabled with Default values
+    { name: "latitude", type: "text", label: "Latitude", required: true, disabled: true, hint: "Auto-filled from location." },
+    { name: "longitude", type: "text", label: "Longitude", required: true, disabled: true, hint: "Auto-filled from location." },
+    { name: "timezone", type: "text", label: "Timezone", required: true, disabled: true, hint: "Auto-filled ('Asia/Kolkata')." },
 ];
 
 const generateInitials = (name) => {
@@ -297,14 +316,15 @@ const generateInitials = (name) => {
     return nameParts[0][0].toUpperCase();
 };
 
-// --- Department Dropdown Component ---
-const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
+// --- Department Dropdown Component (Needed for both Step 2 and Step 3) ---
+const DepartmentDropdown = ({ value, onChange, theme, isError, hint, name }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
-    const [searchTerm, setSearchTerm] = useState('');
+    // Use local search term for the dropdown component
+    const [localSearchTerm, setLocalSearchTerm] = useState('');
     const dropdownRef = useRef(null);
     const PAGE_SIZE = 10;
 
@@ -340,8 +360,8 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
     };
 
     const filteredDepartments = departments.filter(dept => {
-        if (!searchTerm) return true;
-        const searchLower = searchTerm.toLowerCase();
+        if (!localSearchTerm) return true;
+        const searchLower = localSearchTerm.toLowerCase();
         return (
             dept.departmentId.toLowerCase().includes(searchLower) ||
             dept.departmentName.toLowerCase().includes(searchLower)
@@ -369,7 +389,7 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
             <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center ${
                 theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
             }`}>
-                Department ID
+                Department
                 <span className="text-red-500 ml-1 text-sm sm:text-base">*</span>
             </label>
 
@@ -418,9 +438,9 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                                 <input
                                     type="text"
                                     placeholder="Search departments..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
+                                    value={localSearchTerm}
+                                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                                    className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none ${
                                         theme === 'dark'
                                             ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400'
                                             : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
@@ -439,7 +459,8 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                                         key={`${dept.departmentId}-${index}`}
                                         type="button"
                                         onClick={() => {
-                                            onChange(dept.departmentId);
+                                            // Pass the name of the form field being updated ('departmentId' or 'department')
+                                            onChange(dept.departmentId, name); 
                                             setIsOpen(false);
                                         }}
                                         className={`w-full px-4 py-3 text-left text-sm ${
@@ -468,7 +489,7 @@ const DepartmentDropdown = ({ value, onChange, theme, isError, hint }) => {
                                 <div className={`px-4 py-8 text-center text-sm ${
                                     theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
                                 }`}>
-                                    {searchTerm ? 'No departments found matching your search.' : 'No departments available.'}
+                                    {localSearchTerm ? 'No departments found matching your search.' : 'No departments available.'}
                                 </div>
                             ) : null}
 
@@ -509,7 +530,8 @@ function EmployeeApp() {
     const [viewMode, setViewMode] = useState('grid');
     const { userprofiledata, theme, userData } = useContext(Context);
     const { empID } = useParams();
-    const [searchTerm, setSearchTerm] = useState('');
+    // FIXED: Corrected redundant declarations to ensure unique setters
+    const [searchTerm, setSearchTerm] = useState(''); 
     const [selectedFilters, setSelectedFilters] = useState({});
     const [loggedPermissiondata, setLoggedPermissionData] = useState([]);
     const [matchedArray, setMatchedArray] = useState(null);
@@ -523,7 +545,39 @@ function EmployeeApp() {
     const [submissionStatus, setSubmissionStatus] = useState('');
 
     // Multi-step form states
-    const [currentStep, setCurrentStep] = useState(1); // 1: Credentials, 2: Employee, 3: Payroll
+    // FIXED: Used a unique setter for this state
+    const [terminatedSearchTerm, setTerminatedSearchTerm] = useState(''); 
+    const [currentStep, setCurrentStep] = useState(1); // 1: Credentials, 2: Employee, 3: Payroll, 4: Leaves (NEW)
+
+    // NEW: Function to get current location
+    const getCurrentLocation = useCallback(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    
+                    setFormData(prev => ({
+                        ...prev,
+                        latitude: latitude,
+                        longitude: longitude,
+                        // Timezone is set initially via initialFormData, but updated here if available/necessary
+                        // Keeping it explicitly set for the DTO requirement
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
+                    }));
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    // Default to 0, 0 if permission is denied or location is unavailable
+                    setFormData(prev => ({ ...prev, latitude: 0, longitude: 0 }));
+                }
+            );
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+            setFormData(prev => ({ ...prev, latitude: 0, longitude: 0 }));
+        }
+    }, []);
+
 
     const initialFormData = {
         // User Credentials
@@ -553,10 +607,23 @@ function EmployeeApp() {
         uanNumber: '',
         department: '',
         designation: '',
-        JobType: '',
-        Level: '',
+        JobType: 'Full-time', // Default to existing option
+        Level: 'Junior', // Default to an option
         startDate: '',
         empName: '',
+        // NEW LEAVES FIELDS (Step 4)
+        employeeIdDisplay4: '',
+        month: new Date().getMonth() + 1, 
+        year: new Date().getFullYear(), 
+        paid: 0,
+        sick: 0,
+        casual: 0,
+        unpaid: 0,
+        shiftName: '',
+        // These will be overridden by getCurrentLocation in useEffect
+        latitude: 0, 
+        longitude: 0, 
+        timezone: 'Asia/Kolkata', 
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -575,7 +642,6 @@ function EmployeeApp() {
     const [terminatedLoading, setTerminatedLoading] = useState(false);
     const [terminatedHasMore, setTerminatedHasMore] = useState(true);
     const [terminatedCurrentPage, setTerminatedCurrentPage] = useState(0);
-    const [terminatedSearchTerm, setTerminatedSearchTerm] = useState('');
     const terminatedScrollRef = useRef(null);
     const [hasAccess, setHasAccess] = useState([]);
 
@@ -583,6 +649,14 @@ function EmployeeApp() {
 
     const userRole = userData?.roles?.[0]?.toUpperCase();
     const hasManagementAccess = ['ADMIN', 'MANAGER', 'HR'].includes(userRole);
+
+    // useEffect to fetch Geolocation on mount/when modal opens
+    useEffect(() => {
+        if (isAddEmployeeModalOpen) {
+            getCurrentLocation();
+        }
+    }, [isAddEmployeeModalOpen, getCurrentLocation]);
+
 
     useEffect(() => {
         let fetchedData = async () => {
@@ -801,11 +875,19 @@ function EmployeeApp() {
 
             if (name === 'employeeId') {
                 updatedData.employeeIdDisplay = value;
+                updatedData.employeeIdDisplay4 = value; // NEW: Update for step 4
             }
 
             if (name === 'role') {
                 updatedData.employeeRole = value;
             }
+
+            // Ensure numeric fields are stored as numbers if possible, especially for leaves
+            if (['month', 'year', 'paid', 'sick', 'casual', 'unpaid', 'annualSalary', 'latitude', 'longitude'].includes(name)) {
+                // Parse float for all numeric fields (including the new latitude/longitude)
+                updatedData[name] = value === '' ? '' : (name === 'month' || name === 'year' ? parseInt(value) : parseFloat(value));
+            }
+
 
             return updatedData;
         });
@@ -819,22 +901,27 @@ function EmployeeApp() {
         }
     };
 
-    const handleDepartmentChange = (value) => {
-        setFormData({ ...formData, departmentId: value });
-        if (formErrors.departmentId) {
+    const handleDepartmentChange = (value, name) => {
+        // This handler is used by the DepartmentDropdown which passes the name of the DTO field being updated.
+        setFormData(prev => ({ ...prev, [name]: value }));
+        
+        // Clear validation errors for both department fields in Step 2 and Step 3
+        if (formErrors.departmentId || formErrors.department) {
             setFormErrors(prev => {
                 const newErrors = { ...prev };
                 delete newErrors.departmentId;
+                delete newErrors.department;
                 return newErrors;
             });
         }
     };
 
     const handleBlurValidation = (e) => {
+        // Validation on blur is kept to provide instant feedback for the user
         const { name, value } = e.target;
         let error = '';
 
-        // Strict validation rules
+        // Strict validation rules (kept as per previous requirement)
         if (name === 'fullName') {
             if (!value.trim()) {
                 error = "Full name is required.";
@@ -893,6 +980,21 @@ function EmployeeApp() {
                 error = "Phone number must be 10 digits.";
             }
         }
+        
+        // NEW LEAVES/ATTENDANCE VALIDATION (Step 4)
+        if (name === 'month') {
+            const month = parseInt(value);
+            if (value && (isNaN(month) || month < 1 || month > 12)) error = "Month must be between 1 and 12.";
+        }
+        if (name === 'year') {
+            const year = parseInt(value);
+            if (value && (isNaN(year) || year < 2020 || year > new Date().getFullYear() + 1)) error = "Invalid year.";
+        }
+        if (['paid', 'sick', 'casual', 'unpaid'].includes(name)) {
+            const leaves = parseFloat(value);
+            if (value && (isNaN(leaves) || leaves < 0)) error = "Leave days must be zero or a positive number.";
+        }
+
 
         setFormErrors(prev => {
             const newErrors = { ...prev };
@@ -905,103 +1007,158 @@ function EmployeeApp() {
         });
     };
 
-    // Strict validation for each step
+    /**
+     * Executes ALL validation rules for a specific step (1, 2, or 3, 4)
+     */
     const validateStep = (step) => {
         const errors = {};
+        let fieldsToValidate = [];
 
         if (step === 1) {
-            // Credentials validation
-            if (!formData.fullName) errors.fullName = "Full name is required.";
-            else if (formData.fullName.trim().length < 2) errors.fullName = "Full name must be at least 2 characters.";
-            else if (!/^[a-zA-Z\s\'-]+$/.test(formData.fullName)) errors.fullName = "Full name can only contain letters, spaces, hyphens, and apostrophes.";
-
-            if (!formData.username) errors.username = "Username is required.";
-            else if (formData.username.length < 8 || formData.username.length > 30) errors.username = "Username must be 8-30 characters.";
-            else if (!formData.username.startsWith('ACS')) errors.username = "Username must start with 'ACS'.";
-            else if (!/^[A-Z0-9_]+$/.test(formData.username)) errors.username = "Can only contain uppercase letters, numbers, and underscores.";
-
-            if (!formData.password) errors.password = "Password is required.";
-            else if (formData.password.length < 8 || formData.password.length > 30) errors.password = "Password must be 8-30 characters.";
-            else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) errors.password = "Password must contain uppercase, lowercase, and numbers.";
-
-            if (!formData.role) errors.role = "Role is required.";
+            fieldsToValidate = [...credentialsFormFields.map(f => f.name)];
         } else if (step === 2) {
-            // Employee validation
-            if (!formData.employeeId) errors.employeeId = "Employee ID is required.";
-            else if (formData.employeeId.length < 8 || formData.employeeId.length > 30) errors.employeeId = "Employee ID must be 8-30 characters.";
-            else if (!formData.employeeId.startsWith('ACS')) errors.employeeId = "Employee ID must start with 'ACS'.";
-            else if (!/^[A-Z0-9_]+$/.test(formData.employeeId)) errors.employeeId = "Can only contain uppercase letters, numbers, and underscores.";
-
-            if (formData.username && formData.employeeId && formData.username !== formData.employeeId) {
-                errors.employeeId = "Employee ID must match Username.";
-            }
-
-            if (!formData.firstName) errors.firstName = "First name is required.";
-            else if (formData.firstName.trim().length < 2) errors.firstName = "First name must be at least 2 characters.";
-            else if (!/^[a-zA-Z\s\'-]+$/.test(formData.firstName)) errors.firstName = "First name can only contain letters, spaces, hyphens, and apostrophes.";
-
-            if (!formData.maritalStatus) errors.maritalStatus = "Marital status is required.";
-            if (!formData.departmentId) errors.departmentId = "Department ID is required.";
+            fieldsToValidate = [...employeeFormFields.map(f => f.name).filter(name => name !== 'employeeRole')];
         } else if (step === 3) {
-            // Payroll validation
-            if (!formData.email) errors.email = "Email is required.";
-            else {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(formData.email)) errors.email = "Invalid email format.";
-            }
-
-            if (!formData.annualSalary) errors.annualSalary = "Annual salary is required.";
-            else if (isNaN(formData.annualSalary) || parseFloat(formData.annualSalary) <= 0) errors.annualSalary = "Annual salary must be a positive number.";
-
-            if (!formData.accountNumber) errors.accountNumber = "Account number is required.";
-            else if (formData.accountNumber.length < 10) errors.accountNumber = "Account number must be at least 10 digits.";
-
-            if (!formData.ifsccode) errors.ifsccode = "IFSC code is required.";
-            else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsccode)) errors.ifsccode = "Invalid IFSC format.";
-
-            if (!formData.bankName) errors.bankName = "Bank name is required.";
-
-            if (!formData.panNumber) errors.panNumber = "PAN number is required.";
-            else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber)) errors.panNumber = "Invalid PAN format (e.g., ABCDE1234F).";
-
-            if (!formData.aadharNumber) errors.aadharNumber = "Aadhar number is required.";
-            else if (!/^[0-9]{12}$/.test(formData.aadharNumber)) errors.aadharNumber = "Aadhar must be 12 digits.";
-
-            if (formData.phoneNumber && !/^[0-9]{10}$/.test(formData.phoneNumber)) errors.phoneNumber = "Phone number must be 10 digits.";
-
-            if (!formData.department) errors.department = "Department is required.";
-            if (!formData.designation) errors.designation = "Designation is required.";
-            if (!formData.JobType) errors.JobType = "Job type is required.";
-            if (!formData.Level) errors.Level = "Level is required.";
-            if (!formData.startDate) errors.startDate = "Start date is required.";
+            fieldsToValidate = [...payrollFormFields.map(f => f.name).filter(name => !name.endsWith('Display'))];
+        } else if (step === 4) { // NEW STEP 4
+            // FIXED: Filtering the leavesFormFields array to get non-hidden and non-display field names for validation
+            fieldsToValidate = leavesFormFields
+                .filter(f => !f.hidden && !f.name.endsWith('Display4'))
+                .map(f => f.name);
+             // Also include the hidden fields for DTO validation if they are technically required, even if auto-filled (latitude, longitude, timezone)
+             // We include them here just in case validation logic needs to check their formatted (numeric/string) state.
+             fieldsToValidate.push('latitude', 'longitude', 'timezone');
         }
 
+        const runValidation = (name, value, required = false) => {
+            if (required && (!value && value !== 0 && value !== '0')) { // Check if value is truly empty for required fields
+                return `${name} is required.`;
+            }
+            // All specific validation logic from handleBlurValidation is duplicated here for submission checks
+            if (name === 'fullName') {
+                if (value && value.trim().length < 2) return "Full name must be at least 2 characters.";
+                if (value && !/^[a-zA-Z\s\'-]+$/.test(value)) return "Full name can only contain letters, spaces, hyphens, and apostrophes.";
+            }
+            if (name === 'username' || name === 'employeeId') {
+                if (value && !value.startsWith('ACS')) return "Incorrect format. Must start with 'ACS'.";
+                if (value && (value.length < 8 || value.length > 30)) return "Must be between 8 and 30 characters.";
+                if (value && !/^[A-Z0-9_]+$/.test(value)) return "Can only contain uppercase letters, numbers, and underscores.";
+            }
+            if (name === 'password') {
+                if (value && (value.length < 8 || value.length > 30)) return "Password must be 8-30 characters.";
+                if (value && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) return "Password must contain uppercase, lowercase, and numbers.";
+            }
+            if (name === 'email') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (value && !emailRegex.test(value)) return "Invalid email format.";
+            }
+            if (name === 'annualSalary') {
+                if (value && (isNaN(parseFloat(value)) || parseFloat(value) <= 0)) return "Annual salary must be a positive number.";
+            }
+            if (name === 'accountNumber') {
+                if (value && value.length < 10) return "Account number must be at least 10 digits.";
+            }
+            if (name === 'ifsccode') {
+                if (value && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) return "Invalid IFSC format.";
+            }
+            if (name === 'panNumber') {
+                if (value && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) return "Invalid PAN format (e.g., ABCDE1234F).";
+            }
+            if (name === 'aadharNumber') {
+                if (value && (!/^[0-9]{12}$/.test(value))) return "Aadhar must be 12 digits.";
+            }
+            if (name === 'phoneNumber') {
+                if (value && (!/^[0-9]{10}$/.test(value))) return "Phone number must be 10 digits.";
+            }
+
+            // NEW LEAVES/ATTENDANCE VALIDATION (Step 4)
+            if (name === 'month') {
+                const month = parseInt(value);
+                if (value && (isNaN(month) || month < 1 || month > 12)) return "Month must be between 1 and 12.";
+            }
+            if (name === 'year') {
+                const year = parseInt(value);
+                if (value && (isNaN(year) || year < 2020 || year > new Date().getFullYear() + 1)) return "Invalid year.";
+            }
+            if (['paid', 'sick', 'casual', 'unpaid'].includes(name)) {
+                const leaves = parseFloat(value);
+                if ((value !== '' && value !== null) && (isNaN(leaves) || leaves < 0)) return "Leave days must be zero or a positive number.";
+            }
+            
+            if (name === 'shiftName') {
+                if (!value.trim()) return "Shift Name is required.";
+            }
+
+            // Additional check for auto-filled location fields
+            if ((name === 'latitude' || name === 'longitude') && isNaN(parseFloat(value))) {
+                 return `${name} must be a valid number (auto-filled).`;
+            }
+            if (name === 'timezone' && !value) {
+                return "Timezone is required (auto-filled).";
+            }
+
+            return '';
+        };
+
+        const allFields = [...credentialsFormFields, ...employeeFormFields, ...payrollFormFields, ...leavesFormFields].filter(f => !f.disabled);
+
+        fieldsToValidate.forEach(name => {
+            const field = allFields.find(f => f.name === name);
+            // Treat auto-filled fields as required if they should be in the DTO
+            const requiredCheck = field?.required || ['latitude', 'longitude', 'timezone'].includes(name); 
+            const value = formData[name];
+            const error = runValidation(name, value, requiredCheck);
+            if (error) {
+                errors[name] = error;
+            }
+        });
+
+        // Cross-field validation (only applies if both fields are non-empty)
+        if (formData.username && formData.employeeId && formData.username !== formData.employeeId) {
+            errors.employeeId = "Employee ID must match Username from Step 1.";
+        }
+        
         return errors;
     };
 
+    /**
+     * Handles navigation when clicking the "Next" button.
+     */
     const handleNextStep = async () => {
-        const stepErrors = validateStep(currentStep);
-
-        if (Object.keys(stepErrors).length > 0) {
-            setFormErrors(stepErrors);
-            return;
-        }
-
-        setFormErrors({});
-
-        // Check terminated employees when moving to step 2
+        // Auto-fill Employee ID if moving from Step 1 to Step 2
         if (currentStep === 1) {
-            const terminatedIds = await fetchTerminatedEmployeeIds();
-            if (terminatedIds.has(formData.employeeId)) {
-                const errorMessage = `Employee ID ${formData.employeeId} is already in use. Please use a unique ID.`;
-                setFormErrors({ employeeId: "ID already in use by a terminated employee." });
-                setPopup({ show: true, message: errorMessage, type: 'error' });
-                return;
+             // Autopopulate Employee ID if username is filled and employeeId is empty
+            if (formData.username && !formData.employeeId) {
+                setFormData(prev => ({
+                    ...prev,
+                    employeeId: prev.username,
+                    employeeIdDisplay: prev.username,
+                    employeeIdDisplay4: prev.username, // NEW: Update for step 4
+                }));
             }
         }
-
+        
         setCurrentStep(prev => prev + 1);
     };
+
+    /**
+     * @description Enables direct jumping to any step without validation checks on forward movement.
+     * @param {number} stepNumber - The target step number.
+     */
+    const handleStepClick = (stepNumber) => {
+        setFormErrors({});
+        setCurrentStep(stepNumber);
+        
+        // Auto-fill Employee ID if the user jumps to step 2 or 3 or 4 while on step 1
+        if (stepNumber > 1 && currentStep === 1 && formData.username && !formData.employeeId) {
+            setFormData(prev => ({
+                ...prev,
+                employeeId: prev.username,
+                employeeIdDisplay: prev.username,
+                employeeIdDisplay4: prev.username, // NEW: Update for step 4
+            }));
+        }
+    }
 
     const handlePreviousStep = () => {
         setCurrentStep(prev => prev - 1);
@@ -1009,6 +1166,7 @@ function EmployeeApp() {
     };
 
     const fetchTerminatedEmployeeIds = async () => {
+        // This is still needed for the final submission check only.
         let allIds = new Set();
         let page = 0;
         let hasMorePages = true;
@@ -1038,15 +1196,46 @@ function EmployeeApp() {
         return allIds;
     };
 
+    /**
+     * Handles the final form submission. Runs validation for ALL steps.
+     */
     const handleFormSubmit = async (e) => {
         e.preventDefault();
 
-        const stepErrors = validateStep(3);
-        if (Object.keys(stepErrors).length > 0) {
-            setFormErrors(stepErrors);
+        let allErrors = {};
+
+        // Run validation for ALL four steps here
+        const step1Errors = validateStep(1);
+        const step2Errors = validateStep(2);
+        const step3Errors = validateStep(3);
+        const step4Errors = validateStep(4); // NEW STEP 4 VALIDATION
+
+        allErrors = { ...step1Errors, ...step2Errors, ...step3Errors, ...step4Errors }; // COMBINE ALL ERRORS
+
+        // Additional check for terminated IDs (must be done on final submit)
+        if (Object.keys(allErrors).length === 0) {
+            const terminatedIds = await fetchTerminatedEmployeeIds();
+            const idToCheck = formData.employeeId || formData.username;
+
+            if (terminatedIds.has(idToCheck)) {
+                allErrors.employeeId = "ID already in use by a terminated employee.";
+                setPopup({ show: true, message: `Employee ID ${idToCheck} is already in use.`, type: 'error' });
+                setCurrentStep(2); // Jump back to the affected step
+            }
+        }
+
+        if (Object.keys(allErrors).length > 0) {
+            setFormErrors(allErrors);
+            // Optional: Jump to the first step with an error for better UX
+            if (Object.keys(step1Errors).length > 0) setCurrentStep(1);
+            else if (Object.keys(step2Errors).length > 0) setCurrentStep(2);
+            else if (Object.keys(step3Errors).length > 0) setCurrentStep(3);
+            else if (Object.keys(step4Errors).length > 0) setCurrentStep(4); // NEW STEP 4 JUMP
+
             return;
         }
 
+        // --- SUBMISSION LOGIC (Only runs if NO errors found) ---
         setIsUpdating(true);
         setFormErrors({});
         setSubmissionStatus('Creating User...');
@@ -1096,10 +1285,43 @@ function EmployeeApp() {
                 Level: formData.Level,
                 startDate: formData.startDate,
             };
+            // Ensure numeric fields are correctly formatted before post
+            payrollDto.annualSalary = parseFloat(payrollDto.annualSalary);
+
 
             await payroll.post('payroll/jobdetails/create', payrollDto);
+            
+            // Step 4: Add Personal Leave/Attendance Details (NEW)
+            setSubmissionStatus('Adding Leave/Attendance Details...');
+            
+            const leavesDto = {
+                employeeId: formData.employeeId,
+                month: formData.month,
+                year: formData.year,
+                paid: formData.paid,
+                sick: formData.sick,
+                casual: formData.casual,
+                unpaid: formData.unpaid,
+                shiftName: formData.shiftName,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+                timezone: formData.timezone,
+            };
+            
+            // Ensure numeric fields are correctly formatted before post
+            leavesDto.month = parseInt(leavesDto.month);
+            leavesDto.year = parseInt(leavesDto.year);
+            leavesDto.paid = parseFloat(leavesDto.paid);
+            leavesDto.sick = parseFloat(leavesDto.sick);
+            leavesDto.casual = parseFloat(leavesDto.casual);
+            leavesDto.unpaid = parseFloat(leavesDto.unpaid);
+            leavesDto.latitude = parseFloat(leavesDto.latitude);
+            leavesDto.longitude = parseFloat(leavesDto.longitude);
+            
+            // Using attendanceApi and required endpoint
+            await attendanceApi.post('personalleaves/add', leavesDto); 
 
-            setPopup({ show: true, message: 'Employee, user account, and payroll details created successfully!', type: 'success' });
+            setPopup({ show: true, message: 'Employee onboarding completed successfully!', type: 'success' });
             setIsAddEmployeeModalOpen(false);
             setFormData(initialFormData);
             setCurrentStep(1);
@@ -1109,16 +1331,7 @@ function EmployeeApp() {
             console.error("Error creating employee:", error);
             const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please check the data and try again.';
 
-            let specificError = { general: errorMessage };
-            if (error.response?.data?.details) {
-                error.response.data.details.forEach(detail => {
-                    if (detail.field) {
-                        specificError[detail.field] = detail.message;
-                    }
-                });
-            }
-
-            setFormErrors(specificError);
+            setFormErrors({ general: errorMessage });
             setPopup({ show: true, message: errorMessage, type: 'error' });
         } finally {
             setIsUpdating(false);
@@ -1133,23 +1346,54 @@ function EmployeeApp() {
         setCurrentStep(1);
     };
 
+    /**
+     * New handler to print ONLY the fourth form's specific payload to the console
+     */
+    const handlePrintPayload = () => {
+        const payload = {
+            employeeId: formData.employeeId,
+            month: formData.month,
+            year: formData.year,
+            paid: formData.paid,
+            sick: formData.sick,
+            casual: formData.casual,
+            unpaid: formData.unpaid,
+            shiftName: formData.shiftName,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            timezone: formData.timezone,
+        };
+
+        console.log("--- DEBUG: Leaves/Attendance Payload ---");
+        console.log(JSON.stringify(payload, null, 2));
+        console.log("---------------------------------------------------------");
+        setPopup({ show: true, message: "Leaves/Attendance payload printed to console for debugging.", type: 'default' });
+    };
+
     const renderField = (field, currentErrors, handleChange, fieldValue) => {
-        const { label, name, type, required, options = [], hint, maxLength, disabled = false } = field;
+        const { label, name, type, required, options = [], hint, maxLength, disabled = false, hidden = false } = field;
         const isError = currentErrors[name];
 
+        if (hidden) return null; // Skip rendering for hidden fields
+
+        // Use DepartmentDropdown component for Department fields (in Step 2 and Step 3)
         if (type === 'department-dropdown') {
+            const currentOnChange = (value) => handleDepartmentChange(value, name);
+            const departmentValue = formData[name]; // Get the value from the respective state field (departmentId or department)
+            
             return (
                 <DepartmentDropdown
                     key={name}
-                    value={fieldValue}
-                    onChange={handleChange}
+                    name={name}
+                    value={departmentValue}
+                    onChange={currentOnChange} 
                     theme={theme}
                     isError={isError}
                     hint={hint}
                 />
             );
         }
-
+        
         return (
             <InputField
                 key={name}
@@ -1160,8 +1404,8 @@ function EmployeeApp() {
                 hint={hint}
                 placeholder={`Enter ${label.toLowerCase()}...`}
                 value={fieldValue}
-                onChange={handleChange}
-                onBlur={handleBlurValidation}
+                onChange={handleFormChange} 
+                onBlur={handleBlurValidation} 
                 isError={isError}
                 options={options}
                 theme={theme}
@@ -1174,23 +1418,32 @@ function EmployeeApp() {
     const renderAddEmployeeModal = () => {
         if (!isAddEmployeeModalOpen) return null;
 
-        const getStepTitle = () => {
-            if (currentStep === 1) return "User Credentials";
-            if (currentStep === 2) return "Employee Information";
-            if (currentStep === 3) return "Payroll & Job Details";
+        const getStepTitle = (step) => {
+            if (step === 1) return "User Credentials";
+            if (step === 2) return "Employee Information";
+            if (step === 3) return "Payroll & Job Details";
+            if (step === 4) return "Leave/Attendance"; // NEW STEP 4
         };
 
-        const getStepIcon = () => {
-            if (currentStep === 1) return <IoKeyOutline className="w-5 h-5 mr-2" />;
-            if (currentStep === 2) return <IoPersonOutline className="w-5 h-5 mr-2" />;
-            if (currentStep === 3) return <IoBriefcaseOutline className="w-5 h-5 mr-2" />;
+        const getStepIcon = (step) => {
+            if (step === 1) return <IoKeyOutline className="w-5 h-5 mr-2" />;
+            if (step === 2) return <IoPersonOutline className="w-5 h-5 mr-2" />;
+            if (step === 3) return <IoBriefcaseOutline className="w-5 h-5 mr-2" />;
+            if (step === 4) return <IoCalendarOutline className="w-5 h-5 mr-2" />; // NEW STEP 4
         };
 
-        const getStepColor = () => {
-            if (currentStep === 1) return "from-blue-500 to-purple-600";
-            if (currentStep === 2) return "from-purple-500 to-pink-600";
-            if (currentStep === 3) return "from-green-500 to-teal-600";
+        const getStepColor = (step) => {
+            if (step === 1) return "from-blue-500 to-purple-600";
+            if (step === 2) return "from-purple-500 to-pink-600";
+            if (step === 3) return "from-green-500 to-teal-600";
+            if (step === 4) return "from-cyan-500 to-blue-500"; // NEW STEP 4
         };
+
+        const steps = [1, 2, 3, 4]; // ADDED 4TH STEP
+
+        // Determine if a step is considered "completed" (visually, without strict validation check as requested)
+        const isStepVisuallyCompleted = (step) => step < currentStep;
+
 
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[200] p-2 sm:p-4">
@@ -1200,21 +1453,58 @@ function EmployeeApp() {
                     }`}
                 >
                     {/* Header */}
-                    <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${getStepColor()} text-white flex-shrink-0`}>
+                    <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gradient-to-r ${getStepColor(currentStep)} text-white flex-shrink-0`}>
                         <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-3 min-w-0 flex-1">
                                 <div className="text-xl sm:text-2xl">
-                                    {getStepIcon()}
+                                    {getStepIcon(currentStep)}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Add New Employee</h2>
-                                    <p className="text-xs sm:text-sm opacity-90 mt-1">Step {currentStep} of 3: {getStepTitle()}</p>
+                                    <p className="text-xs sm:text-sm opacity-90 mt-1">Step {currentStep} of {steps.length}: {getStepTitle(currentStep)}</p>
                                 </div>
                             </div>
                             <button onClick={handleFormClose} className="p-2 hover:bg-white/20 rounded-lg">
                                 <IoClose className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
                         </div>
+                    </div>
+
+                    {/* Step Navigation Bar (Clickable) */}
+                    <div className={`flex justify-between px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-b ${
+                        theme === 'dark' ? 'border-gray-700 bg-gray-900/40' : 'border-gray-200 bg-gray-50'
+                    }`}>
+                        {steps.map(step => {
+                            const isCompleted = isStepVisuallyCompleted(step);
+
+                            return (
+                                <button
+                                    key={step}
+                                    type="button"
+                                    onClick={() => handleStepClick(step)}
+                                    // Always enabled as requested
+                                    className={`flex-1 p-2 mx-1 sm:mx-2 text-sm sm:text-base font-semibold transition-all duration-300 rounded-lg flex items-center justify-center space-x-2 cursor-pointer ${
+                                        step === currentStep
+                                            ? `text-white ${getStepColor(step)} shadow-md`
+                                            : isCompleted
+                                                ? 'text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300'
+                                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                    } hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                >
+                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                                        step === currentStep
+                                            ? 'border-white bg-transparent'
+                                            : isCompleted
+                                                ? 'border-green-500 bg-green-500 text-white'
+                                                : 'border-gray-400 dark:border-gray-500'
+                                    }`}>
+                                        {step}
+                                    </span>
+                                    <span className="hidden sm:inline">{getStepTitle(step).split('/')[0]}</span>
+                                    {isCompleted && <IoCheckmarkCircle className="w-4 h-4 text-white" />}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Form Content - Fixed Height with Scrollable Content */}
@@ -1252,6 +1542,7 @@ function EmployeeApp() {
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                                             {employeeFormFields.map(field => (
                                                 <div key={field.name}>
+                                                    {/* Handlers adjusted to send correct context to renderField */}
                                                     {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
                                                 </div>
                                             ))}
@@ -1271,8 +1562,32 @@ function EmployeeApp() {
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                                             {payrollFormFields.map(field => (
                                                 <div key={field.name}>
+                                                    {/* Handlers adjusted to send correct context to renderField */}
+                                                    {renderField(field, formErrors, field.type === 'department-dropdown' ? handleDepartmentChange : handleFormChange, formData[field.name])}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* NEW: Step 4: Leaves/Attendance */}
+                                {currentStep === 4 && (
+                                    <div className="p-4 sm:p-6 rounded-lg border-2 border-cyan-500/50 bg-cyan-50 dark:bg-cyan-900/20">
+                                        <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                                            theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'
+                                        }`}>
+                                            <IoCalendarOutline className="w-5 h-5 mr-2" />
+                                            Leave/Attendance Details
+                                        </h3>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+                                            {leavesFormFields.filter(f => !f.hidden).map(field => ( // Filter out hidden fields
+                                                <div key={field.name}>
                                                     {renderField(field, formErrors, handleFormChange, formData[field.name])}
                                                 </div>
+                                            ))}
+                                            {/* Render hidden fields with default values for DTO consistency */}
+                                            {leavesFormFields.filter(f => f.hidden).map(field => (
+                                                <input key={field.name} type="hidden" name={field.name} value={formData[field.name]} />
                                             ))}
                                         </div>
                                     </div>
@@ -1296,7 +1611,7 @@ function EmployeeApp() {
 
                     {/* Footer with Action Buttons */}
                     <div className={`px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t flex-shrink-0 ${
-                        theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50/50'
+                        theme === 'dark' ? 'border-gray-700 bg-gray-900/50' : 'bg-gray-200 bg-gray-50/50'
                     } flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-4`}>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <button
@@ -1310,6 +1625,22 @@ function EmployeeApp() {
                             >
                                 Cancel
                             </button>
+
+                            {/* New Debug Button only visible on Step 4 */}
+                            {currentStep === 4 && (
+                                <button
+                                    type="button"
+                                    onClick={handlePrintPayload}
+                                    className={`px-6 sm:px-8 py-2 sm:py-3 border-2 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base flex items-center justify-center space-x-2 ${
+                                        theme === 'dark'
+                                            ? 'border-yellow-600 text-yellow-400 hover:bg-yellow-900/30'
+                                            : 'border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                                    }`}
+                                >
+                                    <IoInformationCircleOutline className="w-4 h-4" />
+                                    <span>Debug Payload</span>
+                                </button>
+                            )}
 
                             {currentStep > 1 && (
                                 <button
@@ -1328,7 +1659,7 @@ function EmployeeApp() {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            {currentStep < 3 ? (
+                            {currentStep < 4 ? ( // Updated step limit to 4
                                 <button
                                     type="button"
                                     onClick={handleNextStep}
@@ -1391,7 +1722,7 @@ function EmployeeApp() {
         setTerminatedEmployeesData([]);
         setTerminatedCurrentPage(0);
         setTerminatedHasMore(true);
-        setTerminatedSearchTerm('');
+        setTerminatedSearchTerm(''); // FIXED: Using the correct setter
         setIsTerminatedEmployeesModalOpen(true);
 
         loadTerminatedEmployees(0, true);
@@ -1484,8 +1815,8 @@ function EmployeeApp() {
                                 type="text"
                                 placeholder="Search terminated employees..."
                                 value={terminatedSearchTerm}
-                                onChange={(e) => setTerminatedSearchTerm(e.target.value)}
-                                className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 ${
+                                onChange={(e) => setTerminatedSearchTerm(e.target.value)} // FIXED: Using the correct setter
+                                className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 focus:outline-none ${
                                     theme === 'dark'
                                         ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                                         : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
@@ -1513,21 +1844,21 @@ function EmployeeApp() {
                                                 {employee.employeeImage ? (
                                                     <img
                                                         src={employee.employeeImage.startsWith("http")
-                                                            ? employee.employeeImage
-                                                            : `${baseApiUrl}/${employee.employeeImage}`
-                                                        }
+                                                             ? employee.employeeImage
+                                                             : `${baseApiUrl}/${employee.employeeImage}`
+                                                         }
                                                         alt={`${employee.displayName || 'Employee'}'s profile`}
                                                         className="h-12 w-12 rounded-full object-cover border-2 border-red-300 shadow-md"
                                                         onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                            e.target.nextSibling.style.display = 'flex';
-                                                        }}
+                                                             e.target.style.display = 'none';
+                                                             e.target.nextSibling.style.display = 'flex';
+                                                         }}
                                                     />
                                                 ) : null}
                                                 <div
                                                     className={`h-12 w-12 rounded-full bg-gradient-to-br from-red-500 via-red-600 to-red-700 flex items-center justify-center text-white text-sm font-bold shadow-md ${
-                                                        employee.employeeImage ? 'hidden' : 'flex'
-                                                    }`}
+                                                         employee.employeeImage ? 'hidden' : 'flex'
+                                                     }`}
                                                 >
                                                     {generateInitials(employee.displayName || employee.employeeId || 'N/A')}
                                                 </div>
@@ -1851,19 +2182,6 @@ function EmployeeApp() {
                                                                     <span>View Payroll</span>
                                                                 </button>
 
-                                                                {matchedArray && matchedArray.includes("VIEW_TEAM") &&
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleViewTeamsClick(employee);
-                                                                        }}
-                                                                        className={`px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold rounded-lg text-xs sm:text-sm w-full flex items-center justify-center space-x-2`}
-                                                                    >
-                                                                        <IoPeopleOutline className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                                        <span>View Teams</span>
-                                                                    </button>
-                                                                }
-
                                                                 {matchedArray.includes("EMPLOYEES_EMPLOYEE_TERMINATE_EMPLOYEE") && (
                                                                     <button
                                                                         onClick={(e) => {
@@ -1945,9 +2263,7 @@ function EmployeeApp() {
                                                                 theme === 'dark' ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100/50 text-gray-600'
                                                             }`}>
                                                                 <IoMailOutline className={`w-3 h-3 flex-shrink-0 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />
-                                                                <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>
-                                                                    {employee.workEmail || 'N/A'}
-                                                                </span>
+                                                                <span className="truncate text-xs min-w-0" title={employee.workEmail || 'N/A'}>{employee.workEmail || 'N/A'}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2143,7 +2459,7 @@ function EmployeeApp() {
             {popup.show && (
                 <Modal
                     onClose={() => setPopup({ show: false, message: '', type: '' })}
-                    title={popup.type === 'success' ? 'Success' : 'Error'}
+                    title={popup.type === 'success' ? 'Success' : popup.type === 'default' ? 'Information' : 'Error'}
                     type={popup.type}
                     theme={theme}
                 >
@@ -2151,7 +2467,7 @@ function EmployeeApp() {
                     <div className="flex justify-end">
                         <button
                             onClick={() => setPopup({ show: false, message: '', type: '' })}
-                            className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg text-sm`}
+                            className={`${popup.type === 'success' ? 'bg-green-600 hover:bg-green-700' : popup.type === 'default' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 px-6 rounded-lg text-sm`}
                         >
                             OK
                         </button>
