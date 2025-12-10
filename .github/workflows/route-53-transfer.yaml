@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - xyz
-
+  workflow_dispatch:
 jobs:
   host-webpage:
     runs-on: self-hosted
