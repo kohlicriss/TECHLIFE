@@ -2,11 +2,11 @@ name: Hosting webpage
 on:
   push:
     branches:
-      - main
+      - xyz
 
 jobs:
   host-webpage:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - name: Cleanup workspace
       run: |
