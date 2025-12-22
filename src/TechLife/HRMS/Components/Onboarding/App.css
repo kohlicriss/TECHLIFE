@@ -1,0 +1,404 @@
+/* src/App.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* --- GLOBAL RESET & ANIMATIONS --- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  /* Premium Light Background with subtle mesh gradient */
+  background: radial-gradient(circle at 10% 20%, rgba(255, 107, 53, 0.05) 0%, transparent 20%),
+              radial-gradient(circle at 90% 80%, rgba(142, 45, 226, 0.05) 0%, transparent 20%),
+              #f8f9fc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1f2937;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Aligns to top for scrolling */
+  min-height: 100vh;
+  margin: 0;
+  padding: 40px 20px;
+}
+
+/* --- MAIN CONTAINER --- */
+.container {
+  width: 100%;
+  max-width: 720px;
+  margin: auto;
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- MAIN CARD --- */
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -5px rgba(20, 20, 50, 0.08), 
+              0 0 0 1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Add a colored top border for branding */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px; /* Koncham thick chesa styling kosam */
+    background: linear-gradient(90deg, #ff6b35, #d92586, #8e2de2);
+}
+
+/* --- BRANDING HEADER (CENTERED & BIG LOGO) --- */
+.card-brand-header {
+    display: flex;
+    flex-direction: column; /* Stack Logo and Name vertically */
+    align-items: center;    /* Center them */
+    justify-content: center;
+    padding: 45px 40px 20px 40px; /* Top padding ekkuva icha logo kosam */
+    border-bottom: 1px solid #f3f4f6;
+    background: #ffffff;
+}
+
+.brand-logo {
+    height: 75px; /* LOGO SIZE BIG */
+    width: auto;
+    margin-bottom: 15px; /* Gap between logo and name */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+}
+
+.brand-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2a1b5e; /* Deep purple brand color */
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    text-align: center;
+}
+
+/* --- TITLE SECTION --- */
+.page-title-section {
+  padding: 30px 40px 10px 40px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  background: linear-gradient(135deg, #2a1b5e 0%, #d92586 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sub-text {
+  color: #6b7280;
+  font-size: 15px;
+  margin: 0;
+}
+
+/* --- FORM SECTIONS --- */
+.form-body {
+  padding: 30px 40px 40px 40px;
+}
+
+/* Visual Separation for Sections */
+.form-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 25px;
+  transition: all 0.3s ease;
+}
+
+.form-section:hover {
+  border-color: #d92586;
+  box-shadow: 0 10px 25px -5px rgba(217, 37, 134, 0.05);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 20px;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Decorative line next to title */
+.section-title::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(to bottom, #ff6b35, #d92586);
+  border-radius: 4px;
+}
+
+/* --- GRID LAYOUT --- */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .full-width {
+    grid-column: span 2;
+  }
+}
+
+/* --- INPUTS --- */
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.text-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #111827;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.text-input:focus {
+  background-color: #fff;
+  border-color: #d92586;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(217, 37, 134, 0.1);
+}
+
+textarea.text-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* --- FILE INPUT STYLING --- */
+input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 15px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  border: none;
+  color: #374151;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+input[type="file"]:hover::file-selector-button {
+  background: #e5e7eb;
+}
+
+input[type="file"]:hover {
+  border-color: #d92586;
+  background-color: #fffbfc;
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b35 0%, #d92586 50%, #8e2de2 100%);
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 10px 20px -5px rgba(217, 37, 134, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(217, 37, 134, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* --- STATUS & SUCCESS --- */
+.status-msg {
+  margin-top: 25px;
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.error-card {
+  text-align: center;
+  padding: 50px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+.error-title {
+  color: #ef4444;
+  margin: 0;
+}
+
+/* Success View Styles */
+.success-view {
+    text-align: center;
+    padding: 60px 40px;
+}
+
+.success-icon-container {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #2ecc71, #26a65b);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px auto;
+    box-shadow: 0 10px 25px rgba(46, 204, 113, 0.3);
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.checkmark {
+    width: 40px;
+    height: 40px;
+    fill: none;
+    stroke: white;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: drawCheck 0.6s 0.4s forwards;
+}
+
+.success-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #2a1b5e;
+    margin-bottom: 15px;
+}
+
+.success-desc {
+    color: #6b7280;
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+@keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes drawCheck {
+    to { stroke-dashoffset: 0; }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 480px) {
+  .form-body, .page-title-section {
+    padding: 24px;
+  }
+}
+
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}

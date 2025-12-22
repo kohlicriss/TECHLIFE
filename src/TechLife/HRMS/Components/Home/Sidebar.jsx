@@ -17,6 +17,7 @@ import {
   TicketCheck,
   UserRoundCog,
   FolderCog,
+  UserPlus,
 } from "lucide-react";
 import { TfiMoney } from "react-icons/tfi";
 import { Context } from "../HrmsContext";
@@ -141,11 +142,18 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
       icon: <UserRoundCog size={18} />,
       path: empId ? `/permissions/${empId}` : "/permissions",
     });
+    
     navItems.push({
       name: "ADMIN",
       icon: <FaUsers size={18} />,
       path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
     });
+    navItems.push({
+      name: "Onboarding",
+      icon: <UserPlus size={18} />,
+      path: empId ? `/onboarding/${empId}` : "/onboarding",
+    });
+     
   }
 
   if (userRole === "HR") {

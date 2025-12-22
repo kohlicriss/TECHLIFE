@@ -57,6 +57,20 @@ const Tickets = lazy(() =>
         default: () => <div className="p-8 text-center text-red-600">Failed to load Tickets. Please refresh.</div>
     }))
 );
+
+
+const OnboardingForm = lazy(() => 
+    import("./Onboarding/OnboardingForm").catch(() => ({
+        default: () => <div className="p-8 text-center text-red-600">Failed to load Form. Please refresh.</div>
+    }))
+);
+
+        const OnboardingPage = lazy(() => 
+    import("./Onboarding/OnboardingPage").catch(() => ({
+        default: () => <div className="p-8 text-center text-red-600">Failed to load Onboarding. Please refresh.</div>
+    }))
+);
+
 const EmployeeTicket = lazy(() => 
     import("./EmployeeTicket/EmployeeTicket").catch(() => ({
         default: () => <div className="p-8 text-center text-red-600">Failed to load Employee Tickets. Please refresh.</div>
@@ -72,6 +86,9 @@ const AttendanceDetails = lazy(() =>
         default: () => <div className="p-8 text-center text-red-600">Failed to load Dashboard. Please refresh.</div>
     }))
 );
+
+
+
 const AttendancesDashboard = lazy(() => 
     import("./EmployeeDashboards/AttendancesDashboard").catch(() => ({
         default: () => <div className="p-8 text-center text-red-600">Failed to load Attendance. Please refresh.</div>
@@ -416,6 +433,19 @@ const HrmsApp = () => {
                         >
                             <Suspense fallback={<FullPageSpinner />}>
                                 <Routes>
+                                    {/* PUBLIC ROUTES (Always Accessible):
+                                        Moved /offer/view here so it works even if user is logged in.
+                                    */}
+                                    <Route 
+                                        path="/offer/view" 
+                                        element={
+                                            <RouteWrapper moduleName="Onboarding Form">
+                                                <OnboardingForm />
+                                            </RouteWrapper>
+                                        } 
+                                    />
+
+                                    {/* UNAUTHENTICATED ROUTES */}
                                     {!isAuthenticated ? (
                                         <>
                                             <Route 
@@ -430,6 +460,7 @@ const HrmsApp = () => {
                                             <Route path="*" element={<Navigate to="/login" replace />} />
                                         </>
                                     ) : (
+                                        // AUTHENTICATED ROUTES
                                         // Protected Routes wrapped by MainLayout and UISidebarContext
                                         <Route
                                             element={
@@ -631,37 +662,49 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                              />
-     {/* Payroll Routes with Role-Based Access */}
-<Route 
-  path="/payroll/home/:empId" 
-  element={
-    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
-      <RouteWrapper moduleName="Home PayRoll">
-        <HomePayRoll />
-      </RouteWrapper>
-    </ProtectedRoute>
-  } 
-/>
-<Route 
-  path="/payroll/:empId" 
-  element={
-    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
-      <RouteWrapper moduleName="Pay Roll">
-        <PayRollPage />
-      </RouteWrapper>
-    </ProtectedRoute>
-  } 
-/>
-<Route 
-  path="/payroll/employee/:empId" 
-  element={
-    <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN', 'HR', 'MANAGER','TEAM_LEAD']}>
-      <RouteWrapper moduleName="Employee PayRoll">
-        <EmployeePayRoll />
-      </RouteWrapper>
-    </ProtectedRoute>
-  } 
-/>
+                                            {/* Payroll Routes with Role-Based Access */}
+                                            <Route 
+                                              path="/payroll/home/:empId" 
+                                              element={
+                                                <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                                                  <RouteWrapper moduleName="Home PayRoll">
+                                                    <HomePayRoll />
+                                                  </RouteWrapper>
+                                                </ProtectedRoute>
+                                              } 
+                                            />
+                                            <Route 
+                                              path="/payroll/:empId" 
+                                              element={
+                                                <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                                                  <RouteWrapper moduleName="Pay Roll">
+                                                    <PayRollPage />
+                                                  </RouteWrapper>
+                                                </ProtectedRoute>
+                                              } 
+                                            />
+
+                                            <Route 
+                                                path="/onboarding/:empID" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                                                        <RouteWrapper moduleName="Onboarding">
+                                                            <OnboardingPage />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
+
+                                            <Route 
+                                              path="/payroll/employee/:empId" 
+                                              element={
+                                                <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN', 'HR', 'MANAGER','TEAM_LEAD']}>
+                                                  <RouteWrapper moduleName="Employee PayRoll">
+                                                    <EmployeePayRoll />
+                                                  </RouteWrapper>
+                                                </ProtectedRoute>
+                                              } 
+                                            />
                                             
                                             {/* Admin/Management Routes */}
                                             <Route 
