@@ -739,7 +739,7 @@ const DepartmentDropdown = ({
 
       <div className="relative">
         <button
-          type="button"
+          type="button" 
           onClick={() => setIsOpen(!isOpen)}
           className={`w-full px-4 sm:px-5 py-3 sm:py-4 border-2 rounded-lg sm:rounded-xl text-left focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none
                         ${

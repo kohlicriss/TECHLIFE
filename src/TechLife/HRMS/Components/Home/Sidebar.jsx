@@ -17,6 +17,7 @@ import {
   TicketCheck,
   UserRoundCog,
   FolderCog,
+  UserPlus, // UserPlus icon import
 } from "lucide-react";
 import { TfiMoney } from "react-icons/tfi";
 import { Context } from "../HrmsContext";
@@ -129,30 +130,20 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     },
   ];
 
-  if (userRole === "ADMIN") {
-    // "Jobs" added only for ADMIN
+  // Add Onboarding and Permissions ONLY for ADMIN
+  if (userRole === 'ADMIN') {
+    // 1. Add Onboarding (Only for Admin)
     navItems.push({
-      name: "Jobs",
-      icon: <Database size={18} />,
-      path: empId ? `/jobs/${empId}` : "/jobs",
+      name: "Onboarding",
+      icon: <UserPlus size={18} />,
+      path: empId ? `/onboarding/${empId}` : "/onboarding",
     });
-    navItems.push({
-      name: "Permissions",
-      icon: <UserRoundCog size={18} />,
-      path: empId ? `/permissions/${empId}` : "/permissions",
-    });
-    navItems.push({
-      name: "ADMIN",
-      icon: <FaUsers size={18} />,
-      path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
-    });
-  }
 
-  if (userRole === "HR") {
-    navItems.push({
-      name: "HR",
-      icon: <FaUsers size={18} />,
-      path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
+    // 2. Add Permissions
+    navItems.push({ 
+      name: "Permissions", 
+      icon: <UserRoundCog size={18} />, 
+      path: empId ? `/permissions/${empId}` : "/permissions" 
     });
   }
 
