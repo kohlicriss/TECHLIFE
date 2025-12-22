@@ -555,8 +555,9 @@ const AttendanceTable = ({onBack}) => {
   const [error, setError] = useState(null);
 
   // pagination
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const rowsPerPageOptions = [12, 25, 50, 100];
 
   // build start/end date for fetch based on selectedMonth or current month
   const buildRange = () => {
@@ -686,9 +687,8 @@ logoutDisplay: (() => {
             })()
           };
         });
-
         setAttendanceRecords(normalized);
-        setPage(1);
+        setCurrentPage(1);
       } catch (err) {
         console.error(err);
         setError(err.message || 'Failed to load attendance');
@@ -731,8 +731,8 @@ logoutDisplay: (() => {
     return result;
   }, [attendanceRecords, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
-  const pageItems = filteredSorted.slice((page-1)*pageSize, page*pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
+const pageItems = filteredSorted.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   const totalEmployees = useMemo(() => {
     const uniqueIds = new Set(attendanceRecords.map(item => item.employeeId));
@@ -772,10 +772,14 @@ logoutDisplay: (() => {
             <option value="Last 7 days">Date: Last 7 days</option>
           </select>
 
-          <select value={pageSize} onChange={(e)=>{setPageSize(Number(e.target.value)); setPage(1);}} className="p-2 border border-gray-300 rounded-lg text-sm bg-white">
-            <option value={6}>6 / page</option>
-            <option value={12}>12 / page</option>
-            <option value={24}>24 / page</option>
+          <select
+            value={rowsPerPage}
+            onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            className="p-2 border border-gray-300 rounded-lg text-sm bg-white"
+          >
+            {rowsPerPageOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt} / page</option>
+            ))}
           </select>
         </div>
       </div>
@@ -841,9 +845,9 @@ logoutDisplay: (() => {
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
         <div className="flex items-center space-x-2">
-          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
-          <span className="px-3 py-1">Page {page} / {totalPages}</span>
-          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
+           <span className="px-3 py-1">Page {currentPage} / {totalPages}</span>
+           <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
         </div>
       </div>
 

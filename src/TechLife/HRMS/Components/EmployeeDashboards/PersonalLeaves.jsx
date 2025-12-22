@@ -1030,40 +1030,71 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
   const [shiftName, setShiftName] = useState(propShiftName);
   const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+
+  // Pagination: 1-based page for UI
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const rowsPerPageOptions = [10, 25, 50, 100];
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
+  // keep totalPages if server returns it; otherwise compute from items
+  const [totalPagesFromServer, setTotalPagesFromServer] = useState(null);
+
   useEffect(() => {
     setShiftName(propShiftName || "");
   }, [propShiftName]);
-  const fetchByShift = async (sName, p = 0) => {
+
+  // Helper: normalize many possible API response shapes into an array
+  const extractArray = (maybeArray) => {
+    if (!maybeArray) return [];
+    if (Array.isArray(maybeArray)) return maybeArray;
+    if (Array.isArray(maybeArray.content)) return maybeArray.content;
+    if (Array.isArray(maybeArray.data)) return maybeArray.data;
+    if (Array.isArray(maybeArray.items)) return maybeArray.items;
+    // fallback: first array value found on object
+    const firstArr = Object.values(maybeArray).find((v) => Array.isArray(v));
+    return firstArr || [];
+  };
+
+  // Use the largest configured page size for the server fetch so we get enough rows for client-side paging
+  const maxFetchSize = rowsPerPageOptions[rowsPerPageOptions.length - 1];
+
+  // Fetch employees for a shift (pull a large page so we can page client-side)
+  const fetchByShift = async (sName) => {
     if (!sName) {
       setItems([]);
+      setTotalPagesFromServer(null);
       return;
     }
-    setLoading(true); setError("");
+    setLoading(true);
+    setError("");
     try {
-      const res = await axios.get(`${API_BASE}/employees/${encodeURIComponent(sName)}?page=${p}&size=${size}`);
+      const res = await axios.get(`${API_BASE}/employees/${encodeURIComponent(sName)}?page=0&size=${maxFetchSize}`);
       const data = res.data;
-      if (Array.isArray(data)) {
-        setItems(data);
-        setTotalPages(1);
-      } else if (data.content) {
-        setItems(data.content || []);
-        setTotalPages(data.totalPages ?? 1);
+      // If API includes totalPages we keep it; otherwise null and we'll compute from data length
+      const list = extractArray(data);
+      setItems(list);
+      // try to read server paging if present
+      if (data && typeof data.totalPages !== "undefined") {
+        setTotalPagesFromServer(Number(data.totalPages));
       } else {
-        setItems(data.items || []);
+        setTotalPagesFromServer(null);
       }
+      // reset UI page
+      setCurrentPage(1);
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Failed to fetch");
+      setItems([]);
+      setTotalPagesFromServer(null);
     } finally {
       setLoading(false);
     }
   };
-    const fetchByEmployee = async (employeeIdOrObj) => {
+
+  // Fetch details by employee (keeps same behavior but fetches larger size so we can paginate if needed)
+  const fetchByEmployee = async (employeeIdOrObj) => {
     const empId =
       typeof employeeIdOrObj === "string"
         ? employeeIdOrObj
@@ -1076,30 +1107,50 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
       const now = new Date();
       const month = now.getMonth() + 1;
       const year = now.getFullYear();
+      // backend endpoint returns array for this employee -> keep that
       const res = await axios.get(`${API_BASE}/by/${encodeURIComponent(empId)}?month=${month}&year=${year}`);
-      setItems(Array.isArray(res.data) ? res.data : []);
-      setTotalPages(1);
+      const list = extractArray(res.data);
+      setItems(list);
+      setTotalPagesFromServer(null);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Failed to fetch");
+      setItems([]);
+      setTotalPagesFromServer(null);
     } finally {
       setLoading(false);
     }
   };
+
+  // Search handler (fetch employee-specific data)
   const handleSearch = () => {
-    setPage(0);
+    setCurrentPage(1);
     if (searchTerm.trim()) {
       fetchByEmployee(searchTerm.trim());
     } else {
-      fetchByShift(shiftName, 0);
+      // when search cleared, reload the shift list
+      fetchByShift(shiftName);
     }
   };
+
+  // When shift changes (prop or selection), reload once
   useEffect(() => {
-    if (!searchTerm.trim()) fetchByShift(shiftName, page);
-  }, [shiftName, page, size, searchTerm]);
+    if (!searchTerm.trim()) {
+      fetchByShift(shiftName);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shiftName]);
+
+  // computed pagination
+  const normalizedItems = Array.isArray(items) ? items : [];
+  const totalRecords = normalizedItems.length;
+  const totalPages = totalPagesFromServer || Math.max(1, Math.ceil(totalRecords / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedItems = normalizedItems.slice(startIndex, startIndex + rowsPerPage);
 
   const inputCls = `w-full px-4 py-2 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-base ${theme === "dark"
     ? "bg-gray-800 text-white border-gray-700 placeholder-gray-400"
-    : "bg-white text-gray-800 border-gray-300 placeholder-gray-500"}`; 
+    : "bg-white text-gray-800 border-gray-300 placeholder-gray-500"}`;
 
   return (
     <div className={`mt-2 p-8 rounded-xl ${theme === "dark" ? "bg-gray-900 border border-gray-800" : "bg-white border border-gray-200"} shadow-xl transition-shadow duration-300`}>
@@ -1115,7 +1166,22 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-stretch space-x-2 w-full md:w-auto">
+            <input
+              type="text"
+              placeholder="Search Employee ID"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className={inputCls}
+            />
+            <button
+              onClick={handleSearch}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md"
+            >
+              Search
+            </button>
           </div>
+
           <div className="flex items-center rounded-lg overflow-hidden shadow-sm border border-gray-300 dark:border-gray-700">
             <button
               title="Grid view"
@@ -1144,19 +1210,20 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
           </div>
         </div>
       </div>
+
       {error && <div className="p-3 bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 rounded-md text-sm mb-4">{error}</div>}
       {loading ? (
         <div className="py-12 text-center text-lg font-medium text-indigo-500">
           <span className="animate-pulse">Loading Employee Data...</span>
         </div>
-      ) : items.length === 0 ? (
+      ) : normalizedItems.length === 0 ? (
         <div className="py-12 text-center text-base text-gray-500 italic">
           {searchTerm.trim() ? "No shift records found for the employee ID." : "No records for this shift."}
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((it, idx) => (
-           <div key={idx} onClick={() => onViewEmployee(it.employeeId)} className={`cursor-pointer p-5 rounded-xl border transition-all duration-300 hover:shadow-lg ${theme === "dark" ? "bg-gray-800 border-gray-700 hover:border-indigo-600" : "bg-white border-gray-200 hover:border-indigo-400"}`} >
+          {paginatedItems.map((it, idx) => (
+            <div key={idx} onClick={() => onViewEmployee(it.employeeId)} className={`cursor-pointer p-5 rounded-xl border transition-all duration-300 hover:shadow-lg ${theme === "dark" ? "bg-gray-800 border-gray-700 hover:border-indigo-600" : "bg-white border-gray-200 hover:border-indigo-400"}`} >
               <div className="flex items-center justify-between mb-3 border-b pb-2 border-gray-200 dark:border-gray-700">
                 <div className="text-sm font-semibold text-indigo-500 dark:text-indigo-400">Employee ID</div>
                 <div className="text-xs text-gray-500 font-medium">{it.month}/{it.year}</div>
@@ -1189,7 +1256,7 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
               </tr>
             </thead>
             <tbody className={`divide-y divide-gray-200 ${theme === "dark" ? "text-gray-300 bg-gray-900" : "text-gray-700 bg-white"}`}>
-              {items.map((it, idx) => (
+              {paginatedItems.map((it, idx) => (
                 <tr key={idx} onClick={() => onViewEmployee(it.employeeId)} className={`cursor-pointer ${idx % 2 === 0 ? (theme === "dark" ? "bg-gray-900" : "bg-white") : (theme === "dark" ? "bg-gray-850" : "bg-gray-50")} hover:bg-indigo-50 dark:hover:bg-gray-700/50 transition-colors duration-150`} >
                   <td className="px-4 py-3 whitespace-nowrap font-medium text-indigo-600 dark:text-indigo-400">{it.employeeId}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{it.month}/{it.year}</td>
@@ -1203,30 +1270,37 @@ const EmployeeShiftDetails = ({ shiftName: propShiftName = "", onViewEmployee = 
         </div>
       )}
 
-      {/* Pagination Controls (Improved styling) */}
-      {items.length > 0 && (
+      {/* Pagination Controls */}
+      {normalizedItems.length > 0 && (
         <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing **{items.length}** records. Page **{page + 1}** of **{Math.max(1, totalPages)}**
+          <div className="flex items-center gap-3">
+            <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
+            <select
+              value={rowsPerPage}
+              onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              className={`border border-gray-300 px-2 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}
+            >
+              {rowsPerPageOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
           </div>
+
           <div className="flex items-center gap-2">
             <button
-              disabled={page <= 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors duration-200 ${page <= 0
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-indigo-500 hover:bg-indigo-600 text-white shadow-md"
-                }`}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
             >
               Previous
             </button>
+
+            <div className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages} — Showing {Math.min(rowsPerPage, totalRecords - startIndex)} of {totalRecords}
+            </div>
+
             <button
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors duration-200 ${page + 1 >= totalPages
-                  ? "bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed"
-                  : "bg-indigo-500 hover:bg-indigo-600 text-white shadow-md"
-                }`}
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
             >
               Next
             </button>
@@ -1250,8 +1324,9 @@ const PersonalLeaves = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(10);
+   const [currentPage, setCurrentPage] = useState(1); // 1-based page for UI
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const rowsPerPageOptions = [10, 25, 50, 100];
   const [filters, setFilters] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear()
@@ -1259,9 +1334,11 @@ const PersonalLeaves = () => {
   useEffect(() => {
     if (empId) setEmployeeId(empId);
   }, [empId]);
-  useEffect(() => {
+ useEffect(() => {
+  if (empId) {
     handleViewEmployee(empId);
-  }, [currentPage, filters]);
+  }
+}, [empId]);
   const [loggedPermissiondata,setLoggedPermissionData]=useState([]);
           const [matchedArray,setMatchedArray]=useState(null);
            const LoggedUserRole=userData?.roles[0]?`ROLE_${userData?.roles[0]}`:null
@@ -1280,52 +1357,83 @@ const PersonalLeaves = () => {
              }
              },[loggedPermissiondata]);
              console.log(matchedArray);
+   const extractArray = (maybeArray) => {
+    if (!maybeArray) return [];
+    if (Array.isArray(maybeArray)) return maybeArray;
+    if (Array.isArray(maybeArray.content)) return maybeArray.content;
+    if (Array.isArray(maybeArray.data)) return maybeArray.data;
+    if (Array.isArray(maybeArray.items)) return maybeArray.items;
+    // fallback: first array value found on object
+    const firstArr = Object.values(maybeArray).find((v) => Array.isArray(v));
+    return firstArr || [];
+  };
+
+  // Use the largest configured page size for the server fetch so we get enough rows for client-side paging
+  const maxFetchSize = rowsPerPageOptions[rowsPerPageOptions.length - 1];
+
   const loadAllEmployees = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
+      // always fetch page=0 with large size for client-side pagination
       const response = await PersonalLeavesService.attendanceReport(
         filters.month,
         filters.year,
-        currentPage,
-        pageSize
+        0,
+        maxFetchSize
       );
-      setEmployees(response || []);
+      const list = extractArray(response);
+      setEmployees(list);
+      setCurrentPage(1);
     } catch (err) {
-      setError('Failed to load employees: ' + (err.message || 'Unknown error'));
+      setError("Failed to load employees: " + (err.message || "Unknown error"));
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
   };
+
   const loadEmployeeDetails = async (employeeId) => {
+    if (!employeeId) return;
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const response = await PersonalLeavesService.getLeavesByEmployee(employeeId, currentPage,
-        pageSize);
-      setEmployees(response || []);
+      // fetch a large page of that employee's records (server supports pagination)
+      const response = await PersonalLeavesService.getLeavesByEmployee(
+        employeeId,
+        0,
+        maxFetchSize
+      );
+      const list = extractArray(response);
+      setEmployees(list);
+      setCurrentPage(1);
     } catch (err) {
-      setError('Failed to load employee details: ' + (err.message || 'Unknown error'));
+      setError("Failed to load employee details: " + (err.message || "Unknown error"));
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
-  }
+  };
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      loadAllEmployees();
+      await loadAllEmployees();
       return;
     }
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const response = await PersonalLeavesService.getLeavesByEmployee(
-        searchTerm,
-        currentPage,
-        pageSize
+        searchTerm.trim(),
+        0,
+        maxFetchSize
       );
-      setEmployees(response.data || []);
+      const list = extractArray(response);
+      setEmployees(list);
+      setCurrentPage(1);
     } catch (err) {
-      setError('Search failed: ' + (err.message || 'Unknown error'));
+      setError("Search failed: " + (err.message || "Unknown error"));
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -1396,7 +1504,11 @@ const PersonalLeaves = () => {
     }
   };
 
-
+  const normalizedEmployees = Array.isArray(employees) ? employees : [];
+  const totalRecords = normalizedEmployees.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedEmployees = normalizedEmployees.slice(startIndex, startIndex + rowsPerPage);
   const clearMessages = () => {
     setError('');
     setSuccess('');
@@ -1807,7 +1919,7 @@ const PersonalLeaves = () => {
                       </tr>
                     </thead>
                     <tbody className={`divide-y divide-gray-200 ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
-                      {employees.map((employee, index) => (
+                      {paginatedEmployees.map((employee, index) => (
                         <tr
                           key={index}
                           className={`cursor-pointer transition-colors ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-50"}`}
@@ -1829,50 +1941,69 @@ const PersonalLeaves = () => {
                             {employee.unpaidLeaves}
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium`}>
-                            {(matchedArray || []).includes("EDIT_LEAVES") && (<button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUpdateDetails(employee.employeeId);
-                                setActiveView('update');
-                              }}
-                              className="text-blue-600 hover:text-blue-900 mr-3"
-                            >
-                              Edit
-                            </button>)}
-                             {(matchedArray || []).includes("DELETE_LEAVES") && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteLeaves(employee.employeeId);
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>)}
+                            {(matchedArray || []).includes("EDIT_LEAVES") && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleUpdateDetails(employee.employeeId);
+                                  setActiveView("update");
+                                }}
+                                className="text-blue-600 hover:text-blue-900 mr-3"
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {(matchedArray || []).includes("DELETE_LEAVES") && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteLeaves(employee.employeeId);
+                                }}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm text-gray-700">
-                    Page {currentPage}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(prev => prev + 1)}
-                    className={`px-4 py-2 rounded-lg hover:bg-gray-300 ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
-                  >
-                    Next
-                  </button>
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className={`text-sm text-gray-700 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}>Rows per page:</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className={`border border-gray-300 px-2 py-1 rounded-md text-sm ${theme === 'dark' ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800'}`}
+                >
+                  {rowsPerPageOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+              </div>
+          
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
+                >
+                  Previous
+                </button>
+          
+                <div className="text-sm text-gray-700">
+                  Page {currentPage} of {totalPages} — Showing {Math.min(rowsPerPage, totalRecords - startIndex)} of {totalRecords}
                 </div>
+          
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-50 ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
               </>
             )}
           </div>

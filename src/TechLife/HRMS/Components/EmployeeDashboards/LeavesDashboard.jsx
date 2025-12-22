@@ -822,13 +822,17 @@ const WeeklyPattern = () => {
 //        </motion.div>
 //    );
 //};
-const LeaveHistory = ({ leaveHistoryData }) => {
-    const [currentPage, setCurrentPage] = useState(1);
+const LeaveHistory = ({
+    leaveHistoryData,
+    currentPage,
+    setCurrentPage,
+    rowsPerPage,
+    setRowsPerPage,
+    rowsPerPageOptions
+}) => {
     const [leaveTypeFilter, setLeaveTypeFilter] = useState("All");
     const [statusFilter, setStatusFilter] = useState("All");
     const [sortOption, setSortOption] = useState("Recently added");
-   const [rowsPerPage, setRowsPerPage] = useState(10);
-    const rowsPerPageOptions = [10, 25, 50, 100];
     const [isLoading, setIsLoading] = useState(false);
     const { empID } = useParams();
     const [selectedLeave, setSelectedLeave] = useState(null);
@@ -837,14 +841,10 @@ const LeaveHistory = ({ leaveHistoryData }) => {
 
     const leaveTypes = ["All", ...new Set(leaveHistoryData.map((d) => d.leave_type))];
     const statuses = ["All", ...new Set(leaveHistoryData.map((d) => d.status))];
-    const handleDetailsClick = (leave) => {
-  setSelectedLeave(leave);
-};
 
-const handleCloseModal = () => {
-  setSelectedLeave(null);
-};
-   // const sortOptions = ["Recently added", "Ascending", "Descending", "Last Month", "Last 7 Days"];
+    const handleDetailsClick = (leave) => { setSelectedLeave(leave); };
+    const handleCloseModal = () => { setSelectedLeave(null); };
+
     const filterAndSortData = () => {
         let data = [...leaveHistoryData];
         data = data.filter((item) => {
@@ -860,16 +860,18 @@ const handleCloseModal = () => {
             case "Descending":
                 data.sort((a, b) => b.leave_type.localeCompare(a.leave_type));
                 break;
-            case "Last Month":
+            case "Last Month": {
                 const lastMonth = new Date();
                 lastMonth.setMonth(lastMonth.getMonth() - 1);
-                data = data.filter((item) => new Date(item.leave_On) >= lastMonth);
+                data = data.filter((item) => new Date(item.leave_on) >= lastMonth);
                 break;
-            case "Last 7 Days":
+            }
+            case "Last 7 Days": {
                 const last7Days = new Date();
                 last7Days.setDate(last7Days.getDate() - 7);
-                data = data.filter((item) => new Date(item.leave_On) >= last7Days);
+                data = data.filter((item) => new Date(item.leave_on) >= last7Days);
                 break;
+            }
             case "Recently added":
             default:
                 data.sort((a, b) => new Date(b.action_Date) - new Date(a.action_Date));
@@ -877,7 +879,8 @@ const handleCloseModal = () => {
         }
         return data;
     };
-   const filteredAndSortedData= filterAndSortData();
+
+    const filteredAndSortedData = filterAndSortData();
     const totalPages = Math.ceil(filteredAndSortedData.length / rowsPerPage);
     const paginatedData = filteredAndSortedData.slice(
         (currentPage - 1) * rowsPerPage,
@@ -1159,14 +1162,15 @@ const LeavesDashboard = () => {
     const [leaveSummaryData, setLeaveSummaryData] = useState([]);
     const { empID,employeeId } = useParams();
     const { userData } = useContext(Context);
-     const [sidebarView, setSidebarView] = useState(null);
+    const [sidebarView, setSidebarView] = useState(null);
     const role = (userData?.roles?.[0] || "").toUpperCase();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [showMain,setShowMain]=useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-     const [error, setError] = useState(null);
     const showSidebar = ["TEAM_LEAD", "HR", "MANAGER","ADMIN"].includes(role);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const rowsPerPageOptions = [10, 25, 50, 100];
     const [currentLeaveHistoryData, setCurrentLeaveHistoryData] = useState([
 
     ]);
@@ -1223,8 +1227,10 @@ function deduplicateLeaves(leaves) {
     const fetchLeaveHistory = async () => {
         if (!userData?.employeeId) return;
         try {
+            // fetch enough rows to support client-side pagination (use largest rowsPerPage option)
+            const fetchSize = rowsPerPageOptions[rowsPerPageOptions.length - 1];
             const response = await dashboardApi.get(
-                `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData?.employeeId}/leaves?page=0&size=10`
+                `https://hrms.anasolconsultancyservices.com/api/attendance/employee/${userData.employeeId}/leaves?page=0&size=${fetchSize}`
             );
             const apiLeaves = Array.isArray(response.data) ? response.data : [];
             const key = `leaveHistory_${userData.employeeId}`;
@@ -1479,7 +1485,14 @@ function deduplicateLeaves(leaves) {
                                 <LeaveType />
                                 <WeeklyPattern />
                             </div>
-                             <LeaveHistory leaveHistoryData={currentLeaveHistoryData} />
+                             <LeaveHistory
+                                leaveHistoryData={currentLeaveHistoryData}
+                                currentPage={currentPage}
+                                setCurrentPage={setCurrentPage}
+                                rowsPerPage={rowsPerPage}
+                                setRowsPerPage={setRowsPerPage}
+                                rowsPerPageOptions={rowsPerPageOptions}
+                            />
                              {showAddLeaveForm && (
                                  <AddLeaveForm onClose={() => setShowAddLeaveForm(false)} onAddLeave={handleAddLeave} />
                              )}
