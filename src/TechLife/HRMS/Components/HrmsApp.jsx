@@ -18,6 +18,7 @@ import Department from "./Departments/Department";
 import Departmentspage from "./Departments/Departmentspage";
 import HomePayRoll from "./PayRoll/HomePayRoll";
 import PersonalLeaves from "./EmployeeDashboards/PersonalLeaves";
+// import CombinedDashBoard from "./EmployeeDashboards/"
 
 import JobsPage from "./Jobs/JobsPage";
 
@@ -76,6 +77,11 @@ const EmployeeTicket = lazy(() =>
         default: () => <div className="p-8 text-center text-red-600">Failed to load Employee Tickets. Please refresh.</div>
     }))
 );
+// const CombinedDashBoard = lazy(() => 
+//     import("./EmployeeDashboards/CombinedDashBoard").catch(() => ({
+//         default: () => <div className="p-8 text-center text-red-600">Failed to load Dashboard. Please refresh.</div>
+//     }))
+// );
 const AttendanceDetails = lazy(() => 
     import("./EmployeeDashboards/PersonalLeaves").catch(() => ({
         default: () => <div className="p-8 text-center text-red-600">Failed to load Dashboard. Please refresh.</div>
@@ -470,7 +476,7 @@ const HrmsApp = () => {
                                             }
                                         >
                                             {/* Admin/Combined Dashboards (Handling both route paths from the branches) */}
-                                            {/*<Route 
+                                            {/* <Route 
                                                 path="/combined-dashboard/:empId/*" 
                                                 element={
                                                     <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
@@ -479,7 +485,7 @@ const HrmsApp = () => {
                                                         </RouteWrapper>
                                                     </ProtectedRoute>
                                                 } 
-                                            />*/}
+                                            /> */}
                                             <Route 
                                                 path="/personal-leaves/:empId/*" 
                                                 element={
@@ -490,8 +496,26 @@ const HrmsApp = () => {
                                                     </ProtectedRoute>
                                                 } 
                                             />
-                        
-                                            
+                                            {/* <Route 
+                                                path="/admin-dashboard/:empId/*" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                                                        <RouteWrapper moduleName="Admin Dashboard">
+                                                            <CombinedDashBoard />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            /> */}
+                                              <Route 
+                                                path="/jobs/:empId/*" 
+                                                element={
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                                                        <RouteWrapper moduleName="Jobs Page">
+                                                            <JobsPage />
+                                                        </RouteWrapper>
+                                                    </ProtectedRoute>
+                                                } 
+                                            />
                                             {/* Employee Specific Dashboards */}
                                             <Route 
                                                 path="/attendance/:empId/*" 
