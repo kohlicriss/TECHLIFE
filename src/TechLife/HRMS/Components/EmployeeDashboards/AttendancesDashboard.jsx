@@ -12,7 +12,7 @@ import { FaBuilding, FaHome } from "react-icons/fa"
 import AttendanceReports from "./AttendanceReports";
 import { authApi, dashboardApi, publicinfoApi } from "../../../../axiosInstance";
 import { IoPersonOutline } from "react-icons/io5";
-import AttendanceTable from "./TotalEmployeeAttendance";
+//import AttendanceTable from "./TotalEmployeeAttendance";
 import { LiaFileAlt } from "react-icons/lia";
 import { Calendar, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Edit, X } from "lucide-react";
 
@@ -698,7 +698,7 @@ const EventListModal = ({ currentYear, currentMonth, onClose }) => {
     // Non-overlay modal: render inline so it stays inside App layout
     <div className=" absolute inset-0 flex justify-center items-center z-50 bg-white/50 bg-opacity-40 backdrop-blur-sm">
 
-      <div className={`max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-2 sm:p-6 relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className={`max-h-[60vh] overflow-y-auto w-full max-w-4xl mx-auto shadow-2xl rounded-xl p-2 sm:p-6 relative ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
 
         <div className="flex justify-between items-center border-b-4 border-teal-300 pb-3 mb-4">
           <h2 className="text-2xl font-extrabold text-teal-600 flex items-center">
@@ -715,8 +715,8 @@ const EventListModal = ({ currentYear, currentMonth, onClose }) => {
         ) : (
           <div className="space-y-4">
             {pageItems.map((event, index) => (
-              <div key={`${event.startDate}-${startIndex + index}`} className="border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 bg-teal-50">
-                <p className="text-lg font-bold text-teal-700 mb-1 border-b border-teal-100 pb-1">
+              <div key={`${event.startDate}-${startIndex + index}`} className={`border border-teal-200 rounded-xl p-4 shadow-sm transition duration-200 ${theme === 'dark' ? 'bg-teal-900' : 'bg-teal-50'}`}>
+                <p className={`text-lg font-bold mb-1 border-b border-teal-100 pb-1 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-700'}`}>
                   <Clock className="inline w-4 h-4 mr-2" />
                   Date: {event.startDate} {event.startDate !== event.endDate && (`- ${event.endDate}`)}
                 </p>
@@ -1033,7 +1033,7 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
     let bgClass = [`${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`];
     let borderClass = 'border-gray-300';
     let icon = null;
-    let textClass = 'text-gray-900';
+    let textClass = `${theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}`;
     if (status === 'present') {
 
       bgClass = 'bg-green-50 hover:bg-green-200';
@@ -1066,7 +1066,7 @@ function App({ attendanceRecords: externalAttendanceRecords = [] }) {
 
     } else {
 
-      bgClass = 'bg-gray-50 hover:bg-gray-100';
+      bgClass = `${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'} hover:${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`;
 
       borderClass = hasEvents ? 'border-indigo-500 border-2' : 'border-gray-300';
 
@@ -1366,18 +1366,29 @@ const FilterButtonGroup = ({ options, selectedOption, onSelect, className = "" }
 //];
 
 // --- Sub-Component for Hours and Schedule Bar ---
-const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGED
+const MyComponent = ({ Data, selectedMetricDate }) => {
   const [hoveredHour, setHoveredHour] = useState(null);
   const { theme } = useContext(Context);
 
-  // Helper to get start/end hour from time string
+  // DEBUG: డేటా వస్తుందో లేదో చూడడానికి
+  useEffect(() => {
+    console.log("Selected Date:", selectedMetricDate);
+    console.log("Available Data:", Data);
+  }, [Data, selectedMetricDate]);
+
+  // Helper to get decimal hours (e.g., 10:30 -> 10.5)
+  const getDecimalHour = (timeStr) => {
+    if (!timeStr) return 0;
+    const [h, m] = timeStr.split(':').map(Number);
+    return h + (m || 0) / 60;
+  };
+
   const getHourValue = useCallback((timeString) => {
-    const [start, end] = timeString.split(' - ');
-    const [startHour, startMinute] = start.split(':').map(Number);
-    const [endHour, endMinute] = end.split(':').map(Number);
+    if (!timeString) return { start: 0, end: 0 };
+    const [startStr, endStr] = timeString.split(' - ');
     return {
-      start: startHour + startMinute / 60,
-      end: endHour + endMinute / 60
+      start: getDecimalHour(startStr),
+      end: getDecimalHour(endStr)
     };
   }, []);
 
@@ -1389,23 +1400,32 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
     let result = "";
     if (hours > 0) result += `${String(hours).padStart(2, '0')}h `;
     if (minutes > 0) result += `${String(minutes).padStart(2, '0')}m `;
-    if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`;
+    // if (seconds > 0) result += `${String(seconds).padStart(2, '0')}s`; 
     return result.trim() || '0s';
   };
 
   // Calculate metrics for selected date
   const calculateMetrics = useMemo(() => {
-    if (!Data || selectedMetricDate === "All") return null; // <--- USE selectedMetricDate
-    const dayData = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate); // <--- USE selectedMetricDate
+    if (!Data || selectedMetricDate === "All") return null;
+
+    // FIX: Date Comparison ని robust గా మార్చాము (Strings trim చేసి check చేయడం)
+    const dayData = Data.find(d => {
+      const dataDate = `${d.Date}-${d.Month}-${d.Year}`;
+      return dataDate.trim() === selectedMetricDate.trim();
+    });
+
     if (!dayData || !dayData.End_time || !dayData.Start_time) return null;
 
     const totalWorkingSeconds =
       (new Date(`2000/01/01 ${dayData.End_time}`) - new Date(`2000/01/01 ${dayData.Start_time}`)) / 1000;
+    
     let breakSeconds = 0;
     if (dayData.Break_hour) {
       dayData.Break_hour.forEach(b => {
-        const [start, end] = b.Time.split(' - ');
-        breakSeconds += (new Date(`2000/01/01 ${end}`) - new Date(`2000/01/01 ${start}`)) / 1000;
+        if(b.Time) {
+            const [start, end] = b.Time.split(' - ');
+            breakSeconds += (new Date(`2000/01/01 ${end}`) - new Date(`2000/01/01 ${start}`)) / 1000;
+        }
       });
     }
     const productiveSeconds = totalWorkingSeconds - breakSeconds;
@@ -1418,61 +1438,90 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
       breakHours: formatDuration(breakSeconds),
       overtime: formatDuration(overtimeSeconds)
     };
-  }, [selectedMetricDate, Data]); // <--- USE selectedMetricDate
-  const scaleHour = useCallback((hour) => ((hour - 10) / 10) * 100, []);
+  }, [selectedMetricDate, Data]);
+
+  // FIX: Dynamic Scaling based on a standard 14-hour day (8 AM to 10 PM) or full 24 hours
+  // ఇక్కడ 8 AM (8) నుండి స్టార్ట్ అయ్యి 14 గంటల పాటు (until 10 PM) చూపిస్తుంది.
+  // మీ ఆఫీస్ టైమింగ్స్ బట్టి START_HOUR మార్చుకోవచ్చు.
+  const START_HOUR = 8; 
+  const TOTAL_VISIBLE_HOURS = 14; 
+
+  const scaleHour = useCallback((hour) => {
+    // (CurrentHour - StartHour) / TotalVisibleHours * 100
+    let percentage = ((hour - START_HOUR) / TOTAL_VISIBLE_HOURS) * 100;
+    // Clamping limits to keep inside the bar
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
+    return percentage;
+  }, []);
+
   const renderScheduleBar = useCallback(() => {
     if (!Data || selectedMetricDate === "All")
-      return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</motion.div>;
+      return <div className={`text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>Select a specific day to view the timeline.</div>;
 
     const rawDay = Data.find(d => `${d.Date}-${d.Month}-${d.Year}` === selectedMetricDate);
-    if (!rawDay)
-      return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedMetricDate}.</motion.div>;
+    
+    if (!rawDay) {
+        // Debugging log if date is not found
+        console.warn("Date match failed for:", selectedMetricDate, "in Data:", Data);
+        return <div className={`text-gray-500 text-center py-4 italic ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>No schedule available for {selectedMetricDate}.</div>;
+    }
 
-    // Apply IST offset to schedule times
     const dayData = applyOffsetToSchedule(rawDay);
+    
     const timePoints = new Set();
     if (dayData.Start_time) timePoints.add(dayData.Start_time);
     if (dayData.End_time) timePoints.add(dayData.End_time);
-    if (dayData.Break_hour)
+    
+    // Safety check for Break_hour
+    if (Array.isArray(dayData.Break_hour)) {
       dayData.Break_hour.forEach(b => {
         if (b.Time) {
           const [start, end] = b.Time.split(' - ');
-          if (start) timePoints.add(start);
-          if (end) timePoints.add(end);
+          if (start) timePoints.add(start.trim());
+          if (end) timePoints.add(end.trim());
         }
       });
+    }
+
     const sortedTimes = Array.from(timePoints).sort(
       (a, b) => new Date(`2000/01/01 ${a}`) - new Date(`2000/01/01 ${b}`)
     );
+
     const formatTimelineTime = (timeStr) => {
-      if (!timeStr) {
-        console.error("formatTimelineTime received a null or empty time string.");
-        return 'Invalid Time';
-      }
+      if (!timeStr) return '';
       const [hours, minutes] = timeStr.split(':').map(Number);
       const period = hours >= 12 ? 'PM' : 'AM';
       const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
       return `${formattedHours}${minutes > 0 ? `:${minutes}` : ''} ${period}`;
     };
-    const calculateDuration = (startTime, endTime) =>
-      (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
+
+    const calculateDuration = (startTime, endTime) => {
+        if(!startTime || !endTime) return 0;
+        return (new Date(`2000/01/01 ${endTime}`) - new Date(`2000/01/01 ${startTime}`)) / (1000 * 60 * 60);
+    }
+
     const workingHoursSegment = {
       type: 'working',
       time: `${dayData.Start_time} - ${dayData.End_time}`,
       duration: calculateDuration(dayData.Start_time, dayData.End_time)
     };
-    const breakHours = (dayData.Break_hour || []).map(h => ({
+
+    const breakHours = (Array.isArray(dayData.Break_hour) ? dayData.Break_hour : []).map(h => ({
       type: 'break',
       time: h.Time,
       duration: h.hour
     }));
-    const allHours = [workingHoursSegment, ...breakHours].sort(
+
+    const allHours = [workingHoursSegment, ...breakHours].filter(h => h.time && !h.time.includes('undefined')).sort(
       (a, b) => getHourValue(a.time).start - getHourValue(b.time).start
     );
+
     return (
-      <div>
+      <div className="mt-4">
+        {/* Timeline Bar Container */}
         <motion.div
-          className="w-full  h-10 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300"
+          className="w-full h-12 bg-gray-200 relative rounded-xl overflow-hidden border border-gray-300 shadow-inner"
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -1480,13 +1529,19 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
         >
           {allHours.map((hour, index) => {
             const { start, end } = getHourValue(hour.time);
+            
+            // SKIP invalid ranges
+            if(!start || !end) return null; 
+
             const leftPosition = scaleHour(start);
             const widthPercentage = scaleHour(end) - scaleHour(start);
-            const colorClass = hour.type === 'working' ? 'bg-green-300' : 'bg-yellow-300';
+            
+            const colorClass = hour.type === 'working' ? 'bg-green-400' : 'bg-yellow-400';
+            
             return (
               <motion.div
                 key={index}
-                className={`absolute h-full cursor-pointer transition-all duration-300 ${colorClass}`}
+                className={`absolute h-full cursor-pointer transition-all duration-300 ${colorClass} border-r border-white/20`}
                 style={{ left: `${leftPosition}%`, width: `${widthPercentage}%` }}
                 onMouseEnter={() => setHoveredHour(hour)}
                 onMouseLeave={() => setHoveredHour(null)}
@@ -1496,33 +1551,44 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
               >
                 {hoveredHour === hour && (
                   <div
-                    className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-800 text-white text-xs whitespace-nowrap"
+                    className="absolute bottom-full mb-2 p-2 rounded-md shadow-lg bg-gray-900 text-white text-xs whitespace-nowrap z-10"
                     style={{ left: '50%', transform: 'translateX(-50%)' }}
                   >
-                    <p>{hour.type === 'working' ? 'Working' : 'Break'}</p>
-                    <p>Time: {hour.time}</p>
-                    <p>Duration: {hour.duration.toFixed(2)} hours</p>
+                    <p className="font-bold">{hour.type === 'working' ? 'Working' : 'Break'}</p>
+                    <p>{hour.time}</p>
+                    <p>{Number(hour.duration).toFixed(2)} hrs</p>
                   </div>
                 )}
               </motion.div>
             );
           })}
         </motion.div>
-        <div className={`flex justify-between text-xs sm:text-sm  mt-2  ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
-          {sortedTimes.map((time, index) => (
-            <motion.span
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 + index * 0.1, duration: 0.3 }}
-            >
-              {formatTimelineTime(time)}
-            </motion.span>
-          ))}
+        
+        {/* Time Labels */}
+        <div className={`flex justify-between text-xs sm:text-sm mt-2 relative h-6 ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`}>
+          {sortedTimes.map((time, index) => {
+             const decHour = getDecimalHour(time);
+             const leftPos = scaleHour(decHour);
+             // Hide labels that are out of bounds (too early/too late)
+             if(decHour < START_HOUR || decHour > (START_HOUR + TOTAL_VISIBLE_HOURS)) return null;
+
+             return (
+                <motion.span
+                    key={index}
+                    className="absolute transform -translate-x-1/2"
+                    style={{ left: `${leftPos}%` }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 + index * 0.1, duration: 0.3 }}
+                >
+                    {formatTimelineTime(time)}
+                </motion.span>
+             )
+          })}
         </div>
       </div>
     );
-  }, [selectedMetricDate, Data, hoveredHour, getHourValue, scaleHour]); // <--- USE selectedMetricDate
+  }, [selectedMetricDate, Data, hoveredHour, getHourValue, scaleHour, theme]);
 
   return (
     <motion.div
@@ -1531,64 +1597,35 @@ const MyComponent = ({ Data, selectedMetricDate }) => { // <--- PROP NAME CHANGE
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <motion.div
-          className="flex flex-col items-center p-2 rounded-lg bg-gray-50 border border-gray-200 shadow-sm"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="flex items-center text-gray-500 mb-2">
-            <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Total</span>
-          </div>
-          <span className="text-lg sm:text-xl font-bold text-gray-800">
-            {calculateMetrics?.totalWorkingHours || 'N/A'}
-          </span>
-        </motion.div>
-        <motion.div
-          className="flex flex-col items-center p-2 rounded-lg bg-green-50 border border-green-200 shadow-sm"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="flex items-center text-green-700 mb-2">
-            <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Productive</span>
-          </div>
-          <span className="text-lg sm:text-xl font-bold text-green-800">
-            {calculateMetrics?.productiveHours || 'N/A'}
-          </span>
-        </motion.div>
-        <motion.div
-          className="flex flex-col items-center p-2 rounded-lg bg-yellow-50 border border-yellow-200 shadow-sm"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="flex items-center text-yellow-700 mb-2">
-            <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Break</span>
-          </div>
-          <span className="text-lg sm:text-xl font-bold text-yellow-800">
-            {calculateMetrics?.breakHours || 'N/A'}
-          </span>
-        </motion.div>
-        <motion.div
-          className="flex flex-col items-center p-2 rounded-lg bg-blue-50 border border-blue-200 shadow-sm"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <div className="flex items-center text-blue-700 mb-2">
-            <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-            <span className="text-sm font-medium">Overtime</span>
-          </div>
-          <span className="text-lg sm:text-xl font-bold text-blue-800">
-            {calculateMetrics?.overtime || 'N/A'}
-          </span>
-        </motion.div>
+        <MetricCard label="Total" value={calculateMetrics?.totalWorkingHours} color="gray" />
+        <MetricCard label="Productive" value={calculateMetrics?.productiveHours} color="green" />
+        <MetricCard label="Break" value={calculateMetrics?.breakHours} color="yellow" />
+        <MetricCard label="Overtime" value={calculateMetrics?.overtime} color="blue" />
       </div>
+
       {renderScheduleBar()}
     </motion.div>
   );
 };
+
+// Helper Component for Cards to reduce code duplication
+const MetricCard = ({ label, value, color }) => (
+    <motion.div
+        className={`flex flex-col items-center p-2 rounded-lg bg-${color}-50 border border-${color}-200 shadow-sm`}
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 300 }}
+    >
+        <div className={`flex items-center text-${color}-700 mb-2`}>
+            <span className={`w-3 h-3 bg-${color}-500 rounded-full mr-2`}></span>
+            <span className="text-sm font-medium">{label}</span>
+        </div>
+        <span className={`text-lg sm:text-xl font-bold text-${color}-800`}>
+            {value || 'N/A'}
+        </span>
+    </motion.div>
+);
 
 const ProfileAttendance = ({ theme, todayAttendance, isLoggedIn, loading }) => {
   const isDark = theme === "dark";
@@ -2322,127 +2359,142 @@ const fetchTodayAttendance = useCallback(async () => {
         if (cancelled) return;
         const data = payload?.getDetailsBetweenDates || [];
         const normalized = data.map((item) => {
-          const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
-            ? item.date
-            : (() => {
-              const parts = (item.date || '').split('-');
-              if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-              return new Date().toISOString().slice(0, 10);
-            })();
+  const dateForTime = /^\d{4}-\d{2}-\d{2}$/.test(item.date)
+    ? item.date
+    : (() => {
+        const parts = (item.date || '').split('-');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return new Date().toISOString().slice(0, 10);
+      })();
 
-          // more robust UTC parsing with fallbacks
-          const toUtcDate = (raw) => {
-            if (!raw) return null;
-            const s = String(raw).trim();
-            if (!s || /^(-|n\/a|null)$/i.test(s)) return null;
-            if (/\d{4}-\d{2}-\d{2}T/.test(s) || /[Zz]|[+\-]\d{2}:\d{2}$/.test(s)) {
-              const pd = new Date(s);
-              return isNaN(pd.getTime()) ? null : pd;
-            }
-            const parsedByJS = new Date(s);
-            if (!isNaN(parsedByJS.getTime())) return parsedByJS;
-            const hhmm = tryNormalizeTo24(s);
-            if (hhmm) {
-              const pd = new Date(`${dateForTime}T${hhmm}:00Z`);
-              return isNaN(pd.getTime()) ? null : pd;
-            }
-            const spaceSep = s.replace(' ', 'T');
-            if (/\d{4}-\d{2}-\d{2}T/.test(spaceSep)) {
-              const maybe = spaceSep.endsWith('Z') || /[+\-]\d{2}:\d{2}$/.test(spaceSep) ? new Date(spaceSep) : new Date(`${spaceSep}Z`);
-              if (!isNaN(maybe.getTime())) return maybe;
-            }
-            return null;
-          }
-          const formatDateToIST = (dateObj) => {
-            if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
-            return new Intl.DateTimeFormat('en-IN', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-              timeZone: 'Asia/Kolkata'
-            }).format(dateObj);
-          };
+  // --- helper functions (same as your existing code) ---
+  const toUtcDate = (raw) => {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    if (!s || /^(-|n\/a|null)$/i.test(s)) return null;
+    if (/\d{4}-\d{2}-\d{2}T/.test(s) || /[Zz]|[+\-]\d{2}:\d{2}$/.test(s)) {
+      const pd = new Date(s);
+      return isNaN(pd.getTime()) ? null : pd;
+    }
+    const parsedByJS = new Date(s);
+    if (!isNaN(parsedByJS.getTime())) return parsedByJS;
+    const hhmm = tryNormalizeTo24(s);
+    if (hhmm) {
+      const pd = new Date(`${dateForTime}T${hhmm}:00Z`);
+      return isNaN(pd.getTime()) ? null : pd;
+    }
+    const spaceSep = s.replace(' ', 'T');
+    if (/\d{4}-\d{2}-\d{2}T/.test(spaceSep)) {
+      const maybe = spaceSep.endsWith('Z') || /[+\-]\d{2}:\d{2}$/.test(spaceSep)
+        ? new Date(spaceSep)
+        : new Date(`${spaceSep}Z`);
+      if (!isNaN(maybe.getTime())) return maybe;
+    }
+    return null;
+  };
 
-          const loginRaw = item.login ?? item.loginTime ?? null;
-          const logoutRaw = item.logout ?? item.logoutTime ?? null;
+  const formatDateToIST = (dateObj) => {
+    if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
+    return new Intl.DateTimeFormat('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    }).format(dateObj);
+  };
 
-          const loginUtc = loginRaw ? toUtcDate(loginRaw) : null;
-          const logoutUtc = logoutRaw ? toUtcDate(logoutRaw) : null;
+  const loginRaw = item.login ?? item.loginTime ?? null;
+  const logoutRaw = item.logout ?? item.logoutTime ?? null;
 
-          // --- CHANGED: explicitly add IST offset (+5:30) to parsed UTC dates and format ---
-          const shiftAndFormat = (utcDate, rawValue) => {
-            if (!rawValue) return 'N/A';
-            try {
-              // try using already-parsed UTC date if available
-              let base = (utcDate && !isNaN(utcDate.getTime())) ? utcDate : null;
+  const loginUtc = loginRaw ? toUtcDate(loginRaw) : null;
+  const logoutUtc = logoutRaw ? toUtcDate(logoutRaw) : null;
 
-              // fallback: if raw is HH:mm build a UTC instant for dateForTime
-              if (!base) {
-                const hh = tryNormalizeTo24(String(rawValue));
-                if (hh) {
-                  base = new Date(`${dateForTime}T${hh}:00Z`);
-                }
-              }
+  const shiftAndFormat = (utcDate, rawValue) => {
+    if (!rawValue) return 'N/A';
+    try {
+      const maybe = String(rawValue).trim();
+      if (typeof tryNormalizeTo24 === 'function') {
+        const normalized = tryNormalizeTo24(maybe);
+        if (normalized && /^[0-2]?\d:[0-5]\d$/.test(normalized)) {
+          const [h, m] = normalized.split(':');
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+      const match = maybe.match(/([0-2]?\d):([0-5]\d)(?::[0-5]\d)?/);
+      if (match) {
+        return `${String(match[1]).padStart(2, '0')}:${String(match[2]).padStart(2, '0')}`;
+      }
+    } catch {}
 
-              // final parse fallback
-              if (!base) {
-                const maybe = new Date(String(rawValue));
-                if (!isNaN(maybe.getTime())) base = maybe;
-              }
+    try {
+      let base = (utcDate && !isNaN(utcDate.getTime())) ? utcDate : null;
+      if (!base) {
+        const hhmm = (typeof tryNormalizeTo24 === 'function') ? tryNormalizeTo24(String(rawValue)) : null;
+        if (hhmm && /^[0-2]?\d:[0-5]\d$/.test(hhmm)) {
+          base = new Date(`${dateForTime}T${hhmm}:00Z`);
+        }
+      }
+      if (!base) {
+        const maybeDate = new Date(String(rawValue));
+        if (!isNaN(maybeDate.getTime())) base = maybeDate;
+      }
+      if (!base || isNaN(base.getTime())) return 'N/A';
+      const istMs = base.getTime() + (typeof IST_OFFSET_MINUTES === 'number' ? IST_OFFSET_MINUTES : 330) * 60 * 1000;
+      const istDate = new Date(istMs);
+      const hh = String(istDate.getUTCHours()).padStart(2, '0');
+      const mm = String(istDate.getUTCMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    } catch {
+      return 'N/A';
+    }
+  };
 
-              if (!base || isNaN(base.getTime())) return String(rawValue);
+  const loginDisplay = shiftAndFormat(loginUtc, loginRaw);
+  const logoutDisplay = shiftAndFormat(logoutUtc, logoutRaw);
 
-              // add IST offset (+5:30) explicitly
-              const istMs = base.getTime() + IST_OFFSET_MINUTES * 60 * 1000;
-              const istDate = new Date(istMs);
+  // compute duration using the parsed UTC Date objects (difference is timezone-safe)
+  let totalDurationMinutes = 0;
+  if (loginUtc && logoutUtc && !isNaN(loginUtc.getTime()) && !isNaN(logoutUtc.getTime())) {
+    totalDurationMinutes = Math.max(0, Math.floor((logoutUtc.getTime() - loginUtc.getTime()) / (1000 * 60)));
+  } else {
+    const eff = parseEffectiveHours(item.effectiveHours || '');
+    const gross = parseEffectiveHours(item.grossHours || '');
+    totalDurationMinutes = eff || gross || 0;
+  }
+  const effectiveMinutes = parseEffectiveHours(item.effectiveHours || '');
+  const grossMinutes = parseEffectiveHours(item.grossHours || '');
 
-              // Format the shifted instant as a 12-hour India-style time
-              return new Intl.DateTimeFormat('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-                timeZone: 'UTC' // we've already shifted, present as UTC to avoid double TZ conversion
-              }).format(istDate);
-            } catch {
-              return String(rawValue);
-            }
-          };
+  // --- NEW: normalize mode ---
+  const rawMode = (item.mode ?? item.modeType ?? item.modeName ?? '').toString().trim();
+  let modeNormalized = 'Office';
+  if (rawMode) {
+    const s = rawMode.toLowerCase();
+    if (s.includes('office')) modeNormalized = 'Office';
+    else if (s.includes('home') || s.includes('remote') || s.includes('wfh')) modeNormalized = 'Remote';
+    else modeNormalized = rawMode.charAt(0).toUpperCase() + rawMode.slice(1);
+  }
 
-
-          const loginDisplay = shiftAndFormat(loginUtc, loginRaw);
-          const logoutDisplay = shiftAndFormat(logoutUtc, logoutRaw);
-
-          // compute duration using the parsed UTC Date objects (difference is timezone-safe)
-          let totalDurationMinutes = 0;
-          if (loginUtc && logoutUtc && !isNaN(loginUtc.getTime()) && !isNaN(logoutUtc.getTime())) {
-            totalDurationMinutes = Math.max(0, Math.floor((logoutUtc.getTime() - loginUtc.getTime()) / (1000 * 60)));
-          } else {
-            const eff = parseEffectiveHours(item.effectiveHours || '');
-            const gross = parseEffectiveHours(item.grossHours || '');
-            totalDurationMinutes = eff || gross || 0;
-          }
-          const effectiveMinutes = parseEffectiveHours(item.effectiveHours || '');
-          const grossMinutes = parseEffectiveHours(item.grossHours || '');
-
-          return {
-            ...item,
-            date: item.date,
-            loginDisplay,
-            logoutDisplay,
-            effectiveHoursDisplay: toHHMMDisplay(item.effectiveHours),
-            grossHoursDisplay: toHHMMDisplay(item.grossHours),
-            totalDurationMinutes,
-            totalDurationHHMM: totalDurationMinutes > 0 ? formatMinutesToHHMM(totalDurationMinutes) : 'N/A',
-            effectiveMinutes,
-            grossMinutes,
-            attended: (() => {
-              const v = item.isPresent;
-              if (v == null) return false;
-              const s = String(v).toLowerCase();
-              return ['present', 'p', 'yes', 'true', '1'].includes(s);
-            })()
-          };
-        });
+  return {
+    ...item,
+    date: item.date,
+    loginDisplay,
+    logoutDisplay,
+    mode: modeNormalized,
+    modeRaw: rawMode || null,
+    effectiveHoursDisplay: toHHMMDisplay(item.effectiveHours),
+    grossHoursDisplay: toHHMMDisplay(item.grossHours),
+    totalDurationMinutes,
+    totalDurationHHMM: totalDurationMinutes > 0 ? formatMinutesToHHMM(totalDurationMinutes) : 'N/A',
+    effectiveMinutes,
+    grossMinutes,
+    attended: (() => {
+      const v = item.isPresent;
+      if (v == null) return false;
+      const s = String(v).toLowerCase();
+      return ['present', 'p', 'yes', 'true', '1'].includes(s);
+    })()
+  };
+});
 
         setAttendanceRecords(normalized);
         setPage(1);
@@ -2560,7 +2612,7 @@ const fetchTodayAttendance = useCallback(async () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <LiaFileAlt className="w-5 h-5 inline-block mr-2" />Total Employee Attendance
+              {/*<LiaFileAlt className="w-5 h-5 inline-block mr-2" />Total Employee Attendance*/}
             </motion.h3>
             <motion.h3
               className={`text-lg font-bold   cursor-pointer mb-4 p-2 rounded-md  hover:bg-blue-100 transition-colors duration-200 ${theme === 'dark' ? 'text-white hover:bg-gray-900' : 'text-gray-800'}`}
@@ -2598,7 +2650,7 @@ const fetchTodayAttendance = useCallback(async () => {
           </header>
           {/* Conditional Rendering of Main Content */}
           <AnimatePresence mode="wait">
-            {sidebarView === 'attendance' && (
+            {/*{sidebarView === 'attendance' && (
               <motion.div
                 key="attendance"
                 initial={{ opacity: 0, y: 20 }}
@@ -2608,7 +2660,7 @@ const fetchTodayAttendance = useCallback(async () => {
               >
                 <AttendanceTable onBack={() => setSidebarView(null)} />
               </motion.div>
-            )}
+            )}*/}
             {sidebarView === 'attendanceReport' && (
               <motion.div
                 key="reports"
@@ -3229,11 +3281,14 @@ const fetchTodayAttendance = useCallback(async () => {
                                     {record.date}
                                   </td>
                                   <td className="py-4 px-4 hidden sm:table-cell">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${record.mode === 'Office'
-                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
-                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
-                                      }`}>
-                                      {record.mode}
+                                    <span
+                                      className={`block w-full text-center px-2.5 py-2 rounded text-xs font-medium ${
+                                        String(record.mode || '').toLowerCase().includes('office')
+                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
+                                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
+                                      }`}
+                                    >
+                                      {record.mode || 'N/A'}
                                     </span>
                                   </td>
                                   <td className={`py-4 px-4 text-sm hidden sm:table-cell ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
@@ -3280,11 +3335,14 @@ const fetchTodayAttendance = useCallback(async () => {
                                         </div>
                                         <div className="flex justify-between">
                                           <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Mode:</span>
-                                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${record.mode === 'Office'
-                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
-                                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
-                                            }`}>
-                                            {record.mode}
+                                          <span
+                                            className={`inline-block text-center w-28 px-2 py-0.5 rounded text-xs font-medium ${
+                                              String(record.mode || '').toLowerCase().includes('office')
+                                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100'
+                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
+                                            }`}
+                                          >
+                                            {record.mode || 'N/A'}
                                           </span>
                                         </div>
                                         <div className="flex justify-between">

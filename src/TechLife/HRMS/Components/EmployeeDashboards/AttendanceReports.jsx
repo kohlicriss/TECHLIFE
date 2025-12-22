@@ -1,198 +1,9 @@
-import { CalendarDaysIcon, ClockIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
-import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import {ClockIcon} from "@heroicons/react/24/outline";
 import React, { useMemo, useState, Fragment, useContext, useEffect } from "react";
-import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
-import { MdEditCalendar } from "react-icons/md";
-import { BiArchiveOut, BiCalendarStar, BiCodeBlock, BiError, BiLogIn, BiSolidCalendarEvent, BiSolidUser } from "react-icons/bi";
 import { motion, AnimatePresence } from "framer-motion";
-import { AiOutlineGift } from "react-icons/ai";
 import { Context } from "../HrmsContext";
-import { PieChart, Pie, Cell, Tooltip } from "recharts";
-import {BarChart,Bar,XAxis,YAxis,CartesianGrid,ResponsiveContainer,} from "recharts";
+import {BarChart,Bar,XAxis,YAxis,CartesianGrid,ResponsiveContainer,Tooltip} from "recharts";
 import axios from 'axios';
-
-const ChartData = [
-    {
-        title: "Total ClockIn",
-        value: "104",
-    },
-    {
-        title: "Not ClockIn ",
-        value: "10",
-    },
-    {
-        title: "On leave",
-        value: "6",
-    },
-    {
-        title: "Weekly Off",
-        value: "5",
-       
-    },
-    {
-        title: "Holiday",
-        value: "10", 
-    },
-    {
-        title: "ClockOut",
-        value: "104",
-       
-    }
-];
-
-
-const ChartCard = ({ title, icontextcolor, icon, value, color }) => {
-    
-    const {theme} = useContext(Context);
-    return (
-        <motion.div
-            className={` rounded-xl p-6 shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col items-center justify-center text-center space-y-2 ${theme==='dark' ? 'bg-gray-600 ':'bg-stone-100 '}`}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-            
-            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-2 p-2 ${color} ${icontextcolor}`}>
-                {React.cloneElement(icon, { className: `w-10 h-10 rounded-full ` })}
-            </div>
-            <div>
-                <p className={`text-3xl font-bold mt-2 ${theme==='dark' ? 'bg-gradient-to-br from-blue-100 to-blue-500 bg-clip-text text-transparent' :'text-gray-800 '}`}>
-                    {value}</p>
-                <h3 className={`text-sm  ${theme==='dark' ? 'text-white ':'text-gray-800'} `}>{title}</h3>
-            </div>
-            
-        </motion.div>
-    );
-};
-const DashboardGrid = () => {
-    const {theme}= useContext(Context)
-    return (
-        <div className="p-2 h-full flex flex-col justify-between">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-7 gap-6 h-full">
-                <EmployeePieChart/>
-                {ChartData.map((chart, index) => {
-                    let icon, icontextcolor, colorHandler;
-
-                    switch (chart.title) {
-                        case "Total ClockIn": icon = <BiArchiveOut className="w-8 h-8 text-white" />; colorHandler = "bg-orange-100"; icontextcolor = "text-orange-400";  break;
-                        case "Not ClockIn ": icon = < BiError  className="w-8 h-8 text-white" />; colorHandler = "bg-red-100"; icontextcolor = "text-red-400";  break;
-                        case "On leave": icon = <BiCodeBlock className="w-8 h-8 text-white" />; colorHandler = "bg-green-100"; icontextcolor = "text-green-400";  break;
-                        case "Weekly Off": icon = <BiSolidCalendarEvent className="w-8 h-8 text-white" />; colorHandler = "bg-blue-100"; icontextcolor = "text-blue-400";  break;
-                        case "Holiday": icon = <AiOutlineGift  className="w-8 h-8 text-white" />; colorHandler = "bg-indigo-100"; icontextcolor = "text-indigo-400";  break;
-                        case "ClockOut": icon = <BiLogIn className="w-8 h-8 text-white" />; colorHandler = "bg-yellow-100"; icontextcolor = "text-yellow-400";  break;
-                        default:  icon = <ArrowPathIcon className="w-10 h-10 text-white" />; colorHandler = "#D3D3D3"; icontextcolor = "text-gray-100";
-                    }
-                    return (
-                        <ChartCard key={index} icon={icon} color={colorHandler} value={chart.value} title={chart.title} icontextcolor={icontextcolor}/>
-                    );
-                })}
-            </div>
-            </div>
-        
-    );
-};
-
-
-const piechartData = [
-  { title: "Total ClockIn", value: 104 },
-  { title: "Not ClockIn ", value: 10 },
-  { title: "On leave", value: 6 },
-  { title: "Weekly Off", value: 5 },
-  { title: "Holiday", value: 10 },
-  { title: "ClockOut", value: 104 },
-];
-
-const COLORS = ["#3B82F6", "#F59E0B", "#EF4444", "#84CC16", "#6B7280", "#22C55E"];
-
-const EmployeePieChart = () => {
-    const {theme}=useContext(Context)
-  const totalEmployees = piechartData.reduce(
-    (sum, entry) => sum + entry.value,
-    0
-  );
-  const textColor = theme==='dark' ? "white" : "black";
-
-  return (
-    <div className="flex justify-center items-center">
-      {/* Chart container */}
-      <PieChart width={160} height={160}>
-        <Pie
-          data={piechartData}
-          dataKey="value"
-          nameKey="title"
-          cx="50%"
-          cy="50%"
-          innerRadius={55} // Donut chart shape kosam inner radius set cheyyandi
-          outerRadius={80}
-         
-        >
-          {piechartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <text
-            x="50%"
-            y="50%"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            stroke={textColor}
-            className={`text-sm font-small `}
-        >
-           Total Employees
-          <span className={` ${theme==='dark'?'text-gray-200':'text-gray-800'} text-xl font-bold `}>
-          {totalEmployees}
-        </span>
-        </text>
-        <Tooltip />
-      </PieChart>
-    </div>
-  );
-};
-//const employees = [
-//    {
-//        name: 'John Doe',
-//        title: 'UI/UX Designer',
-//        department: 'UI/UX',
-//        status: 'Clocked In',
-//        time: '09:15',
-//        Arrival:"On-Time"
-//    },
-//    {
-//        name: 'Raju',
-//        title: 'Project Manager',
-//        department: 'Management',
-//        status: 'Clocked In',
-//        time: '09:36',
-//        Arrival:"On-Time"
-//    },
-//    {
-//        name: 'Srilekha',
-//        title: 'PHP Developer',
-//        department: 'Development',
-//        status: 'Clocked In',
-//        time: '09:15',
-//        Arrival:"On-Time",
-//        details: {
-//            clockIn: '10:30 AM',
-//            clockOut: '09:45 AM',
-//            production: '09:21 Hrs',
-//        },
-//    },
-//    {
-//        name: 'Anita',
-//        title: 'Marketing Head',
-//        department: 'Marketing',
-//        Arrival: 'Late',
-//        lateTime: '30 Min',
-//        time: '10:35',
-//    }
-//
-//];
-
-
-
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ');
@@ -402,14 +213,6 @@ const TopOnTime = () => {
     );
 };
 
-//const onTimeDate = [
-//  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 100 },
-//  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 120 },
-//  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 80 },
-//  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 150 },
-//  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 7 },
-//];
-
 const EmployeeBarChart = () => {
   const { theme } = useContext(Context);
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -525,14 +328,6 @@ const EmployeeBarChart = () => {
     </motion.div>
   );
 };
-
-//const overTimeworkDate = [
-//  { Date: "11", Month: "Aug", Year: "2025", NoofEmployee: 50, Hour: 3 },
-//  { Date: "12", Month: "Aug", Year: "2025", NoofEmployee: 60, Hour: 5 },
-//  { Date: "13", Month: "Aug", Year: "2025", NoofEmployee: 10, Hour: 10 },
-//  { Date: "14", Month: "Aug", Year: "2025", NoofEmployee: 8, Hour: 15 },
-//  { Date: "15", Month: "Aug", Year: "2025", NoofEmployee: 40, Hour: 20 },
-//];
 
 const EmployeeOvertimeChart = () => {
   const { theme } = useContext(Context);
@@ -760,8 +555,9 @@ const AttendanceTable = ({onBack}) => {
   const [error, setError] = useState(null);
 
   // pagination
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const rowsPerPageOptions = [12, 25, 50, 100];
 
   // build start/end date for fetch based on selectedMonth or current month
   const buildRange = () => {
@@ -778,6 +574,41 @@ const AttendanceTable = ({onBack}) => {
     return { startISO: toISO(start), endISO: toISO(end) };
   };
 
+  const formatToHHMMFromRaw = (timeStr, dateRef = null) => {
+  if (!timeStr) return 'N/A';
+  const raw = String(timeStr).trim();
+  if (raw === 'N/A') return 'N/A';
+
+  // If the raw string already contains HH:MM or HH:MM:SS, extract HH:MM
+  const m = raw.match(/([0-2]?\d):([0-5]\d)(?::[0-5]\d)?/);
+  if (m) {
+    return `${String(m[1]).padStart(2, '0')}:${String(m[2]).padStart(2, '0')}`;
+  }
+
+  // Try the existing parser which returns an IST-shifted Date (if available)
+  try {
+    const d = parseToISTDate(raw, dateRef);
+    if (d && !isNaN(d.getTime())) {
+      // parseToISTDate returns a Date shifted to IST; use UTC fields to get IST values reliably
+      const hh = String(d.getUTCHours()).padStart(2, '0');
+      const mm = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+  } catch (e) {}
+
+  // Fallback: try normal Date parse and shift by IST offset
+  try {
+    const parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) {
+      const shifted = new Date(parsed.getTime() + IST_OFFSET_MINUTES * 60 * 1000);
+      const hh = String(shifted.getUTCHours()).padStart(2, '0');
+      const mm = String(shifted.getUTCMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+  } catch (e) {}
+
+  return 'N/A';
+};
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
@@ -828,12 +659,22 @@ const AttendanceTable = ({onBack}) => {
           return {
             ...item,
             date: item.date,
-            loginDisplay: (loginIST && !isNaN(loginIST.getTime()))
-              ? loginIST.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-              : toISTTimeDisplay(item.login, dateForTime),
-            logoutDisplay: (logoutIST && !isNaN(logoutIST.getTime()))
-              ? logoutIST.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-              : toISTTimeDisplay(item.logout, dateForTime),
+            loginDisplay: (() => {
+  if (loginIST && !isNaN(loginIST.getTime())) {
+    const hh = String(loginIST.getUTCHours()).padStart(2, '0');
+    const mm = String(loginIST.getUTCMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  return formatToHHMMFromRaw(item.login, dateForTime);
+})(),
+logoutDisplay: (() => {
+  if (logoutIST && !isNaN(logoutIST.getTime())) {
+    const hh = String(logoutIST.getUTCHours()).padStart(2, '0');
+    const mm = String(logoutIST.getUTCMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  return formatToHHMMFromRaw(item.logout, dateForTime);
+})(),
             effectiveHoursDisplay: effectiveMinutes > 0 ? formatMinutesToHHMM(effectiveMinutes) : 'N/A',
             grossHoursDisplay: grossMinutes > 0 ? formatMinutesToHHMM(grossMinutes) : 'N/A',
             totalDurationMinutes,
@@ -846,9 +687,8 @@ const AttendanceTable = ({onBack}) => {
             })()
           };
         });
-
         setAttendanceRecords(normalized);
-        setPage(1);
+        setCurrentPage(1);
       } catch (err) {
         console.error(err);
         setError(err.message || 'Failed to load attendance');
@@ -891,8 +731,8 @@ const AttendanceTable = ({onBack}) => {
     return result;
   }, [attendanceRecords, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
-  const pageItems = filteredSorted.slice((page-1)*pageSize, page*pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
+const pageItems = filteredSorted.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   const totalEmployees = useMemo(() => {
     const uniqueIds = new Set(attendanceRecords.map(item => item.employeeId));
@@ -932,10 +772,14 @@ const AttendanceTable = ({onBack}) => {
             <option value="Last 7 days">Date: Last 7 days</option>
           </select>
 
-          <select value={pageSize} onChange={(e)=>{setPageSize(Number(e.target.value)); setPage(1);}} className="p-2 border border-gray-300 rounded-lg text-sm bg-white">
-            <option value={6}>6 / page</option>
-            <option value={12}>12 / page</option>
-            <option value={24}>24 / page</option>
+          <select
+            value={rowsPerPage}
+            onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            className="p-2 border border-gray-300 rounded-lg text-sm bg-white"
+          >
+            {rowsPerPageOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt} / page</option>
+            ))}
           </select>
         </div>
       </div>
@@ -1001,9 +845,9 @@ const AttendanceTable = ({onBack}) => {
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600">Showing {pageItems.length} of {filteredSorted.length} records</div>
         <div className="flex items-center space-x-2">
-          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
-          <span className="px-3 py-1">Page {page} / {totalPages}</span>
-          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Prev</button>
+           <span className="px-3 py-1">Page {currentPage} / {totalPages}</span>
+           <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50">Next</button>
         </div>
       </div>
 
@@ -1027,11 +871,6 @@ function AttendanceReports({ onBack }) {
             >
                 ← Back to Dashboard
             </button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-2">
-                <DashboardGrid />
-                
-                
             </div>
              <div className="grid grid-cols-1 lg:grid-cols-3  gap-6 mb-8">
                 <TopOnTime />

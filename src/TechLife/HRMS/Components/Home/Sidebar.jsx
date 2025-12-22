@@ -128,41 +128,14 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
         ? `/payroll/employee/${empId}`
         : "/payroll/employee",
     },
-  ];
-
-  if (userRole === "ADMIN") {
-    // "Jobs" added only for ADMIN
-    navItems.push({
-      name: "Jobs",
-      icon: <Database size={18} />,
-      path: empId ? `/jobs/${empId}` : "/jobs",
-    });
-    navItems.push({
-      name: "Permissions",
-      icon: <UserRoundCog size={18} />,
-      path: empId ? `/permissions/${empId}` : "/permissions",
-    });
-    
-    navItems.push({
-      name: "ADMIN",
-      icon: <FaUsers size={18} />,
-      path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
-    });
-    navItems.push({
-      name: "Onboarding",
-      icon: <UserPlus size={18} />,
-      path: empId ? `/onboarding/${empId}` : "/onboarding",
-    });
-     
+  ]
+  if (userRole === 'ADMIN') {
+    navItems.push({ name: "Permissions", icon: <UserRoundCog size={18} />, path: empId ? `/permissions/${empId}` : "/permissions" });
+    //navItems.push({ name: "ADMIN", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
   }
-
-  if (userRole === "HR") {
-    navItems.push({
-      name: "HR",
-      icon: <FaUsers size={18} />,
-      path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard",
-    });
-  }
+  {/*if (userRole === 'HR') {
+    navItems.push({ name: "HR", icon: <FaUsers size={18} />, path: empId ? `/combined-dashboard/${empId}` : "/combined-dashboard" });
+  }*/}
 
   return (
     <>
