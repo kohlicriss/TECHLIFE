@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logo from "../assets/anasol-logo.png";
+import logo from "../assets/anasol-logo.png"; // Ensure this path is correct based on your folder structure
 
 // BACKEND API BASE URL
 const API_BASE_URL = "https://hrms.anasolconsultancyservices.com";
@@ -44,7 +44,9 @@ function App() {
     if (file) {
         if (file.size > maxSize) {
             const sizeInMB = maxSize / (1024 * 1024);
-            alert(`File size exceeds ${Math.round(sizeInMB)}MB! Please upload a smaller file.`);
+            // Alert logic to handle small sizes correctly (like 5MB)
+            const displaySize = sizeInMB < 1 ? Math.round(sizeInMB * 100) / 100 : Math.round(sizeInMB);
+            alert(`File size exceeds ${displaySize}MB! Please upload a smaller file.`);
             e.target.value = null;
             setFileState(null);
         } else {
@@ -186,9 +188,10 @@ function App() {
       {/* THE MAIN CARD */}
       <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden border border-gray-100">
         
-        {/* BRANDING HEADER */}
+        {/* BRANDING HEADER - Updated Logo Styling */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-900 p-8 text-center flex flex-col items-center justify-center">
-            <img src={logo} alt="Anasol Logo" className="h-20 w-auto mb-4 bg-white/10 p-2 rounded-lg backdrop-blur-sm" />
+            {/* Removed background box/blur effects (bg-white/10, backdrop-blur-sm, p-2) */}
+            <img src={logo} alt="Anasol Logo" className="h-20 w-auto mb-4" />
             <div className="text-2xl font-bold text-white tracking-wide">Anasol Consultancy Services Pvt Ltd</div>
         </div>
 
@@ -387,12 +390,13 @@ function App() {
                         <div className="flex flex-col space-y-2 md:col-span-2 mt-4 pt-4 border-t border-dashed border-gray-300">
                             <label className="text-sm font-medium text-gray-700">Self Introduction Video <span className="text-red-500">*</span></label>
                             <span className="text-xs text-gray-500">
-                                Please upload a short video introducing yourself (Max: 50MB, Format: MP4/WebM)
+                                Please upload a short video introducing yourself (Max: 5MB)
                             </span>
                             <input 
                                 type="file" 
                                 accept="video/mp4,video/webm" 
-                                onChange={(e) => handleFileChange(e, setIntroVideo, 52428800)} 
+                                // Passed 5MB in bytes: 5 * 1024 * 1024 = 5242880
+                                onChange={(e) => handleFileChange(e, setIntroVideo, 5242880)} 
                                 required 
                                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                             />

@@ -245,8 +245,8 @@ const OnboardingPage = () => {
 
       {/* ================= MODAL SECTION ================= */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onClick={() => setShowModal(false)} />
+        <div className="fixed inset-0 z-151 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity " onClick={() => setShowModal(false)} />
           
           <div className={`relative w-full max-w-6xl rounded-xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden
             ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
