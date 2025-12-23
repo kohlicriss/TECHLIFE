@@ -684,11 +684,12 @@ const HrmsApp = () => {
                                                 </ProtectedRoute>
                                               } 
                                             />
-
+                                            
+                                            {/* Updated allowedRoles here */}
                                             <Route 
                                                 path="/onboarding/:empID" 
                                                 element={
-                                                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                                                    <ProtectedRoute allowedRoles={['ADMIN', 'HR']}>
                                                         <RouteWrapper moduleName="Onboarding">
                                                             <OnboardingPage />
                                                         </RouteWrapper>

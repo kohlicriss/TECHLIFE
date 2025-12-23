@@ -130,16 +130,17 @@ function Sidebar({ isSidebarOpen, setSidebarOpen, onLogout }) {
     },
   ];
 
-  // Add Onboarding and Permissions ONLY for ADMIN
-  if (userRole === 'ADMIN') {
-    // 1. Add Onboarding (Only for Admin)
+  // 1. Add Onboarding for both ADMIN and HR
+  if (['ADMIN', 'HR'].includes(userRole)) {
     navItems.push({
       name: "Onboarding",
       icon: <UserPlus size={18} />,
       path: empId ? `/onboarding/${empId}` : "/onboarding",
     });
+  }
 
-    // 2. Add Permissions
+  // 2. Add Permissions ONLY for ADMIN
+  if (userRole === 'ADMIN') {
     navItems.push({ 
       name: "Permissions", 
       icon: <UserRoundCog size={18} />, 
